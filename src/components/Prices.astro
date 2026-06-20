@@ -8,7 +8,7 @@ const icons = ['clock', 'trending-up'] as const;
 const cards = t.prices.cards.map((c, i) => ({ ...c, icon: icons[i] }));
 ---
 
-<section id="prices" class="prices-section relative border-b border-divider">
+<section id="prices" class="prices-section relative border-t border-b border-divider">
   <div class="site-container py-20 md:py-32">
     <div class="grid grid-cols-1 items-center lg:items-start gap-12 lg:grid-cols-12 lg:gap-10 xl:gap-16">
 
@@ -102,6 +102,10 @@ const cards = t.prices.cards.map((c, i) => ({ ...c, icon: icons[i] }));
 
 <style>
   .prices-section {
+    background: var(--color-surface);
+  }
+
+  .prices-section :global(.feature-card) {
     background: var(--color-paper);
   }
 

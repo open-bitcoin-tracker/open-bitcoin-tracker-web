@@ -8,7 +8,7 @@ const icons = ['user-x', 'eye-off', 'lock', 'code'] as const;
 const cards = t.privacy.cards.map((c, i) => ({ ...c, icon: icons[i] }));
 ---
 
-<section id="privacy" class="privacy-section relative">
+<section id="privacy" class="privacy-section relative border-t border-b border-divider">
   <div class="site-container py-20 md:py-32">
 
     <div class="text-center" data-reveal-stagger="80">
@@ -29,6 +29,10 @@ const cards = t.privacy.cards.map((c, i) => ({ ...c, icon: icons[i] }));
 
 <style>
   .privacy-section {
+    background: var(--color-surface);
+  }
+
+  .privacy-section :global(.feature-card) {
     background: var(--color-paper);
   }
 </style>

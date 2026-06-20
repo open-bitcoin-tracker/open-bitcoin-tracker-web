@@ -12,7 +12,7 @@ const srcs = [
 const shots = srcs.map((src, i) => ({ src, label: t.themes.labels[i] }));
 ---
 
-<section id="themes" class="section-surface relative">
+<section id="themes" class="themes-section relative">
   <div class="site-container pt-16 pb-28 md:pt-24 md:pb-40">
     <div class="flex flex-col items-center gap-12 md:gap-16">
 
@@ -78,10 +78,8 @@ const shots = srcs.map((src, i) => ({ src, label: t.themes.labels[i] }));
 </script>
 
 <style>
-  .section-surface {
-    background: var(--color-surface);
-    border-top: 1px solid var(--color-divider);
-    border-bottom: 1px solid var(--color-divider);
+  .themes-section {
+    background: var(--color-paper);
   }
   /* Break out of .site-container's side padding so the fanned cards can
      run edge to edge. overflow-x: clip on <html> still prevents the page
