@@ -1,11 +1,7 @@
 ---
-import FeatureCard from './FeatureCard.astro';
 import { useTranslations } from '../i18n/utils';
 
 const t = useTranslations(Astro.currentLocale);
-
-const icons = ['clock', 'trending-up'] as const;
-const cards = t.prices.cards.map((c, i) => ({ ...c, icon: icons[i] }));
 ---
 
 <section id="prices" class="prices-section relative border-t border-b border-divider">
@@ -13,13 +9,15 @@ const cards = t.prices.cards.map((c, i) => ({ ...c, icon: icons[i] }));
     <div class="grid grid-cols-1 items-center lg:items-start gap-12 lg:grid-cols-12 lg:gap-10 xl:gap-16">
 
       <!-- LEFT: text -->
-      <div class="lg:col-span-7 text-center lg:text-left lg:pt-2" data-reveal-stagger="80">
-        <h2 class="font-display text-3xl font-bold italic tracking-tight text-accent md:text-4xl" data-reveal>{t.prices.heading}</h2>
-        <p class="mt-2 text-sm leading-relaxed text-ink-muted" data-reveal>{t.prices.sub}</p>
+      <div class="lg:col-span-7 text-center lg:text-left lg:pt-2">
+        <div data-reveal-stagger="80">
+          <h2 class="font-display text-3xl font-bold italic tracking-tight text-accent md:text-4xl" data-reveal>{t.prices.heading}</h2>
+          <p class="mt-2 text-sm leading-relaxed text-ink-muted" data-reveal>{t.prices.sub}</p>
+        </div>
       </div>
 
       <!-- RIGHT: phone -->
-      <div class="lg:col-span-5 lg:row-span-2 flex justify-center lg:items-center lg:self-center">
+      <div class="lg:col-span-5 flex justify-center lg:items-center lg:self-center">
         <div class="prices-phone" id="prices-phone" role="img" aria-label="Open Bitcoin Tracker - Stack details screenshot">
           <div class="prices-phone-tilt">
             <div class="prices-phone-shadow" aria-hidden="true"></div>
@@ -30,17 +28,6 @@ const cards = t.prices.cards.map((c, i) => ({ ...c, icon: icons[i] }));
               </div>
             </div>
           </div>
-        </div>
-      </div>
-
-      <!-- LEFT (row 2): cards -->
-      <div class="lg:col-span-7">
-        <div class="grid grid-cols-1 gap-5" data-reveal-stagger="90">
-          {cards.map((c) => (
-            <div data-reveal>
-              <FeatureCard title={c.title} body={c.body} icon={c.icon} />
-            </div>
-          ))}
         </div>
       </div>
 
@@ -103,10 +90,6 @@ const cards = t.prices.cards.map((c, i) => ({ ...c, icon: icons[i] }));
 <style>
   .prices-section {
     background: var(--color-surface);
-  }
-
-  .prices-section :global(.feature-card) {
-    background: var(--color-paper);
   }
 
   .prices-phone {
