@@ -6,18 +6,16 @@ const t = useTranslations(Astro.currentLocale);
 
 <section id="prices" class="prices-section relative border-t border-b border-divider">
   <div class="site-container py-20 md:py-32">
-    <div class="grid grid-cols-1 items-center lg:items-start gap-12 lg:grid-cols-12 lg:gap-10 xl:gap-16">
+    <div class="flex flex-col items-center gap-12 md:gap-16">
 
-      <!-- LEFT: text -->
-      <div class="lg:col-span-7 text-center lg:text-left lg:pt-2">
-        <div data-reveal-stagger="80">
-          <h2 class="font-display text-3xl font-bold italic tracking-tight text-accent md:text-4xl" data-reveal>{t.prices.heading}</h2>
-          <p class="mt-2 text-sm leading-relaxed text-ink-muted" data-reveal>{t.prices.sub}</p>
-        </div>
+      <!-- Text -->
+      <div class="text-center" data-reveal-stagger="80">
+        <h2 class="font-display text-3xl font-bold italic tracking-tight text-accent md:text-4xl" data-reveal>{t.prices.heading}</h2>
+        <p class="mt-2 text-sm leading-relaxed text-ink-muted" data-reveal>{t.prices.sub}</p>
       </div>
 
-      <!-- RIGHT: phone -->
-      <div class="lg:col-span-5 flex justify-center lg:items-center lg:self-center">
+      <!-- Phone -->
+      <div class="flex justify-center" data-reveal="scale">
         <div class="prices-phone" id="prices-phone" role="img" aria-label="Open Bitcoin Tracker - Stack details screenshot">
           <div class="prices-phone-tilt">
             <div class="prices-phone-shadow" aria-hidden="true"></div>
@@ -93,27 +91,23 @@ const t = useTranslations(Astro.currentLocale);
   }
 
   .prices-phone {
-    width: 200px;
+    width: 190px;
     max-width: min(100%, calc((100svh - 8rem) * 9 / 19.5));
-    --frame-radius: 33.8px;
-    --screen-radius: 26.8px;
+    --frame-radius: 34px;
+    --screen-radius: 29px;
     perspective: 800px;
   }
   @media (max-width: 1023px) and (orientation: landscape) {
     .prices-phone { max-width: 100%; }
   }
-  @media (min-width: 1024px) {
+  @media (min-width: 768px) {
     .prices-phone {
-      width: 240px;
-      --frame-radius: 40.5px;
-      --screen-radius: 33.5px;
+      width: 200px;
     }
   }
-  @media (min-width: 1280px) {
+  @media (min-width: 1024px) {
     .prices-phone {
-      width: 280px;
-      --frame-radius: 47.3px;
-      --screen-radius: 40.3px;
+      width: 220px;
     }
   }
 
@@ -132,7 +126,7 @@ const t = useTranslations(Astro.currentLocale);
     width: 100%;
     aspect-ratio: 9 / 19.5;
     border-radius: var(--frame-radius);
-    padding: 7px;
+    padding: 5px;
     /* Lift the glass above the side rail so the edge sits visibly behind it. */
     transform-style: preserve-3d;
     z-index: 1;
@@ -156,7 +150,7 @@ const t = useTranslations(Astro.currentLocale);
     position: absolute;
     inset: 0;
     border-radius: var(--frame-radius);
-    transform: translateZ(-14px);
+    transform: translateZ(-10px);
     background: linear-gradient(145deg, #2a2a2c 0%, #050506 40%, #050506 60%, #1c1c1f 100%);
     box-shadow: 0 0 0 1px rgb(0 0 0 / 0.5);
   }
@@ -175,12 +169,12 @@ const t = useTranslations(Astro.currentLocale);
   }
   .prices-phone-screen-wrap {
     position: absolute;
-    inset: 7px;
+    inset: 5px;
     /* Sit the glass just forward of the rail so the bezel has real depth. */
     transform: translateZ(1px);
     border-radius: var(--screen-radius);
     background: #050505;
-    border: 3px solid #050505;
+    border: 2px solid #050505;
     box-shadow:
       inset 0 0 0 1px rgb(255 255 255 / 0.04),
       inset 0 1px 2px rgb(0 0 0 / 0.8);
