@@ -82,6 +82,15 @@ export const en = {
     labels: ['Paper Cream', 'Salmon Press', 'Deepsea Blue', 'OLED Black'],
   },
 
+  prices: {
+    heading: 'Past and future prices',
+    sub: 'Analyze historical trends and project future value.',
+    cards: [
+      { title: 'Historical price tracking', body: 'Analyze historical Bitcoin price data.' },
+      { title: 'Future projection tools', body: 'Simulate value based on target price targets.' },
+    ],
+  },
+
   privacy: {
     heading: 'Total privacy',
     sub: 'Your data stays on your phone.',

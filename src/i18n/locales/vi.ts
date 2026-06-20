@@ -64,6 +64,15 @@ export const vi: Dict = {
     labels: ['Paper Cream', 'Salmon Press', 'Deepsea Blue', 'OLED Black'],
   },
 
+  prices: {
+    heading: 'Giá khứ hồi và tương lai',
+    sub: 'Phân tích xu hướng lịch sử và dự báo giá trị tương lai.',
+    cards: [
+      { title: 'Theo dõi giá lịch sử', body: 'Phân tích dữ liệu giá Bitcoin lịch sử.' },
+      { title: 'Công cụ dự báo tương lai', body: 'Mô phỏng giá trị dựa trên mục tiêu giá.' },
+    ],
+  },
+
   privacy: {
     heading: 'Riêng tư tuyệt đối',
     sub: 'Dữ liệu của bạn ở lại trên điện thoại.',

@@ -64,6 +64,15 @@ export const tr: Dict = {
     labels: ['Paper Cream', 'Salmon Press', 'Deepsea Blue', 'OLED Black'],
   },
 
+  prices: {
+    heading: 'Geçmiş ve gelecek fiyatlar',
+    sub: 'Geçmiş trendleri analiz edin ve gelecekteki değeri tahmin edin.',
+    cards: [
+      { title: 'Geçmiş fiyat takibi', body: 'Geçmiş Bitcoin fiyat verilerini analiz edin.' },
+      { title: 'Gelecek projeksiyon araçları', body: 'Hedef fiyatlara göre değer simülasyonu yapın.' },
+    ],
+  },
+
   privacy: {
     heading: 'Tam gizlilik',
     sub: 'Verilerin telefonunda kalır.',

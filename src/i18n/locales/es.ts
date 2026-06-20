@@ -64,6 +64,15 @@ export const es: Dict = {
     labels: ['Paper Cream', 'Salmon Press', 'Deepsea Blue', 'OLED Black'],
   },
 
+  prices: {
+    heading: 'Precios pasados y futuros',
+    sub: 'Analiza tendencias históricas y proyecta el valor futuro.',
+    cards: [
+      { title: 'Seguimiento de precios históricos', body: 'Analiza datos de precios históricos de Bitcoin.' },
+      { title: 'Herramientas de proyección futura', body: 'Simula el valor basado en precios objetivo.' },
+    ],
+  },
+
   privacy: {
     heading: 'Privacidad total',
     sub: 'Tus datos se quedan en tu teléfono.',

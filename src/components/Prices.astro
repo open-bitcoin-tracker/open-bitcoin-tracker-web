@@ -1,0 +1,210 @@
+---
+import FeatureCard from './FeatureCard.astro';
+import { useTranslations } from '../i18n/utils';
+
+const t = useTranslations(Astro.currentLocale);
+
+const icons = ['clock', 'trending-up'] as const;
+const cards = t.prices.cards.map((c, i) => ({ ...c, icon: icons[i] }));
+---
+
+<section id="prices" class="prices-section relative border-b border-divider">
+  <div class="site-container py-20 md:py-32">
+    <div class="grid grid-cols-1 items-center lg:items-start gap-12 lg:grid-cols-12 lg:gap-10 xl:gap-16">
+
+      <!-- LEFT: text -->
+      <div class="lg:col-span-7 text-center lg:text-left lg:pt-2" data-reveal-stagger="80">
+        <h2 class="font-display text-3xl font-bold italic tracking-tight text-accent md:text-4xl" data-reveal>{t.prices.heading}</h2>
+        <p class="mt-2 text-sm leading-relaxed text-ink-muted" data-reveal>{t.prices.sub}</p>
+      </div>
+
+      <!-- RIGHT: phone -->
+      <div class="lg:col-span-5 lg:row-span-2 flex justify-center lg:items-center lg:self-center">
+        <div class="prices-phone" id="prices-phone" role="img" aria-label="Open Bitcoin Tracker - Stack details screenshot">
+          <div class="prices-phone-tilt">
+            <div class="prices-phone-shadow" aria-hidden="true"></div>
+            <div class="prices-phone-frame">
+              <div class="prices-phone-edge" aria-hidden="true"></div>
+              <div class="prices-phone-screen-wrap">
+                <img src="/screenshots/stack-details.png" alt="Open Bitcoin Tracker - Stack details screenshot" width="1080" height="2340" class="prices-phone-screen" />
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- LEFT (row 2): cards -->
+      <div class="lg:col-span-7">
+        <div class="grid grid-cols-1 gap-5" data-reveal-stagger="90">
+          {cards.map((c) => (
+            <div data-reveal>
+              <FeatureCard title={c.title} body={c.body} icon={c.icon} />
+            </div>
+          ))}
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<script is:inline>
+  // Subtle 3D tilt: the prices phone leans toward the cursor as it moves
+  // across the prices section, easing back to flat when the pointer leaves.
+  const phone = document.getElementById('prices-phone');
+  const reduce = window.matchMedia('(prefers-reduced-motion: reduce)');
+
+  if (phone && window.matchMedia('(hover: hover) and (pointer: fine)').matches && !reduce.matches) {
+    const section = phone.closest('.prices-section');
+    const zone = section ?? phone;
+
+    const MAX = 2.2; // degrees of tilt at the edges
+    let targetX = 0, targetY = 0;
+    let curX = 0, curY = 0;
+    let raf = 0;
+
+    const render = () => {
+      // Ease current values toward targets for a smooth, weighty follow.
+      curX += (targetX - curX) * 0.12;
+      curY += (targetY - curY) * 0.12;
+      phone.style.setProperty('--rx', curX.toFixed(2) + 'deg');
+      phone.style.setProperty('--ry', curY.toFixed(2) + 'deg');
+      // Swing the grounding shadow opposite the horizontal lean so it reads
+      // as cast by a light overhead — the phone turns, its shadow trails.
+      phone.style.setProperty('--sh-x', (-curY * 1.6).toFixed(2) + 'px');
+      phone.style.setProperty('--sh-skew', (-curY * 0.8).toFixed(2) + 'deg');
+
+      const settled =
+        Math.abs(targetX - curX) < 0.01 &&
+        Math.abs(targetY - curY) < 0.01;
+      raf = settled ? 0 : requestAnimationFrame(render);
+    };
+    const kick = () => { if (!raf) raf = requestAnimationFrame(render); };
+
+    zone.addEventListener('pointermove', (e) => {
+      const r = zone.getBoundingClientRect();
+      const px = (e.clientX - r.left) / r.width;   // 0..1
+      const py = (e.clientY - r.top) / r.height;   // 0..1
+      // Cursor right -> rotateY positive (leans right); cursor up -> rotateX positive.
+      targetY = (px - 0.5) * 2 * MAX;
+      targetX = -(py - 0.5) * 2 * MAX;
+      phone.classList.add('is-tilting');
+      kick();
+    });
+
+    zone.addEventListener('pointerleave', () => {
+      targetX = 0; targetY = 0;
+      phone.classList.remove('is-tilting');
+      kick();
+    });
+  }
+</script>
+
+<style>
+  .prices-section {
+    background: var(--color-paper);
+  }
+
+  .prices-phone {
+    width: 200px;
+    max-width: min(100%, calc((100svh - 8rem) * 9 / 19.5));
+    --frame-radius: 33.8px;
+    --screen-radius: 26.8px;
+    perspective: 800px;
+  }
+  @media (max-width: 1023px) and (orientation: landscape) {
+    .prices-phone { max-width: 100%; }
+  }
+  @media (min-width: 1024px) {
+    .prices-phone {
+      width: 240px;
+      --frame-radius: 40.5px;
+      --screen-radius: 33.5px;
+    }
+  }
+  @media (min-width: 1280px) {
+    .prices-phone {
+      width: 280px;
+      --frame-radius: 47.3px;
+      --screen-radius: 40.3px;
+    }
+  }
+
+  .prices-phone-tilt {
+    position: relative;
+    transform-style: preserve-3d;
+    transform: rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg));
+    transition: transform 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  .prices-phone.is-tilting .prices-phone-tilt {
+    transition: transform 0.12s ease-out;
+  }
+
+  .prices-phone-frame {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 9 / 19.5;
+    border-radius: var(--frame-radius);
+    padding: 7px;
+    /* Lift the glass above the side rail so the edge sits visibly behind it. */
+    transform-style: preserve-3d;
+    z-index: 1;
+    /* The aluminium/titanium rail: a diagonal sheen across a dark frame,
+       lit from the top-left so it reads as a physical edge, not a stroke. */
+    background:
+      linear-gradient(145deg, #3a3a3d 0%, #0c0c0d 22%, #060607 50%, #0c0c0d 78%, #2c2c2f 100%);
+    box-shadow:
+      /* crisp outer edge */
+      0 0 0 1px rgb(0 0 0 / 0.55),
+      /* top rim catching light */
+      inset 0 1px 1px rgb(255 255 255 / 0.22),
+      /* bottom rim falling into shadow */
+      inset 0 -1px 1px rgb(0 0 0 / 0.6),
+      /* layered grounding shadow: tight contact + soft ambient */
+      0 2px 4px rgb(31 27 20 / 0.10),
+      0 14px 30px rgb(31 27 20 / 0.18),
+      0 34px 70px rgb(31 27 20 / 0.12);
+  }
+  .prices-phone-edge {
+    position: absolute;
+    inset: 0;
+    border-radius: var(--frame-radius);
+    transform: translateZ(-14px);
+    background: linear-gradient(145deg, #2a2a2c 0%, #050506 40%, #050506 60%, #1c1c1f 100%);
+    box-shadow: 0 0 0 1px rgb(0 0 0 / 0.5);
+  }
+  .prices-phone-shadow {
+    position: absolute;
+    inset: 6% 8%;
+    border-radius: var(--frame-radius);
+    background: radial-gradient(ellipse at center, var(--phone-shadow) 0%, transparent 72%);
+    filter: blur(28px);
+    transform: translateZ(-60px) translateX(var(--sh-x, 0px)) translateY(18px) skewX(var(--sh-skew, 0deg)) scale(0.92);
+    transition: transform 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+    z-index: 0;
+  }
+  .prices-phone.is-tilting .prices-phone-shadow {
+    transition: transform 0.12s ease-out;
+  }
+  .prices-phone-screen-wrap {
+    position: absolute;
+    inset: 7px;
+    /* Sit the glass just forward of the rail so the bezel has real depth. */
+    transform: translateZ(1px);
+    border-radius: var(--screen-radius);
+    background: #050505;
+    border: 3px solid #050505;
+    box-shadow:
+      inset 0 0 0 1px rgb(255 255 255 / 0.04),
+      inset 0 1px 2px rgb(0 0 0 / 0.8);
+    overflow: hidden;
+  }
+  .prices-phone-screen {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: top center;
+    display: block;
+    background: #050505;
+  }
+</style>

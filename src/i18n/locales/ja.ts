@@ -64,6 +64,15 @@ export const ja: Dict = {
     labels: ['Paper Cream', 'Salmon Press', 'Deepsea Blue', 'OLED Black'],
   },
 
+  prices: {
+    heading: '過去と将来の価格',
+    sub: '過去のトレンドを分析し、将来の価値を予測します。',
+    cards: [
+      { title: '過去の価格追跡', body: 'ビットコインの過去の価格データを分析します。' },
+      { title: '将来の予測ツール', body: '目標価格に基づいて価値をシミュレーションします。' },
+    ],
+  },
+
   privacy: {
     heading: '完全なプライバシー',
     sub: 'あなたのデータは端末内にとどまります。',
