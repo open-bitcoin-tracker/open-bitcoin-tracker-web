@@ -91,23 +91,24 @@ const t = useTranslations(Astro.currentLocale);
   }
 
   .prices-phone {
-    width: 190px;
+    width: 260px;
     max-width: min(100%, calc((100svh - 8rem) * 9 / 19.5));
-    --frame-radius: 34px;
-    --screen-radius: 29px;
+    container-type: inline-size;
+    --frame-radius: 16.9cqw;
+    --screen-radius: calc(var(--frame-radius) - 7px);
     perspective: 800px;
   }
   @media (max-width: 1023px) and (orientation: landscape) {
     .prices-phone { max-width: 100%; }
   }
-  @media (min-width: 768px) {
-    .prices-phone {
-      width: 200px;
-    }
-  }
   @media (min-width: 1024px) {
     .prices-phone {
-      width: 220px;
+      width: 300px;
+    }
+  }
+  @media (min-width: 1280px) {
+    .prices-phone {
+      width: 360px;
     }
   }
 
@@ -126,7 +127,7 @@ const t = useTranslations(Astro.currentLocale);
     width: 100%;
     aspect-ratio: 9 / 19.5;
     border-radius: var(--frame-radius);
-    padding: 5px;
+    padding: 7px;
     /* Lift the glass above the side rail so the edge sits visibly behind it. */
     transform-style: preserve-3d;
     z-index: 1;
@@ -150,7 +151,7 @@ const t = useTranslations(Astro.currentLocale);
     position: absolute;
     inset: 0;
     border-radius: var(--frame-radius);
-    transform: translateZ(-10px);
+    transform: translateZ(-14px);
     background: linear-gradient(145deg, #2a2a2c 0%, #050506 40%, #050506 60%, #1c1c1f 100%);
     box-shadow: 0 0 0 1px rgb(0 0 0 / 0.5);
   }
@@ -169,12 +170,12 @@ const t = useTranslations(Astro.currentLocale);
   }
   .prices-phone-screen-wrap {
     position: absolute;
-    inset: 5px;
+    inset: 7px;
     /* Sit the glass just forward of the rail so the bezel has real depth. */
     transform: translateZ(1px);
     border-radius: var(--screen-radius);
     background: #050505;
-    border: 2px solid #050505;
+    border: 3px solid #050505;
     box-shadow:
       inset 0 0 0 1px rgb(255 255 255 / 0.04),
       inset 0 1px 2px rgb(0 0 0 / 0.8);

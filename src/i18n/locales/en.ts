@@ -83,8 +83,8 @@ export const en = {
   },
 
   prices: {
-    heading: 'Past and future prices',
-    sub: 'Analyze historical trends and project future value.',
+    heading: 'Historical value and projections',
+    sub: 'See how your stack performed in previous years and project its future value.',
     cards: [
       { title: 'Historical price tracking', body: 'Analyze historical Bitcoin price data.' },
       { title: 'Future projection tools', body: 'Simulate value based on target price targets.' },
