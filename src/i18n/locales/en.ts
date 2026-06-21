@@ -124,7 +124,7 @@ export const en = {
     // Personal origin story shown under the H1. Voice string — transcreate
     // freely (see TRANSLATING.md). Each array entry renders as its own paragraph.
     story: [
-      'I built Open Bitcoin Tracker because I wanted a convenient way to keep track of multiple stacks. I don´t need to transact, just to keep an eye on their value. Most wallets only allow one and can be slow because they connect to a node.',
+      'I built Open Bitcoin Tracker because I wanted a convenient way to keep track of multiple stacks. I don\'t need to transact, just to keep an eye on their value. Most wallets only allow one and can be slow because they connect to a node.',
       'My family and friends ended up using it too, so I made it public in case more people find it useful.',
     ],
     dataSourcesHeader: 'Data sources for the Android app',

@@ -49,7 +49,7 @@ const firstAlt = `${altPrefix}${themeLabels[0]}${altSuffix}`;
         <p class="mt-4 text-sm leading-relaxed text-ink-muted">{t.hero.tagline}</p>
 
         <div class="mt-9 flex flex-wrap items-center justify-center lg:justify-start gap-3">
-          <a href={releasesUrl} rel="noopener noreferrer" target="_blank" class="cta-accent inline-flex items-center gap-2.5 rounded-xl px-6 py-3 text-sm font-semibold">
+          <a href={releasesUrl} rel="noopener noreferrer" target="_blank" class="cta-primary inline-flex items-center gap-2.5 rounded-xl px-6 py-3 text-sm font-semibold">
             <svg width="15" height="17" viewBox="0 0 24 26" fill="currentColor" aria-hidden="true" style="flex-shrink:0; transform: translateY(-1px);">
               <path d="M7.4 3.2 9.1 6" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" fill="none"/>
               <path d="M16.6 3.2 14.9 6" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" fill="none"/>
@@ -282,42 +282,6 @@ const firstAlt = `${altPrefix}${themeLabels[0]}${altSuffix}`;
   @media (prefers-reduced-motion: reduce) {
     .hero-phone-screen-next.is-fading { transition: none; }
   }
-  .cta-accent {
-    background: rgb(247 147 26 / 0.10);
-    color: var(--color-accent);
-    border: 0.5px solid var(--color-accent);
-    transition: opacity 0.2s ease, transform 0.15s ease;
-  }
-  .cta-accent:hover {
-    opacity: 0.85;
-    transform: translateY(-1px);
-  }
-  .cta-accent:active { transform: translateY(0); }
-
-  .cta-primary {
-    background: var(--color-accent);
-    color: #fff;
-    box-shadow: 0 1px 3px rgb(247 147 26 / 0.30), 0 4px 16px rgb(247 147 26 / 0.22);
-    transition: opacity 0.2s ease, box-shadow 0.2s ease, transform 0.15s ease;
-  }
-  .cta-primary:hover {
-    opacity: 0.92;
-    box-shadow: 0 2px 6px rgb(247 147 26 / 0.35), 0 8px 24px rgb(247 147 26 / 0.28);
-    transform: translateY(-1px);
-  }
-  .cta-primary:active { transform: translateY(0); }
-
-  .cta-secondary {
-    background: var(--color-surface);
-    border: 1px solid var(--color-divider);
-    box-shadow: var(--shadow-card);
-    transition: box-shadow 0.2s ease, transform 0.15s ease;
-  }
-  .cta-secondary:hover {
-    box-shadow: var(--shadow-card-hover);
-    transform: translateY(-1px);
-  }
-  .cta-secondary:active { transform: translateY(0); }
 </style>
 
 <script is:inline define:vars={{ screenSrcs, themeLabels, altPrefix, altSuffix }}>

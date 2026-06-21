@@ -1,7 +1,11 @@
 ---
+import FeatureCard from './FeatureCard.astro';
 import { useTranslations } from '../i18n/utils';
 
 const t = useTranslations(Astro.currentLocale);
+
+const icons = ['clock', 'trending-up'] as const;
+const cards = t.prices.cards.map((c, i) => ({ ...c, icon: icons[i] }));
 ---
 
 <section id="prices" class="prices-section relative border-t border-b border-divider">
@@ -27,6 +31,15 @@ const t = useTranslations(Astro.currentLocale);
             </div>
           </div>
         </div>
+      </div>
+
+      <!-- Cards -->
+      <div class="grid grid-cols-1 gap-5 sm:grid-cols-2 max-w-2xl w-full" data-reveal-stagger="90">
+        {cards.map((c) => (
+          <div data-reveal>
+            <FeatureCard title={c.title} body={c.body} icon={c.icon} />
+          </div>
+        ))}
       </div>
 
     </div>
@@ -88,6 +101,10 @@ const t = useTranslations(Astro.currentLocale);
 <style>
   .prices-section {
     background: var(--color-surface);
+  }
+
+  .prices-section :global(.feature-card) {
+    background: var(--color-paper);
   }
 
   .prices-phone {

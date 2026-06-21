@@ -252,5 +252,36 @@ html.dark {
     }
   }
 }
+
+/* Button utility classes used in Hero and Footer */
+.cta-primary {
+  background: var(--color-accent);
+  color: #fff !important;
+  box-shadow: 0 1px 3px rgb(247 147 26 / 0.30), 0 4px 16px rgb(247 147 26 / 0.22);
+  transition: opacity 0.2s ease, box-shadow 0.2s ease, transform 0.15s ease;
+}
+.cta-primary:hover {
+  opacity: 0.92;
+  box-shadow: 0 2px 6px rgb(247 147 26 / 0.35), 0 8px 24px rgb(247 147 26 / 0.28);
+  transform: translateY(-1px);
+}
+.cta-primary:active {
+  transform: translateY(0);
+}
+
+.cta-accent {
+  background: rgb(247 147 26 / 0.10);
+  color: var(--color-accent) !important;
+  border: 0.5px solid var(--color-accent);
+  transition: opacity 0.2s ease, transform 0.15s ease;
+}
+.cta-accent:hover {
+  opacity: 0.85;
+  transform: translateY(-1px);
+}
+.cta-accent:active {
+  transform: translateY(0);
+}
+
 </content>
 </invoke>
