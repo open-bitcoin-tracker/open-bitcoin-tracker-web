@@ -38,7 +38,6 @@ export const it: Dict = {
     downloadApk: 'Scarica l’APK',
     viewGithub: 'Vedi su GitHub',
     viewZapstore: 'Zapstore',
-    phoneAria: 'Screenshot di Open Bitcoin Tracker — clicca per cambiare tema',
     altPrefix: 'Open Bitcoin Tracker — ',
     altSuffix: '',
     reasons: [

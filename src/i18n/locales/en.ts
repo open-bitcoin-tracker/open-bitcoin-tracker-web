@@ -50,8 +50,7 @@ export const en = {
     downloadApk: 'Download APK',
     viewGithub: 'View on GitHub',
     viewZapstore: 'Zapstore',
-    phoneAria: 'Open Bitcoin Tracker screenshot — click to change theme',
-    // Screenshot alt text is built client-side as `${altPrefix}${label}${altSuffix}`,
+    // Screenshot alt text is built as `${altPrefix}${label}${altSuffix}`,
     // e.g. "Open Bitcoin Tracker — Home screen". The product name stays in the
     // prefix verbatim; only the surrounding words translate.
     altPrefix: 'Open Bitcoin Tracker — ',

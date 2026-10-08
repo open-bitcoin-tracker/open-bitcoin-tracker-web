@@ -38,7 +38,6 @@ export const ru: Dict = {
     downloadApk: 'Скачать APK',
     viewGithub: 'Открыть на GitHub',
     viewZapstore: 'Zapstore',
-    phoneAria: 'Скриншот Open Bitcoin Tracker — нажмите, чтобы сменить тему',
     altPrefix: 'Open Bitcoin Tracker — ',
     altSuffix: '',
     reasons: [

@@ -5,10 +5,10 @@ import DownloadButton from './DownloadButton.astro';
 import { useTranslations } from '../i18n/utils';
 const t = useTranslations(Astro.currentLocale);
 const titleParts = t.hero.reasons[0].title.split(t.hero.titleHighlight);
-const screenSrcs = ['/screenshots/paper-cream.png', '/screenshots/salmon-press.png', '/screenshots/deepsea-blue.png', '/screenshots/oled-black.png'];
-const themeLabels = t.themes.labels;
-const altPrefix = t.hero.altPrefix;
-const altSuffix = t.hero.altSuffix;
+const screens = [
+  { src: '/screenshots/paper-cream.png', alt: `${t.hero.altPrefix}${t.themes.labels[0]}${t.hero.altSuffix}` },
+  { src: '/screenshots/deepsea-blue.png', alt: `${t.hero.altPrefix}${t.themes.labels[2]}${t.hero.altSuffix}` },
+];
 ---
 <section class="hero-section" id="hero" data-scene>
   <div class="site-container hero-grid">
@@ -30,7 +30,7 @@ const altSuffix = t.hero.altSuffix;
       <div class="orbit" aria-hidden="true"></div>
       <div class="orbit orbit-two" aria-hidden="true"></div>
       <div class="hero-device-position">
-        <Phone src={screenSrcs[0]} alt={t.hero.phoneAria} id="hero-phone" class="hero-device" interactive eager />
+        <Phone src={screens[0].src} alt={screens[0].alt} id="hero-phone" class="hero-device" tilt eager />
       </div>
     </div>
   </div>
@@ -39,47 +39,16 @@ const altSuffix = t.hero.altSuffix;
     <div data-reveal><FeatureCard title={t.hero.reasons[2].title} body={t.hero.reasons[2].body} icon="bolt" headingLevel="h2" /></div>
   </div>
 </section>
-<script is:inline define:vars={{ screenSrcs, themeLabels, altPrefix, altSuffix }}>
+<script is:inline define:vars={{ screens }}>
   (() => {
-    const phone = document.getElementById('hero-phone');
-    if (!phone) return;
-    const screen = phone.querySelector('img');
-    const nextScreen = phone.querySelector('.device-next');
-    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)');
-    let current = document.documentElement.classList.contains('dark') ? 2 : 0;
-    let picked = false;
-    let version = 0;
-    const setScreen = (index, animate = true) => {
-      current = index;
-      const token = ++version;
-      const src = screenSrcs[index];
-      const alt = `${altPrefix}${themeLabels[index]}${altSuffix}`;
-      nextScreen.getAnimations().forEach((animation) => animation.cancel());
-      const show = () => {
-        if (token !== version) return;
-        if (!animate || reduce.matches) { screen.src = src; screen.alt = alt; return; }
-        nextScreen.src = src;
-        const animation = nextScreen.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 360, easing: 'ease-out', fill: 'forwards' });
-        animation.finished.then(() => {
-          if (token !== version) return;
-          screen.src = src;
-          screen.alt = alt;
-          animation.cancel();
-        }).catch(() => {});
-      };
-      const preload = new Image();
-      preload.src = src;
-      if (preload.complete) show();
-      else preload.onload = show;
+    const screen = document.querySelector('#hero-phone img');
+    if (!screen) return;
+    const syncTheme = () => {
+      const { src, alt } = screens[document.documentElement.classList.contains('dark') ? 1 : 0];
+      screen.src = src;
+      screen.alt = alt;
     };
-    setScreen(current, false);
-    const cycle = () => { picked = true; setScreen((current + 1) % screenSrcs.length); };
-    phone.addEventListener('click', cycle);
-    phone.addEventListener('keydown', (event) => {
-      if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); cycle(); }
-    });
-    document.addEventListener('themechange', () => {
-      if (!picked) setScreen(document.documentElement.classList.contains('dark') ? 2 : 0);
-    });
+    syncTheme();
+    document.addEventListener('themechange', syncTheme);
   })();
 </script>

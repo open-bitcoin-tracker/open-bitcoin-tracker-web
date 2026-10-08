@@ -38,7 +38,6 @@ export const ja: Dict = {
     downloadApk: 'APK をダウンロード',
     viewGithub: 'GitHub で見る',
     viewZapstore: 'Zapstore',
-    phoneAria: 'Open Bitcoin Tracker のスクリーンショット — クリックでテーマを変更',
     altPrefix: 'Open Bitcoin Tracker — ',
     altSuffix: ' の画面',
     reasons: [

@@ -21,10 +21,10 @@ const swatches = ['#F8F7F3', '#F3C7B6', '#0F1E3A', '#080808'];
     </div>
     <div class="themes-gallery" role="region" aria-label={t.themes.regionAria} data-reveal="scale">
       {srcs.map((src, i) => (
-        <button type="button" class:list={['gallery-item', { 'is-active': i === 0 }]} data-gallery-index={i} aria-label={t.themes.showAria.replace('{label}', t.themes.labels[i])} aria-pressed={i === 0 ? 'true' : 'false'}>
+        <div class="gallery-item" data-gallery-index={i} hidden={i !== 0}>
           <Phone src={src} alt={`${t.themes.altPrefix}${t.themes.labels[i]}${t.themes.altSuffix}`} />
           <span class="gallery-label"><span class="gallery-number" aria-hidden="true">0{i + 1}</span>{t.themes.labels[i]}</span>
-        </button>
+        </div>
       ))}
     </div>
   </div>
@@ -33,54 +33,25 @@ const swatches = ['#F8F7F3', '#F3C7B6', '#0F1E3A', '#080808'];
   const gallery = document.querySelector<HTMLElement>('.themes-gallery');
   if (gallery) {
     const choices = [...document.querySelectorAll<HTMLButtonElement>('.theme-choice')];
-    const items = [...gallery.querySelectorAll<HTMLButtonElement>('.gallery-item')];
-    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const items = [...gallery.querySelectorAll<HTMLElement>('.gallery-item')];
     let picked = false;
-    let current = 0;
-    const select = (index: number, scroll = false, animate = true) => {
-      current = index;
+    const select = (index: number) => {
       choices.forEach((choice, i) => choice.setAttribute('aria-pressed', String(i === index)));
-      items.forEach((item, i) => { item.classList.toggle('is-active', i === index); item.setAttribute('aria-pressed', String(i === index)); });
-      if (scroll && window.matchMedia('(max-width: 767px)').matches) {
-        const itemBounds = items[index].getBoundingClientRect();
-        const galleryBounds = gallery.getBoundingClientRect();
-        gallery.scrollTo({ left: gallery.scrollLeft + itemBounds.left - galleryBounds.left - (gallery.clientWidth - itemBounds.width) / 2, behavior: reduce.matches || !animate ? 'instant' : 'smooth' });
-      }
+      items.forEach((item, i) => { item.hidden = i !== index; });
     };
     choices.forEach((choice, index) => {
-      choice.addEventListener('click', () => { picked = true; select(index, true); });
+      choice.addEventListener('click', () => { picked = true; select(index); });
       choice.addEventListener('keydown', (event) => {
-        let next = current;
+        let next = index;
         if (event.key === 'ArrowRight') next = (index + 1) % choices.length;
         else if (event.key === 'ArrowLeft') next = (index - 1 + choices.length) % choices.length;
         else if (event.key === 'Home') next = 0;
         else if (event.key === 'End') next = choices.length - 1;
         else return;
-        event.preventDefault(); picked = true; choices[next].focus(); select(next, true);
+        event.preventDefault(); picked = true; choices[next].focus(); select(next);
       });
     });
-    items.forEach((item, index) => item.addEventListener('click', () => { picked = true; select(index, true); }));
-    // Keep the visible mobile screenshot in sync without moving the page vertically.
-    select(document.documentElement.classList.contains('dark') ? 2 : 0, true, false);
-    document.addEventListener('themechange', () => { if (!picked) select(document.documentElement.classList.contains('dark') ? 2 : 0, true); });
-    const syncScroll = () => {
-      if (!window.matchMedia('(max-width: 767px)').matches) return;
-      const bounds = gallery.getBoundingClientRect();
-      const center = bounds.left + bounds.width / 2;
-      let nearest = 0;
-      let distance = Infinity;
-      items.forEach((item, index) => {
-        const itemBounds = item.getBoundingClientRect();
-        const offset = Math.abs(itemBounds.left + itemBounds.width / 2 - center);
-        if (offset < distance) { distance = offset; nearest = index; }
-      });
-      select(nearest);
-    };
-    gallery.addEventListener('pointerdown', () => { picked = true; }, { passive: true });
-    if ('onscrollend' in gallery) gallery.addEventListener('scrollend', syncScroll);
-    else {
-      let scrollTimer: ReturnType<typeof setTimeout>;
-      gallery.addEventListener('scroll', () => { clearTimeout(scrollTimer); scrollTimer = setTimeout(syncScroll, 120); }, { passive: true });
-    }
+    select(document.documentElement.classList.contains('dark') ? 2 : 0);
+    document.addEventListener('themechange', () => { if (!picked) select(document.documentElement.classList.contains('dark') ? 2 : 0); });
   }
 </script>
