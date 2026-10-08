@@ -23,7 +23,7 @@ const canonical = new URL(Astro.url.pathname, Astro.site).toString();
 const ogImage = new URL('/og-image.png', Astro.site).toString();
 const ogImageAlt = t.meta.ogImageAlt;
 const siteName = 'Open Bitcoin Tracker';
-const homeUrl = new URL('/', Astro.site).toString();
+const appUrl = new URL('/android-app', Astro.site).toString();
 
 // The locale-agnostic remainder of the current path ('' | 'about' | 'privacy'),
 // used to build this same page's URL in every language for hreflang.
@@ -49,14 +49,14 @@ const alternates = [
 // locale home (not on about/privacy) and always points at the canonical app
 // URL/download, not the current localized page. softwareVersion is
 // intentionally omitted so it can't silently go stale against the release.
-const isHome = localePath === '';
+const isApp = localePath === 'android-app';
 const jsonLd = {
   '@context': 'https://schema.org',
   '@type': 'SoftwareApplication',
   name: siteName,
   applicationCategory: 'FinanceApplication',
   operatingSystem: 'Android 5.0+',
-  url: homeUrl,
+  url: appUrl,
   author: {
     '@type': 'Person',
     name: 'Max Hodler',
@@ -141,7 +141,7 @@ const jsonLd = {
          variable Inter file since it's used for all body text on first paint. -->
     <link rel="preload" href="/fonts/InterVariable.woff2" as="font" type="font/woff2" crossorigin />
 
-    {isHome && <script type="application/ld+json" set:html={JSON.stringify(jsonLd)} />}
+    {isApp && <script type="application/ld+json" set:html={JSON.stringify(jsonLd)} />}
   </head>
   <body class="bg-paper text-ink antialiased">
     <a class="skip-link" href="#main-content">{t.nav.skipToContent}</a>

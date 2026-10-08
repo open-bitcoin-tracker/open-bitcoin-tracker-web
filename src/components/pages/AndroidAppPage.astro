@@ -1,0 +1,22 @@
+---
+// Android app page, shared by the English and localized routes. All copy comes
+// from the child components via Astro.currentLocale, so no props are needed.
+import Layout from '../../layouts/Layout.astro';
+import Nav from '../Nav.astro';
+import Hero from '../Hero.astro';
+import Prices from '../Prices.astro';
+import Privacy from '../Privacy.astro';
+import KeepAndroidOpen from '../KeepAndroidOpen.astro';
+import Footer from '../Footer.astro';
+---
+
+<Layout page="home">
+  <Nav />
+  <main id="main-content">
+    <Hero />
+    <Prices />
+    <Privacy />
+    <KeepAndroidOpen />
+  </main>
+  <Footer />
+</Layout>

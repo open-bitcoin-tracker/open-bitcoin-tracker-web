@@ -1,23 +1,55 @@
 ---
-// Shared home-page body, rendered both at the English root (src/pages/index.astro)
-// and under every locale prefix (src/pages/[lang]/index.astro). All copy comes
-// from the child components via Astro.currentLocale, so no props are needed.
+import { getRelativeLocaleUrl } from 'astro:i18n';
 import Layout from '../../layouts/Layout.astro';
-import Nav from '../Nav.astro';
-import Hero from '../Hero.astro';
-import Prices from '../Prices.astro';
-import Privacy from '../Privacy.astro';
-import KeepAndroidOpen from '../KeepAndroidOpen.astro';
-import Footer from '../Footer.astro';
+import BitcoinChart from '../BitcoinChart.astro';
+import LanguageSwitcher from '../LanguageSwitcher.astro';
+import ThemeToggle from '../ThemeToggle.astro';
+import { resolveLang, useTranslations } from '../../i18n/utils';
+import { tracker } from '../../i18n/tracker';
+
+const lang = resolveLang(Astro.currentLocale);
+const t = tracker[lang];
+const nav = useTranslations(Astro.currentLocale).nav;
+const appHref = getRelativeLocaleUrl(lang, 'android-app');
 ---
 
-<Layout page="home">
-  <Nav />
-  <main id="main-content">
-    <Hero />
-    <Prices />
-    <Privacy />
-    <KeepAndroidOpen />
+<Layout title={t.title} description={t.description}>
+  <header class="nav-header">
+    <nav class="site-container nav-inner" aria-label={nav.mainAria}>
+      <a href={getRelativeLocaleUrl(lang, '')} class="nav-brand" aria-label="Open Bitcoin Tracker">
+        <img src="/app-icon.png" width="36" height="36" alt="" />
+        <span class="brand-full">Open Bitcoin Tracker</span><span class="brand-short" aria-hidden="true">OBT</span>
+      </a>
+      <div class="nav-actions"><LanguageSwitcher /><ThemeToggle class="nav-theme-toggle" /></div>
+    </nav>
+  </header>
+  <main id="main-content" class="site-container tracker-main">
+    <BitcoinChart />
+    <div class="app-link">
+      <a class="button cta-secondary" href={appHref}>
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><rect x="6" y="2" width="12" height="20" rx="3" /><path d="M10 5h4M11 19h2" /></svg>
+        {t.app}
+        <span aria-hidden="true">↗</span>
+      </a>
+    </div>
   </main>
-  <Footer />
+  <footer class="tracker-footer site-container">
+    <span>Open Bitcoin Tracker</span>
+    <div>
+      <a href={getRelativeLocaleUrl(lang, 'about')}>{t.about}</a>
+      <a href={getRelativeLocaleUrl(lang, 'privacy')}>{t.privacy}</a>
+      <a href="https://github.com/open-bitcoin-tracker/open-bitcoin-tracker-web" target="_blank" rel="noopener noreferrer">GitHub</a>
+    </div>
+  </footer>
 </Layout>
+
+<style>
+  .tracker-main { max-width: 1280px; }
+  .app-link { display: flex; justify-content: center; padding: 2.5rem 0 3.5rem; }
+  .app-link .button { font-size: .875rem; }
+  .app-link svg { color: var(--color-accent-text); }
+  .app-link a > span { margin-left: .75rem; color: var(--color-ink-muted); }
+  .tracker-footer { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 1rem; padding-block: 1.5rem; border-top: 1px solid var(--color-divider); color: var(--color-ink-muted); font-size: .75rem; }
+  .tracker-footer div { display: flex; gap: 1.5rem; }
+  .tracker-footer a:hover { color: var(--color-ink); }
+</style>
