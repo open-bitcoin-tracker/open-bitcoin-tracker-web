@@ -106,7 +106,7 @@ export const en = {
   },
 
   kao: {
-    body: 'From September 2026, Google will require every Android developer to register and verify their identity, even for apps installed outside the Play Store. That threatens open-source apps like this one.',
+    body: 'Google will require every Android developer to register and verify their identity, even for apps installed outside the Play Store. That threatens open-source apps like this one.',
     linkText: 'Learn more at keepandroidopen.org',
   },
 

@@ -88,7 +88,7 @@ export const de: Dict = {
   },
 
   kao: {
-    body: 'Ab September 2026 verlangt Google von jedem Android-Entwickler, sich zu registrieren und seine Identität zu verifizieren – sogar für Apps, die außerhalb des Play Store installiert werden. Das bedroht Open-Source-Apps wie diese.',
+    body: 'Google verlangt von jedem Android-Entwickler, sich zu registrieren und seine Identität zu verifizieren – sogar für Apps, die außerhalb des Play Store installiert werden. Das bedroht Open-Source-Apps wie diese.',
     linkText: 'Mehr erfahren auf keepandroidopen.org',
   },
 
