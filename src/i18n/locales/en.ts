@@ -28,6 +28,8 @@ export const en = {
   },
 
   nav: {
+    skipToContent: 'Skip to content',
+    mainAria: 'Main navigation',
     github: 'GitHub',
     githubAria: 'GitHub repository',
     download: 'Download',
@@ -43,6 +45,7 @@ export const en = {
   },
 
   hero: {
+    titleHighlight: 'humble stackers',
     tagline: 'Open source bitcoin portfolio tracker for Android.',
     downloadApk: 'Download APK',
     viewGithub: 'View on GitHub',

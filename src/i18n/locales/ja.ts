@@ -21,6 +21,8 @@ export const ja: Dict = {
   },
 
   nav: {
+    skipToContent: 'コンテンツへ移動',
+    mainAria: 'メインナビゲーション',
     github: 'GitHub',
     githubAria: 'GitHub リポジトリ',
     download: 'ダウンロード',
@@ -31,6 +33,7 @@ export const ja: Dict = {
   },
 
   hero: {
+    titleHighlight: 'コツコツ積む人',
     tagline: 'Android向けオープンソースのビットコイン・ポートフォリオ追跡アプリ。',
     downloadApk: 'APK をダウンロード',
     viewGithub: 'GitHub で見る',

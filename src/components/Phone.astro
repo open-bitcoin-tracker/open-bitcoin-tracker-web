@@ -1,0 +1,21 @@
+---
+interface Props {
+  src: string;
+  alt: string;
+  id?: string;
+  class?: string;
+  interactive?: boolean;
+  eager?: boolean;
+}
+const { src, alt, id, class: className, interactive = false, eager = false } = Astro.props;
+---
+<div class:list={['device', className]} id={id} role={interactive ? 'button' : undefined} tabindex={interactive ? 0 : undefined} aria-label={interactive ? alt : undefined} data-tilt={interactive || undefined}>
+  <div class="device-tilt">
+    <div class="device-frame">
+      <div class="device-screen">
+        <img src={src} alt={alt} width="1280" height="2856" loading={eager ? 'eager' : 'lazy'} fetchpriority={eager ? 'high' : 'auto'} decoding="async" />
+        {interactive && <img class="device-next" src={src} alt="" aria-hidden="true" width="1280" height="2856" decoding="async" />}
+      </div>
+    </div>
+  </div>
+</div>

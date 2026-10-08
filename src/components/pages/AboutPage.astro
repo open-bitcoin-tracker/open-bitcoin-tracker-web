@@ -26,10 +26,10 @@ const dataSources = dataSourceMeta.map((d, i) => ({ ...d, label: t.about.dataSou
 
 <Layout page="about">
   <Nav />
-  <main>
+  <main id="main-content" class="document-page">
     <section>
-      <div class="mx-auto max-w-2xl px-6 sm:px-12 lg:px-20 pt-10 pb-10 md:pt-14 md:pb-12">
-        <h1 class="text-3xl font-semibold tracking-tight text-ink md:text-4xl">{t.about.h1}</h1>
+      <div class="document-container document-header">
+        <h1 class="document-title">{t.about.h1}</h1>
         <h2 class="about-story-header about-story-header--first">{t.about.storyHeader}</h2>
         <div class="about-story">
           {t.about.story.map((para) => <p>{para}</p>)}
@@ -62,7 +62,7 @@ const dataSources = dataSourceMeta.map((d, i) => ({ ...d, label: t.about.dataSou
     </section>
 
     <section>
-      <div class="mx-auto max-w-2xl px-6 sm:px-12 lg:px-20 pb-24 md:pb-32">
+      <div class="document-container pb-24 md:pb-32">
 
         <h2 class="about-section-header">{t.about.dataSourcesHeader}</h2>
         <p class="about-note">
@@ -147,7 +147,7 @@ const dataSources = dataSourceMeta.map((d, i) => ({ ...d, label: t.about.dataSou
   }
 
   .about-story-header {
-    font-size: 0.875rem;
+    font-size: 1.125rem;
     font-weight: 600;
     color: var(--color-ink);
     margin: 2rem 0 0;
@@ -161,8 +161,8 @@ const dataSources = dataSourceMeta.map((d, i) => ({ ...d, label: t.about.dataSou
   }
   .about-story p {
     color: var(--color-ink-muted);
-    font-size: 0.9375rem;
-    line-height: 1.65;
+    font-size: 1rem;
+    line-height: 1.85;
     margin: 0;
   }
   .about-story p + p {
@@ -170,7 +170,7 @@ const dataSources = dataSourceMeta.map((d, i) => ({ ...d, label: t.about.dataSou
   }
 
   .about-section-header {
-    font-size: 0.875rem;
+    font-size: 1.125rem;
     font-weight: 600;
     color: var(--color-ink);
     margin: 2rem 0 0.625rem;
@@ -191,7 +191,7 @@ const dataSources = dataSourceMeta.map((d, i) => ({ ...d, label: t.about.dataSou
   .about-note {
     margin: 0 0 0.875rem;
     padding-left: 0.25rem;
-    font-size: 0.8125rem;
+    font-size: 0.875rem;
     line-height: 1.5;
     color: var(--color-ink-muted);
   }
@@ -213,7 +213,7 @@ const dataSources = dataSourceMeta.map((d, i) => ({ ...d, label: t.about.dataSou
   }
 
   .about-tile-label {
-    font-size: 0.9375rem;
+    font-size: 1rem;
   }
 
   .about-tile-trailing {
@@ -224,7 +224,7 @@ const dataSources = dataSourceMeta.map((d, i) => ({ ...d, label: t.about.dataSou
     min-width: 0;
   }
   .about-tile-value {
-    font-size: 0.9375rem;
+    font-size: 1rem;
     text-align: right;
   }
   .about-tile-icon {
@@ -238,7 +238,7 @@ const dataSources = dataSourceMeta.map((d, i) => ({ ...d, label: t.about.dataSou
   }
   .about-footer p {
     color: var(--color-ink-muted);
-    font-size: 0.9375rem;
+    font-size: 1rem;
     margin: 0;
   }
 </style>

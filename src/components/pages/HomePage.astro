@@ -3,6 +3,7 @@
 // and under every locale prefix (src/pages/[lang]/index.astro). All copy comes
 // from the child components via Astro.currentLocale, so no props are needed.
 import Layout from '../../layouts/Layout.astro';
+import Nav from '../Nav.astro';
 import Hero from '../Hero.astro';
 import Prices from '../Prices.astro';
 import Privacy from '../Privacy.astro';
@@ -12,7 +13,8 @@ import Footer from '../Footer.astro';
 ---
 
 <Layout page="home">
-  <main>
+  <Nav />
+  <main id="main-content">
     <Hero />
     <Prices />
     <Themes />

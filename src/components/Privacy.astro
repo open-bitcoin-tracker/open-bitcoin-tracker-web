@@ -1,38 +1,30 @@
 ---
 import FeatureCard from './FeatureCard.astro';
-import { useTranslations } from '../i18n/utils';
-
+import { getRelativeLocaleUrl } from 'astro:i18n';
+import { useTranslations, resolveLang } from '../i18n/utils';
 const t = useTranslations(Astro.currentLocale);
-
 const icons = ['user-x', 'eye-off', 'lock', 'code'] as const;
-const cards = t.privacy.cards.map((c, i) => ({ ...c, icon: icons[i] }));
 ---
-
-<section id="privacy" class="privacy-section relative border-t border-b border-divider">
-  <div class="site-container py-20 md:py-32">
-
-    <div class="text-center" data-reveal-stagger="80">
-      <h2 class="font-display text-3xl font-bold italic tracking-tight text-accent md:text-4xl" data-reveal>{t.privacy.heading}</h2>
-      <p class="mt-2 text-sm leading-relaxed text-ink-muted" data-reveal>{t.privacy.sub}</p>
-    </div>
-
-    <div class="mt-8 grid grid-cols-1 gap-5 sm:grid-cols-2 md:mt-10 md:gap-6" data-reveal-stagger="90">
-      {cards.map((c) => (
-        <div data-reveal>
-          <FeatureCard title={c.title} body={c.body} icon={c.icon} />
+<section id="privacy" class="privacy-section section-space">
+  <div class="site-container">
+    <div class="privacy-panel">
+      <div class="privacy-intro" data-reveal>
+        <span class="section-index" aria-hidden="true">03 / OBT</span>
+        <div class="privacy-symbol" aria-hidden="true">
+          <svg width="64" height="64" viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M32 5 53 14v17c0 14-21 25-21 25S11 45 11 31V14L32 5Z"/><rect x="23" y="27" width="18" height="15" rx="4"/><path d="M27 27v-5a5 5 0 0 1 10 0v5m-5 6v3"/></svg>
         </div>
-      ))}
+        <h2 class="section-heading">{t.privacy.heading}</h2>
+        <p class="section-description">{t.privacy.sub}</p>
+        <a class="text-link" href={getRelativeLocaleUrl(resolveLang(Astro.currentLocale), 'privacy')}>{t.footer.privacy}</a>
+      </div>
+      <div class="privacy-cards" data-reveal-stagger="90">
+        {t.privacy.cards.map((card, i) => (
+          <div class="privacy-card" data-reveal>
+            <FeatureCard title={card.title} body={card.body} icon={icons[i]} />
+            {i === 3 && <a class="text-link source-link" href="https://github.com/Max-Hodler/open-bitcoin-tracker" target="_blank" rel="noopener noreferrer">{t.hero.viewGithub}</a>}
+          </div>
+        ))}
+      </div>
     </div>
-
   </div>
 </section>
-
-<style>
-  .privacy-section {
-    background: var(--color-surface);
-  }
-
-  .privacy-section :global(.feature-card) {
-    background: var(--color-paper);
-  }
-</style>

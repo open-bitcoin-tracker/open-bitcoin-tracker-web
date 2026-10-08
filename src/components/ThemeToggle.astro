@@ -31,44 +31,42 @@ const t = useTranslations(Astro.currentLocale);
 </button>
 
 <script>
-  // Theme toggle. The initial theme is already applied (no-FOUC script in
-  // Layout.astro); here we just flip + persist on click. `.theme-transition`
-  // is added before flipping so only user toggles animate, not page loads.
-  // There can be more than one toggle on a page (nav + footer): a single click
-  // flips the root and we re-sync every button's aria-pressed state.
   const root = document.documentElement;
   const toggles = document.querySelectorAll<HTMLButtonElement>('.theme-toggle');
-
-  const sync = () => {
-    const dark = root.classList.contains('dark');
-    toggles.forEach((b) => b.setAttribute('aria-pressed', String(dark)));
-  };
+  const reduce = window.matchMedia('(prefers-reduced-motion: reduce)');
+  const sync = () => toggles.forEach((button) => button.setAttribute('aria-pressed', String(root.classList.contains('dark'))));
   sync();
-
-  toggles.forEach((toggle) => {
-    toggle.addEventListener('click', () => {
+  let transition: ViewTransition | undefined;
+  const apply = () => {
+    const dark = root.classList.toggle('dark');
+    try { localStorage.setItem('theme', dark ? 'dark' : 'light'); } catch {}
+    sync();
+    document.querySelectorAll('meta[name="theme-color"]').forEach((meta) => meta.remove());
+    const meta = document.createElement('meta');
+    meta.name = 'theme-color';
+    meta.content = dark ? '#0F1E3A' : '#F8F7F3';
+    document.head.appendChild(meta);
+    document.dispatchEvent(new CustomEvent('themechange', { detail: { dark } }));
+  };
+  toggles.forEach((toggle) => toggle.addEventListener('click', () => {
+    transition?.skipTransition();
+    if (!document.startViewTransition || reduce.matches) {
       root.classList.add('theme-transition');
-      const dark = root.classList.toggle('dark');
-      localStorage.setItem('theme', dark ? 'dark' : 'light');
-      sync();
-      // Keep the browser-chrome color in sync. Replace the media-scoped pair
-      // with a single definitive tag once a choice has been made.
-      let meta = document.querySelector('meta[name="theme-color"]:not([media])');
-      if (!meta) {
-        document
-          .querySelectorAll('meta[name="theme-color"][media]')
-          .forEach((m) => m.remove());
-        meta = document.createElement('meta');
-        meta.setAttribute('name', 'theme-color');
-        document.head.appendChild(meta);
-      }
-      meta.setAttribute('content', dark ? '#0F1E3A' : '#F8F7F3');
-      // Let other components (e.g. the hero phone) react to a runtime theme
-      // switch. The pre-paint init in Layout.astro covers the initial load;
-      // this covers toggles made while the page is open.
-      document.dispatchEvent(new CustomEvent('themechange', { detail: { dark } }));
-    });
-  });
+      apply();
+      return;
+    }
+    root.classList.remove('theme-transition');
+    const bounds = toggle.getBoundingClientRect();
+    const x = bounds.left + bounds.width / 2;
+    const y = bounds.top + bounds.height / 2;
+    const radius = Math.hypot(Math.max(x, innerWidth - x), Math.max(y, innerHeight - y));
+    transition = document.startViewTransition(apply);
+    transition.ready.then(() => {
+      root.animate({ clipPath: [`circle(0px at ${x}px ${y}px)`, `circle(${radius}px at ${x}px ${y}px)`] }, {
+        duration: 550, easing: 'cubic-bezier(.22, 1, .36, 1)', pseudoElement: '::view-transition-new(root)',
+      });
+    }).catch(() => {});
+  }));
 </script>
 
 <style>

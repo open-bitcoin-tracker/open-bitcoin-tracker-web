@@ -1,50 +1,27 @@
 ---
 import { getRelativeLocaleUrl } from 'astro:i18n';
 import { useTranslations, resolveLang } from '../i18n/utils';
-
-const repoUrl = 'https://github.com/Max-Hodler/open-bitcoin-tracker';
-const releasesUrl = 'https://github.com/Max-Hodler/open-bitcoin-tracker/releases/latest';
-const zapstoreUrl = 'https://zapstore.dev/apps/com.openbitcointracker.app';
-
+import ThemeToggle from './ThemeToggle.astro';
+import LanguageSwitcher from './LanguageSwitcher.astro';
 const t = useTranslations(Astro.currentLocale);
 const lang = resolveLang(Astro.currentLocale);
 const homeHref = getRelativeLocaleUrl(lang, '');
 ---
-
-<header class="nav-header sticky top-0 left-0 right-0 z-50">
-  <nav class="site-container flex items-center justify-between py-4">
-    <a href={homeHref} class="flex items-center gap-2.5 text-ink hover:opacity-80 transition-opacity duration-200">
-      <img src="/app-icon.png" width="28" height="28" alt="" />
-      <span class="font-semibold tracking-tight text-[15px]">Open Bitcoin Tracker</span>
+<header class="nav-header">
+  <nav class="site-container nav-inner" aria-label={t.nav.mainAria}>
+    <a href={homeHref} class="nav-brand" aria-label="Open Bitcoin Tracker">
+      <img src="/app-icon.png" width="36" height="36" alt="" />
+      <span class="brand-full">Open Bitcoin Tracker</span><span class="brand-short" aria-hidden="true">OBT</span>
     </a>
-    <div class="flex items-center gap-2 text-sm text-ink-muted">
-      <a href={releasesUrl} rel="noopener noreferrer" target="_blank" class="nav-download rounded-xl px-3.5 py-1.5 text-[13px] font-semibold">
-        {t.hero.downloadApk}
-      </a>
-      <a href={zapstoreUrl} rel="noopener noreferrer" target="_blank" class="nav-download rounded-xl px-3.5 py-1.5 text-[13px] font-semibold">
-        {t.hero.viewZapstore}
-      </a>
+    <div class="nav-links">
+      <a href={getRelativeLocaleUrl(lang, 'about')}>{t.footer.about}</a>
+      <a href="https://github.com/Max-Hodler/open-bitcoin-tracker" rel="noopener noreferrer" target="_blank">{t.nav.github}</a>
+    </div>
+    <div class="nav-actions">
+      <LanguageSwitcher />
+      <ThemeToggle class="nav-theme-toggle" />
+      <a href="https://github.com/Max-Hodler/open-bitcoin-tracker/releases/latest" rel="noopener noreferrer" target="_blank" class="button cta-primary nav-download">{t.nav.download}</a>
     </div>
   </nav>
+  <div class="reading-progress" aria-hidden="true"></div>
 </header>
-
-<style>
-  .nav-download {
-    background: rgb(247 147 26 / 0.10);
-    color: var(--color-accent);
-    border: 0.5px solid var(--color-accent);
-    transition: opacity 0.2s ease, transform 0.15s ease;
-  }
-  .nav-download:hover {
-    opacity: 0.85;
-    transform: translateY(-1px);
-  }
-  .nav-download:active { transform: translateY(0); }
-
-  .nav-header {
-    background: var(--nav-bg);
-    backdrop-filter: blur(16px) saturate(1.4);
-    -webkit-backdrop-filter: blur(16px) saturate(1.4);
-    border-bottom: 1px solid var(--nav-border);
-  }
-</style>

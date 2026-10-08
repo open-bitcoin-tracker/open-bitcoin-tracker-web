@@ -21,6 +21,8 @@ export const tr: Dict = {
   },
 
   nav: {
+    skipToContent: 'İçeriğe geç',
+    mainAria: 'Ana gezinme',
     github: 'GitHub',
     githubAria: 'GitHub deposu',
     download: 'İndir',
@@ -31,6 +33,7 @@ export const tr: Dict = {
   },
 
   hero: {
+    titleHighlight: 'Acele etmeden',
     tagline: 'Android için açık kaynaklı bitcoin portföy takipçisi.',
     downloadApk: 'APK indir',
     viewGithub: "GitHub'da görüntüle",

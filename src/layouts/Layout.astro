@@ -77,6 +77,9 @@ const jsonLd = {
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
 
+    <meta name="theme-color" content="#F8F7F3" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0F1E3A" media="(prefers-color-scheme: dark)" />
+
     <!-- Theme init must run before first paint to avoid a flash of the wrong
          theme. is:inline keeps Astro from bundling/deferring it. Follows the
          saved choice if present, otherwise the OS preference. -->
@@ -117,8 +120,6 @@ const jsonLd = {
 
     <link rel="icon" href="/favicon.ico" sizes="any" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
-    <meta name="theme-color" content="#F8F7F3" media="(prefers-color-scheme: light)" />
-    <meta name="theme-color" content="#0F1E3A" media="(prefers-color-scheme: dark)" />
 
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content={siteName} />
@@ -143,42 +144,11 @@ const jsonLd = {
     {isHome && <script type="application/ld+json" set:html={JSON.stringify(jsonLd)} />}
   </head>
   <body class="bg-paper text-ink antialiased">
+    <a class="skip-link" href="#main-content">{t.nav.skipToContent}</a>
     <slot />
 
     <script>
-      // Scroll-reveal: any [data-reveal] element fades/slides in once it
-      // enters the viewport. Children can opt into a stagger via
-      // [data-reveal-stagger] on a parent (delays each direct [data-reveal]).
-      const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-
-      const reveal = (el: Element) => el.classList.add('is-revealed');
-
-      if (reduceMotion) {
-        // Show everything immediately, no animation.
-        document.querySelectorAll('[data-reveal]').forEach(reveal);
-      } else {
-        // Apply stagger delays to grouped children.
-        document.querySelectorAll('[data-reveal-stagger]').forEach((group) => {
-          const step = Number((group as HTMLElement).dataset.revealStagger) || 90;
-          group.querySelectorAll(':scope > [data-reveal]').forEach((child, i) => {
-            (child as HTMLElement).style.transitionDelay = `${i * step}ms`;
-          });
-        });
-
-        const observer = new IntersectionObserver(
-          (entries, obs) => {
-            for (const entry of entries) {
-              if (entry.isIntersecting) {
-                reveal(entry.target);
-                obs.unobserve(entry.target);
-              }
-            }
-          },
-          { rootMargin: '0px 0px -10% 0px', threshold: 0.1 }
-        );
-
-        document.querySelectorAll('[data-reveal]').forEach((el) => observer.observe(el));
-      }
+      import '../scripts/motion';
     </script>
   </body>
 </html>

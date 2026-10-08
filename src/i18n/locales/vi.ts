@@ -21,6 +21,8 @@ export const vi: Dict = {
   },
 
   nav: {
+    skipToContent: 'Chuyển đến nội dung',
+    mainAria: 'Điều hướng chính',
     github: 'GitHub',
     githubAria: 'Kho lưu trữ GitHub',
     download: 'Tải xuống',
@@ -31,6 +33,7 @@ export const vi: Dict = {
   },
 
   hero: {
+    titleHighlight: 'thong thả',
     tagline: 'Trình theo dõi danh mục bitcoin mã nguồn mở cho Android.',
     downloadApk: 'Tải APK',
     viewGithub: 'Xem trên GitHub',

@@ -21,6 +21,8 @@ export const de: Dict = {
   },
 
   nav: {
+    skipToContent: 'Zum Inhalt springen',
+    mainAria: 'Hauptnavigation',
     github: 'GitHub',
     githubAria: 'GitHub-Repository',
     download: 'Herunterladen',
@@ -31,6 +33,7 @@ export const de: Dict = {
   },
 
   hero: {
+    titleHighlight: 'in Ruhe stacken',
     tagline: 'Open-Source-Bitcoin-Portfolio-Tracker für Android.',
     downloadApk: 'APK herunterladen',
     viewGithub: 'Auf GitHub ansehen',

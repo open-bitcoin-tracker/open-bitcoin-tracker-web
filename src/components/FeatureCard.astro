@@ -3,14 +3,16 @@ interface Props {
   title: string;
   body: string;
   icon: 'mountain' | 'lock' | 'bolt' | 'code' | 'user-x' | 'eye-off' | 'clock' | 'trending-up';
+  headingLevel?: 'h2' | 'h3';
 }
 
-const { title, body, icon } = Astro.props;
+const { title, body, icon, headingLevel = 'h3' } = Astro.props;
+const Heading = headingLevel;
 ---
 
-<div class="feature-card flex flex-col gap-4 rounded-2xl bg-surface p-6">
+<div class="feature-card">
   <div class="flex items-center gap-3">
-    <div class="feature-icon-wrap flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-accent-soft text-accent">
+    <div class="feature-icon-wrap">
       {icon === 'mountain' && (
         <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m8 3 4 8 5-5 5 15H2L8 3z"/></svg>
       )}
@@ -36,22 +38,7 @@ const { title, body, icon } = Astro.props;
         <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
       )}
     </div>
-    <p class="text-[14px] font-semibold text-ink">{title}</p>
+    <Heading>{title}</Heading>
   </div>
-  <p class="text-sm leading-relaxed text-ink-muted">{body}</p>
+  <p class="feature-body">{body}</p>
 </div>
-
-<style>
-  .feature-card {
-    border: 1px solid var(--color-divider);
-    box-shadow: var(--shadow-card);
-  }
-  /* Icons are always orange and never react to hovering the card. */
-  .feature-icon-wrap {
-    color: var(--color-accent);
-  }
-  .feature-card:hover .feature-icon-wrap {
-    color: var(--color-accent);
-    background: var(--color-accent-soft);
-  }
-</style>

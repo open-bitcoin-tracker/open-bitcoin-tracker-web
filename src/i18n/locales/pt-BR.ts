@@ -21,6 +21,8 @@ export const ptBR: Dict = {
   },
 
   nav: {
+    skipToContent: 'Pular para o conteúdo',
+    mainAria: 'Navegação principal',
     github: 'GitHub',
     githubAria: 'Repositório no GitHub',
     download: 'Baixar',
@@ -31,6 +33,7 @@ export const ptBR: Dict = {
   },
 
   hero: {
+    titleHighlight: 'sem pressa',
     tagline: 'Trackeador de portfólio de bitcoin de código aberto para Android.',
     downloadApk: 'Baixar APK',
     viewGithub: 'Ver no GitHub',

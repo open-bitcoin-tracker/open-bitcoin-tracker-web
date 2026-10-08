@@ -21,6 +21,8 @@ export const ru: Dict = {
   },
 
   nav: {
+    skipToContent: 'Перейти к содержимому',
+    mainAria: 'Основная навигация',
     github: 'GitHub',
     githubAria: 'Репозиторий на GitHub',
     download: 'Скачать',
@@ -31,6 +33,7 @@ export const ru: Dict = {
   },
 
   hero: {
+    titleHighlight: 'спокойно копит',
     tagline: 'Открытый трекер биткоин-портфеля для Android.',
     downloadApk: 'Скачать APK',
     viewGithub: 'Открыть на GitHub',
