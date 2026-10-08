@@ -8,16 +8,12 @@ function startTracker(root: HTMLElement) {
   const t: TrackerCopy = JSON.parse(root.dataset.copy!);
   const locale = root.dataset.locale || 'en';
   const priceEl = root.querySelector<HTMLElement>('[data-price]')!;
-  const updatedEl = root.querySelector<HTMLElement>('[data-updated]')!;
-  const statusEl = root.querySelector<HTMLElement>('[data-feed-status]')!;
-  const statusText = root.querySelector<HTMLElement>('[data-status-text]')!;
   const chart = root.querySelector<SVGSVGElement>('[data-chart]')!;
   const line = root.querySelector<SVGPathElement>('[data-chart-line]')!;
   const area = root.querySelector<SVGPathElement>('[data-chart-area]')!;
   const historyStatus = root.querySelector<HTMLElement>('[data-history-status]')!;
-  const money = new Intl.NumberFormat(locale, { style: 'currency', currency: 'USD', maximumFractionDigits: 2 });
+  const money = new Intl.NumberFormat(locale, { style: 'currency', currency: 'USD', minimumFractionDigits: 0, maximumFractionDigits: 0 });
   const date = new Intl.DateTimeFormat(locale, { year: 'numeric', month: 'short', day: 'numeric', timeZone: 'UTC' });
-  const time = new Intl.DateTimeFormat(locale, { hour: '2-digit', minute: '2-digit', second: '2-digit' });
 
   let history: HistoryPoint[] = [];
   let livePoint: HistoryPoint | undefined;
@@ -30,10 +26,10 @@ function startTracker(root: HTMLElement) {
   let polling = false;
   let historyLoading = false;
   let paintFrame = 0;
+  let feedState: 'connecting' | 'live' | 'delayed' | 'offline' = 'connecting';
 
   function setStatus(state: 'connecting' | 'live' | 'delayed' | 'offline') {
-    statusEl.dataset.state = state;
-    statusText.textContent = t[state];
+    feedState = state;
   }
 
   function draw() {
@@ -49,7 +45,6 @@ function startTracker(root: HTMLElement) {
     line.setAttribute('d', paths.line);
     area.setAttribute('d', paths.area);
     const range = `2010 — ${date.format(points.at(-1)!.time)}`;
-    root.querySelector<HTMLElement>('[data-history-dates]')!.textContent = range;
     root.querySelector<SVGDescElement>('[data-chart-description]')!.textContent = `${t.all}: ${range}. ${t.scale}.`;
   }
 
@@ -62,7 +57,6 @@ function startTracker(root: HTMLElement) {
     livePoint = { time: Date.now(), price: value };
     priceEl.textContent = money.format(value);
     priceEl.removeAttribute('aria-label');
-    updatedEl.textContent = `${t.updated}: ${time.format(livePoint.time)}`;
     scheduleDraw();
   }
 
@@ -103,7 +97,7 @@ function startTracker(root: HTMLElement) {
 
   async function pollPrice() {
     if (polling || stopped || !navigator.onLine) return;
-    if (statusEl.dataset.state === 'live') return;
+    if (feedState === 'live') return;
     polling = true;
     try {
       const result = await getJson('https://api.kraken.com/0/public/Ticker?pair=XBTUSD');
@@ -111,12 +105,12 @@ function startTracker(root: HTMLElement) {
       const price = Number(ticker?.c?.[0]);
       if (!Number.isFinite(price) || price <= 0) throw new Error('Missing ticker price');
       // A late REST response must never replace a newer stream update.
-      if (statusEl.dataset.state !== 'live') {
+      if (feedState !== 'live') {
         applyPrice(price);
         setStatus('delayed');
       }
     } catch {
-      if (!livePoint) updatedEl.textContent = t.unavailable;
+      if (!livePoint) priceEl.setAttribute('aria-label', t.unavailable);
     } finally {
       polling = false;
     }
@@ -175,7 +169,7 @@ function startTracker(root: HTMLElement) {
   void pollPrice();
   const watchdog = setInterval(() => {
     if (stopped) return;
-    if (socket && (Date.now() - lastMessage > 30_000 || (statusEl.dataset.state === 'live' && Date.now() - lastStreamTick > 60_000))) {
+    if (socket && (Date.now() - lastMessage > 30_000 || (feedState === 'live' && Date.now() - lastStreamTick > 60_000))) {
       setStatus('delayed');
       socket.close();
     }

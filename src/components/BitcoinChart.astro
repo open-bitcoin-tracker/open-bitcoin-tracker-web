@@ -11,23 +11,13 @@ const paths = chartPaths(history, 1200, 440);
 const lastDate = new Intl.DateTimeFormat(lang, { year: 'numeric', month: 'short', day: 'numeric', timeZone: 'UTC' }).format(history.at(-1)!.time);
 ---
 
-<section class="bitcoin-tracker" data-bitcoin-tracker data-copy={JSON.stringify(t)} data-locale={lang} aria-labelledby="price-heading">
+<section class="bitcoin-tracker" data-bitcoin-tracker data-copy={JSON.stringify(t)} data-locale={lang} aria-label={t.price}>
   <div class="price-header">
-    <div>
-      <h1 id="price-heading">{t.price} <span class="currency">BTC / USD</span></h1>
-      <p class="current-price" data-price aria-label={t.unavailable}>—</p>
-      <p class="price-updated" data-updated>{t.connecting}…</p>
-    </div>
-    <span class="feed-status" data-feed-status role="status" data-state="connecting">
-      <span class="status-dot" aria-hidden="true"></span><span data-status-text>{t.connecting}</span>
-    </span>
+    <p class="current-price" data-price aria-label={t.unavailable}>—</p>
   </div>
 
-  <div class="data-note">
-    <p><a href="https://coinmetrics.io" target="_blank" rel="noopener noreferrer">Coin Metrics</a> <span aria-hidden="true">·</span> <a href="https://www.kraken.com" target="_blank" rel="noopener noreferrer">Kraken</a></p>
-    <p data-history-status hidden>{t.history}</p>
-  </div>
-  <noscript><p class="data-note">{t.unavailable}. {t.updated}: {lastDate}.</p></noscript>
+  <p class="history-status" data-history-status hidden>{t.history}</p>
+  <noscript><p class="history-status">{t.unavailable}.</p></noscript>
   <figure class="price-history">
     <div class="chart-plot">
       <svg class="price-chart" data-chart viewBox="0 0 1200 440" preserveAspectRatio="none" role="img" aria-labelledby="chart-title chart-description">
@@ -45,7 +35,6 @@ const lastDate = new Intl.DateTimeFormat(lang, { year: 'numeric', month: 'short'
       </svg>
     </div>
     <figcaption>
-      <span>{t.all} <span class="history-dates" data-history-dates>2010 — {lastDate}</span></span>
       <span>{t.scale}</span>
     </figcaption>
   </figure>
@@ -57,32 +46,17 @@ const lastDate = new Intl.DateTimeFormat(lang, { year: 'numeric', month: 'short'
 
 <style>
   .bitcoin-tracker { display: flex; flex-direction: column; flex: 1; padding-top: clamp(1.5rem, 3svh, 2.5rem); }
-  .price-header, figcaption, .data-note { padding-inline: var(--tracker-gutter, 1rem); }
+  .price-header, figcaption, .history-status { padding-inline: var(--tracker-gutter, 1rem); }
   .price-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem; }
-  h1 { display: flex; align-items: center; flex-wrap: wrap; gap: .75rem; font-size: .875rem; font-weight: 500; color: var(--color-ink-muted); }
-  .currency { font-size: .6875rem; letter-spacing: .04em; padding: .25rem .5rem; border-radius: 6px; background: var(--color-surface); border: 1px solid var(--color-divider); }
-  .current-price { margin-top: .6rem; font-size: clamp(3.1rem, 7.5vw, 6rem); font-weight: 700; line-height: 1.1; letter-spacing: -.06em; font-variant-numeric: tabular-nums; }
-  .price-updated { margin-top: .7rem; min-height: 1.4em; font-size: .8125rem; color: var(--color-ink-muted); }
-  .feed-status { display: inline-flex; align-items: center; gap: .5rem; padding-top: .15rem; font-size: .75rem; color: var(--color-ink-muted); }
-  .status-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--color-ink-muted); flex-shrink: 0; }
-  .feed-status[data-state="live"] .status-dot { background: #4CA66B; box-shadow: 0 0 0 4px rgb(76 166 107 / .1); }
+  .current-price { font-size: clamp(3.1rem, 7.5vw, 6rem); font-weight: 700; line-height: 1.1; letter-spacing: -.06em; font-variant-numeric: tabular-nums; }
   .price-history { display: flex; flex-direction: column; flex: 1; margin: 1rem 0 0; }
   /* Fill all remaining viewport space; keep a usable plot on short screens. */
   .chart-plot { position: relative; flex: 1; min-height: 180px; }
   .price-chart { position: absolute; inset: 0; display: block; width: 100%; height: 100%; overflow: hidden; }
-  figcaption { display: flex; justify-content: space-between; flex-wrap: wrap; order: -1; gap: .5rem 1rem; margin-bottom: .75rem; font-size: .75rem; color: var(--color-ink-muted); }
-  .history-dates { margin-left: .5rem; }
-  .data-note { display: flex; flex-wrap: wrap; justify-content: space-between; gap: .5rem; margin-top: .65rem; color: var(--color-ink-muted); font-size: .6875rem; }
-  .data-note a:hover { color: var(--color-ink); text-decoration: underline; }
-  .data-note span { margin-inline: .4rem; }
+  figcaption { display: flex; justify-content: flex-end; order: -1; margin-bottom: .75rem; font-size: .75rem; color: var(--color-ink-muted); }
+  .history-status { margin-top: .65rem; color: var(--color-ink-muted); font-size: .6875rem; }
   @media (max-width: 600px) {
     .price-header { display: block; position: relative; }
-    h1 { max-width: calc(100% - 6rem); }
     .current-price { font-size: clamp(1.875rem, 10vw, 3.1rem); }
-    .feed-status { position: absolute; top: 0; right: var(--tracker-gutter, 1rem); max-width: 5.5rem; font-size: .6875rem; }
-    .feed-status [data-status-text] { min-width: 0; overflow-wrap: anywhere; }
-  }
-  @media (max-width: 480px) {
-    .history-dates { display: block; margin: .25rem 0 0; }
   }
 </style>
