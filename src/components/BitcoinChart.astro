@@ -64,7 +64,7 @@ const lastDate = new Intl.DateTimeFormat(lang, { year: 'numeric', month: 'short'
 </script>
 
 <style>
-  .bitcoin-tracker { display: flex; flex-direction: column; flex: 1; padding-top: clamp(1.5rem, 3svh, 2.5rem); }
+  .bitcoin-tracker { position: relative; display: flex; flex-direction: column; flex: 1; padding-top: clamp(1.5rem, 3svh, 2.5rem); }
   .price-header, figcaption, .history-status { padding-inline: var(--tracker-gutter, 1rem); }
   .price-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem; }
   .current-price { font-size: clamp(3.1rem, 7.5vw, 6rem); font-weight: 700; line-height: 1.1; letter-spacing: -.06em; font-variant-numeric: tabular-nums; }
@@ -74,15 +74,23 @@ const lastDate = new Intl.DateTimeFormat(lang, { year: 'numeric', month: 'short'
   .price-chart { position: absolute; inset: 0; display: block; width: 100%; height: 100%; overflow: hidden; }
   figcaption { display: flex; justify-content: flex-end; order: -1; margin-bottom: .75rem; font-size: .75rem; color: var(--color-ink-muted); }
   .history-status { margin-top: .65rem; color: var(--color-ink-muted); font-size: .6875rem; }
-  .range-bar { display: flex; align-items: stretch; gap: .25rem; width: calc(100% - 2 * var(--tracker-gutter, 1rem)); max-width: 48rem; margin: 1.25rem auto; padding: .375rem; border-radius: 999px; background: rgb(var(--color-ink-rgb) / .055); }
+  /* Overlay the plot without reserving space beneath the price line. */
+  .range-bar { position: absolute; z-index: 1; left: 50%; bottom: calc(2.5rem + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); display: flex; align-items: stretch; gap: .25rem; width: calc(100% - 2 * var(--tracker-gutter, 1rem)); max-width: 48rem; margin: 0; padding: .25rem; border-radius: 999px; background: rgb(var(--color-ink-rgb) / .055); }
   .range-bar[hidden] { display: none; }
-  .range-slot { flex: 1; min-width: 0; display: grid; grid-template-rows: 24px minmax(24px, auto) 24px; justify-items: center; border-radius: 999px; transition: background-color .2s, box-shadow .2s; }
+  /* Include the external arrows and their gaps in the hover area. */
+  .range-bar::before { content: ''; position: absolute; inset: -2.5rem -1rem; z-index: -1; }
+  .range-slot { position: relative; flex: 1; min-width: 0; display: flex; align-items: center; border-radius: 999px; transition: background-color .2s, box-shadow .2s; }
   .range-slot[data-selected="true"] { background: var(--color-surface); box-shadow: var(--shadow-card); color: var(--color-accent-text); }
-  .range-select { grid-row: 2; width: 100%; padding-inline: .25rem; font-size: .875rem; font-variant-numeric: tabular-nums; color: var(--color-ink-muted); border-radius: 999px; }
+  .range-select { width: 100%; min-height: 36px; padding-inline: .25rem; font-size: .875rem; font-variant-numeric: tabular-nums; color: var(--color-ink-muted); border-radius: 999px; }
   .range-select[aria-pressed="true"] { color: var(--color-accent-text); font-weight: 700; }
-  .range-slot[data-range-slot="all"] .range-select { grid-row: 1 / -1; }
-  .range-step { display: flex; justify-content: center; align-items: center; width: 100%; max-width: 64px; min-height: 24px; border-radius: 999px; visibility: hidden; color: var(--color-accent-text); }
-  .range-slot[data-selected="true"] .range-step { visibility: visible; }
+  .range-step { position: absolute; left: 50%; transform: translateX(-50%); display: flex; justify-content: center; align-items: center; width: 100%; max-width: 64px; height: 28px; border-radius: 999px; visibility: hidden; color: var(--color-accent-text); }
+  .range-step[data-range-step="1"] { bottom: calc(100% + .5rem); }
+  .range-step[data-range-step="-1"] { top: calc(100% + .5rem); }
+  .range-bar:hover .range-slot[data-selected="true"] .range-step,
+  .range-bar:has(:focus-visible) .range-slot[data-selected="true"] .range-step { visibility: visible; }
+  @media (hover: none) {
+    .range-bar:focus-within .range-slot[data-selected="true"] .range-step { visibility: visible; }
+  }
   .range-select:hover, .range-step:hover { background: var(--hover-tint); }
   .range-bar button:focus-visible { outline-offset: 0; }
   @media (prefers-reduced-motion: reduce) { .range-slot { transition: none; } }

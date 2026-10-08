@@ -22,7 +22,7 @@
 
 The homepage shows the full daily BTC/USD history since July 2010, using the Android app's logarithmic chart, orange line, gradient, and Paper Cream / Deepsea Blue colours. Kraken's public WebSocket ticker supplies the live price; REST polling provides a fallback while reconnecting. Recent daily Kraken candles are merged into the bundled history by UTC day.
 
-The range bar below the chart mirrors the app's days, weeks, months, years, and All slots. Select a slot, then use its up/down chevrons (or the up/down arrow keys on its label) to cycle through 1–7 days, 1–4 weeks, 1–12 months, or 1–15 years. Each slot keeps its count while switching ranges. Days use 15-minute Kraken candles; weeks and one month use hourly candles; longer ranges use the daily history. Intraday requests are cached by interval and refreshed every minute while selected.
+The range bar overlays the lower part of the chart and mirrors the app's days, weeks, months, years, and All slots. Select a slot, then use its up/down chevrons (or the up/down arrow keys on its label) to cycle through 1–7 days, 1–4 weeks, 1–12 months, or 1–15 years. Each slot keeps its count while switching ranges. Days use 15-minute Kraken candles; weeks and one month use hourly candles; longer ranges use the daily history. Intraday requests are cached by interval and refreshed every minute while selected.
 
 The existing Android app landing page lives at `/android-app/`. Both pages are available in all ten supported languages.
 
