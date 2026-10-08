@@ -1,11 +1,10 @@
 ---
 import FeatureCard from './FeatureCard.astro';
 import Phone from './Phone.astro';
+import DownloadButton from './DownloadButton.astro';
 import { useTranslations } from '../i18n/utils';
 const t = useTranslations(Astro.currentLocale);
 const titleParts = t.hero.reasons[0].title.split(t.hero.titleHighlight);
-const releasesUrl = 'https://github.com/Max-Hodler/open-bitcoin-tracker/releases/latest';
-const zapstoreUrl = 'https://zapstore.dev/apps/com.openbitcointracker.app';
 const screenSrcs = ['/screenshots/paper-cream.png', '/screenshots/salmon-press.png', '/screenshots/deepsea-blue.png', '/screenshots/oled-black.png'];
 const themeLabels = t.themes.labels;
 const altPrefix = t.hero.altPrefix;
@@ -18,14 +17,7 @@ const altSuffix = t.hero.altSuffix;
       <h1 data-reveal>{titleParts[0]}<em>{t.hero.titleHighlight}</em>{titleParts[1]}</h1>
       <p class="hero-description" data-reveal>{t.hero.reasons[0].body}</p>
       <div class="hero-actions" data-reveal>
-        <a href={releasesUrl} rel="noopener noreferrer" target="_blank" class="cta-primary button">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12m-5-5 5 5 5-5M5 16v4a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-4" /></svg>
-          {t.hero.downloadApk}
-        </a>
-        <a href={zapstoreUrl} rel="noopener noreferrer" target="_blank" class="cta-secondary button">
-          <svg width="17" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m13 2-9 12h7l-1 8 10-12h-8l1-8Z" /></svg>
-          {t.hero.viewZapstore}
-        </a>
+        <DownloadButton />
       </div>
       <div class="hero-trust" data-reveal>
         <span><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="m5 12 4 4 10-10" /></svg>{t.privacy.cards[0].title}</span>

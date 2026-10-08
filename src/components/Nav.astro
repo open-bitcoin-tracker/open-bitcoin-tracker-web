@@ -3,6 +3,7 @@ import { getRelativeLocaleUrl } from 'astro:i18n';
 import { useTranslations, resolveLang } from '../i18n/utils';
 import ThemeToggle from './ThemeToggle.astro';
 import LanguageSwitcher from './LanguageSwitcher.astro';
+import DownloadButton from './DownloadButton.astro';
 const t = useTranslations(Astro.currentLocale);
 const lang = resolveLang(Astro.currentLocale);
 const homeHref = getRelativeLocaleUrl(lang, '');
@@ -20,7 +21,7 @@ const homeHref = getRelativeLocaleUrl(lang, '');
     <div class="nav-actions">
       <LanguageSwitcher />
       <ThemeToggle class="nav-theme-toggle" />
-      <a href="https://github.com/Max-Hodler/open-bitcoin-tracker/releases/latest" rel="noopener noreferrer" target="_blank" class="button cta-primary nav-download">{t.nav.download}</a>
+      <DownloadButton variant="nav" />
     </div>
   </nav>
   <div class="reading-progress" aria-hidden="true"></div>
