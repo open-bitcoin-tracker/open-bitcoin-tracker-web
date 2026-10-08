@@ -1,51 +1,36 @@
 ---
 import { getRelativeLocaleUrl } from 'astro:i18n';
 import { useTranslations, resolveLang } from '../i18n/utils';
-import LanguageSwitcher from './LanguageSwitcher.astro';
-import ThemeToggle from './ThemeToggle.astro';
 import DownloadButton from './DownloadButton.astro';
 
 const repoUrl = 'https://github.com/Max-Hodler/open-bitcoin-tracker';
 
 const t = useTranslations(Astro.currentLocale);
 const lang = resolveLang(Astro.currentLocale);
-const homeHref = getRelativeLocaleUrl(lang, '');
 const aboutHref = getRelativeLocaleUrl(lang, 'about');
 const privacyHref = getRelativeLocaleUrl(lang, 'privacy');
 ---
 
 <footer class="footer-section">
-  <div class="site-container pt-16 pb-12 md:pt-20 md:pb-16">
-    <div class="flex flex-col gap-12 md:flex-row md:items-start md:justify-between md:gap-10">
-    <div class="footer-brand" data-reveal>
-      <div class="flex items-center gap-3">
-        <img src="/app-icon.png" width="48" height="48" alt="" class="footer-app-icon h-11 w-11 shrink-0" />
-        <span class="text-lg font-bold tracking-tight text-ink">Open Bitcoin Tracker</span>
-      </div>
-      <p class="mt-3 text-sm leading-relaxed text-ink-muted">{t.hero.tagline}</p>
-      <div class="mt-5 flex flex-wrap items-center gap-3">
-        <DownloadButton variant="footer" placement="up" />
-      </div>
-    </div>
-
-    <div class="flex flex-col items-start gap-10 sm:flex-row sm:items-start sm:gap-16 text-sm text-ink-muted" data-reveal-stagger="100">
-
-      <div data-reveal>
-        <div class="flex flex-col items-start gap-2.5">
-          <a href={repoUrl} rel="noopener noreferrer" target="_blank" class="footer-link hover:text-ink">{t.footer.github}</a>
-          <a href={aboutHref} class="footer-link hover:text-ink">{t.footer.about}</a>
-          <a href={privacyHref} class="footer-link hover:text-ink">{t.footer.privacy}</a>
+  <div class="site-container footer-container">
+    <div class="footer-layout">
+      <div class="footer-brand" data-reveal>
+        <div class="flex items-center gap-3">
+          <img src="/app-icon.png" width="48" height="48" alt="" class="footer-app-icon h-11 w-11 shrink-0" />
+          <span class="text-lg font-bold tracking-tight text-ink">Open Bitcoin Tracker</span>
         </div>
+        <p class="mt-3 text-sm leading-relaxed text-ink-muted">{t.hero.tagline}</p>
+        <div class="mt-5 flex flex-wrap items-center gap-3">
+          <DownloadButton variant="footer" placement="up" />
+        </div>
+        <p class="mt-5 text-sm leading-relaxed text-ink-muted">{t.footer.copyright}</p>
       </div>
 
-      <div class="max-w-[260px]" data-reveal>
-        <div class="flex flex-col items-start gap-2.5 text-ink-muted">
-          <LanguageSwitcher placement="up" />
-          <ThemeToggle showLabel />
-          <p class="leading-relaxed">{t.footer.copyright}</p>
-        </div>
+      <div class="footer-links text-sm text-ink-muted" data-reveal>
+        <a href={repoUrl} rel="noopener noreferrer" target="_blank" class="footer-link hover:text-ink">{t.footer.github}</a>
+        <a href={aboutHref} class="footer-link hover:text-ink">{t.footer.about}</a>
+        <a href={privacyHref} class="footer-link hover:text-ink">{t.footer.privacy}</a>
       </div>
-    </div>
     </div>
   </div>
 </footer>
@@ -60,20 +45,5 @@ const privacyHref = getRelativeLocaleUrl(lang, 'privacy');
   }
   .footer-app-icon {
     filter: drop-shadow(0 1px 2px rgb(var(--color-ink-rgb) / 0.04)) drop-shadow(0 4px 12px rgb(var(--color-ink-rgb) / 0.05));
-  }
-
-  /* The leading globe/sun icons carry a little whitespace inside their SVG box,
-     so their visible shape looks slightly inset from the column's left edge.
-     A 1px nudge lines the icons up with the copyright text below them. */
-  .footer-section :global(.theme-toggle > svg:first-child) {
-    margin-left: -1px;
-  }
-  /* The sun/moon glyphs fill their 24×24 box more than the globe circle
-     (r="10" leaves a 2-unit inset all round), so the globe reads as nudged
-     right of the icons below it. Pull the globe a touch further left so its
-     visible circle lines up with the sun's rays / moon's crescent, without
-     touching the text gap (kept equal to the theme toggle's). */
-  .footer-section :global(.lang-summary > svg:first-child) {
-    margin-left: -2px;
   }
 </style>
