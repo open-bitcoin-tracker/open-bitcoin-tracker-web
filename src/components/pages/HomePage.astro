@@ -14,42 +14,40 @@ const appHref = getRelativeLocaleUrl(lang, 'android-app');
 ---
 
 <Layout title={t.title} description={t.description}>
-  <header class="nav-header">
-    <nav class="site-container nav-inner" aria-label={nav.mainAria}>
-      <a href={getRelativeLocaleUrl(lang, '')} class="nav-brand" aria-label="Open Bitcoin Tracker">
-        <img src="/app-icon.png" width="36" height="36" alt="" />
-        <span class="brand-full">Open Bitcoin Tracker</span><span class="brand-short" aria-hidden="true">OBT</span>
-      </a>
-      <div class="nav-actions"><LanguageSwitcher /><ThemeToggle class="nav-theme-toggle" /></div>
-    </nav>
-  </header>
-  <main id="main-content" class="site-container tracker-main">
-    <BitcoinChart />
-    <div class="app-link">
-      <a class="button cta-secondary" href={appHref}>
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true"><rect x="6" y="2" width="12" height="20" rx="3" /><path d="M10 5h4M11 19h2" /></svg>
-        {t.app}
-        <span aria-hidden="true">↗</span>
-      </a>
-    </div>
-  </main>
-  <footer class="tracker-footer site-container">
-    <span>Open Bitcoin Tracker</span>
-    <div>
-      <a href={getRelativeLocaleUrl(lang, 'about')}>{t.about}</a>
-      <a href={getRelativeLocaleUrl(lang, 'privacy')}>{t.privacy}</a>
-      <a href="https://github.com/open-bitcoin-tracker/open-bitcoin-tracker-web" target="_blank" rel="noopener noreferrer">GitHub</a>
-    </div>
-  </footer>
+  <div class="tracker-page">
+    <header class="nav-header">
+      <nav class="site-container tracker-container tracker-nav nav-inner" aria-label={nav.mainAria}>
+        <a href={getRelativeLocaleUrl(lang, '')} class="nav-brand" aria-label="Open Bitcoin Tracker">
+          <img src="/app-icon.png" width="36" height="36" alt="" />
+          <span class="brand-full">Open Bitcoin Tracker</span><span class="brand-short" aria-hidden="true">OBT</span>
+        </a>
+        <div class="tracker-links">
+          <a href={getRelativeLocaleUrl(lang, 'about')}>{t.about}</a>
+          <a href={getRelativeLocaleUrl(lang, 'privacy')}>{t.privacy}</a>
+          <a href="https://github.com/open-bitcoin-tracker/open-bitcoin-tracker-web" target="_blank" rel="noopener noreferrer">GitHub</a>
+          <a href={appHref}>{t.app} <span aria-hidden="true">↗</span></a>
+        </div>
+        <div class="nav-actions"><LanguageSwitcher /><ThemeToggle class="nav-theme-toggle" /></div>
+      </nav>
+    </header>
+    <main id="main-content" class="tracker-main">
+      <BitcoinChart />
+    </main>
+  </div>
 </Layout>
 
 <style>
-  .tracker-main { max-width: 1280px; }
-  .app-link { display: flex; justify-content: center; padding: 2.5rem 0 3.5rem; }
-  .app-link .button { font-size: .875rem; }
-  .app-link svg { color: var(--color-accent-text); }
-  .app-link a > span { margin-left: .75rem; color: var(--color-ink-muted); }
-  .tracker-footer { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 1rem; padding-block: 1.5rem; border-top: 1px solid var(--color-divider); color: var(--color-ink-muted); font-size: .75rem; }
-  .tracker-footer div { display: flex; gap: 1.5rem; }
-  .tracker-footer a:hover { color: var(--color-ink); }
+  .tracker-page { display: flex; flex-direction: column; min-height: 100dvh; }
+  .tracker-main { display: flex; flex-direction: column; flex: 1; }
+  .tracker-container, .tracker-main { --tracker-gutter: clamp(1rem, 3vw, 4rem); }
+  .tracker-container { max-width: none; padding-inline: var(--tracker-gutter); }
+  .tracker-nav { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; }
+  .tracker-links { display: flex; flex-wrap: wrap; align-items: center; gap: .25rem 1rem; color: var(--color-ink-muted); font-size: .8125rem; }
+  .tracker-links a { display: inline-flex; align-items: center; gap: .375rem; min-height: 44px; }
+  .tracker-links a:hover { color: var(--color-ink); }
+  .tracker-nav :global(.lang-menu) { left: auto; right: 0; }
+  @media (max-width: 1023px) {
+    .tracker-nav { grid-template-columns: minmax(0, 1fr) auto; row-gap: .25rem; padding-bottom: .5rem; }
+    .tracker-links { grid-column: 1 / -1; grid-row: 2; justify-content: flex-end; }
+  }
 </style>

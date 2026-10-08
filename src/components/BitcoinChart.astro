@@ -23,30 +23,32 @@ const lastDate = new Intl.DateTimeFormat(lang, { year: 'numeric', month: 'short'
     </span>
   </div>
 
-  <figure class="price-history">
-    <svg class="price-chart" data-chart viewBox="0 0 1200 440" preserveAspectRatio="none" role="img" aria-labelledby="chart-title chart-description">
-      <title id="chart-title">{t.chart}</title>
-      <desc id="chart-description" data-chart-description>{t.all}: 2010 — {lastDate}. {t.scale}.</desc>
-      <defs>
-        <linearGradient id="price-fill" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stop-color="var(--color-accent)" stop-opacity="0.18" />
-          <stop offset="60%" stop-color="var(--color-accent)" stop-opacity="0.12" />
-          <stop offset="100%" stop-color="var(--color-accent)" stop-opacity="0" />
-        </linearGradient>
-      </defs>
-      <path data-chart-area d={paths.area} fill="url(#price-fill)" />
-      <path data-chart-line d={paths.line} fill="none" stroke="var(--color-accent)" stroke-width="1.5" vector-effect="non-scaling-stroke" stroke-linejoin="round" />
-    </svg>
-    <figcaption>
-      <span>{t.all} <span class="history-dates" data-history-dates>2010 — {lastDate}</span></span>
-      <span>{t.scale}</span>
-    </figcaption>
-  </figure>
   <div class="data-note">
     <p><a href="https://coinmetrics.io" target="_blank" rel="noopener noreferrer">Coin Metrics</a> <span aria-hidden="true">·</span> <a href="https://www.kraken.com" target="_blank" rel="noopener noreferrer">Kraken</a></p>
     <p data-history-status hidden>{t.history}</p>
   </div>
   <noscript><p class="data-note">{t.unavailable}. {t.updated}: {lastDate}.</p></noscript>
+  <figure class="price-history">
+    <div class="chart-plot">
+      <svg class="price-chart" data-chart viewBox="0 0 1200 440" preserveAspectRatio="none" role="img" aria-labelledby="chart-title chart-description">
+        <title id="chart-title">{t.chart}</title>
+        <desc id="chart-description" data-chart-description>{t.all}: 2010 — {lastDate}. {t.scale}.</desc>
+        <defs>
+          <linearGradient id="price-fill" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="var(--color-accent)" stop-opacity="0.18" />
+            <stop offset="60%" stop-color="var(--color-accent)" stop-opacity="0.12" />
+            <stop offset="100%" stop-color="var(--color-accent)" stop-opacity="0" />
+          </linearGradient>
+        </defs>
+        <path data-chart-area d={paths.area} fill="url(#price-fill)" />
+        <path data-chart-line d={paths.line} fill="none" stroke="var(--color-accent)" stroke-width="1.5" vector-effect="non-scaling-stroke" stroke-linejoin="round" />
+      </svg>
+    </div>
+    <figcaption>
+      <span>{t.all} <span class="history-dates" data-history-dates>2010 — {lastDate}</span></span>
+      <span>{t.scale}</span>
+    </figcaption>
+  </figure>
 </section>
 
 <script>
@@ -54,7 +56,8 @@ const lastDate = new Intl.DateTimeFormat(lang, { year: 'numeric', month: 'short'
 </script>
 
 <style>
-  .bitcoin-tracker { padding-top: clamp(2.5rem, 6vw, 4.5rem); }
+  .bitcoin-tracker { display: flex; flex-direction: column; flex: 1; padding-top: clamp(1.5rem, 3svh, 2.5rem); }
+  .price-header, figcaption, .data-note { padding-inline: var(--tracker-gutter, 1rem); }
   .price-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem; }
   h1 { display: flex; align-items: center; flex-wrap: wrap; gap: .75rem; font-size: .875rem; font-weight: 500; color: var(--color-ink-muted); }
   .currency { font-size: .6875rem; letter-spacing: .04em; padding: .25rem .5rem; border-radius: 6px; background: var(--color-surface); border: 1px solid var(--color-divider); }
@@ -63,9 +66,11 @@ const lastDate = new Intl.DateTimeFormat(lang, { year: 'numeric', month: 'short'
   .feed-status { display: inline-flex; align-items: center; gap: .5rem; padding-top: .15rem; font-size: .75rem; color: var(--color-ink-muted); }
   .status-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--color-ink-muted); flex-shrink: 0; }
   .feed-status[data-state="live"] .status-dot { background: #4CA66B; box-shadow: 0 0 0 4px rgb(76 166 107 / .1); }
-  .price-history { margin: 2rem 0 0; }
-  .price-chart { display: block; width: 100%; height: clamp(260px, 40vw, 440px); overflow: hidden; }
-  figcaption { display: flex; justify-content: space-between; flex-wrap: wrap; gap: .5rem 1rem; margin-top: 1.25rem; font-size: .75rem; color: var(--color-ink-muted); }
+  .price-history { display: flex; flex-direction: column; flex: 1; margin: 1rem 0 0; }
+  /* Fill all remaining viewport space; keep a usable plot on short screens. */
+  .chart-plot { position: relative; flex: 1; min-height: 180px; }
+  .price-chart { position: absolute; inset: 0; display: block; width: 100%; height: 100%; overflow: hidden; }
+  figcaption { display: flex; justify-content: space-between; flex-wrap: wrap; order: -1; gap: .5rem 1rem; margin-bottom: .75rem; font-size: .75rem; color: var(--color-ink-muted); }
   .history-dates { margin-left: .5rem; }
   .data-note { display: flex; flex-wrap: wrap; justify-content: space-between; gap: .5rem; margin-top: .65rem; color: var(--color-ink-muted); font-size: .6875rem; }
   .data-note a:hover { color: var(--color-ink); text-decoration: underline; }
@@ -74,7 +79,8 @@ const lastDate = new Intl.DateTimeFormat(lang, { year: 'numeric', month: 'short'
     .price-header { display: block; position: relative; }
     h1 { max-width: calc(100% - 6rem); }
     .current-price { font-size: clamp(1.875rem, 10vw, 3.1rem); }
-    .feed-status { position: absolute; top: 0; right: 0; max-width: 5.5rem; font-size: .6875rem; }
+    .feed-status { position: absolute; top: 0; right: var(--tracker-gutter, 1rem); max-width: 5.5rem; font-size: .6875rem; }
+    .feed-status [data-status-text] { min-width: 0; overflow-wrap: anywhere; }
   }
   @media (max-width: 480px) {
     .history-dates { display: block; margin: .25rem 0 0; }
