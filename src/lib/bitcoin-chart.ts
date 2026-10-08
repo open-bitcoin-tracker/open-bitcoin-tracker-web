@@ -3,6 +3,8 @@ export interface HistoryPoint {
   price: number;
 }
 
+export type ChartScale = 'logarithmic' | 'linear';
+
 export const DAY_MS = 86_400_000;
 
 export function parseHistory(csv: string): HistoryPoint[] {
@@ -27,11 +29,11 @@ export function mergeHistory(base: HistoryPoint[], recent: HistoryPoint[]): Hist
 
 // The app defaults to log10, a straight 1.5px line, and 5% vertical padding.
 // SVG keeps those details sharp at every viewport size without a chart library.
-export function chartPaths(points: HistoryPoint[], width: number, height: number) {
+export function chartPaths(points: HistoryPoint[], width: number, height: number, scale: ChartScale = 'logarithmic') {
   if (points.length < 2) return { line: '', area: '', positions: [] };
   const start = points[0].time;
   const span = Math.max(points.at(-1)!.time - start, 1);
-  const values = points.map((point) => Math.log10(point.price));
+  const values = points.map((point) => scale === 'logarithmic' ? Math.log10(point.price) : point.price);
   const low = Math.min(...values);
   const range = Math.max(Math.max(...values) - low, 1e-6);
   const bottom = low - range * 0.05;

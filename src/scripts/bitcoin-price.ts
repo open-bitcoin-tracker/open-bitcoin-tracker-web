@@ -1,4 +1,4 @@
-import { DAY_MS, chartPaths, mergeHistory, nearestHistoryIndex, parseHistory, type HistoryPoint } from '../lib/bitcoin-chart';
+import { DAY_MS, chartPaths, mergeHistory, nearestHistoryIndex, parseHistory, type ChartScale, type HistoryPoint } from '../lib/bitcoin-chart';
 import { createPriceChangeFormatter } from '../lib/bitcoin-price-change';
 import type { TrackerCopy } from '../i18n/tracker';
 import type { RangeCopy } from '../i18n/ranges';
@@ -26,8 +26,11 @@ function startTracker(root: HTMLElement) {
   const date = new Intl.DateTimeFormat(locale, { year: 'numeric', month: 'short', day: 'numeric', timeZone: 'UTC' });
   const dateTime = new Intl.DateTimeFormat(locale, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit', timeZone: 'UTC' });
   const rangeBar = root.querySelector<HTMLElement>('[data-range-bar]')!;
+  const chartControls = root.querySelector<HTMLElement>('[data-chart-controls]')!;
+  const scaleToggle = root.querySelector<HTMLButtonElement>('[data-scale-toggle]')!;
   const counts = Object.fromEntries(rangeSlots.map(({ unit, initial }) => [unit, initial])) as Record<RangeUnit, number>;
   let selected: BitcoinRange = { unit: 'all' };
+  let scale: ChartScale = 'logarithmic';
   const candles = new Map<number, { points: HistoryPoint[]; updated: number }>();
   const candleRequests = new Map<number, Promise<void>>();
   const candleErrors = new Set<number>();
@@ -71,7 +74,7 @@ function startTracker(root: HTMLElement) {
     if (!width || !height) return;
     // Draw at actual CSS size so the app's line thickness and 5% padding match.
     chart.setAttribute('viewBox', `0 0 ${width} ${height}`);
-    const paths = chartPaths(points, width, height);
+    const paths = chartPaths(points, width, height, scale);
     line.setAttribute('d', paths.line);
     area.setAttribute('d', paths.area);
     plottedPoints = points;
@@ -82,7 +85,9 @@ function startTracker(root: HTMLElement) {
     const label = rangeLabel(selected);
     const formatter = window ? dateTime : date;
     const period = points.length ? `${formatter.format(points[0].time)} — ${formatter.format(points.at(-1)!.time)}` : loading ? r.loading : r.unavailable;
-    root.querySelector<SVGDescElement>('[data-chart-description]')!.textContent = `${label}: ${period}. ${t.scale}.`;
+    const scaleLabel = scale === 'logarithmic' ? t.scale : t.linearScale;
+    root.querySelector<SVGTitleElement>('[data-chart-title]')!.textContent = `${t.price} — ${scaleLabel}`;
+    root.querySelector<SVGDescElement>('[data-chart-description]')!.textContent = `${label}: ${period}. ${scaleLabel}.`;
   }
 
   function selectionIndex() {
@@ -214,7 +219,18 @@ function startTracker(root: HTMLElement) {
     selectRange(unit);
   });
   updateRangeBar();
-  rangeBar.hidden = false;
+  chartControls.hidden = false;
+
+  scaleToggle.addEventListener('click', () => {
+    clearSelection();
+    scale = scale === 'logarithmic' ? 'linear' : 'logarithmic';
+    const label = scale === 'logarithmic' ? t.scale : t.linearScale;
+    scaleToggle.textContent = scale === 'logarithmic' ? t.logScaleShort : t.linearScaleShort;
+    scaleToggle.setAttribute('aria-pressed', String(scale === 'logarithmic'));
+    scaleToggle.setAttribute('aria-label', label);
+    scaleToggle.setAttribute('title', label);
+    scheduleDraw();
+  });
 
   function scheduleDraw() {
     if (!paintFrame) paintFrame = requestAnimationFrame(draw);
