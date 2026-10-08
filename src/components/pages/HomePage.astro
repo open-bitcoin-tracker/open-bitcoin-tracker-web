@@ -1,35 +1,17 @@
 ---
-import { getRelativeLocaleUrl } from 'astro:i18n';
 import Layout from '../../layouts/Layout.astro';
 import BitcoinChart from '../BitcoinChart.astro';
-import LanguageSwitcher from '../LanguageSwitcher.astro';
-import ThemeToggle from '../ThemeToggle.astro';
-import { resolveLang, useTranslations } from '../../i18n/utils';
+import Nav from '../Nav.astro';
+import { resolveLang } from '../../i18n/utils';
 import { tracker } from '../../i18n/tracker';
 
 const lang = resolveLang(Astro.currentLocale);
 const t = tracker[lang];
-const nav = useTranslations(Astro.currentLocale).nav;
-const appHref = getRelativeLocaleUrl(lang, 'android-app');
 ---
 
 <Layout title={t.title} description={t.description}>
   <div class="tracker-page">
-    <header class="nav-header">
-      <nav class="site-container tracker-container tracker-nav nav-inner" aria-label={nav.mainAria}>
-        <a href={getRelativeLocaleUrl(lang, '')} class="nav-brand" aria-label="Open Bitcoin Tracker">
-          <img src="/app-icon.png" width="36" height="36" alt="" />
-          <span class="brand-full">Open Bitcoin Tracker</span><span class="brand-short" aria-hidden="true">OBT</span>
-        </a>
-        <div class="tracker-links">
-          <a href={getRelativeLocaleUrl(lang, 'about')}>{t.about}</a>
-          <a href={getRelativeLocaleUrl(lang, 'privacy')}>{t.privacy}</a>
-          <a href="https://github.com/open-bitcoin-tracker/open-bitcoin-tracker-web" target="_blank" rel="noopener noreferrer">GitHub</a>
-          <a href={appHref}>{t.app} <span aria-hidden="true">↗</span></a>
-        </div>
-        <div class="nav-actions"><LanguageSwitcher /><ThemeToggle class="nav-theme-toggle" /></div>
-      </nav>
-    </header>
+    <Nav />
     <main id="main-content" class="tracker-main">
       <BitcoinChart />
     </main>
@@ -39,15 +21,5 @@ const appHref = getRelativeLocaleUrl(lang, 'android-app');
 <style>
   .tracker-page { display: flex; flex-direction: column; min-height: 100dvh; }
   .tracker-main { display: flex; flex-direction: column; flex: 1; }
-  .tracker-container, .tracker-main { --tracker-gutter: clamp(1rem, 3vw, 4rem); }
-  .tracker-container { max-width: none; padding-inline: var(--tracker-gutter); }
-  .tracker-nav { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; }
-  .tracker-links { display: flex; flex-wrap: wrap; align-items: center; gap: .25rem 1rem; color: var(--color-ink-muted); font-size: .8125rem; }
-  .tracker-links a { display: inline-flex; align-items: center; gap: .375rem; min-height: 44px; }
-  .tracker-links a:hover { color: var(--color-ink); }
-  .tracker-nav :global(.lang-menu) { left: auto; right: 0; }
-  @media (max-width: 1023px) {
-    .tracker-nav { grid-template-columns: minmax(0, 1fr) auto; row-gap: .25rem; padding-bottom: .5rem; }
-    .tracker-links { grid-column: 1 / -1; grid-row: 2; justify-content: flex-end; }
-  }
+  .tracker-main { --tracker-gutter: clamp(1rem, 3vw, 4rem); }
 </style>

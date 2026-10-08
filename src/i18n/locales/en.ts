@@ -28,6 +28,7 @@ export const en = {
   },
 
   nav: {
+    menuLabel: 'Menu',
     skipToContent: 'Skip to content',
     mainAria: 'Main navigation',
     github: 'GitHub',

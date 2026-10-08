@@ -21,6 +21,7 @@ export const ru: Dict = {
   },
 
   nav: {
+    menuLabel: 'Меню',
     skipToContent: 'Перейти к содержимому',
     mainAria: 'Основная навигация',
     github: 'GitHub',

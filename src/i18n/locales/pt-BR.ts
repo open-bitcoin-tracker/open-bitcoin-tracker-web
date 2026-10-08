@@ -21,6 +21,7 @@ export const ptBR: Dict = {
   },
 
   nav: {
+    menuLabel: 'Menu',
     skipToContent: 'Pular para o conteúdo',
     mainAria: 'Navegação principal',
     github: 'GitHub',

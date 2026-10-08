@@ -129,6 +129,7 @@ html.dark { --color-accent-text: #F7A53A; }
 .text-link:hover { color: var(--color-accent-text); }
 
 /* A floating navigation surface, with a quiet indication of reading progress. */
+html { scrollbar-gutter: stable; }
 .nav-header { position: sticky; top: 0; z-index: 50; background: var(--nav-bg); border-bottom: 1px solid var(--nav-border); backdrop-filter: blur(20px) saturate(1.25); -webkit-backdrop-filter: blur(20px) saturate(1.25); }
 .nav-inner { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; min-height: 86px; gap: 1.5rem; padding-block: 1rem; }
 .nav-brand { display: flex; align-items: center; gap: .75rem; color: var(--color-ink); font-size: .9375rem; font-weight: 650; letter-spacing: -.035em; white-space: nowrap; }
@@ -262,7 +263,6 @@ html.dark .hero-copy h1 em { color: var(--color-accent); }
 }
 @media (max-width: 1100px) {
   .nav-actions { gap: .75rem; }
-  .nav-header .nav-actions .lang-current { display: none; }
   .hero-copy h1 { font-size: clamp(3.5rem, 6.5vw, 4.65rem); }
   .hero-stage { height: 595px; }
   .hero-device-position { width: 248px; }

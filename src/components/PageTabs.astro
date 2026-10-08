@@ -1,0 +1,63 @@
+---
+import { getRelativeLocaleUrl } from 'astro:i18n';
+import { resolveLang, stripLocale } from '../i18n/utils';
+import { tracker } from '../i18n/tracker';
+
+const lang = resolveLang(Astro.currentLocale);
+const t = tracker[lang];
+const currentPage = stripLocale(Astro.url.pathname);
+const pages = [
+  { path: '', label: t.priceChart },
+  { path: 'android-app', label: t.app },
+];
+---
+
+<div class="page-tabs">
+  {pages.map(({ path, label }) => (
+    <a
+      href={getRelativeLocaleUrl(lang, path)}
+      class:list={['page-tab', { 'is-active': currentPage === path }]}
+      aria-current={currentPage === path ? 'page' : undefined}
+    >
+      {label}
+    </a>
+  ))}
+</div>
+
+<style>
+  .page-tabs {
+    display: flex;
+    align-items: stretch;
+    gap: .25rem;
+    min-width: 0;
+    padding: .25rem;
+    border: 1px solid var(--color-divider);
+    border-radius: 14px;
+    background: var(--color-surface);
+  }
+  .page-tab {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex: 1;
+    min-width: 0;
+    min-height: 44px;
+    padding: .625rem .875rem;
+    border-radius: 10px;
+    color: var(--color-ink-muted);
+    font-size: .8125rem;
+    font-weight: 600;
+    line-height: 1.25;
+    text-align: center;
+    white-space: nowrap;
+    transition: background-color .2s ease, color .2s ease;
+  }
+  .page-tab:hover { background: var(--hover-tint); color: var(--color-ink); }
+  .page-tab.is-active {
+    background: var(--color-accent);
+    color: #1F1B14;
+    box-shadow: 0 3px 10px rgb(247 147 26 / .15);
+  }
+  @media (max-width: 900px) { .page-tab { white-space: normal; overflow-wrap: anywhere; } }
+  @media (max-width: 600px) { .page-tab { padding-inline: .375rem; } }
+</style>

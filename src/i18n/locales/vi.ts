@@ -21,6 +21,7 @@ export const vi: Dict = {
   },
 
   nav: {
+    menuLabel: 'Menu',
     skipToContent: 'Chuyển đến nội dung',
     mainAria: 'Điều hướng chính',
     github: 'GitHub',

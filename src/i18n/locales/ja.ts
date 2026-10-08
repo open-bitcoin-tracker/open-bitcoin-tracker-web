@@ -21,6 +21,7 @@ export const ja: Dict = {
   },
 
   nav: {
+    menuLabel: 'メニュー',
     skipToContent: 'コンテンツへ移動',
     mainAria: 'メインナビゲーション',
     github: 'GitHub',

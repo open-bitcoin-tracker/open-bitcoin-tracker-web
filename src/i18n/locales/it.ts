@@ -21,6 +21,7 @@ export const it: Dict = {
   },
 
   nav: {
+    menuLabel: 'Menu',
     skipToContent: 'Vai al contenuto',
     mainAria: 'Navigazione principale',
     github: 'GitHub',

@@ -21,6 +21,7 @@ export const tr: Dict = {
   },
 
   nav: {
+    menuLabel: 'Menü',
     skipToContent: 'İçeriğe geç',
     mainAria: 'Ana gezinme',
     github: 'GitHub',
