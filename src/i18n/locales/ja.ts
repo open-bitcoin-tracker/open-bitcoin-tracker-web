@@ -33,7 +33,7 @@ export const ja: Dict = {
   },
 
   hero: {
-    titleHighlight: 'コツコツ積む人',
+    titleHighlight: '貯めたビットコイン',
     tagline: 'Android向けオープンソースのビットコイン・ポートフォリオ追跡アプリ。',
     downloadApk: 'APK をダウンロード',
     viewGithub: 'GitHub で見る',
@@ -42,7 +42,7 @@ export const ja: Dict = {
     altSuffix: ' の画面',
     reasons: [
       {
-        title: 'コツコツ積む人のための価格トラッカー',
+        title: '貯めたビットコインの価値をチェック。',
         body: '送受信は必要ないけれど、スタックの価値はしっかり見守りたい——そんな人のために作りました。',
       },
       {

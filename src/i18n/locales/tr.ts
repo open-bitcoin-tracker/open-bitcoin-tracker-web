@@ -33,7 +33,7 @@ export const tr: Dict = {
   },
 
   hero: {
-    titleHighlight: 'Acele etmeden',
+    titleHighlight: 'Bitcoin birikiminin',
     tagline: 'Android için açık kaynaklı bitcoin portföy takipçisi.',
     downloadApk: 'APK indir',
     viewGithub: "GitHub'da görüntüle",
@@ -42,7 +42,7 @@ export const tr: Dict = {
     altSuffix: '',
     reasons: [
       {
-        title: 'Acele etmeden biriktirenler için',
+        title: 'Bitcoin birikiminin değerini takip et.',
         body: "Gönderip almaya gerek duymayan, yalnızca stack'lerinin değerini takip etmek isteyenler için yapıldı.",
       },
       {

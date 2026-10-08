@@ -33,7 +33,7 @@ export const de: Dict = {
   },
 
   hero: {
-    titleHighlight: 'in Ruhe stacken',
+    titleHighlight: 'Bitcoin-Stacks',
     tagline: 'Open-Source-Bitcoin-Portfolio-Tracker für Android.',
     downloadApk: 'APK herunterladen',
     viewGithub: 'Auf GitHub ansehen',
@@ -42,7 +42,7 @@ export const de: Dict = {
     altSuffix: '',
     reasons: [
       {
-        title: 'Für alle, die in Ruhe stacken',
+        title: 'Behalte den Wert deiner Bitcoin-Stacks im Blick.',
         body: 'Gemacht für alle, die nicht senden oder empfangen wollen, sondern einfach den Wert ihrer Stacks im Blick behalten.',
       },
       {

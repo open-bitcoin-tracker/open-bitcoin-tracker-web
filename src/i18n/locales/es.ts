@@ -33,7 +33,7 @@ export const es: Dict = {
   },
 
   hero: {
-    titleHighlight: 'sin prisa',
+    titleHighlight: 'stacks de bitcoin',
     tagline: 'Trackeador de portfolio de bitcoin de código abierto para Android.',
     downloadApk: 'Descargar APK',
     viewGithub: 'Ver en GitHub',
@@ -42,7 +42,7 @@ export const es: Dict = {
     altSuffix: '',
     reasons: [
       {
-        title: 'Para quien acumula sin prisa',
+        title: 'Mira cuánto valen tus stacks de bitcoin.',
         body: 'Hecho para quienes no necesitan generar transacciones pero quieren seguir de cerca lo que valen sus stacks.',
       },
       {

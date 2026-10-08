@@ -33,7 +33,7 @@ export const ru: Dict = {
   },
 
   hero: {
-    titleHighlight: 'спокойно копит',
+    titleHighlight: 'накопленного биткоина',
     tagline: 'Открытый трекер биткоин-портфеля для Android.',
     downloadApk: 'Скачать APK',
     viewGithub: 'Открыть на GitHub',
@@ -42,7 +42,7 @@ export const ru: Dict = {
     altSuffix: '',
     reasons: [
       {
-        title: 'Для тех, кто спокойно копит',
+        title: 'Следи за стоимостью накопленного биткоина.',
         body: 'Сделано для тех, кому не нужно ничего отправлять или получать — лишь следить за стоимостью своих стеков.',
       },
       {

@@ -33,7 +33,7 @@ export const vi: Dict = {
   },
 
   hero: {
-    titleHighlight: 'thong thả',
+    titleHighlight: 'bitcoin bạn tích lũy',
     tagline: 'Trình theo dõi danh mục bitcoin mã nguồn mở cho Android.',
     downloadApk: 'Tải APK',
     viewGithub: 'Xem trên GitHub',
@@ -42,7 +42,7 @@ export const vi: Dict = {
     altSuffix: '',
     reasons: [
       {
-        title: 'Cho những người tích sản thong thả',
+        title: 'Theo dõi giá trị bitcoin bạn tích lũy.',
         body: 'Được tạo ra cho những ai không cần gửi hay nhận, chỉ muốn để mắt đến giá trị các stack của mình.',
       },
       {

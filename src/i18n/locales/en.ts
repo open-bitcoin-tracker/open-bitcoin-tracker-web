@@ -45,7 +45,7 @@ export const en = {
   },
 
   hero: {
-    titleHighlight: 'humble stackers',
+    titleHighlight: 'bitcoin stacks',
     tagline: 'Open source bitcoin portfolio tracker for Android.',
     downloadApk: 'Download APK',
     viewGithub: 'View on GitHub',
@@ -57,7 +57,7 @@ export const en = {
     altSuffix: ' screen',
     reasons: [
       {
-        title: 'A price tracker for humble stackers',
+        title: 'Track the value of your bitcoin stacks.',
         body: "Made for those who don't need to transact but want to keep an eye on the value of their stacks.",
       },
       {
