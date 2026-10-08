@@ -1,11 +1,14 @@
 import { DAY_MS, chartPaths, mergeHistory, parseHistory, type HistoryPoint } from '../lib/bitcoin-chart';
 import type { TrackerCopy } from '../i18n/tracker';
+import type { RangeCopy } from '../i18n/ranges';
+import { candleWindow, historyForRange, parseCandles, rangeSlots, stepRange, type BitcoinRange, type RangeUnit } from '../lib/bitcoin-range';
 
 const root = document.querySelector<HTMLElement>('[data-bitcoin-tracker]');
 if (root) startTracker(root);
 
 function startTracker(root: HTMLElement) {
   const t: TrackerCopy = JSON.parse(root.dataset.copy!);
+  const r: RangeCopy = JSON.parse(root.dataset.rangeCopy!);
   const locale = root.dataset.locale || 'en';
   const priceEl = root.querySelector<HTMLElement>('[data-price]')!;
   const chart = root.querySelector<SVGSVGElement>('[data-chart]')!;
@@ -14,6 +17,14 @@ function startTracker(root: HTMLElement) {
   const historyStatus = root.querySelector<HTMLElement>('[data-history-status]')!;
   const money = new Intl.NumberFormat(locale, { style: 'currency', currency: 'USD', minimumFractionDigits: 0, maximumFractionDigits: 0 });
   const date = new Intl.DateTimeFormat(locale, { year: 'numeric', month: 'short', day: 'numeric', timeZone: 'UTC' });
+  const dateTime = new Intl.DateTimeFormat(locale, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit', timeZone: 'UTC' });
+  const rangeBar = root.querySelector<HTMLElement>('[data-range-bar]')!;
+  const counts = Object.fromEntries(rangeSlots.map(({ unit, initial }) => [unit, initial])) as Record<RangeUnit, number>;
+  let selected: BitcoinRange = { unit: 'all' };
+  const candles = new Map<number, { points: HistoryPoint[]; updated: number }>();
+  const candleRequests = new Map<number, Promise<void>>();
+  const candleErrors = new Set<number>();
+  let historyError = false;
 
   let history: HistoryPoint[] = [];
   let livePoint: HistoryPoint | undefined;
@@ -34,9 +45,17 @@ function startTracker(root: HTMLElement) {
 
   function draw() {
     paintFrame = 0;
-    if (history.length < 2) return;
-    const lastTime = history.at(-1)!.time;
-    const points = livePoint && livePoint.time >= lastTime && livePoint.time - lastTime < 2 * DAY_MS ? [...history, livePoint] : history;
+    const window = candleWindow(selected);
+    const source = window ? candles.get(window.interval)?.points ?? [] : history;
+    const rangePoints = historyForRange(source, selected);
+    const lastTime = rangePoints.at(-1)?.time;
+    const maxGap = window ? window.interval * 60_000 * 2 : 2 * DAY_MS;
+    const points = lastTime !== undefined && livePoint && livePoint.time >= lastTime && livePoint.time - lastTime < maxGap ? [...rangePoints, livePoint] : rangePoints;
+    const loading = window ? candleRequests.has(window.interval) && !source.length : !history.length && !historyError;
+    const unavailable = window ? candleErrors.has(window.interval) : historyError;
+    chart.setAttribute('aria-busy', String(loading));
+    historyStatus.hidden = !loading && !unavailable;
+    historyStatus.textContent = loading ? r.loading : window ? r.unavailable : t.history;
     const { width, height } = chart.getBoundingClientRect();
     if (!width || !height) return;
     // Draw at actual CSS size so the app's line thickness and 5% padding match.
@@ -44,9 +63,63 @@ function startTracker(root: HTMLElement) {
     const paths = chartPaths(points, width, height);
     line.setAttribute('d', paths.line);
     area.setAttribute('d', paths.area);
-    const range = `2010 — ${date.format(points.at(-1)!.time)}`;
-    root.querySelector<SVGDescElement>('[data-chart-description]')!.textContent = `${t.all}: ${range}. ${t.scale}.`;
+    const label = rangeLabel(selected);
+    const formatter = window ? dateTime : date;
+    const period = points.length ? `${formatter.format(points[0].time)} — ${formatter.format(points.at(-1)!.time)}` : loading ? r.loading : r.unavailable;
+    root.querySelector<SVGDescElement>('[data-chart-description]')!.textContent = `${label}: ${period}. ${t.scale}.`;
   }
+
+  function rangeLabel(range: BitcoinRange) {
+    if (range.unit === 'all') return t.all;
+    return new Intl.NumberFormat(locale, { style: 'unit', unit: range.unit, unitDisplay: 'long' }).format(range.count);
+  }
+
+  function updateRangeBar() {
+    for (const slot of rangeBar.querySelectorAll<HTMLElement>('[data-range-slot]')) {
+      const unit = slot.dataset.rangeSlot as BitcoinRange['unit'];
+      const active = selected.unit === unit;
+      slot.dataset.selected = String(active);
+      const button = slot.querySelector<HTMLButtonElement>('[data-range-select]')!;
+      button.setAttribute('aria-pressed', String(active));
+      button.setAttribute('aria-label', rangeLabel(unit === 'all' ? { unit } : { unit, count: counts[unit] }));
+      if (unit === 'all') continue;
+      button.textContent = `${counts[unit]}${r.suffixes[unit]}`;
+      for (const stepButton of slot.querySelectorAll<HTMLButtonElement>('[data-range-step]')) {
+        const step = Number(stepButton.dataset.rangeStep);
+        const next = rangeLabel({ unit, count: stepRange(unit, counts[unit], step) });
+        stepButton.setAttribute('aria-label', `${step > 0 ? r.increase : r.decrease}: ${next}`);
+        stepButton.tabIndex = active ? 0 : -1;
+        stepButton.setAttribute('aria-hidden', String(!active));
+      }
+    }
+  }
+
+  function selectRange(unit: BitcoinRange['unit']) {
+    selected = unit === 'all' ? { unit } : { unit, count: counts[unit] };
+    updateRangeBar();
+    void refreshCandles();
+    scheduleDraw();
+  }
+
+  rangeBar.addEventListener('click', (event) => {
+    const button = (event.target as Element).closest<HTMLButtonElement>('button');
+    if (!button) return;
+    const unit = button.closest<HTMLElement>('[data-range-slot]')!.dataset.rangeSlot as BitcoinRange['unit'];
+    if (button.dataset.rangeStep && unit !== 'all') {
+      counts[unit] = stepRange(unit, counts[unit], Number(button.dataset.rangeStep));
+    }
+    selectRange(unit);
+  });
+  rangeBar.addEventListener('keydown', (event) => {
+    const button = (event.target as Element).closest<HTMLButtonElement>('[data-range-select]');
+    const unit = button?.dataset.rangeSelect as BitcoinRange['unit'] | undefined;
+    if (!unit || unit === 'all' || selected.unit !== unit || !['ArrowUp', 'ArrowDown'].includes(event.key)) return;
+    event.preventDefault();
+    counts[unit] = stepRange(unit, counts[unit], event.key === 'ArrowUp' ? 1 : -1);
+    selectRange(unit);
+  });
+  updateRangeBar();
+  rangeBar.hidden = false;
 
   function scheduleDraw() {
     if (!paintFrame) paintFrame = requestAnimationFrame(draw);
@@ -68,30 +141,46 @@ function startTracker(root: HTMLElement) {
     return body.result;
   }
 
+  async function refreshCandles() {
+    const window = candleWindow(selected);
+    if (!window || stopped) return;
+    const { interval } = window;
+    const cached = candles.get(interval);
+    if (cached && Date.now() - cached.updated < 60_000) return;
+    if (candleRequests.has(interval)) return candleRequests.get(interval);
+    const request = (async () => {
+      try {
+        const result = await getJson(`https://api.kraken.com/0/public/OHLC?pair=XBTUSD&interval=${interval}`);
+        candles.set(interval, { points: parseCandles(result), updated: Date.now() });
+        candleErrors.delete(interval);
+      } catch {
+        candleErrors.add(interval);
+      } finally {
+        candleRequests.delete(interval);
+        scheduleDraw();
+      }
+    })();
+    candleRequests.set(interval, request);
+    scheduleDraw();
+    return request;
+  }
+
   async function refreshHistory() {
     if (historyLoading || stopped) return;
     historyLoading = true;
     try {
       const result = await getJson('https://api.kraken.com/0/public/OHLC?pair=XBTUSD&interval=1440');
-      const rows = Object.values(result).find(Array.isArray);
-      if (!rows) throw new Error('Missing daily prices');
-      const recent: HistoryPoint[] = rows.flatMap((row: unknown) => {
-        if (!Array.isArray(row)) return [];
-        const time = Number(row[0]) * 1000;
-        const price = Number(row[4]);
-        return Number.isFinite(time) && Number.isFinite(price) && price > 0 ? [{ time, price }] : [];
-      });
-      if (!recent.length) throw new Error('Empty daily prices');
+      const recent = parseCandles(result);
       // Never draw an invented straight connector if the bundled CSV is too old.
       const hasGap = recent[0].time > history.at(-1)!.time + DAY_MS;
       if (hasGap) throw new Error('Historical data needs updating');
       history = mergeHistory(history, recent);
-      historyStatus.hidden = true;
-      scheduleDraw();
+      historyError = false;
     } catch {
-      historyStatus.hidden = false;
+      historyError = true;
     } finally {
       historyLoading = false;
+      scheduleDraw();
     }
   }
 
@@ -162,7 +251,7 @@ function startTracker(root: HTMLElement) {
       history = parseHistory(await response.text());
       scheduleDraw();
       await refreshHistory();
-    } catch { historyStatus.hidden = false; }
+    } catch { historyError = true; scheduleDraw(); }
   })();
 
   connect();
@@ -176,11 +265,12 @@ function startTracker(root: HTMLElement) {
   }, 5000);
   const pollTimer = setInterval(() => { void pollPrice(); }, 30_000);
   const historyTimer = setInterval(() => { if (history.length) void refreshHistory(); }, 300_000);
+  const candleTimer = setInterval(() => { void refreshCandles(); }, 60_000);
 
   window.addEventListener('offline', () => { setStatus('offline'); socket?.close(); });
-  window.addEventListener('online', () => { connect(); void pollPrice(); if (history.length) void refreshHistory(); });
+  window.addEventListener('online', () => { connect(); void pollPrice(); if (history.length) void refreshHistory(); void refreshCandles(); });
   document.addEventListener('visibilitychange', () => {
-    if (!document.hidden && !stopped) { connect(); void pollPrice(); if (history.length) void refreshHistory(); }
+    if (!document.hidden && !stopped) { connect(); void pollPrice(); if (history.length) void refreshHistory(); void refreshCandles(); }
   });
   window.addEventListener('pagehide', () => {
     stopped = true;
@@ -188,6 +278,7 @@ function startTracker(root: HTMLElement) {
     clearInterval(watchdog);
     clearInterval(pollTimer);
     clearInterval(historyTimer);
+    clearInterval(candleTimer);
     socket?.close();
   });
   window.addEventListener('pageshow', (event) => { if (event.persisted) window.location.reload(); });

@@ -3,25 +3,28 @@ import bundledHistory from '../../public/data/btc-history.csv?raw';
 import { parseHistory, chartPaths } from '../lib/bitcoin-chart';
 import { resolveLang } from '../i18n/utils';
 import { tracker } from '../i18n/tracker';
+import { ranges } from '../i18n/ranges';
+import { rangeSlots } from '../lib/bitcoin-range';
 
 const lang = resolveLang(Astro.currentLocale);
 const t = tracker[lang];
+const r = ranges[lang];
 const history = parseHistory(bundledHistory);
 const paths = chartPaths(history, 1200, 440);
 const lastDate = new Intl.DateTimeFormat(lang, { year: 'numeric', month: 'short', day: 'numeric', timeZone: 'UTC' }).format(history.at(-1)!.time);
 ---
 
-<section class="bitcoin-tracker" data-bitcoin-tracker data-copy={JSON.stringify(t)} data-locale={lang} aria-label={t.price}>
+<section class="bitcoin-tracker" data-bitcoin-tracker data-copy={JSON.stringify(t)} data-range-copy={JSON.stringify(r)} data-locale={lang} aria-label={t.price}>
   <div class="price-header">
     <p class="current-price" data-price aria-label={t.unavailable}>—</p>
   </div>
 
-  <p class="history-status" data-history-status hidden>{t.history}</p>
+  <p class="history-status" data-history-status role="status" hidden>{t.history}</p>
   <noscript><p class="history-status">{t.unavailable}.</p></noscript>
   <figure class="price-history">
     <div class="chart-plot">
       <svg class="price-chart" data-chart viewBox="0 0 1200 440" preserveAspectRatio="none" role="img" aria-labelledby="chart-title chart-description">
-        <title id="chart-title">{t.chart}</title>
+        <title id="chart-title">{t.price} — {t.scale}</title>
         <desc id="chart-description" data-chart-description>{t.all}: 2010 — {lastDate}. {t.scale}.</desc>
         <defs>
           <linearGradient id="price-fill" x1="0" y1="0" x2="0" y2="1">
@@ -38,6 +41,22 @@ const lastDate = new Intl.DateTimeFormat(lang, { year: 'numeric', month: 'short'
       <span>{t.scale}</span>
     </figcaption>
   </figure>
+  <div class="range-bar" data-range-bar role="group" aria-label={r.label} hidden>
+    {rangeSlots.map(({ unit, initial }) => (
+      <div class="range-slot" data-range-slot={unit}>
+        <button type="button" class="range-step" data-range-step="1" aria-label={r.increase} tabindex="-1" aria-hidden="true">
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="m4 10 4-4 4 4" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" /></svg>
+        </button>
+        <button type="button" class="range-select" data-range-select={unit} aria-pressed="false">{initial}{r.suffixes[unit]}</button>
+        <button type="button" class="range-step" data-range-step="-1" aria-label={r.decrease} tabindex="-1" aria-hidden="true">
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="m4 6 4 4 4-4" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" /></svg>
+        </button>
+      </div>
+    ))}
+    <div class="range-slot" data-range-slot="all" data-selected="true">
+      <button type="button" class="range-select" data-range-select="all" aria-label={t.all} aria-pressed="true">{r.all}</button>
+    </div>
+  </div>
 </section>
 
 <script>
@@ -55,6 +74,18 @@ const lastDate = new Intl.DateTimeFormat(lang, { year: 'numeric', month: 'short'
   .price-chart { position: absolute; inset: 0; display: block; width: 100%; height: 100%; overflow: hidden; }
   figcaption { display: flex; justify-content: flex-end; order: -1; margin-bottom: .75rem; font-size: .75rem; color: var(--color-ink-muted); }
   .history-status { margin-top: .65rem; color: var(--color-ink-muted); font-size: .6875rem; }
+  .range-bar { display: flex; align-items: stretch; gap: .25rem; width: calc(100% - 2 * var(--tracker-gutter, 1rem)); max-width: 48rem; margin: 1.25rem auto; padding: .375rem; border-radius: 999px; background: rgb(var(--color-ink-rgb) / .055); }
+  .range-bar[hidden] { display: none; }
+  .range-slot { flex: 1; min-width: 0; display: grid; grid-template-rows: 24px minmax(24px, auto) 24px; justify-items: center; border-radius: 999px; transition: background-color .2s, box-shadow .2s; }
+  .range-slot[data-selected="true"] { background: var(--color-surface); box-shadow: var(--shadow-card); color: var(--color-accent-text); }
+  .range-select { grid-row: 2; width: 100%; padding-inline: .25rem; font-size: .875rem; font-variant-numeric: tabular-nums; color: var(--color-ink-muted); border-radius: 999px; }
+  .range-select[aria-pressed="true"] { color: var(--color-accent-text); font-weight: 700; }
+  .range-slot[data-range-slot="all"] .range-select { grid-row: 1 / -1; }
+  .range-step { display: flex; justify-content: center; align-items: center; width: 100%; max-width: 64px; min-height: 24px; border-radius: 999px; visibility: hidden; color: var(--color-accent-text); }
+  .range-slot[data-selected="true"] .range-step { visibility: visible; }
+  .range-select:hover, .range-step:hover { background: var(--hover-tint); }
+  .range-bar button:focus-visible { outline-offset: 0; }
+  @media (prefers-reduced-motion: reduce) { .range-slot { transition: none; } }
   @media (max-width: 600px) {
     .price-header { display: block; position: relative; }
     .current-price { font-size: clamp(1.875rem, 10vw, 3.1rem); }
