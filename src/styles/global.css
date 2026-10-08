@@ -223,16 +223,7 @@ html.dark .hero-copy h1 em { color: var(--color-accent); }
 .stage-grid { position: absolute; inset: 5% -12%; background-image: linear-gradient(var(--color-divider) 1px, transparent 1px), linear-gradient(90deg, var(--color-divider) 1px, transparent 1px); background-size: 56px 56px; opacity: .42; mask-image: radial-gradient(ellipse, #000 15%, transparent 68%); z-index: -2; }
 .orbit { position: absolute; width: 460px; aspect-ratio: 1; border: 1px solid rgb(var(--color-ink-rgb) / .10); border-radius: 50%; z-index: -1; transform: rotate(-22deg) scaleX(.95); }
 .orbit-two { width: 570px; border-color: rgb(var(--color-ink-rgb) / .06); }
-.orbit-one::before { content: ''; position: absolute; width: 8px; height: 8px; border-radius: 50%; background: var(--color-accent); top: 17%; left: 11%; box-shadow: 0 0 0 7px var(--color-accent-soft); }
-.orbit-label { position: absolute; top: 7%; right: 6%; color: var(--color-accent); opacity: .14; font-size: 6rem; line-height: 1; font-weight: 600; transform: rotate(12deg); z-index: -1; }
 .hero-device-position { width: 282px; transform: translateY(calc(var(--scene-progress, 0) * -24px)) rotate(7deg); }
-.floating-note { position: absolute; display: flex; align-items: center; gap: .75rem; background: var(--nav-bg); border: 1px solid var(--color-divider); border-radius: 16px; padding: .9375rem 1.125rem; backdrop-filter: blur(16px); box-shadow: 0 8px 32px -8px var(--phone-shadow); font-size: .875rem; font-weight: 600; max-width: 290px; }
-.note-privacy { bottom: 12%; left: -7%; transform: translateY(calc(var(--scene-progress, 0) * 16px)); }
-.note-icon { display: flex; justify-content: center; align-items: center; width: 40px; height: 40px; background: var(--color-accent-soft); color: var(--color-accent-text); border-radius: 12px; flex-shrink: 0; }
-.floating-note small { display: block; margin-top: .2rem; color: var(--color-ink-muted); font-size: .75rem; font-weight: 400; line-height: 1.45; }
-.theme-indicator { position: absolute; display: flex; align-items: center; gap: 6px; bottom: 0; }
-.theme-indicator span { width: 5px; height: 5px; border-radius: 4px; background: var(--color-divider); transition: width .35s var(--ease-out), background .35s; }
-.theme-indicator span.active { width: 22px; background: var(--color-accent); }
 .hero-benefits { display: grid; grid-template-columns: 1fr 1fr; gap: 4rem; padding-bottom: 4rem; }
 .feature-card { height: 100%; padding: 1.75rem; border: 1px solid var(--color-divider); border-radius: 20px; background: var(--color-surface); }
 .feature-card > div { display: flex; align-items: center; gap: .875rem; }
@@ -313,8 +304,6 @@ html.dark .hero-copy h1 em { color: var(--color-accent); }
   .hero-copy h1 { font-size: clamp(3.5rem, 6.5vw, 4.65rem); }
   .hero-stage { height: 595px; }
   .hero-device-position { width: 248px; }
-  .note-privacy { left: -8%; bottom: 12%; max-width: 245px; }
-  .floating-note { padding: .75rem; font-size: .8125rem; }
   .prices-stage { height: 640px; }
   .prices-device-position { width: 254px; }
   .privacy-panel { gap: 2rem; grid-template-columns: .8fr 1.3fr; }
@@ -339,10 +328,8 @@ html.dark .hero-copy h1 em { color: var(--color-accent); }
   .hero-actions .button { padding-inline: 1.1rem; min-height: 50px; font-size: .875rem; }
   .hero-stage { height: 620px; margin-top: 1.5rem; }
   .hero-device-position { width: 258px; }
-  .note-privacy { left: max(0px, calc(50% - 205px)); bottom: 12%; }
   .orbit { width: 390px; }
   .orbit-two { width: 490px; }
-  .orbit-label { right: 8%; }
   .hero-benefits { gap: 2rem; padding-bottom: 4rem; }
   .hero-benefits .feature-card > div { flex-direction: column; align-items: flex-start; }
   .hero-benefits .feature-body { margin-left: 0; margin-top: .75rem; }
@@ -379,8 +366,6 @@ html.dark .hero-copy h1 em { color: var(--color-accent); }
   .hero-stage { height: 565px; }
   .hero-device-position { width: 236px; }
   .hero-trust { font-size: .8125rem; gap: .5rem 1rem; }
-  .floating-note { max-width: 235px; }
-  .note-privacy { bottom: 10%; }
   .hero-benefits { grid-template-columns: 1fr; gap: 1.5rem; }
   .hero-benefits .feature-card > div { flex-direction: row; align-items: center; }
   .hero-benefits .feature-body { margin-left: 54px; margin-top: .375rem; }
@@ -399,7 +384,6 @@ html.dark .hero-copy h1 em { color: var(--color-accent); }
   .motion-ready [data-reveal] { opacity: 1; transform: none; }
   .hero-device-position { transform: rotate(7deg); }
   .prices-device-position { transform: rotate(-5deg); }
-  .note-privacy { transform: none; }
 }
 
 .skip-link { position: fixed; top: 1rem; left: 1rem; z-index: 100; padding: .75rem 1rem; border-radius: 12px; background: var(--color-accent); color: #1F1B14; font-weight: 600; transform: translateY(-180%); }

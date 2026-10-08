@@ -35,17 +35,11 @@ const altSuffix = t.hero.altSuffix;
     </div>
     <div class="hero-stage" data-reveal="scale">
       <div class="stage-grid" aria-hidden="true"></div>
-      <div class="orbit orbit-one" aria-hidden="true"></div>
+      <div class="orbit" aria-hidden="true"></div>
       <div class="orbit orbit-two" aria-hidden="true"></div>
-      <div class="orbit-label" aria-hidden="true">₿</div>
       <div class="hero-device-position">
         <Phone src={screenSrcs[0]} alt={t.hero.phoneAria} id="hero-phone" class="hero-device" interactive eager />
       </div>
-      <div class="floating-note note-privacy">
-        <span class="note-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="10" width="14" height="11" rx="3"/><path d="M8 10V7a4 4 0 0 1 8 0v3m-4 4v3" /></svg></span>
-        <span>{t.privacy.cards[2].title}<small>{t.privacy.sub}</small></span>
-      </div>
-      <div class="theme-indicator" aria-hidden="true"><span></span><span></span><span></span><span></span></div>
     </div>
   </div>
   <div class="site-container hero-benefits" data-reveal-stagger="120">
@@ -60,7 +54,6 @@ const altSuffix = t.hero.altSuffix;
     const screen = phone.querySelector('img');
     const nextScreen = phone.querySelector('.device-next');
     const reduce = window.matchMedia('(prefers-reduced-motion: reduce)');
-    const dots = document.querySelectorAll('.theme-indicator span');
     let current = document.documentElement.classList.contains('dark') ? 2 : 0;
     let picked = false;
     let version = 0;
@@ -69,7 +62,6 @@ const altSuffix = t.hero.altSuffix;
       const token = ++version;
       const src = screenSrcs[index];
       const alt = `${altPrefix}${themeLabels[index]}${altSuffix}`;
-      dots.forEach((dot, i) => dot.classList.toggle('active', i === index));
       nextScreen.getAnimations().forEach((animation) => animation.cancel());
       const show = () => {
         if (token !== version) return;
