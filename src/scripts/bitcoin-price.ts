@@ -1,4 +1,4 @@
-import { DAY_MS, chartPaths, mergeHistory, parseHistory, type HistoryPoint } from '../lib/bitcoin-chart';
+import { DAY_MS, chartPaths, mergeHistory, nearestHistoryIndex, parseHistory, type HistoryPoint } from '../lib/bitcoin-chart';
 import { createPriceChangeFormatter } from '../lib/bitcoin-price-change';
 import type { TrackerCopy } from '../i18n/tracker';
 import type { RangeCopy } from '../i18n/ranges';
@@ -17,6 +17,10 @@ function startTracker(root: HTMLElement) {
   const chart = root.querySelector<SVGSVGElement>('[data-chart]')!;
   const line = root.querySelector<SVGPathElement>('[data-chart-line]')!;
   const area = root.querySelector<SVGPathElement>('[data-chart-area]')!;
+  const marker = root.querySelector<SVGGElement>('[data-chart-marker]')!;
+  const markerLine = root.querySelector<SVGLineElement>('[data-chart-marker-line]')!;
+  const markerDot = root.querySelector<SVGCircleElement>('[data-chart-marker-dot]')!;
+  const markerGradient = root.querySelector<SVGLinearGradientElement>('[data-chart-marker-gradient]')!;
   const historyStatus = root.querySelector<HTMLElement>('[data-history-status]')!;
   const money = new Intl.NumberFormat(locale, { style: 'currency', currency: 'USD', minimumFractionDigits: 0, maximumFractionDigits: 0 });
   const date = new Intl.DateTimeFormat(locale, { year: 'numeric', month: 'short', day: 'numeric', timeZone: 'UTC' });
@@ -31,6 +35,10 @@ function startTracker(root: HTMLElement) {
 
   let history: HistoryPoint[] = [];
   let livePoint: HistoryPoint | undefined;
+  let plottedPoints: HistoryPoint[] = [];
+  let plottedPositions: { x: number; y: number }[] = [];
+  let selectionRatio: number | undefined;
+  let activePointer: number | undefined;
   let socket: WebSocket | undefined;
   let reconnectTimer: ReturnType<typeof setTimeout> | undefined;
   let attempts = 0;
@@ -59,7 +67,6 @@ function startTracker(root: HTMLElement) {
     chart.setAttribute('aria-busy', String(loading));
     historyStatus.hidden = !loading && !unavailable;
     historyStatus.textContent = loading ? r.loading : window ? r.unavailable : t.history;
-    priceChangeEl.textContent = formatPriceChange(points);
     const { width, height } = chart.getBoundingClientRect();
     if (!width || !height) return;
     // Draw at actual CSS size so the app's line thickness and 5% padding match.
@@ -67,11 +74,94 @@ function startTracker(root: HTMLElement) {
     const paths = chartPaths(points, width, height);
     line.setAttribute('d', paths.line);
     area.setAttribute('d', paths.area);
+    plottedPoints = points;
+    plottedPositions = paths.positions;
+    markerLine.setAttribute('y2', String(height));
+    markerGradient.setAttribute('y2', String(height));
+    updatePriceDisplay();
     const label = rangeLabel(selected);
     const formatter = window ? dateTime : date;
     const period = points.length ? `${formatter.format(points[0].time)} — ${formatter.format(points.at(-1)!.time)}` : loading ? r.loading : r.unavailable;
     root.querySelector<SVGDescElement>('[data-chart-description]')!.textContent = `${label}: ${period}. ${t.scale}.`;
   }
+
+  function selectionIndex() {
+    if (selectionRatio === undefined || plottedPoints.length < 2) return -1;
+    const start = plottedPoints[0].time;
+    const end = plottedPoints.at(-1)!.time;
+    return nearestHistoryIndex(plottedPoints, start + selectionRatio * (end - start));
+  }
+
+  function updatePriceDisplay() {
+    const index = selectionIndex();
+    const point = plottedPoints[index];
+    const position = plottedPositions[index];
+    if (point && position) {
+      markerLine.setAttribute('x1', String(position.x));
+      markerLine.setAttribute('x2', String(position.x));
+      markerDot.setAttribute('cx', String(position.x));
+      markerDot.setAttribute('cy', String(position.y));
+      marker.setAttribute('visibility', 'visible');
+      priceEl.textContent = money.format(point.price);
+      priceEl.removeAttribute('aria-label');
+      const formatter = candleWindow(selected) ? dateTime : date;
+      priceChangeEl.textContent = `${formatter.format(point.time)}${candleWindow(selected) ? ' UTC' : ''}`;
+      return;
+    }
+    marker.setAttribute('visibility', 'hidden');
+    priceEl.textContent = livePoint ? money.format(livePoint.price) : '—';
+    if (livePoint) priceEl.removeAttribute('aria-label');
+    else priceEl.setAttribute('aria-label', t.unavailable);
+    priceChangeEl.textContent = formatPriceChange(plottedPoints);
+  }
+
+  function clearSelection() {
+    selectionRatio = undefined;
+    updatePriceDisplay();
+  }
+
+  function selectAtPointer(event: PointerEvent) {
+    const bounds = chart.getBoundingClientRect();
+    if (!bounds.width) return;
+    selectionRatio = Math.max(0, Math.min(1, (event.clientX - bounds.left) / bounds.width));
+    updatePriceDisplay();
+  }
+
+  chart.addEventListener('pointerdown', (event) => {
+    if (!event.isPrimary || event.button !== 0) return;
+    activePointer = event.pointerId;
+    chart.setPointerCapture(event.pointerId);
+    selectAtPointer(event);
+  });
+  chart.addEventListener('pointermove', (event) => {
+    if (event.pointerId === activePointer) selectAtPointer(event);
+  });
+  chart.addEventListener('pointerleave', () => {
+    if (activePointer === undefined) clearSelection();
+  });
+  chart.addEventListener('pointerup', (event) => {
+    if (event.pointerId !== activePointer) return;
+    activePointer = undefined;
+    chart.releasePointerCapture(event.pointerId);
+    clearSelection();
+  });
+  chart.addEventListener('lostpointercapture', () => {
+    if (activePointer !== undefined) { activePointer = undefined; clearSelection(); }
+  });
+  chart.addEventListener('pointercancel', () => { activePointer = undefined; clearSelection(); });
+  chart.addEventListener('blur', clearSelection);
+  chart.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape') { clearSelection(); return; }
+    if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key) || plottedPoints.length < 2) return;
+    event.preventDefault();
+    const current = selectionIndex();
+    const index = event.key === 'Home' ? 0 : event.key === 'End' ? plottedPoints.length - 1
+      : current < 0 ? (event.key === 'ArrowLeft' ? plottedPoints.length - 1 : 0)
+      : Math.max(0, Math.min(plottedPoints.length - 1, current + (event.key === 'ArrowLeft' ? -1 : 1)));
+    const start = plottedPoints[0].time;
+    selectionRatio = (plottedPoints[index].time - start) / Math.max(plottedPoints.at(-1)!.time - start, 1);
+    updatePriceDisplay();
+  });
 
   function rangeLabel(range: BitcoinRange) {
     if (range.unit === 'all') return t.all;
@@ -99,6 +189,7 @@ function startTracker(root: HTMLElement) {
   }
 
   function selectRange(unit: BitcoinRange['unit']) {
+    clearSelection();
     selected = unit === 'all' ? { unit } : { unit, count: counts[unit] };
     updateRangeBar();
     void refreshCandles();
@@ -132,8 +223,7 @@ function startTracker(root: HTMLElement) {
   function applyPrice(value: number) {
     if (!Number.isFinite(value) || value <= 0) return;
     livePoint = { time: Date.now(), price: value };
-    priceEl.textContent = money.format(value);
-    priceEl.removeAttribute('aria-label');
+    updatePriceDisplay();
     scheduleDraw();
   }
 
@@ -203,7 +293,7 @@ function startTracker(root: HTMLElement) {
         setStatus('delayed');
       }
     } catch {
-      if (!livePoint) priceEl.setAttribute('aria-label', t.unavailable);
+      if (!livePoint && selectionIndex() < 0) priceEl.setAttribute('aria-label', t.unavailable);
     } finally {
       polling = false;
     }
