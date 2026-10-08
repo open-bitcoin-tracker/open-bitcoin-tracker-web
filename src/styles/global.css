@@ -288,13 +288,6 @@ html.dark .hero-copy h1 em { color: var(--color-accent); }
 .privacy-card:last-child .feature-card { padding-bottom: 4rem; }
 .source-link { position: absolute; bottom: 1.75rem; left: 1.75rem; }
 
-.kao-section { padding-bottom: 6rem; }
-.kao-panel { display: grid; grid-template-columns: .7fr 1.5fr; align-items: start; gap: 3rem; padding: 2rem 2.5rem; border: 1px solid var(--color-divider); border-radius: 20px; }
-.kao-title { display: flex; align-items: center; gap: .75rem; }
-.kao-title h2 { font-size: 1rem; font-weight: 600; letter-spacing: -.025em; }
-.kao-icon { display: inline-flex; color: var(--color-accent-text); }
-.kao-panel p { color: var(--color-ink-muted); font-size: 1rem; line-height: 1.75; }
-.kao-panel .text-link { margin-top: 1rem; }
 .footer-section .footer-brand { max-width: 33rem; }
 .footer-section .footer-link { padding-block: .2rem; }
 
@@ -374,7 +367,6 @@ html.dark .hero-copy h1 em { color: var(--color-accent); }
   .privacy-symbol svg { width: 52px; height: 52px; }
   .privacy-intro .section-description { margin-top: 1rem; }
   .privacy-intro .text-link { margin-top: 1.25rem; }
-  .kao-panel { grid-template-columns: 1fr; gap: 1.25rem; padding: 1.75rem; }
 }
 @media (max-width: 480px) {
   .brand-full { display: none; }
@@ -400,7 +392,6 @@ html.dark .hero-copy h1 em { color: var(--color-accent); }
   .privacy-cards .feature-card { padding: 1.5rem; }
   .privacy-card:last-child .feature-card { padding-bottom: 4rem; }
   .source-link { left: 1.5rem; bottom: 1.5rem; }
-  .kao-section { padding-bottom: 4rem; }
 }
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
