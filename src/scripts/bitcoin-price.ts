@@ -1,4 +1,5 @@
 import { DAY_MS, chartPaths, mergeHistory, parseHistory, type HistoryPoint } from '../lib/bitcoin-chart';
+import { createPriceChangeFormatter } from '../lib/bitcoin-price-change';
 import type { TrackerCopy } from '../i18n/tracker';
 import type { RangeCopy } from '../i18n/ranges';
 import { candleWindow, historyForRange, parseCandles, rangeSlots, stepRange, type BitcoinRange, type RangeUnit } from '../lib/bitcoin-range';
@@ -11,6 +12,8 @@ function startTracker(root: HTMLElement) {
   const r: RangeCopy = JSON.parse(root.dataset.rangeCopy!);
   const locale = root.dataset.locale || 'en';
   const priceEl = root.querySelector<HTMLElement>('[data-price]')!;
+  const priceChangeEl = root.querySelector<HTMLElement>('[data-price-change]')!;
+  const formatPriceChange = createPriceChangeFormatter(locale);
   const chart = root.querySelector<SVGSVGElement>('[data-chart]')!;
   const line = root.querySelector<SVGPathElement>('[data-chart-line]')!;
   const area = root.querySelector<SVGPathElement>('[data-chart-area]')!;
@@ -56,6 +59,7 @@ function startTracker(root: HTMLElement) {
     chart.setAttribute('aria-busy', String(loading));
     historyStatus.hidden = !loading && !unavailable;
     historyStatus.textContent = loading ? r.loading : window ? r.unavailable : t.history;
+    priceChangeEl.textContent = formatPriceChange(points);
     const { width, height } = chart.getBoundingClientRect();
     if (!width || !height) return;
     // Draw at actual CSS size so the app's line thickness and 5% padding match.

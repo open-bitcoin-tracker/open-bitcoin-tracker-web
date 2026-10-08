@@ -16,7 +16,10 @@ const lastDate = new Intl.DateTimeFormat(lang, { year: 'numeric', month: 'short'
 
 <section class="bitcoin-tracker" data-bitcoin-tracker data-copy={JSON.stringify(t)} data-range-copy={JSON.stringify(r)} data-locale={lang} aria-label={t.price}>
   <div class="price-header">
-    <p class="current-price" data-price aria-label={t.unavailable}>—</p>
+    <div>
+      <p class="current-price" data-price aria-label={t.unavailable}>—</p>
+      <p class="price-change" data-price-change></p>
+    </div>
   </div>
 
   <p class="history-status" data-history-status role="status" hidden>{t.history}</p>
@@ -68,6 +71,7 @@ const lastDate = new Intl.DateTimeFormat(lang, { year: 'numeric', month: 'short'
   .price-header, figcaption, .history-status { padding-inline: var(--tracker-gutter, 1rem); }
   .price-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem; }
   .current-price { font-size: clamp(3.1rem, 7.5vw, 6rem); font-weight: 700; line-height: 1.1; letter-spacing: -.06em; font-variant-numeric: tabular-nums; }
+  .price-change { min-height: 1.5em; margin-top: .375rem; color: var(--color-ink-muted); font-size: clamp(.9375rem, 1.5vw, 1.125rem); font-variant-numeric: tabular-nums; }
   .price-history { display: flex; flex-direction: column; flex: 1; margin: 1rem 0 0; }
   /* Fill all remaining viewport space; keep a usable plot on short screens. */
   .chart-plot { position: relative; flex: 1; min-height: 180px; }

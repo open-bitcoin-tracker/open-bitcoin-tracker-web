@@ -24,6 +24,8 @@ The homepage shows the full daily BTC/USD history since July 2010, using the And
 
 The range bar overlays the lower part of the chart and mirrors the app's days, weeks, months, years, and All slots. Select a slot, then use its up/down chevrons (or the up/down arrow keys on its label) to cycle through 1–7 days, 1–4 weeks, 1–12 months, or 1–15 years. Each slot keeps its count while switching ranges. Days use 15-minute Kraken candles; weeks and one month use hourly candles; longer ranges use the daily history. Intraday requests are cached by interval and refreshed every minute while selected.
 
+Below the live price, the selected range's signed dollar change and percentage use the first and last plotted prices, including the live price when it connects to the chart. The subtitle matches the Android app's whole-dollar amounts and compact percentages, and stays blank until at least two prices are available.
+
 The existing Android app landing page lives at `/android-app/`. Both pages are available in all ten supported languages.
 
 Run `npm install` and `npm run dev` for a local preview, or `npm run build` for the static production output.
