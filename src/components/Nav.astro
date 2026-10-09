@@ -7,9 +7,10 @@ import { tracker } from '../i18n/tracker';
 const t = useTranslations(Astro.currentLocale);
 const lang = resolveLang(Astro.currentLocale);
 const links = tracker[lang];
-const isPriceChart = stripLocale(Astro.url.pathname) === '';
+const pagePath = stripLocale(Astro.url.pathname);
+const alignWithPrice = pagePath === '' || pagePath === 'android-app';
 ---
-<nav class:list={['floating-nav', { 'floating-nav--chart': isPriceChart }]} aria-label={t.nav.mainAria}>
+<nav class:list={['floating-nav', { 'floating-nav--price-aligned': alignWithPrice }]} aria-label={t.nav.mainAria}>
   <NavMenu>
     <PageTabs />
     <a href={getRelativeLocaleUrl(lang, 'about')}>{links.about}</a>
@@ -20,5 +21,5 @@ const isPriceChart = stripLocale(Astro.url.pathname) === '';
 
 <style>
   .floating-nav { --nav-top: max(1rem, env(safe-area-inset-top, 0px)); position: fixed; top: var(--nav-top); right: clamp(1rem, 3vw, 4rem); z-index: 50; }
-  .floating-nav--chart { --nav-top: calc(max(1rem, env(safe-area-inset-top, 0px)) + var(--live-price-font-size) * .55 - 24px); }
+  .floating-nav--price-aligned { --nav-top: calc(max(1rem, env(safe-area-inset-top, 0px)) + var(--live-price-font-size) * .55 - 24px); }
 </style>
