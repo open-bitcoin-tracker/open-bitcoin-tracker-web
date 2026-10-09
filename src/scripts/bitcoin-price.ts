@@ -1,4 +1,5 @@
-import { DAY_MS, chartPaths, mergeHistory, nearestHistoryIndex, parseHistory, type ChartScale, type HistoryPoint } from '../lib/bitcoin-chart';
+import { DAY_MS, chartPaths, chartViewport, mergeHistory, nearestHistoryIndex, parseHistory, visibleHistory, type ChartScale, type HistoryPoint } from '../lib/bitcoin-chart';
+import { ChartMotion } from '../lib/bitcoin-chart-motion';
 import { createPriceChangeFormatter } from '../lib/bitcoin-price-change';
 import type { TrackerCopy } from '../i18n/tracker';
 import type { RangeCopy } from '../i18n/ranges';
@@ -17,6 +18,7 @@ function startTracker(root: HTMLElement) {
   const chart = root.querySelector<SVGSVGElement>('[data-chart]')!;
   const line = root.querySelector<SVGPathElement>('[data-chart-line]')!;
   const area = root.querySelector<SVGPathElement>('[data-chart-area]')!;
+  const fillGradient = root.querySelector<SVGLinearGradientElement>('[data-chart-fill-gradient]')!;
   const marker = root.querySelector<SVGGElement>('[data-chart-marker]')!;
   const markerLine = root.querySelector<SVGLineElement>('[data-chart-marker-line]')!;
   const markerDot = root.querySelector<SVGCircleElement>('[data-chart-marker-dot]')!;
@@ -51,7 +53,37 @@ function startTracker(root: HTMLElement) {
   let polling = false;
   let historyLoading = false;
   let paintFrame = 0;
+  let motionFrame = 0;
+  let plottedRangeKey = '';
+  const motion = new ChartMotion();
+  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
   let feedState: 'connecting' | 'live' | 'delayed' | 'offline' = 'connecting';
+
+  function rangeKey() {
+    return selected.unit === 'all' ? 'all' : `${selected.unit}:${selected.count}`;
+  }
+
+  function paintMotion(now: number) {
+    const scene = motion.sample(now);
+    if (!scene) return;
+    const { width, height } = chart.getBoundingClientRect();
+    if (!width || !height) return;
+    chart.setAttribute('viewBox', `0 0 ${width} ${height}`);
+    const paths = chartPaths(visibleHistory(scene.points, scene.viewport), width, height, scene.scale, scene.viewport);
+    line.setAttribute('d', paths.line);
+    area.setAttribute('d', paths.area);
+    line.style.opacity = area.style.opacity = String(motion.opacity);
+    fillGradient.setAttribute('y2', String(height));
+    markerLine.setAttribute('y2', String(height));
+    markerGradient.setAttribute('y2', String(height));
+    if (!motion.animating) {
+      plottedPositions = chartPaths(plottedPoints, width, height, scene.scale, scene.viewport).positions;
+      updatePriceDisplay();
+    }
+    if (motion.animating && !motionFrame && !document.hidden && !stopped) {
+      motionFrame = requestAnimationFrame((time) => { motionFrame = 0; paintMotion(time); });
+    }
+  }
 
   function setStatus(state: 'connecting' | 'live' | 'delayed' | 'offline') {
     feedState = state;
@@ -70,28 +102,33 @@ function startTracker(root: HTMLElement) {
     chart.setAttribute('aria-busy', String(loading));
     historyStatus.hidden = !loading && !unavailable;
     historyStatus.textContent = loading ? r.loading : window ? r.unavailable : t.history;
-    const { width, height } = chart.getBoundingClientRect();
-    if (!width || !height) return;
-    // Draw at actual CSS size so the app's line thickness and 5% padding match.
-    chart.setAttribute('viewBox', `0 0 ${width} ${height}`);
-    const paths = chartPaths(points, width, height, scale);
-    line.setAttribute('d', paths.line);
-    area.setAttribute('d', paths.area);
-    plottedPoints = points;
-    plottedPositions = paths.positions;
-    markerLine.setAttribute('y2', String(height));
-    markerGradient.setAttribute('y2', String(height));
-    updatePriceDisplay();
     const label = rangeLabel(selected);
     const formatter = window ? dateTime : date;
     const period = points.length ? `${formatter.format(points[0].time)} — ${formatter.format(points.at(-1)!.time)}` : loading ? r.loading : r.unavailable;
     const scaleLabel = scale === 'logarithmic' ? t.scale : t.linearScale;
     root.querySelector<SVGTitleElement>('[data-chart-title]')!.textContent = `${t.price} — ${scaleLabel}`;
     root.querySelector<SVGDescElement>('[data-chart-description]')!.textContent = `${label}: ${period}. ${scaleLabel}.`;
+    // Keep the outgoing curve while a new candle interval is loading.
+    if (loading && points.length < 2) return;
+    plottedPoints = points;
+    plottedRangeKey = rangeKey();
+    if (points.length < 2) {
+      motion.clear();
+      line.setAttribute('d', '');
+      area.setAttribute('d', '');
+      plottedPositions = [];
+    } else {
+      // Long ranges share the full curve; only the camera window changes.
+      const renderPoints = points.at(-1) === livePoint ? [...source, livePoint!] : source;
+      const now = performance.now();
+      motion.update({ points: renderPoints, viewport: chartViewport(points, scale), scale, rangeKey: plottedRangeKey }, now, reduceMotion.matches || document.hidden);
+      paintMotion(now);
+    }
+    updatePriceDisplay();
   }
 
   function selectionIndex() {
-    if (selectionRatio === undefined || plottedPoints.length < 2) return -1;
+    if (selectionRatio === undefined || plottedPoints.length < 2 || motion.animating || plottedRangeKey !== rangeKey()) return -1;
     const start = plottedPoints[0].time;
     const end = plottedPoints.at(-1)!.time;
     return nearestHistoryIndex(plottedPoints, start + selectionRatio * (end - start));
@@ -126,6 +163,7 @@ function startTracker(root: HTMLElement) {
   }
 
   function selectAtPointer(event: PointerEvent) {
+    if (motion.animating || plottedRangeKey !== rangeKey()) return;
     const bounds = chart.getBoundingClientRect();
     if (!bounds.width) return;
     selectionRatio = Math.max(0, Math.min(1, (event.clientX - bounds.left) / bounds.width));
@@ -157,7 +195,7 @@ function startTracker(root: HTMLElement) {
   chart.addEventListener('blur', clearSelection);
   chart.addEventListener('keydown', (event) => {
     if (event.key === 'Escape') { clearSelection(); return; }
-    if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key) || plottedPoints.length < 2) return;
+    if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key) || plottedPoints.length < 2 || motion.animating || plottedRangeKey !== rangeKey()) return;
     event.preventDefault();
     const current = selectionIndex();
     const index = event.key === 'Home' ? 0 : event.key === 'End' ? plottedPoints.length - 1
@@ -233,8 +271,18 @@ function startTracker(root: HTMLElement) {
   });
 
   function scheduleDraw() {
-    if (!paintFrame) paintFrame = requestAnimationFrame(draw);
+    if (!paintFrame && !stopped) paintFrame = requestAnimationFrame(draw);
   }
+
+  function onMotionPreferenceChange() {
+    if (reduceMotion.matches) {
+      motion.finish();
+      cancelAnimationFrame(motionFrame);
+      motionFrame = 0;
+      paintMotion(performance.now());
+    }
+  }
+  reduceMotion.addEventListener('change', onMotionPreferenceChange);
 
   function applyPrice(value: number) {
     if (!Number.isFinite(value) || value <= 0) return;
@@ -380,10 +428,17 @@ function startTracker(root: HTMLElement) {
   window.addEventListener('offline', () => { setStatus('offline'); socket?.close(); });
   window.addEventListener('online', () => { connect(); void pollPrice(); if (history.length) void refreshHistory(); void refreshCandles(); });
   document.addEventListener('visibilitychange', () => {
-    if (!document.hidden && !stopped) { connect(); void pollPrice(); if (history.length) void refreshHistory(); void refreshCandles(); }
+    if (document.hidden) {
+      motion.finish();
+      cancelAnimationFrame(motionFrame);
+      motionFrame = 0;
+    } else if (!stopped) { scheduleDraw(); connect(); void pollPrice(); if (history.length) void refreshHistory(); void refreshCandles(); }
   });
   window.addEventListener('pagehide', () => {
     stopped = true;
+    cancelAnimationFrame(paintFrame);
+    cancelAnimationFrame(motionFrame);
+    reduceMotion.removeEventListener('change', onMotionPreferenceChange);
     clearTimeout(reconnectTimer);
     clearInterval(watchdog);
     clearInterval(pollTimer);

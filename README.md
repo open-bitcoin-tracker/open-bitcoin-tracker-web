@@ -26,6 +26,8 @@ The range bar overlays the lower part of the chart and mirrors the app's days, w
 
 Below the live price, the selected range's signed dollar change and percentage use the first and last plotted prices, including the live price when it connects to the chart. The subtitle matches the Android app's whole-dollar amounts and compact percentages, and stays blank until at least two prices are available.
 
+Range changes match the Android chart's 450 ms camera zoom with cubic easing, keeping the wider curve visible while zooming in. Log/Lin changes fade out for 150 ms, switch scale, then fade back in for 150 ms. Rapid range changes continue from the current camera position, and uncached intraday ranges retain the outgoing chart while candles load. Live ticks and resizing update directly without starting a transition. Scrubbing pauses during transitions, and reduced-motion preferences make changes immediate.
+
 Press and drag on the chart to scrub through prices. A dashed vertical marker and dot snap to the nearest recorded point, while the top-left price and subtitle show that point's price and date (or time for intraday ranges). Moving the mouse without pressing leaves the chart and live price unchanged. Live updates continue in the background. Releasing the mouse or ending a touch gesture, or changing ranges, restores the live price and range change. The focused chart also supports Left/Right, Home/End, and Escape.
 
 The existing Android app landing page lives at `/android-app/`. Both pages are available in all ten supported languages.
