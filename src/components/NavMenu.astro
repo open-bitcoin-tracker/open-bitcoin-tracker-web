@@ -106,14 +106,11 @@ const t = useTranslations(Astro.currentLocale);
   .nav-menu-panel :global(.theme-toggle) { justify-content: flex-start; cursor: pointer; }
   .nav-menu-panel :global(.lang-current) { display: inline; }
   .nav-menu-panel :global(.lang-caret) { margin-left: auto; }
-  .nav-menu-panel :global(.lang-menu), .nav-menu-panel :global(.download-menu) {
+  .nav-menu-panel :global(.lang-menu) {
     position: static;
     min-width: 0;
     max-height: none;
     margin-top: .25rem;
     box-shadow: none;
-  }
-  @media (max-width: 900px) {
-    .nav-menu-panel :global(.download-dropdown--nav) { display: none; }
   }
 </style>

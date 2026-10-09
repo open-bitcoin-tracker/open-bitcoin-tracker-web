@@ -3,7 +3,6 @@ import { getRelativeLocaleUrl } from 'astro:i18n';
 import { useTranslations, resolveLang, stripLocale } from '../i18n/utils';
 import NavMenu from './NavMenu.astro';
 import PageTabs from './PageTabs.astro';
-import DownloadButton from './DownloadButton.astro';
 import { tracker } from '../i18n/tracker';
 const t = useTranslations(Astro.currentLocale);
 const lang = resolveLang(Astro.currentLocale);
@@ -16,7 +15,6 @@ const isPriceChart = stripLocale(Astro.url.pathname) === '';
     <a href={getRelativeLocaleUrl(lang, 'about')}>{links.about}</a>
     <a href={getRelativeLocaleUrl(lang, 'privacy')}>{links.privacy}</a>
     <a href="https://github.com/open-bitcoin-tracker/open-bitcoin-tracker-web" target="_blank" rel="noopener noreferrer">GitHub</a>
-    <DownloadButton variant="nav" />
   </NavMenu>
 </nav>
 
