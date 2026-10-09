@@ -101,7 +101,7 @@ html.dark {
 }
 
 /* The brand orange stays intact; small accent text uses a darker shade on paper. */
-:root { --color-accent-text: #995000; --ease-out: cubic-bezier(.22, 1, .36, 1); --live-price-font-size: clamp(4rem, 10vw, 8rem); }
+:root { --color-accent-text: #995000; --ease-out: cubic-bezier(.22, 1, .36, 1); --live-price-font-size: clamp(4rem, 10vw, 8rem); --tracker-gutter: clamp(1rem, 3vw, 4rem); --live-price-top: max(var(--tracker-gutter), env(safe-area-inset-top, 0px)); }
 @media (max-width: 600px) {
   :root { --live-price-font-size: clamp(2.5rem, 13vw, 4rem); }
 }
