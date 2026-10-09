@@ -95,19 +95,22 @@ const lastDate = new Intl.DateTimeFormat(lang, { year: 'numeric', month: 'short'
   .range-bar, .scale-toggle { padding: .25rem; border-radius: 999px; background: rgb(var(--color-ink-rgb) / .055); }
   .range-bar { position: relative; display: flex; flex: 1; min-width: 0; align-items: stretch; gap: .25rem; margin: 0; }
   .scale-toggle { flex: 0 0 4rem; font-size: .875rem; color: var(--color-ink-muted); }
-  /* Include the external arrows and their gaps in the hover area. */
-  .range-bar::before { content: ''; position: absolute; inset: -2.5rem -1rem; z-index: -1; }
   .range-pill { position: absolute; left: 0; top: 0; border-radius: 999px; background: var(--color-surface); box-shadow: var(--shadow-card); pointer-events: none; transition: transform 260ms cubic-bezier(.215, .61, .355, 1), width 260ms cubic-bezier(.215, .61, .355, 1), height 260ms cubic-bezier(.215, .61, .355, 1); }
   .range-pill[hidden] { display: none; }
   .range-bar[data-dragging="true"] { cursor: grabbing; }
   .range-bar[data-dragging="true"] .range-pill { box-shadow: var(--shadow-card-hover); transition: none; }
   .range-slot { position: relative; flex: 1; min-width: 0; display: flex; align-items: center; border-radius: 999px; }
   .range-select { width: 100%; min-height: 36px; padding-inline: .25rem; font-size: .875rem; font-variant-numeric: tabular-nums; color: var(--color-ink-muted); border-radius: 999px; transition: color 200ms ease-out, font-weight 200ms ease-out; touch-action: pan-y; user-select: none; -webkit-user-select: none; }
+  /* Equal side columns center each chevron between the label and pill edge. */
+  .range-slot:has(.range-step) { display: grid; grid-template-columns: minmax(0, 1fr) max-content minmax(0, 1fr); }
+  .range-slot:has(.range-step) .range-select { grid-area: 1 / 1 / 2 / -1; display: grid; grid-template-columns: subgrid; align-items: center; padding-inline: 0; }
+  .range-slot:has(.range-step) [data-range-label] { grid-column: 2; }
   .range-slot[data-highlighted="true"] .range-select { color: var(--color-accent-text); font-weight: 700; cursor: grab; }
   .range-bar[data-dragging="true"] .range-select { cursor: grabbing; }
-  .range-step { position: absolute; left: 50%; transform: translateX(-50%); display: flex; justify-content: center; align-items: center; width: 100%; max-width: 64px; height: 28px; border-radius: 999px; visibility: hidden; color: var(--color-accent-text); }
-  .range-step[data-range-step="1"] { bottom: calc(100% + .5rem); }
-  .range-step[data-range-step="-1"] { top: calc(100% + .5rem); }
+  .range-step { grid-row: 1; justify-self: center; z-index: 1; display: flex; justify-content: center; align-items: center; width: 100%; max-width: 20px; height: 100%; border-radius: 999px; visibility: hidden; color: var(--color-accent-text); }
+  .range-step svg { max-width: 100%; }
+  .range-step[data-range-step="1"] { grid-column: 1; }
+  .range-step[data-range-step="-1"] { grid-column: 3; }
   .range-bar:hover .range-slot[data-selected="true"] .range-step,
   .range-bar:has(:focus-visible) .range-slot[data-selected="true"] .range-step { visibility: visible; }
   .range-bar[data-dragging="true"] .range-step { visibility: hidden !important; }
@@ -119,5 +122,6 @@ const lastDate = new Intl.DateTimeFormat(lang, { year: 'numeric', month: 'short'
   @media (prefers-reduced-motion: reduce) { .range-pill, .range-select { transition: none; } }
   @media (max-width: 600px) {
     .price-header { display: block; position: relative; }
+    .range-step { display: none; }
   }
 </style>
