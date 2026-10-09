@@ -4,6 +4,7 @@ import { createPriceChangeFormatter } from '../lib/bitcoin-price-change';
 import type { TrackerCopy } from '../i18n/tracker';
 import type { RangeCopy } from '../i18n/ranges';
 import { candleWindow, historyForRange, parseCandles, rangeSlots, stepRange, type BitcoinRange, type RangeUnit } from '../lib/bitcoin-range';
+import { createRangePill } from './bitcoin-range-pill';
 
 const root = document.querySelector<HTMLElement>('[data-bitcoin-tracker]');
 if (root) startTracker(root);
@@ -220,7 +221,7 @@ function startTracker(root: HTMLElement) {
       button.setAttribute('aria-pressed', String(active));
       button.setAttribute('aria-label', rangeLabel(unit === 'all' ? { unit } : { unit, count: counts[unit] }));
       if (unit === 'all') continue;
-      button.textContent = `${counts[unit]}${r.suffixes[unit]}`;
+      button.querySelector<HTMLElement>('[data-range-label]')!.textContent = `${counts[unit]}${r.suffixes[unit]}`;
       for (const stepButton of slot.querySelectorAll<HTMLButtonElement>('[data-range-step]')) {
         const step = Number(stepButton.dataset.rangeStep);
         const next = rangeLabel({ unit, count: stepRange(unit, counts[unit], step) });
@@ -229,6 +230,7 @@ function startTracker(root: HTMLElement) {
         stepButton.setAttribute('aria-hidden', String(!active));
       }
     }
+    rangePill.select(selected.unit);
   }
 
   function selectRange(unit: BitcoinRange['unit']) {
@@ -239,6 +241,7 @@ function startTracker(root: HTMLElement) {
     scheduleDraw();
   }
 
+  const rangePill = createRangePill(rangeBar, selectRange);
   rangeBar.addEventListener('click', (event) => {
     const button = (event.target as Element).closest<HTMLButtonElement>('button');
     if (!button) return;
@@ -439,6 +442,7 @@ function startTracker(root: HTMLElement) {
     cancelAnimationFrame(paintFrame);
     cancelAnimationFrame(motionFrame);
     reduceMotion.removeEventListener('change', onMotionPreferenceChange);
+    rangePill.destroy();
     clearTimeout(reconnectTimer);
     clearInterval(watchdog);
     clearInterval(pollTimer);
