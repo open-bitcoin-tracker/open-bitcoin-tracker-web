@@ -1,6 +1,6 @@
 ---
 import { getRelativeLocaleUrl } from 'astro:i18n';
-import { useTranslations, resolveLang } from '../i18n/utils';
+import { useTranslations, resolveLang, stripLocale } from '../i18n/utils';
 import NavMenu from './NavMenu.astro';
 import PageTabs from './PageTabs.astro';
 import DownloadButton from './DownloadButton.astro';
@@ -8,31 +8,19 @@ import { tracker } from '../i18n/tracker';
 const t = useTranslations(Astro.currentLocale);
 const lang = resolveLang(Astro.currentLocale);
 const links = tracker[lang];
-const homeHref = getRelativeLocaleUrl(lang, '');
+const isPriceChart = stripLocale(Astro.url.pathname) === '';
 ---
-<header class="nav-header">
-  <nav class="site-container site-nav nav-inner" aria-label={t.nav.mainAria}>
-    <a href={homeHref} class="nav-brand" aria-label="Open Bitcoin Tracker">
-      <img src="/app-icon.png" width="36" height="36" alt="" />
-      <span class="brand-full">Open Bitcoin Tracker</span><span class="brand-short" aria-hidden="true">OBT</span>
-    </a>
-    <div class="nav-actions page-actions">
-      <PageTabs />
-      <NavMenu>
-        <a href={getRelativeLocaleUrl(lang, 'about')}>{links.about}</a>
-        <a href={getRelativeLocaleUrl(lang, 'privacy')}>{links.privacy}</a>
-        <a href="https://github.com/open-bitcoin-tracker/open-bitcoin-tracker-web" target="_blank" rel="noopener noreferrer">GitHub</a>
-        <DownloadButton variant="nav" />
-      </NavMenu>
-    </div>
-  </nav>
-  <div class="reading-progress" aria-hidden="true"></div>
-</header>
+<nav class:list={['floating-nav', { 'floating-nav--chart': isPriceChart }]} aria-label={t.nav.mainAria}>
+  <NavMenu>
+    <PageTabs />
+    <a href={getRelativeLocaleUrl(lang, 'about')}>{links.about}</a>
+    <a href={getRelativeLocaleUrl(lang, 'privacy')}>{links.privacy}</a>
+    <a href="https://github.com/open-bitcoin-tracker/open-bitcoin-tracker-web" target="_blank" rel="noopener noreferrer">GitHub</a>
+    <DownloadButton variant="nav" />
+  </NavMenu>
+</nav>
 
 <style>
-  .site-nav.nav-inner { display: grid; grid-template-columns: auto minmax(0, 1fr); max-width: none; padding-inline: clamp(1rem, 3vw, 4rem); }
-  .nav-actions.page-actions { flex-wrap: nowrap; min-width: 0; gap: clamp(.5rem, 2vw, 1.25rem); }
-  @media (max-width: 480px) {
-    .site-nav.nav-inner { gap: .5rem; }
-  }
+  .floating-nav { --nav-top: max(1rem, env(safe-area-inset-top, 0px)); position: fixed; top: var(--nav-top); right: clamp(1rem, 3vw, 4rem); z-index: 50; }
+  .floating-nav--chart { --nav-top: calc(max(1rem, env(safe-area-inset-top, 0px)) + var(--live-price-font-size) * .55 - 24px); }
 </style>

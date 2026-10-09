@@ -33,8 +33,6 @@ document.querySelectorAll<HTMLElement>('[data-scene]').forEach((scene) => sceneO
 let frame = 0;
 function update() {
   frame = 0;
-  const available = document.documentElement.scrollHeight - window.innerHeight;
-  root.style.setProperty('--reading-progress', String(available > 0 ? window.scrollY / available : 0));
   if (reduceMotion.matches) return;
   scenes.forEach((scene) => {
     const bounds = scene.getBoundingClientRect();
