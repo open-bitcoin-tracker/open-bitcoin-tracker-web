@@ -1,37 +1,64 @@
-<div align="center">
+# Open Bitcoin Tracker — Website
 
-<picture>
-  <img src="./public/app-icon.png" width="128px" alt="Open Bitcoin Tracker icon">
-</picture>
+Live BTC/USD chart and website for [Open Bitcoin Tracker](https://github.com/Max-Hodler/open-bitcoin-tracker), an open-source Bitcoin portfolio tracker for Android.
 
-</div>
+Astro 6, TypeScript, and Tailwind CSS 4, with static pages and a Cloudflare Pages Function for language redirects.
 
-<h1 align="center">Open Bitcoin Tracker — Website</h1>
+## Development
 
-<p align="center">
-  A live Bitcoin price chart and Bitcoin tools, including <a href="https://github.com/Max-Hodler/open-bitcoin-tracker">Open Bitcoin Tracker</a> — an open-source Bitcoin portfolio tracker for Android.
-</p>
+Use Node.js **22.12.0 or newer** (`.nvmrc` selects Node 22).
 
-<div align="center">
+```sh
+npm ci
+npm run dev
+```
 
-[![Astro](https://img.shields.io/badge/Astro-6-FF5D01?style=for-the-badge&logo=astro&logoColor=white)](https://astro.build)
-[![Tailwind CSS](https://img.shields.io/badge/Tailwind-v4-38BDF8?style=for-the-badge&logo=tailwindcss&logoColor=white)](https://tailwindcss.com)
-[![License: MIT](https://img.shields.io/badge/License-MIT-success?style=for-the-badge)](./LICENSE)
+| Command | Purpose |
+| --- | --- |
+| `npm test` | Run chart motion and range pill tests |
+| `npm run build` | Generate the production site in `dist/` |
+| `npm run preview` | Serve the built site locally |
 
-</div>
+The build does not run a full TypeScript check. Local development and preview do not run the Pages Function.
 
-The homepage shows the full daily BTC/USD history since July 2010, using the Android app's logarithmic chart, orange line, gradient, and Paper Cream / Deepsea Blue colours. Kraken's public WebSocket ticker supplies the live price; REST polling provides a fallback while reconnecting. Recent daily Kraken candles are merged into the bundled history by UTC day.
+## Pages and languages
 
-The range bar overlays the lower part of the chart and mirrors the app's days, weeks, months, years, and All slots. Select a slot, then use its up/down chevrons (or the up/down arrow keys on its label) to cycle through 1–7 days, 1–4 weeks, 1–12 months, or 1–15 years. Each slot keeps its count while switching ranges. The matching button to the right toggles between logarithmic (Log) and linear (Lin) scales; logarithmic is the default, and the selected scale stays active when changing ranges. Days use 15-minute Kraken candles; weeks and one month use hourly candles; longer ranges use the daily history. Intraday requests are cached by interval and refreshed every minute while selected.
+- `/`: live Bitcoin price and interactive price history since July 2010.
+- `/android-app/`: Android app overview and download links.
+- `/about/` and `/privacy/`: project information and the app privacy policy.
 
-Below the live price, the selected range's signed dollar change and percentage use the first and last plotted prices, including the live price when it connects to the chart. The subtitle matches the Android app's whole-dollar amounts and compact percentages, and stays blank until at least two prices are available.
+All pages support English, Spanish, Brazilian Portuguese, Russian, Turkish, Vietnamese, Japanese, French, German, and Italian. English has no URL prefix; Portuguese uses `/pt/` with code `pt-BR`; others use their language code.
 
-Range changes match the Android chart's 450 ms camera zoom with cubic easing, keeping the wider curve visible while zooming in. Log/Lin changes fade out for 150 ms, switch scale, then fade back in for 150 ms. Rapid range changes continue from the current camera position, and uncached intraday ranges retain the outgoing chart while candles load. Live ticks and resizing update directly without starting a transition. Scrubbing pauses during transitions, and reduced-motion preferences make changes immediate.
+On Cloudflare Pages, `functions/_middleware.js` honors a valid `lang` cookie on root visits; otherwise it detects `Accept-Language` and stores the result for 180 days. The switcher links to the same page in another language.
 
-Press and drag on the chart to scrub through prices. A dashed vertical marker and dot snap to the nearest recorded point, while the top-left price and subtitle show that point's price and date (or time for intraday ranges). Moving the mouse without pressing leaves the chart and live price unchanged. Live updates continue in the background. Releasing the mouse or ending a touch gesture, or changing ranges, restores the live price and range change. The focused chart also supports Left/Right, Home/End, and Escape.
+## Price chart
 
-The existing Android app landing page lives at `/android-app/`. Both pages are available in all ten supported languages.
+The chart defaults to All time and logarithmic scale. Select or drag the range pill; use chevrons or Up/Down to cycle the selected count. Log/Lin switches scale. Press and drag to inspect prices, or focus the chart and use Left/Right, Home/End, and Escape. Releasing restores the live price and range change. Transitions respect reduced motion.
 
-Run `npm install` and `npm run dev` for a local preview, or `npm run build` for the static production output.
+Prices come directly from Kraken in the browser:
 
-`public/data/btc-history.csv` is copied from the Android project's `assets/btc_history.csv` (Coin Metrics history). Keep this asset updated alongside the app: Kraken only supplies the most recent 720 daily candles. The chart retains its bundled history and reports unavailable recent data if a request fails or the data sources no longer overlap. The live price remains separate from the historical chart's last available date.
+- WebSocket ticker for live BTC/USD, with REST polling every 30 seconds while the stream is unavailable.
+- 15-minute candles for day ranges; hourly candles for weeks and one month. These refresh every minute while selected.
+- Daily history for longer ranges, merging bundled data with recent candles by UTC day every five minutes.
+
+Intraday ranges may be shorter than requested because Kraken limits available candles. The bundled chart renders without JavaScript; live prices and controls require it.
+
+## Maintenance
+
+| Location | Purpose |
+| --- | --- |
+| `src/pages/`, `src/components/pages/` | Routes and shared page content |
+| `src/components/`, `src/layouts/`, `src/styles/` | UI, metadata, and styles |
+| `src/lib/`, `src/scripts/` | Chart calculations and browser interactions |
+| `src/i18n/locales/en.ts`, `src/i18n/ui.ts` | English page copy and dictionary types |
+| `src/i18n/tracker.ts`, `src/i18n/ranges.ts` | Chart copy for every language |
+| `astro.config.mjs` | Site URL, locale routing, sitemap, and build configuration |
+| `functions/_middleware.js`, `wrangler.toml` | Cloudflare Pages language redirect and runtime configuration |
+
+Keep `public/data/btc-history.csv` synchronized with the Android project's `assets/btc_history.csv` (Coin Metrics history). The format is `YYYY-MM-DD,USD_PRICE`, one daily point per line, with no header. Recent candles must connect to the bundled history without missing days. Gaps or failed requests preserve existing history and display an error; the live price updates separately.
+
+New languages need dictionaries, chart copy, route `getStaticPaths()` entries, Astro/sitemap locale configuration, layout alternates, switcher entries, and middleware matchers.
+
+For Cloudflare Pages, build with `npm run build`, serve `dist/`, and include `functions/`. `wrangler.toml` pins the runtime compatibility date.
+
+Licensed under [MIT](./LICENSE).

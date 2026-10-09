@@ -12,7 +12,6 @@ yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 
-
 # environment variables
 .env
 .env.production
@@ -24,8 +23,7 @@ pnpm-debug.log*
 .idea/
 
 # local instructions (must never be published)
-CLAUDE.md
-NEXT.md
+AGENTS.md
 src/i18n/TRANSLATING.md
 
 # local tooling state
