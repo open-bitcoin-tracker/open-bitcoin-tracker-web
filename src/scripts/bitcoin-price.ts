@@ -122,7 +122,7 @@ function startTracker(root: HTMLElement) {
       // Long ranges share the full curve; only the camera window changes.
       const renderPoints = points.at(-1) === livePoint ? [...source, livePoint!] : source;
       const now = performance.now();
-      motion.update({ points: renderPoints, viewport: chartViewport(points, scale), scale, rangeKey: plottedRangeKey }, now, reduceMotion.matches || document.hidden);
+      motion.update({ points: renderPoints, viewport: chartViewport(points, scale), scale, rangeKey: plottedRangeKey, seriesKey: window ? `candles:${window.interval}` : 'daily' }, now, reduceMotion.matches || document.hidden);
       paintMotion(now);
     }
     updatePriceDisplay();

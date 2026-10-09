@@ -5,8 +5,44 @@ import { ChartMotion, type ChartScene } from '../src/lib/bitcoin-chart-motion.ts
 
 const points = [10, 20, 40, 100, 80].map((price, time) => ({ time: time * 1000, price }));
 function scene(rangeKey = 'all', subset = points, scale: ChartScene['scale'] = 'logarithmic'): ChartScene {
-  return { rangeKey, points, scale, viewport: chartViewport(subset, scale) };
+  return { rangeKey, points, scale, seriesKey: 'daily', viewport: chartViewport(subset, scale) };
 }
+
+test('1D to All preserves the intraday curve in the first zoom-out frame', () => {
+  const daily = [
+    { time: 0, price: 1 }, { time: 1000, price: 120 }, { time: 2000, price: 110 }, { time: 3000, price: 102 },
+  ];
+  const intraday = [
+    { time: 1500, price: 98 }, { time: 1800, price: 100 }, { time: 2200, price: 105 }, { time: 2600, price: 99 }, daily.at(-1)!,
+  ];
+  for (const scale of ['linear', 'logarithmic'] as const) {
+    const motion = new ChartMotion();
+    const from = { rangeKey: 'day:1', seriesKey: 'candles:15', points: intraday, scale, viewport: chartViewport(intraday, scale) };
+    const to = { rangeKey: 'all', seriesKey: 'daily', points: daily, scale, viewport: chartViewport(daily, scale) };
+    motion.update(from, 0);
+    motion.update(to, 10);
+    const first = motion.sample(10)!;
+    assert.deepEqual(first.viewport, from.viewport);
+    assert.deepEqual(first.points.filter(point => point.time >= from.viewport.start), intraday);
+    const original = chartPaths(intraday, 400, 200, scale).positions;
+    const projected = chartPaths(first.points, 400, 200, scale, first.viewport).positions.filter(point => point.x >= 0);
+    assert.deepEqual(projected, original);
+    assert.deepEqual(motion.sample(460), to);
+  }
+});
+
+test('zooming out between candle intervals preserves detail and sorted timestamps', () => {
+  const fine = points.slice(2);
+  const coarse = [points[0], { time: 2500, price: 200 }, points.at(-1)!];
+  const motion = new ChartMotion();
+  motion.update({ ...scene('day', fine), points: fine, seriesKey: 'candles:15' }, 0);
+  const to = { ...scene('week', coarse), points: coarse, seriesKey: 'candles:60' };
+  motion.update(to, 10);
+  const frame = motion.sample(100)!;
+  assert.deepEqual(frame.points, [points[0], ...fine]);
+  assert.ok(frame.points.every((point, i) => i === 0 || point.time > frame.points[i - 1].time));
+  assert.deepEqual(motion.sample(460), to);
+});
 
 test('range changes zoom the camera and retain the wider outgoing curve', () => {
   const motion = new ChartMotion();

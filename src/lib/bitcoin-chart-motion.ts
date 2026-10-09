@@ -5,6 +5,20 @@ export interface ChartScene {
   viewport: ChartViewport;
   scale: ChartScale;
   rangeKey: string;
+  seriesKey: string;
+}
+
+// A wider daily/hourly series cannot replace a fine intraday curve while the
+// camera is still close up. Keep its samples through the overlapping period,
+// adding incoming history outside it, then adopt the target when zoom settles.
+function zoomOutPoints(outgoing: HistoryPoint[], incoming: HistoryPoint[]) {
+  const start = outgoing[0].time;
+  const end = outgoing.at(-1)!.time;
+  return [
+    ...incoming.filter(point => point.time < start),
+    ...outgoing,
+    ...incoming.filter(point => point.time > end),
+  ];
 }
 
 // Flutter's Curves.easeInOutCubic and Curves.easeInOut, respectively.
@@ -24,7 +38,7 @@ function bezier(progress: number, x1: number, y1: number, x2: number, y2: number
 export class ChartMotion {
   private target?: ChartScene;
   private scene?: ChartScene;
-  private zoom?: { start: number; from: ChartViewport; points: HistoryPoint[]; hold: boolean };
+  private zoom?: { start: number; from: ChartViewport; points: HistoryPoint[]; seriesKey: string; hold: boolean };
   private fade?: { start: number; from: number; out: boolean };
   opacity = 1;
 
@@ -40,9 +54,13 @@ export class ChartMotion {
       this.fade = { start: now, from: this.opacity, out: this.scene.scale !== target.scale };
     } else if (previous?.rangeKey !== target.rangeKey && !this.fade) {
       const from = this.scene.viewport;
+      const zoomingIn = target.viewport.end - target.viewport.start < from.end - from.start;
+      const changingSeries = this.scene.seriesKey !== target.seriesKey;
       this.zoom = {
-        start: now, from, points: this.scene.points,
-        hold: target.viewport.end - target.viewport.start < from.end - from.start,
+        start: now, from,
+        points: !zoomingIn && changingSeries ? zoomOutPoints(this.scene.points, target.points) : this.scene.points,
+        seriesKey: this.scene.seriesKey,
+        hold: zoomingIn || changingSeries,
       };
     }
     this.sample(now);
@@ -87,6 +105,7 @@ export class ChartMotion {
       this.scene = {
         ...this.target,
         points: this.zoom.hold ? this.zoom.points : this.target.points,
+        seriesKey: this.zoom.hold ? this.zoom.seriesKey : this.target.seriesKey,
         viewport: {
           start: from.start + (to.start - from.start) * t,
           end: from.end + (to.end - from.end) * t,
