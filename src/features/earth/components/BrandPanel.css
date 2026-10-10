@@ -5,7 +5,7 @@
   align-items: center;
   gap: 11px;
   text-decoration: none;
-  font-size: 23px;
+  font-size: var(--text-heading);
   font-weight: 400;
   letter-spacing: -0.5px;
 }
@@ -18,10 +18,12 @@
 }
 .earth-feature .sidebar {
   min-height: 0;
-  padding: 18px;
+  /* Search icon inset: 1px border + 6px padding + 11px inside its button.
+     The 20px info icon needs 5px padding with a 44px touch target to match. */
+  padding: 12px 5px 12px 18px;
   background: var(--panel);
   border: 1px solid var(--border);
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   box-shadow: var(--panel-shadow);
   display: flex;
   flex-direction: column;
@@ -29,62 +31,34 @@
 .earth-feature .panel-header {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 12px;
   flex-shrink: 0;
   min-width: 0;
 }
-.earth-feature .panel-content {
-  margin-top: 16px;
-  min-height: 0;
-  overflow-y: auto;
-  scrollbar-width: thin;
-  scrollbar-color: var(--input-border) transparent;
-}
-.earth-feature .intro p {
-  font-size: 15px;
-  color: var(--muted);
-  line-height: 1.6;
-  margin: 0;
-}
 @media (max-width: 800px) {
   .earth-feature .sidebar {
-    padding: 16px;
+    padding: 12px 5px 12px 16px;
   }
   .earth-feature .brand {
-    font-size: 21px;
     gap: 8px;
   }
   .earth-feature .panel-header {
     gap: 8px;
   }
-  .earth-feature .intro p {
-    font-size: 13px;
-  }
 }
 @media (max-width: 360px) {
   .earth-feature .sidebar {
-    padding: 12px;
-  }
-  .earth-feature .brand {
-    font-size: 19px;
+    padding: 12px 5px 12px 12px;
   }
 }
 
-.earth-feature .intro {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-.earth-feature .intro p {
-  flex: 1;
-  min-width: 0;
-}
 .earth-feature .about-help {
   flex-shrink: 0;
   display: grid;
   place-items: center;
-  width: 32px;
-  height: 32px;
+  width: 44px;
+  height: 44px;
   padding: 0;
   border: 0;
   border-radius: 50%;
@@ -92,7 +66,7 @@
   color: var(--muted);
 }
 .earth-feature .about-help:hover {
-  background: var(--border);
+  background: var(--hover);
   color: var(--ink);
 }
 .earth-feature .about-help:focus-visible {

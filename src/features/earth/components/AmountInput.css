@@ -15,7 +15,7 @@
   height: 28px;
   padding: 0;
   line-height: 28px;
-  font-size: 24px;
+  font-size: var(--text-heading);
   font-weight: 700;
 }
 .earth-feature .floating-amount .bitcoin-symbol {
@@ -43,7 +43,7 @@
 }
 .earth-feature .amount-input:focus-within {
   border-color: var(--orange);
-  box-shadow: 0 0 0 3px #f7931a24;
+  box-shadow: 0 0 0 3px var(--focus-ring);
 }
 .earth-feature .amount-input.invalid {
   border-color: var(--error);
@@ -57,12 +57,12 @@
   width: 100%;
   border: 0;
   outline: none;
-  color: var(--orange);
+  color: var(--orange-ink);
   background: transparent;
   font-variant-numeric: tabular-nums;
 }
 .earth-feature .input-help {
-  font-size: 11px;
+  font-size: var(--text-label);
   color: var(--muted);
   line-height: 1.5;
   margin-top: 8px;
@@ -74,5 +74,10 @@
 @media (max-width: 800px) {
   .earth-feature .floating-amount .amount-input.long-amount input {
     font-size: 18px;
+  }
+}
+@media (max-width: 480px) {
+  .earth-feature .floating-amount .amount-input input {
+    font-size: 1.25rem;
   }
 }

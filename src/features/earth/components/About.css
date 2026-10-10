@@ -11,7 +11,7 @@
   padding: 0;
   overflow: hidden;
   border: 0;
-  background: var(--panel);
+  background: var(--surface);
   color: var(--ink);
   box-shadow: 12px 0 64px #0003;
   transition: width 300ms cubic-bezier(0.64, 0, 0.78, 0);
@@ -41,7 +41,7 @@
   display: flex;
   flex-direction: column;
   height: 100%;
-  background: var(--panel);
+  background: var(--surface);
 }
 .earth-feature .guide-shell {
   position: relative;
@@ -58,10 +58,10 @@
   flex-shrink: 0;
 }
 .earth-feature .guide-header .eyebrow,
-.earth-feature .guide-detail-eyebrow {
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 1.8px;
+.earth-feature .guide-detail-panel .guide-detail-eyebrow {
+  font-size: var(--text-eyebrow);
+  font-weight: 500;
+  letter-spacing: .16em;
 }
 .earth-feature .guide-close {
   display: grid;
@@ -70,13 +70,13 @@
   height: 40px;
   border: 0;
   border-radius: 50%;
-  background: var(--surface);
+  background: var(--panel);
   color: var(--muted);
   flex-shrink: 0;
 }
 .earth-feature .guide-close:hover {
   color: var(--ink);
-  background: var(--border);
+  background: var(--hover);
 }
 .earth-feature .guide-content {
   min-height: 0;
@@ -104,6 +104,8 @@
   margin-top: 14px;
 }
 .earth-feature .about-dialog h2 {
+  font-size: var(--text-heading);
+  font-weight: 600;
   line-height: 1.2;
   margin: 0;
 }
@@ -113,15 +115,15 @@
 .earth-feature .guide-description {
   margin: 16px 0 0;
   color: var(--muted);
-  font-size: 16px;
-  line-height: 1.6;
+  font-size: var(--text-intro);
+  line-height: 1.75;
 }
 .earth-feature .guide-note {
   margin: 18px 0 0;
   padding-left: 12px;
   border-left: 2px solid var(--orange);
-  font-size: 12px;
-  line-height: 1.6;
+  font-size: var(--text-label);
+  line-height: 1.7;
   color: var(--muted);
 }
 .earth-feature .guide-model-details {
@@ -139,7 +141,7 @@
   border-top: 1px solid var(--border);
   background: transparent;
   text-align: left;
-  font-size: 15px;
+  font-size: var(--text-control);
   font-weight: 600;
   transition:
     background 150ms,
@@ -153,7 +155,7 @@
   color: var(--muted);
 }
 .earth-feature .guide-section-trigger:hover {
-  background: var(--surface);
+  background: var(--hover);
 }
 .earth-feature .guide-section-trigger[aria-expanded='true'] {
   background: var(--orange-soft);
@@ -193,34 +195,35 @@
   border-radius: 8px;
   background: transparent;
   color: var(--muted);
-  font-size: 14px;
+  font-size: var(--text-label);
 }
 .earth-feature .guide-back:hover {
-  background: var(--surface);
+  background: var(--hover);
   color: var(--ink);
 }
 .earth-feature .guide-detail-panel .model-details {
   padding: 12px 28px max(28px, env(safe-area-inset-bottom));
 }
-.earth-feature .guide-detail-eyebrow {
+.earth-feature .guide-detail-panel .guide-detail-eyebrow {
   margin: 0 0 12px;
   color: var(--muted);
 }
 .earth-feature .guide-detail-panel h2 {
   margin-bottom: 24px;
-  font-size: 28px;
+  font-size: var(--text-heading);
   font-weight: 600;
 }
 .earth-feature .model-details p {
-  font-size: 14px;
-  line-height: 1.65;
+  margin: 1rem 0;
+  font-size: var(--text-body);
+  line-height: 1.7;
   color: var(--muted);
 }
 .earth-feature .model-assumptions {
   display: grid;
   gap: 14px;
   padding: 16px 18px;
-  background: var(--surface);
+  background: var(--panel);
   border-radius: 12px;
   margin: 20px 0;
 }
@@ -232,10 +235,10 @@
 }
 .earth-feature .model-assumptions span {
   color: var(--muted);
-  font-size: 12px;
+  font-size: var(--text-label);
 }
 .earth-feature .model-assumptions strong {
-  font-size: 14px;
+  font-size: var(--text-control);
   font-weight: 600;
   white-space: nowrap;
 }
@@ -244,7 +247,7 @@
   padding: 14px;
   border-radius: 8px;
   background: var(--orange-soft);
-  font-size: 12px;
+  font-size: var(--text-caption);
   line-height: 1.8;
   overflow-wrap: anywhere;
 }
@@ -255,14 +258,14 @@
   width: fit-content;
   margin: 14px 0;
   color: var(--orange-ink);
-  font-size: 14px;
+  font-size: var(--text-label);
   text-underline-offset: 4px;
 }
 .earth-feature .model-sources a svg {
   flex-shrink: 0;
 }
 .earth-feature .model-sources p {
-  font-size: 12px;
+  font-size: var(--text-caption);
 }
 
 /* Lightweight, theme-aware diagrams: no image downloads needed. */
@@ -372,9 +375,6 @@
   }
   .earth-feature .guide-intro {
     padding: 8px 24px 24px;
-  }
-  .earth-feature .guide-description {
-    font-size: 15px;
   }
   .earth-feature .guide-model-details {
     padding: 8px 24px 24px;

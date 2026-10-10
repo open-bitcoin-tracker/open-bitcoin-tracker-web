@@ -21,28 +21,40 @@
 }
 
 .earth-feature {
-  font-family: 'Titillium Web', Arial, sans-serif;
+  font-family: var(--font-sans);
   color: var(--ink);
   background: var(--page-background);
   font-synthesis: none;
-  font-size: 16px;
-  line-height: normal;
-  --page-background: #fff;
-  --ink: #22252b;
-  --orange: #f7931a;
-  --orange-ink: #a94f00;
-  --orange-soft: #fff7ec;
+  font-size: 1rem;
+  line-height: 1.5;
+  /* Use the Android page's semantic palette and compact text roles. */
+  --page-background: var(--color-paper);
+  --ink: var(--color-ink);
+  --orange: var(--color-accent);
+  --orange-ink: var(--color-accent-text);
+  --orange-soft: var(--color-accent-soft);
+  --border: var(--color-divider);
+  --muted: var(--color-ink-muted);
+  --panel: var(--color-surface);
+  --surface: var(--color-paper);
+  --hover: var(--hover-tint);
+  --panel-shadow: var(--shadow-card-hover);
+  --input-border: color-mix(in srgb, var(--ink) 16%, transparent);
+  --focus-ring: color-mix(in srgb, var(--orange) 15%, transparent);
+  --warning-border: color-mix(in srgb, var(--orange) 35%, var(--border));
+  --text-eyebrow: .75rem;
+  --text-caption: .8125rem;
+  --text-label: .875rem;
+  --text-control: .9375rem;
+  --text-body: 1rem;
+  --text-intro: 1.0625rem;
+  --text-heading: 1.5rem;
+  /* Map graphics keep their original color and halo independently of UI. */
+  --map-orange: #f7931a;
   --readout-orange: #a94f00;
   --readout-halo: #fff7ec;
-  --border: #e3e5e8;
-  --muted: #626872;
-  --panel-shadow: 0 8px 32px #161a241a;
   color-scheme: light;
-  --panel: #fff;
-  --surface: #f4f5f7;
-  --input-border: #d4d7dc;
   --error: #a4372e;
-  --warning-border: #efcfaa;
   --overlay-opacity: 0.3;
   --globe-sky: radial-gradient(
     ellipse at 50% 50%,
@@ -89,20 +101,9 @@
 
 .earth-feature[data-theme='dark'] {
   color-scheme: dark;
-  --ink: #edf0f4;
-  --orange-ink: #ffb75e;
-  --orange-soft: #342a1e;
   --readout-orange: #f7931a;
   --readout-halo: #151a21;
-  --border: #39414d;
-  --muted: #adb6c2;
-  --panel: #1c222c;
-  --surface: #282f3b;
-  --page-background: #151a21;
-  --input-border: #46505e;
   --error: #ff9c90;
-  --warning-border: #795837;
-  --panel-shadow: 0 8px 32px #0005;
   --overlay-opacity: 0.2;
   --globe-sky: radial-gradient(
     ellipse at 50% 50%,

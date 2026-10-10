@@ -1,27 +1,13 @@
 import { useEffect, useId, useRef, useState } from 'react';
 import { Settings2, X } from 'lucide-react';
-import type { MeasurementSystem } from '../lib/measurements';
-import type { Theme } from '../lib/theme';
 import BrandPanel from './BrandPanel';
-import MapControls from './MapControls';
-import MeasurementSelect from './MeasurementSelect';
 import './MobileMenu.css';
 
 interface MobileMenuProps {
-  measurements: MeasurementSystem;
-  onMeasurementsChange: (system: MeasurementSystem) => void;
-  theme: Theme;
-  onThemeChange: (theme: Theme) => void;
   onAbout: () => void;
 }
 
-export default function MobileMenu({
-  measurements,
-  onMeasurementsChange,
-  theme,
-  onThemeChange,
-  onAbout,
-}: MobileMenuProps) {
+export default function MobileMenu({ onAbout }: MobileMenuProps) {
   const dialogRef = useRef<HTMLDialogElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const afterClose = useRef<(() => void) | undefined>(undefined);
@@ -124,19 +110,6 @@ export default function MobileMenu({
             <X size={22} aria-hidden="true" />
           </button>
           <BrandPanel onAbout={() => closeMenu(onAbout)} />
-          <div className="mobile-menu-preferences">
-            <div className="mobile-menu-setting">
-              <span>Measurements</span>
-              <MeasurementSelect
-                value={measurements}
-                onChange={onMeasurementsChange}
-              />
-            </div>
-            <div className="mobile-menu-setting">
-              <span>Theme</span>
-              <MapControls theme={theme} onThemeChange={onThemeChange} />
-            </div>
-          </div>
         </div>
       </dialog>
     </>

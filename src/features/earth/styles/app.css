@@ -39,9 +39,7 @@
   }
 }
 @media (max-width: 480px) {
-  .earth-feature .floating-panels > .sidebar,
-.earth-feature.app-shell .earth-workspace > .measurement-panel,
-.earth-feature.app-shell .earth-workspace > .floating-map-controls {
+  .earth-feature .floating-panels > .sidebar {
     display: none;
   }
   .earth-feature .floating-panels {
@@ -49,8 +47,4 @@
   }
 }
 
-/* Keep map controls below the shared site menu, in their own right column. */
-.earth-feature .earth-workspace > .measurement-panel { top: calc(var(--menu-control-top) + var(--menu-control-size) + 20px); }
-.earth-feature .earth-workspace > .floating-map-controls { top: calc(var(--menu-control-top) + var(--menu-control-size) + 78px); }
 .earth-feature .brand-name { font-family: inherit; font-weight: inherit; text-transform: none; }
-.earth-feature h2 { font-size: 1.5em; font-weight: 700; }

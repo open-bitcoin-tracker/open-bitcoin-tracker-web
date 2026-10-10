@@ -12,7 +12,7 @@
 }
 .earth-feature .place-search:focus-within {
   border-color: var(--orange);
-  box-shadow: 0 0 0 3px #f7931a24;
+  box-shadow: 0 0 0 3px var(--focus-ring);
 }
 .earth-feature .place-search input {
   width: 100%;
@@ -21,7 +21,7 @@
   border: 0;
   background: transparent;
   color: var(--ink);
-  font-size: 16px;
+  font-size: var(--text-body);
   padding: 0;
 }
 .earth-feature .place-search input:focus-visible {
@@ -52,7 +52,7 @@
   display: none;
 }
 .earth-feature .place-status {
-  font-size: 12px;
+  font-size: var(--text-label);
   line-height: 1.5;
   color: var(--muted);
   margin: 8px 0 0;
@@ -99,7 +99,7 @@
   border: 0;
   background: transparent;
   padding: 11px;
-  font-size: 12px;
+  font-size: var(--text-label);
   line-height: 1.5;
 }
 .earth-feature .place-results button svg {
@@ -113,7 +113,7 @@
 }
 .earth-feature .place-results button:hover,
 .earth-feature .place-results button:focus-visible {
-  background: var(--surface);
+  background: var(--hover);
 }
 .earth-feature .place-results button:focus-visible {
   outline-offset: -3px;

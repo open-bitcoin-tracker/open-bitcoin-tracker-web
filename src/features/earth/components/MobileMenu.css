@@ -24,7 +24,7 @@
   display: flex;
   align-self: flex-end;
   flex-shrink: 0;
-  background: var(--surface);
+  background: var(--panel);
 }
 .earth-feature .mobile-menu {
   position: fixed;
@@ -37,7 +37,7 @@
   padding: 0;
   border: 0;
   border-left: 1px solid var(--border);
-  background: var(--panel);
+  background: var(--surface);
   color: var(--ink);
   box-shadow: var(--panel-shadow);
   overflow-y: auto;
@@ -57,36 +57,14 @@
   flex-direction: column;
   gap: 24px;
   min-height: 100%;
-  padding: 12px 20px 24px;
+  /* With no right border, 6px + the info button's 12px matches search. */
+  padding: 12px 6px 24px 20px;
 }
 .earth-feature .mobile-menu .sidebar {
+  background: transparent;
   padding: 0;
   border: 0;
   border-radius: 0;
-  box-shadow: none;
-}
-.earth-feature .mobile-menu-preferences {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  border-top: 1px solid var(--border);
-  padding-top: 24px;
-}
-.earth-feature .mobile-menu-setting {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  font-size: 14px;
-}
-.earth-feature .mobile-menu .measurement-panel,
-.earth-feature .mobile-menu .floating-map-controls {
-  position: relative;
-  inset: auto;
-  flex-shrink: 0;
-  box-shadow: none;
-}
-.earth-feature .mobile-menu .appearance-panel {
   box-shadow: none;
 }
 @keyframes mobile-menu-slide-in {

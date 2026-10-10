@@ -5,7 +5,6 @@ import AreaReadout from './components/AreaReadout';
 import BrandPanel from './components/BrandPanel';
 import EarthMap from './components/EarthMap';
 import LocationSearch from './components/LocationSearch';
-import MapControls from './components/MapControls';
 import MeasurementSelect from './components/MeasurementSelect';
 import MobileMenu from './components/MobileMenu';
 import { useBitcoinAmount } from './hooks/useBitcoinAmount';
@@ -19,7 +18,7 @@ import './styles/app.css';
 
 export default function App() {
   const amount = useBitcoinAmount();
-  const { theme, setTheme } = useTheme();
+  const theme = useTheme();
   const { measurements, chooseMeasurements } = useMeasurements();
   const [place, setPlace] = useState('');
   const [aboutOpen, setAboutOpen] = useState(false);
@@ -58,14 +57,7 @@ export default function App() {
           readoutRef={map.readoutRef}
         />
         <MeasurementSelect value={measurements} onChange={chooseMeasurements} />
-        <MapControls theme={theme} onThemeChange={setTheme} />
-        <MobileMenu
-          measurements={measurements}
-          onMeasurementsChange={chooseMeasurements}
-          theme={theme}
-          onThemeChange={setTheme}
-          onAbout={() => setAboutOpen(true)}
-        />
+        <MobileMenu onAbout={() => setAboutOpen(true)} />
         <EarthMap
           km2={amount.km2}
           ready={map.ready}

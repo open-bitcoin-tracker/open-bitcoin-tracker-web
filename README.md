@@ -37,11 +37,11 @@ On Cloudflare Pages, `functions/_middleware.js` honors a valid `lang` cookie on 
 
 ## A Bit of Earth
 
-The map is a browser-rendered React feature inside Astro, adapted from [A Bit of Earth](https://github.com/Max-Hodler/bitcoin-land). It uses MapLibre GL and a bundled worker, with scoped styles and Titillium Web fonts (the font license is included in `public/earth/fonts/OFL.txt`). The calculator, location search, measurements, and guide currently use English on every localized route; the surrounding navigation and landing descriptions are translated.
+The map is a browser-rendered React feature inside Astro, adapted from [A Bit of Earth](https://github.com/Max-Hodler/bitcoin-land). It uses MapLibre GL and a bundled worker, with scoped styles, the shared site palette and UI typography, and Titillium Web for the map readout (the font license is included in `public/earth/fonts/OFL.txt`). The calculator, location search, measurements, and guide currently use English on every localized route; the surrounding navigation and landing descriptions are translated.
 
 Bitcoin amounts are calculated locally. Location search sends only the submitted place query to Photon at `https://photon.komoot.io/api/`. Set `PUBLIC_EARTH_GEOCODER_URL` at build time to use another compatible endpoint. Map tiles and glyphs are fetched directly from the providers specified in `src/features/earth/map/style.json`; attribution remains visible on desktop and mobile. The page suppresses referrer headers.
 
-Map and site controls share the existing `theme` preference. Mobile map settings are separate from the site menu and provide measurements, appearance, and the guide. The source project remains independently maintained; its standalone build and exports are not part of this website.
+The map follows the existing `theme` preference controlled by the shared site menu. Measurements are always available at the map's bottom-left corner; the separate mobile map menu opens the guide. The source project remains independently maintained; its standalone build and exports are not part of this website.
 
 ## Price chart
 

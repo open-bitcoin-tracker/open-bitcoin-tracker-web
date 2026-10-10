@@ -18,21 +18,16 @@ export default function BrandPanel({ onAbout }: BrandPanelProps) {
             A <span className="brand-bit">Bit</span> of Earth
           </span>
         </a>
-      </div>
-      <div className="panel-content">
-        <div className="intro">
-          <p>See Bitcoin as a share of Earth’s land.</p>
-          <button
-            className="about-help"
-            type="button"
-            onClick={onAbout}
-            aria-label="How does this work?"
-            title="How does this work?"
-            aria-haspopup="dialog"
-          >
-            <Info size={20} aria-hidden="true" />
-          </button>
-        </div>
+        <button
+          className="about-help"
+          type="button"
+          onClick={onAbout}
+          aria-label="How does this work?"
+          title="How does this work?"
+          aria-haspopup="dialog"
+        >
+          <Info size={20} aria-hidden="true" />
+        </button>
       </div>
     </aside>
   );

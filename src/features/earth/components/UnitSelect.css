@@ -15,7 +15,7 @@
 }
 .earth-feature .input-unit:hover,
 .earth-feature .input-unit[aria-expanded='true'] {
-  background: var(--surface);
+  background: var(--hover);
   color: var(--ink);
 }
 .earth-feature .input-unit:focus-visible {
@@ -33,8 +33,8 @@
   top: calc(100% + 12px);
   right: 0;
   min-width: 120px;
-  padding: 5px;
-  background: var(--surface);
+  padding: 6px;
+  background: var(--panel);
   border: 1px solid var(--border);
   border-radius: 12px;
   box-shadow: var(--panel-shadow);
@@ -50,24 +50,24 @@
   padding: 8px 12px;
   border: 1px solid transparent;
   border-radius: 7px;
-  font-size: 13px;
-  font-weight: 600;
+  font-size: var(--text-label);
+  font-weight: 500;
   cursor: pointer;
 }
 .earth-feature .unit-option[aria-selected='true'] {
-  background: var(--panel);
+  background: var(--orange-soft);
   border-color: var(--border);
-  color: var(--orange);
+  color: var(--orange-ink);
 }
 .earth-feature .unit-option:hover:not([aria-selected='true']),
 .earth-feature .unit-option[data-active='true']:not([aria-selected='true']) {
-  background: var(--surface);
+  background: var(--hover);
 }
 .earth-feature .unit-options:focus-visible .unit-option[data-active='true'] {
   border-color: var(--orange-ink);
 }
 .earth-feature .input-unit {
-  font-size: 13px;
+  font-size: var(--text-label);
   color: var(--muted);
   font-weight: 600;
 }

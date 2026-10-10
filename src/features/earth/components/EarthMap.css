@@ -6,9 +6,9 @@
   pointer-events: none;
 }
 .earth-feature .bitcoin-overlay path {
-  fill: var(--orange);
+  fill: var(--map-orange);
   fill-opacity: var(--overlay-opacity);
-  stroke: var(--orange);
+  stroke: var(--map-orange);
   stroke-width: 2.5;
   stroke-linejoin: round;
 }
@@ -37,7 +37,7 @@
   z-index: 1;
   isolation: isolate;
   overflow: hidden;
-  font-size: 28px;
+  font-size: var(--text-heading);
 }
 .earth-feature .map-loading::before,
 .earth-feature .map-loading::after {
@@ -101,7 +101,7 @@
   padding: 15px 18px;
   border-radius: 8px;
   z-index: 3;
-  font-size: 13px;
+  font-size: var(--text-label);
 }
 .earth-feature .map-error p {
   flex: 1;
@@ -117,7 +117,7 @@
   padding: 8px 10px;
   border-radius: 5px;
   white-space: nowrap;
-  font-size: 12px;
+  font-size: var(--text-label);
 }
 .earth-feature .tiny-note {
   position: absolute;
@@ -127,7 +127,7 @@
   padding: 9px 12px;
   border-radius: 6px;
   background: var(--orange-soft);
-  font-size: 12px;
+  font-size: var(--text-label);
   max-width: 360px;
   text-align: center;
   width: max-content;

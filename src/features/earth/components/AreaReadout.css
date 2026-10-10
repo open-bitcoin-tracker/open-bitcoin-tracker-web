@@ -1,7 +1,8 @@
 .earth-feature .result {
   --side-font-size: 15px;
+  font-family: 'Titillium Web', Arial, sans-serif;
   position: absolute;
-  bottom: 64px;
+  bottom: calc(max(24px, env(safe-area-inset-bottom)) + 60px);
   left: 20px;
   z-index: 4;
   width: max-content;
