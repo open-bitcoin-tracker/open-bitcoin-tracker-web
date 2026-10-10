@@ -1,0 +1,7 @@
+---
+import SupplyPage from '../../components/pages/SupplyPage.astro';
+export function getStaticPaths() {
+  return ['es', 'pt', 'ru', 'tr', 'vi', 'ja', 'fr', 'de', 'it'].map((lang) => ({ params: { lang } }));
+}
+---
+<SupplyPage />

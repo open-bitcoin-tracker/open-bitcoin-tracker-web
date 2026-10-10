@@ -1,0 +1,190 @@
+import assert from 'node:assert/strict';
+import test from 'node:test';
+import { readFileSync } from 'node:fs';
+import { annualRate, BITCOIN_MAX, DAY_MS, equalShare, isValidMoney, isValidSnapshot, MAX_PROJECTION_DAYS, projectMoney, projectPopulation, projectionAnchor, type SupplySnapshot } from '../src/features/supply/model.ts';
+import { importReviewedMoney, parseH6, refreshedSnapshot, scaleSource, type ReviewedMoneyImport } from '../src/features/supply/refresh.ts';
+
+const snapshot = JSON.parse(readFileSync(new URL('../src/features/supply/snapshot.json', import.meta.url), 'utf8')) as SupplySnapshot;
+const usd = snapshot.fiat[0];
+
+test('all five official snapshots retain native units, their own windows and independent rates', () => {
+  assert.ok(isValidSnapshot(snapshot));
+  assert.deepEqual(snapshot.fiat.map(m => [m.id, m.latest.amount, m.previousYear.amount]), [
+    ['usd', 23_342_800_000_000, 22_092_600_000_000],
+    ['eur', 16_447_405_000_000, 15_762_736_000_000],
+    ['jpy', 1_296_389_500_000_000, 1_271_226_300_000_000],
+    ['cny', 356_810_000_000_000, 331_980_000_000_000],
+    ['gbp', 3_064_747_000_000, 2_941_749_000_000],
+  ]);
+  assert.equal(new Set(snapshot.fiat.map(annualRate)).size, 5);
+  assert.equal(snapshot.fiat[4].aggregate, 'M4ex');
+  assert.equal(equalShare(BITCOIN_MAX, snapshot.population.persons).toFixed(8), '0.00252991');
+  assert.equal(equalShare(1, 0), NaN);
+});
+test('population interpolates official July 1 totals using elapsed time and net change', () => {
+  const start = Date.parse('2026-07-01T00:00:00Z');
+  const end = Date.parse('2027-07-01T00:00:00Z');
+  const first = projectPopulation(snapshot, start);
+  const middle = projectPopulation(snapshot, (start + end) / 2);
+  const next = projectPopulation(snapshot, start + 1_000);
+  assert.equal(first.persons, 8_300_678_395);
+  assert.equal(first.state, 'estimated');
+  assert.equal(middle.persons, (8_300_678_395 + 8_369_094_344) / 2);
+  assert.ok(Math.abs(next.persons! - first.persons! - 68_415_949 / (365 * 86_400)) < .00001);
+  assert.equal(projectPopulation(snapshot, end).persons, 8_369_094_344);
+});
+
+test('population switches annual intervals at their boundary and includes leap days', () => {
+  const start = Date.parse('2027-07-01T00:00:00Z');
+  const end = Date.parse('2028-07-01T00:00:00Z');
+  assert.equal(end - start, 366 * DAY_MS);
+  assert.equal(projectPopulation(snapshot, start).rate, (8_436_618_886 - 8_369_094_344) / (366 * 86_400));
+  assert.equal(projectPopulation(snapshot, (start + end) / 2).persons, (8_436_618_886 + 8_369_094_344) / 2);
+});
+
+test('population declines when the sourced annual difference is negative', () => {
+  const declining = structuredClone(snapshot);
+  declining.population.points = [{ date: '2026-07-01', persons: 10_000 }, { date: '2027-07-01', persons: 9_000 }];
+  declining.population.persons = 10_000;
+  const start = Date.parse('2026-07-01T00:00:00Z');
+  const end = Date.parse('2027-07-01T00:00:00Z');
+  assert.equal(projectPopulation(declining, (start + end) / 2).persons, 9_500);
+  assert.ok(projectPopulation(declining, start).rate < 0);
+});
+
+test('population range is bounded and uses the nearest dated annual point outside it', () => {
+  const start = Date.parse(snapshot.population.points[0].date);
+  const end = Date.parse(snapshot.population.points.at(-1)!.date);
+  assert.equal(projectPopulation(snapshot, start).state, 'estimated');
+  assert.equal(projectPopulation(snapshot, end).state, 'estimated');
+  assert.deepEqual(projectPopulation(snapshot, start - 1), { persons: 8_231_613_070, state: 'snapshot', rate: 0, date: '2025-07-01' });
+  assert.deepEqual(projectPopulation(snapshot, end + 1), { persons: 8_436_618_886, state: 'snapshot', rate: 0, date: '2028-07-01' });
+  assert.equal(projectPopulation(snapshot, NaN).state, 'unavailable');
+});
+
+
+test('every fiat grows at its own historical rate and respects its publication date', () => {
+  assert.ok(Math.abs(annualRate(usd) - 39643.58194) < .00001);
+  for (const money of snapshot.fiat) {
+    const release = Date.parse(money.releasedAt);
+    const a = projectMoney(money, release + DAY_MS);
+    const b = projectMoney(money, release + DAY_MS + 1_000);
+    assert.equal(a.state, 'projected');
+    assert.ok(Math.abs((b.amount! - a.amount!) - annualRate(money)) < 1);
+    assert.equal(projectMoney(money, release - 1).state, 'recorded');
+  }
+});
+
+test('projections expire individually after the bounded horizon and return their recorded stock', () => {
+  for (const money of snapshot.fiat) {
+    const expires = projectionAnchor(money.latest.month) + MAX_PROJECTION_DAYS * DAY_MS;
+    assert.equal(projectMoney(money, expires).state, 'projected');
+    assert.deepEqual(projectMoney(money, expires + 1), { amount: money.latest.amount, state: 'stale' });
+    assert.equal(projectMoney(money, NaN).state, 'unavailable');
+  }
+  const later = structuredClone(snapshot.fiat[1]);
+  later.latest.month = '2026-09'; later.previousYear.month = '2025-09';
+  later.releasedAt = '2026-10-09'; later.checkedAt = '2026-10-11';
+  const when = Date.parse('2026-12-01');
+  assert.equal(projectMoney(usd, when).state, 'stale');
+  assert.equal(projectMoney(later, when).state, 'projected');
+});
+
+test('all currencies preserve contraction, flat rates and leap-year interval lengths', () => {
+  for (const money of snapshot.fiat) {
+    const negative = structuredClone(money);
+    negative.previousYear.amount = negative.latest.amount + 1e12;
+    assert.ok(annualRate(negative) < 0);
+    assert.ok(projectMoney(negative, Date.parse(negative.releasedAt) + DAY_MS).amount! < negative.latest.amount);
+    const flat = structuredClone(money); flat.previousYear.amount = flat.latest.amount;
+    assert.equal(annualRate(flat), 0);
+    assert.equal(projectMoney(flat, Date.parse(flat.releasedAt)).amount, flat.latest.amount);
+  }
+  const leap = structuredClone(usd);
+  leap.latest.month = '2024-08'; leap.previousYear.month = '2023-08'; leap.releasedAt = '2024-09-24';
+  assert.equal(annualRate(leap), (leap.latest.amount - leap.previousYear.amount) / (366 * 86400));
+  const impossible = structuredClone(usd); impossible.previousYear.amount *= 100;
+  assert.deepEqual(projectMoney(impossible, Date.parse(impossible.releasedAt)), { amount: impossible.latest.amount, state: 'stale' });
+});
+
+test('wrong scaling, currency, windows, release date or native amounts fail only that monetary model', () => {
+  for (const mutate of [
+    (m: typeof usd) => { m.currency = 'EUR'; },
+    (m: typeof usd) => { m.sourceMultiplier = 1e6; },
+    (m: typeof usd) => { m.sourceUnit = 'millions'; },
+    (m: typeof usd) => { m.series = 'M1SL'; },
+    (m: typeof usd) => { m.basis = 'End of month'; },
+    (m: typeof usd) => { m.previousYear.month = '2025-07'; },
+    (m: typeof usd) => { m.latest.month = '2026-13'; },
+    (m: typeof usd) => { m.latest.amount = Infinity; },
+    (m: typeof usd) => { m.releasedAt = '2026-08-01'; },
+    (m: typeof usd) => { m.checkedAt = '2026-09-01'; },
+  ]) {
+    const invalid = structuredClone(usd); mutate(invalid);
+    assert.equal(isValidMoney(invalid), false);
+    assert.equal(projectMoney(invalid, Date.parse('2026-10-10')).state, 'unavailable');
+    assert.equal(projectMoney(snapshot.fiat[1], Date.parse('2026-10-10')).state, 'projected');
+  }
+  const duplicate = structuredClone(snapshot); duplicate.fiat[1] = duplicate.fiat[0];
+  assert.equal(isValidSnapshot(duplicate), false);
+});
+
+test('unusable population and nonconsecutive July 1 points fail population validation', () => {
+  for (const mutate of [
+    (s: SupplySnapshot) => { s.population.persons = NaN; },
+    (s: SupplySnapshot) => { s.population.points[1].date = '2026-01-01'; },
+    (s: SupplySnapshot) => { s.population.points[1].persons += 1; },
+    (s: SupplySnapshot) => { s.population.points[2].date = '2028-07-01'; },
+    (s: SupplySnapshot) => { s.population.points[2].persons = Infinity; },
+  ]) {
+    const invalid = structuredClone(snapshot); mutate(invalid);
+    assert.equal(isValidSnapshot(invalid), false);
+    assert.equal(projectPopulation(invalid, Date.parse('2026-10-10')).state, 'unavailable');
+  }
+});
+
+const fixture = `<div>Release Date: September 22, 2026</div><th id="t1tg1b2">M2</th><table>
+<tr><th id="t1tg1r1">Aug. 2025</th><td headers="t1tg1a2 t1tg1b1 t1tg1r1">18,840.8</td><td headers="t1tg1a2 t1tg1b2 t1tg1r1">22,092.6</td><td headers="t1tg1a3 t1tg1b5 t1tg1r1">22,033.1</td></tr>
+<tr><th id="t1tg1r2">Aug. 2026</th><td headers="t1tg1a2 t1tg1b1 t1tg1r2">19,991.1</td><td headers="t1tg1a2 t1tg1b2 t1tg1r2">23,342.8</td><td headers="t1tg1a3 t1tg1b5 t1tg1r2">23,284.3</td></tr></table>`;
+
+test('Fed refresh selects seasonally adjusted M2, scales billions and preserves every other series', () => {
+  assert.deepEqual(parseH6(fixture), { latest: usd.latest, previousYear: usd.previousYear, releasedAt: usd.releasedAt });
+  const next = refreshedSnapshot(snapshot, fixture, '2026-10-11');
+  assert.deepEqual(next.population, snapshot.population);
+  assert.deepEqual(next.fiat.slice(1), snapshot.fiat.slice(1));
+  assert.throws(() => parseH6(fixture.replace('22,092.6', '.')));
+  assert.throws(() => parseH6(fixture.replace('id="t1tg1b2"', 'id="other"')));
+  assert.throws(() => parseH6(fixture.replace('>M2</th>', '>M1</th>') + '<p>M2</p>'));
+  assert.throws(() => refreshedSnapshot(snapshot, fixture.replaceAll('2026', '2024').replaceAll('2025', '2023'), '2026-10-11'));
+});
+
+const reviewed: ReviewedMoneyImport[] = snapshot.fiat.map(money => ({ id: money.id, sourceMultiplier: money.sourceMultiplier,
+  latest: { month: money.latest.month, value: money.latest.amount / money.sourceMultiplier },
+  previousYear: { month: money.previousYear.month, value: money.previousYear.amount / money.sourceMultiplier },
+  releasedAt: money.releasedAt, source: money.source, dataSource: money.dataSource,
+  previousDataSource: money.previousDataSource, definitionSource: money.definitionSource, note: money.note,
+}));
+
+test('reviewed imports scale each source unit and keep unrelated snapshots intact', () => {
+  assert.deepEqual(reviewed.map(m => scaleSource(m.latest.value, m.sourceMultiplier)), snapshot.fiat.map(m => m.latest.amount));
+  assert.deepEqual(importReviewedMoney(snapshot, reviewed, '2026-10-11'), snapshot);
+  const partial = structuredClone(reviewed[1]); partial.latest.value += 1;
+  const next = importReviewedMoney(snapshot, [partial], '2026-10-11');
+  assert.equal(next.fiat[1].latest.amount, snapshot.fiat[1].latest.amount + 1e6);
+  assert.deepEqual(next.fiat[0], usd);
+  assert.deepEqual(next.population, snapshot.population);
+});
+
+test('failed imports, duplicates, wrong units and old releases leave valid snapshots untouched', () => {
+  const before = JSON.stringify(snapshot);
+  const bad = structuredClone(reviewed[1]); bad.sourceMultiplier = 1e9;
+  assert.throws(() => importReviewedMoney(snapshot, [reviewed[0], bad], '2026-10-11'));
+  assert.throws(() => importReviewedMoney(snapshot, [reviewed[0], reviewed[0]], '2026-10-11'));
+  const missing = structuredClone(reviewed[1]); missing.previousYear.value = NaN;
+  assert.throws(() => importReviewedMoney(snapshot, [missing], '2026-10-11'));
+  const old = structuredClone(reviewed[4]); old.latest.month = '2025-08'; old.previousYear.month = '2024-08'; old.releasedAt = '2025-09-29';
+  assert.throws(() => importReviewedMoney(snapshot, [old], '2026-10-11'));
+  const unofficial = structuredClone(reviewed[1]); unofficial.source = 'https://example.com/data';
+  assert.throws(() => importReviewedMoney(snapshot, [unofficial], '2026-10-11'));
+  assert.equal(JSON.stringify(snapshot), before);
+});

@@ -12,7 +12,9 @@
     "test": "node --experimental-strip-types --test tests/*.test.ts",
     "astro": "astro",
     "test:earth": "vitest run src/features/earth",
-    "check:earth": "tsc --project tsconfig.earth.json"
+    "check:earth": "tsc --project tsconfig.earth.json",
+    "check:supply": "tsc --project tsconfig.supply.json",
+    "refresh:supply": "node --experimental-strip-types scripts/refresh-supply.ts"
   },
   "dependencies": {
     "@astrojs/react": "^6.0.6",

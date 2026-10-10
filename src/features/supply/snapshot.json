@@ -1,0 +1,156 @@
+{
+  "checkedAt": "2026-10-11",
+  "fiat": [
+    {
+      "id": "usd",
+      "currency": "USD",
+      "series": "M2SL",
+      "aggregate": "M2",
+      "adjustment": "Seasonally adjusted",
+      "basis": "Monthly average",
+      "sourceUnit": "billions",
+      "sourceMultiplier": 1000000000,
+      "latest": {
+        "month": "2026-08",
+        "amount": 23342800000000
+      },
+      "previousYear": {
+        "month": "2025-08",
+        "amount": 22092600000000
+      },
+      "releasedAt": "2026-09-22",
+      "checkedAt": "2026-10-11",
+      "source": "https://www.federalreserve.gov/releases/h6/current/default.htm",
+      "dataSource": "https://www.federalreserve.gov/releases/h6/current/default.htm",
+      "previousDataSource": "https://www.federalreserve.gov/releases/h6/current/default.htm",
+      "definitionSource": "https://www.federalreserve.gov/releases/h6/current/default.htm",
+      "note": ""
+    },
+    {
+      "id": "eur",
+      "currency": "EUR",
+      "series": "BSI.M.U2.Y.V.M20.X.1.U2.2300.Z01.E",
+      "aggregate": "M2",
+      "adjustment": "Seasonally and working-day adjusted",
+      "basis": "End of month",
+      "sourceUnit": "millions",
+      "sourceMultiplier": 1000000,
+      "latest": {
+        "month": "2026-08",
+        "amount": 16447405000000
+      },
+      "previousYear": {
+        "month": "2025-08",
+        "amount": 15762736000000
+      },
+      "releasedAt": "2026-09-25",
+      "checkedAt": "2026-10-11",
+      "source": "https://www.ecb.europa.eu/press/stats/md/html/ecb.md2608~406f8d243d.en.html",
+      "dataSource": "https://data.ecb.europa.eu/data/datasets/BSI/BSI.M.U2.Y.V.M20.X.1.U2.2300.Z01.E",
+      "previousDataSource": "https://data.ecb.europa.eu/data/datasets/BSI/BSI.M.U2.Y.V.M20.X.1.U2.2300.Z01.E",
+      "definitionSource": "https://www.ecb.europa.eu/stats/money_credit_banking/monetary_aggregates/html/index.en.html",
+      "note": "Euro area with changing composition; August 2026 is provisional."
+    },
+    {
+      "id": "jpy",
+      "currency": "JPY",
+      "series": "MD02'MAM1NAM2M2MO",
+      "aggregate": "M2",
+      "adjustment": "Not seasonally adjusted",
+      "basis": "Monthly average",
+      "sourceUnit": "hundred millions",
+      "sourceMultiplier": 100000000,
+      "latest": {
+        "month": "2026-08",
+        "amount": 1296389500000000
+      },
+      "previousYear": {
+        "month": "2025-08",
+        "amount": 1271226300000000
+      },
+      "releasedAt": "2026-09-09",
+      "checkedAt": "2026-10-11",
+      "source": "https://www.boj.or.jp/en/statistics/money/ms/ms2608.pdf",
+      "dataSource": "https://www.stat-search.boj.or.jp/ssi/mtshtml/md02_m_1_en.html",
+      "previousDataSource": "https://www.stat-search.boj.or.jp/ssi/mtshtml/md02_m_1_en.html",
+      "definitionSource": "https://www.boj.or.jp/en/statistics/outline/note/notest31.htm",
+      "note": "Average amounts outstanding; the historical point uses the currently published series, including revisions."
+    },
+    {
+      "id": "cny",
+      "currency": "CNY",
+      "series": "PBC Financial Statistics Report · M2",
+      "aggregate": "M2",
+      "adjustment": "Not seasonally adjusted",
+      "basis": "End of month",
+      "sourceUnit": "trillions",
+      "sourceMultiplier": 1000000000000,
+      "latest": {
+        "month": "2026-08",
+        "amount": 356810000000000
+      },
+      "previousYear": {
+        "month": "2025-08",
+        "amount": 331980000000000
+      },
+      "releasedAt": "2026-09-14",
+      "checkedAt": "2026-10-11",
+      "source": "https://www.pbc.gov.cn/en/3688247/3688978/3709137/2026091810450078652/index.html",
+      "dataSource": "https://www.pbc.gov.cn/en/3688247/3688978/3709137/2026091810450078652/index.html",
+      "previousDataSource": "https://www.pbc.gov.cn/en/3688247/3688978/3709137/5838983/index.html",
+      "definitionSource": "https://www.pbc.gov.cn/rmyh/109339/2025080818580470423/index.html",
+      "note": "August 2025 report released September 12, 2025. Source reports broad money, not aggregate financing."
+    },
+    {
+      "id": "gbp",
+      "currency": "GBP",
+      "series": "B53Q · Table J",
+      "aggregate": "M4ex",
+      "adjustment": "Seasonally adjusted",
+      "basis": "End of month",
+      "sourceUnit": "billions",
+      "sourceMultiplier": 1000000000,
+      "latest": {
+        "month": "2026-08",
+        "amount": 3064747000000
+      },
+      "previousYear": {
+        "month": "2025-08",
+        "amount": 2941749000000
+      },
+      "releasedAt": "2026-09-29",
+      "checkedAt": "2026-10-11",
+      "source": "https://www.bankofengland.co.uk/statistics/money-and-credit/2026/august-2026",
+      "dataSource": "https://www.bankofengland.co.uk/-/media/boe/files/statistics/money-and-credit/2026/tables-a-and-k-august-2026.xlsx",
+      "previousDataSource": "https://www.bankofengland.co.uk/-/media/boe/files/statistics/money-and-credit/2025/tables-a-and-k-august-2025.xlsx",
+      "definitionSource": "https://www.bankofengland.co.uk/statistics/faqs",
+      "note": "Table J, amounts outstanding, excluding intermediate other financial corporations. The 2025 point is from its original September 29, 2025 release; the stock difference can include revisions and breaks and is not the Bank’s break-adjusted growth rate."
+    }
+  ],
+  "population": {
+    "persons": 8300678395,
+    "date": "2026-07-01",
+    "points": [
+      {
+        "date": "2025-07-01",
+        "persons": 8231613070
+      },
+      {
+        "date": "2026-07-01",
+        "persons": 8300678395
+      },
+      {
+        "date": "2027-07-01",
+        "persons": 8369094344
+      },
+      {
+        "date": "2028-07-01",
+        "persons": 8436618886
+      }
+    ],
+    "revision": "WPP 2024",
+    "variant": "Medium",
+    "source": "https://population.un.org/wpp/",
+    "download": "https://population.un.org/wpp/assets/Excel%20Files/1_Indicator%20(Standard)/EXCEL_FILES/1_General/WPP2024_GEN_F01_DEMOGRAPHIC_INDICATORS_COMPACT.xlsx"
+  }
+}

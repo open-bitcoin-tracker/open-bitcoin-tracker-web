@@ -2,7 +2,8 @@
 import { getRelativeLocaleUrl } from 'astro:i18n';
 import { resolveLang, stripLocale } from '../i18n/utils';
 import { tracker } from '../i18n/tracker';
-import { aBitOfEarth } from '../lib/projects';
+import { aBitOfEarth, bitcoinAndDollar } from '../lib/projects';
+import { supply } from '../i18n/supply';
 
 const lang = resolveLang(Astro.currentLocale);
 const t = tracker[lang];
@@ -24,4 +25,5 @@ const visiblePages = pages.filter(({ path }) => currentPage !== path);
     </a>
   ))}
   {currentPage !== aBitOfEarth.path && <a href={getRelativeLocaleUrl(lang, aBitOfEarth.path)} class="page-link" lang="en">{aBitOfEarth.title}</a>}
+  {currentPage !== bitcoinAndDollar.path && <a href={getRelativeLocaleUrl(lang, bitcoinAndDollar.path)} class="page-link" lang="en">{supply.title}</a>}
 </div>

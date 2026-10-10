@@ -1,0 +1,170 @@
+export const BITCOIN_MAX = 21_000_000;
+export const SATOSHIS_PER_BTC = 100_000_000;
+export const DAY_MS = 86_400_000;
+export const MAX_PROJECTION_DAYS = 90;
+
+export const FIAT_UNITS = {
+  usd: { currency: 'USD', aggregate: 'M2', multiplier: 1e9, sourceUnit: 'billions', basis: 'Monthly average', adjustment: 'Seasonally adjusted', series: 'M2SL' },
+  eur: { currency: 'EUR', aggregate: 'M2', multiplier: 1e6, sourceUnit: 'millions', basis: 'End of month', adjustment: 'Seasonally and working-day adjusted', series: 'BSI.M.U2.Y.V.M20.X.1.U2.2300.Z01.E' },
+  jpy: { currency: 'JPY', aggregate: 'M2', multiplier: 1e8, sourceUnit: 'hundred millions', basis: 'Monthly average', adjustment: 'Not seasonally adjusted', series: "MD02'MAM1NAM2M2MO" },
+  cny: { currency: 'CNY', aggregate: 'M2', multiplier: 1e12, sourceUnit: 'trillions', basis: 'End of month', adjustment: 'Not seasonally adjusted', series: 'PBC Financial Statistics Report · M2' },
+  gbp: { currency: 'GBP', aggregate: 'M4ex', multiplier: 1e9, sourceUnit: 'billions', basis: 'End of month', adjustment: 'Seasonally adjusted', series: 'B53Q · Table J' },
+} as const;
+export type FiatId = keyof typeof FIAT_UNITS;
+export interface MoneyObservation { month: string; amount: number }
+export interface MoneySnapshot {
+  id: FiatId;
+  currency: string;
+  series: string;
+  aggregate: 'M2' | 'M4ex';
+  adjustment: string;
+  basis: 'Monthly average' | 'End of month';
+  sourceUnit: string;
+  sourceMultiplier: number;
+  latest: MoneyObservation;
+  previousYear: MoneyObservation;
+  releasedAt: string;
+  checkedAt: string;
+  source: string;
+  dataSource: string;
+  previousDataSource: string;
+  definitionSource: string;
+  note: string;
+}
+export interface SupplySnapshot {
+  checkedAt: string;
+  fiat: MoneySnapshot[];
+  population: {
+    persons: number;
+    date: string;
+    points: { date: string; persons: number }[];
+    revision: string;
+    variant: string;
+    source: string;
+    download: string;
+  };
+}
+
+function populationTime(date: string): number {
+  // The source column is explicitly July 1, not January 1 or year-end.
+  return /^\d{4}-07-01$/.test(date) ? Date.parse(`${date}T00:00:00Z`) : NaN;
+}
+
+export function isValidPopulation(population: SupplySnapshot['population']): boolean {
+  const { points } = population;
+  return Array.isArray(points) && points.length >= 2
+    && points.every((point, index) => Number.isSafeInteger(point.persons) && point.persons > 0
+      && Number.isFinite(populationTime(point.date))
+      && (index === 0 || Number(point.date.slice(0, 4)) === Number(points[index - 1].date.slice(0, 4)) + 1))
+    && points.some((point) => point.date === population.date && point.persons === population.persons);
+}
+
+export type PopulationState = 'estimated' | 'snapshot' | 'unavailable';
+export interface PopulationProjection {
+  persons: number | null;
+  state: PopulationState;
+  // Net change per second in the active annual interval; can be negative.
+  rate: number;
+  date?: string;
+}
+
+export function projectPopulation(snapshot: SupplySnapshot, now: number): PopulationProjection {
+  const population = snapshot.population;
+  if (!isValidPopulation(population) || !Number.isFinite(now)) return { persons: null, state: 'unavailable', rate: 0 };
+  const first = population.points[0];
+  const last = population.points.at(-1)!;
+  if (now < populationTime(first.date) || now > populationTime(last.date)) {
+    const point = now < populationTime(first.date) ? first : last;
+    return { persons: point.persons, state: 'snapshot', rate: 0, date: point.date };
+  }
+  for (let index = 1; index < population.points.length; index++) {
+    const end = population.points[index];
+    if (now < populationTime(end.date) || index === population.points.length - 1) {
+      const start = population.points[index - 1];
+      const elapsed = now - populationTime(start.date);
+      const duration = populationTime(end.date) - populationTime(start.date);
+      const change = end.persons - start.persons;
+      return { persons: start.persons + change * elapsed / duration, state: 'estimated', rate: change / (duration / 1_000) };
+    }
+  }
+  return { persons: null, state: 'unavailable', rate: 0 };
+}
+
+export function monthStart(month: string): number {
+  if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(month)) return NaN;
+  return Date.parse(`${month}-01T00:00:00Z`);
+}
+
+// A monthly average has no exact instant. The following month's start is an
+// explicit modeling convention, not a claim about M2 at midnight that day.
+export function projectionAnchor(month: string): number {
+  const start = monthStart(month);
+  if (!Number.isFinite(start)) return NaN;
+  const date = new Date(start);
+  return Date.UTC(date.getUTCFullYear(), date.getUTCMonth() + 1, 1);
+}
+
+export function isValidMoney(money: MoneySnapshot): boolean {
+  const unit = FIAT_UNITS[money.id];
+  const latest = monthStart(money.latest.month);
+  const prior = monthStart(money.previousYear.month);
+  return !!unit && money.currency === unit.currency && money.aggregate === unit.aggregate
+    && money.sourceMultiplier === unit.multiplier
+    && money.sourceUnit === unit.sourceUnit && money.basis === unit.basis
+    && money.adjustment === unit.adjustment && money.series === unit.series
+    && Number.isFinite(latest) && Number.isFinite(prior)
+    && money.latest.month.slice(5) === money.previousYear.month.slice(5)
+    && Number(money.latest.month.slice(0, 4)) - Number(money.previousYear.month.slice(0, 4)) === 1
+    && Number.isSafeInteger(money.latest.amount) && money.latest.amount > 0
+    && Number.isSafeInteger(money.previousYear.amount) && money.previousYear.amount > 0
+    && Number.isFinite(Date.parse(money.releasedAt))
+    && Date.parse(money.releasedAt) >= projectionAnchor(money.latest.month)
+    && Number.isFinite(Date.parse(money.checkedAt))
+    && Date.parse(money.checkedAt) >= Date.parse(money.releasedAt)
+    && [money.source, money.dataSource, money.previousDataSource, money.definitionSource].every((url) => /^https:\/\//.test(url));
+}
+
+export function isValidSnapshot(snapshot: SupplySnapshot): boolean {
+  return snapshot.fiat.length === Object.keys(FIAT_UNITS).length
+    && new Set(snapshot.fiat.map(({ id }) => id)).size === snapshot.fiat.length
+    && snapshot.fiat.every(isValidMoney) && isValidPopulation(snapshot.population)
+    && Number.isFinite(Date.parse(snapshot.checkedAt));
+}
+
+export function annualRate(money: MoneySnapshot): number {
+  const { latest, previousYear } = money;
+  return (latest.amount - previousYear.amount)
+    / ((projectionAnchor(latest.month) - projectionAnchor(previousYear.month)) / 1_000);
+}
+
+export type ProjectionState = 'projected' | 'stale' | 'recorded' | 'unavailable';
+export function projectMoney(money: MoneySnapshot, now: number): { amount: number | null; state: ProjectionState } {
+  if (!isValidMoney(money) || !Number.isFinite(now)) return { amount: null, state: 'unavailable' };
+  const recorded = money.latest.amount;
+  const anchor = projectionAnchor(money.latest.month);
+  if (now < Date.parse(money.releasedAt)) return { amount: recorded, state: 'recorded' };
+  if (now > anchor + MAX_PROJECTION_DAYS * DAY_MS) return { amount: recorded, state: 'stale' };
+  const amount = recorded + annualRate(money) * Math.max(0, now - anchor) / 1_000;
+  // Never silently clamp an invalid projection into a fabricated observation.
+  if (!Number.isFinite(amount) || amount <= 0) return { amount: recorded, state: 'stale' };
+  return { amount, state: 'projected' };
+}
+
+export function equalShare(total: number, population: number): number {
+  if (!Number.isFinite(total) || total < 0 || !Number.isFinite(population) || population <= 0) return NaN;
+  return total / population;
+}
+
+export function formatNumber(value: number, locale: string, digits = 0): string {
+  return new Intl.NumberFormat(locale, { minimumFractionDigits: digits, maximumFractionDigits: digits }).format(value);
+}
+
+export function formatDate(value: string, locale: string, monthOnly = false): string {
+  return new Intl.DateTimeFormat(locale, {
+    year: 'numeric', month: 'long', ...(monthOnly ? {} : { day: 'numeric' as const }), timeZone: 'UTC',
+  }).format(new Date(monthOnly ? `${value}-01T00:00:00Z` : value));
+}
+
+export function interpolate(template: string, values: Record<string, string>): string {
+  return template.replace(/\{(\w+)\}/g, (match, key: string) => values[key] ?? match);
+}
