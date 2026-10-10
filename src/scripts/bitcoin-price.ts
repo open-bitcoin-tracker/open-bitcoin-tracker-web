@@ -107,7 +107,7 @@ function startTracker(root: HTMLElement) {
     const formatter = window ? dateTime : date;
     const period = points.length ? `${formatter.format(points[0].time)} — ${formatter.format(points.at(-1)!.time)}` : loading ? r.loading : r.unavailable;
     const scaleLabel = scale === 'logarithmic' ? t.scale : t.linearScale;
-    root.querySelector<SVGTitleElement>('[data-chart-title]')!.textContent = `${t.price} — ${scaleLabel}`;
+    chart.setAttribute('aria-label', `${t.price} — ${scaleLabel}`);
     root.querySelector<SVGDescElement>('[data-chart-description]')!.textContent = `${label}: ${period}. ${scaleLabel}.`;
     // Keep the outgoing curve while a new candle interval is loading.
     if (loading && points.length < 2) return;

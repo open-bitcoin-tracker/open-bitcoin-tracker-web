@@ -26,8 +26,7 @@ const lastDate = new Intl.DateTimeFormat(lang, { year: 'numeric', month: 'short'
   <noscript><p class="history-status">{t.unavailable}.</p></noscript>
   <figure class="price-history">
     <div class="chart-plot">
-      <svg class="price-chart" data-chart viewBox="0 0 1200 440" preserveAspectRatio="none" role="img" tabindex="0" aria-labelledby="chart-title chart-description">
-        <title id="chart-title" data-chart-title>{t.price} — {t.scale}</title>
+      <svg class="price-chart" data-chart viewBox="0 0 1200 440" preserveAspectRatio="none" role="img" tabindex="0" aria-label={`${t.price} — ${t.scale}`} aria-describedby="chart-description">
         <desc id="chart-description" data-chart-description>{t.all}: 2010 — {lastDate}. {t.scale}.</desc>
         <defs>
           <linearGradient id="price-fill" data-chart-fill-gradient gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="0" y2="440">
