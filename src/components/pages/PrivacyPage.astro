@@ -6,6 +6,7 @@
 import Layout from '../../layouts/Layout.astro';
 import Nav from '../Nav.astro';
 import Footer from '../Footer.astro';
+import BrandText from '../BrandText.astro';
 import { useTranslations } from '../../i18n/utils';
 
 const repoUrl = 'https://github.com/Max-Hodler/open-bitcoin-tracker';
@@ -29,7 +30,7 @@ const p = t.policy;
     <section>
       <div class="document-container pb-24 md:pb-32 prose-policy">
 
-        <p>{p.intro}</p>
+        <p><BrandText text={p.intro} /></p>
 
         {p.sections.map((section) => (
           <>

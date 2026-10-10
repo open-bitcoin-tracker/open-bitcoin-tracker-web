@@ -15,7 +15,7 @@ const t = useTranslations(Astro.currentLocale);
     <div class="landing-content">
       <header class="landing-brand">
         <img src="/app-icon.png" width="112" height="112" alt="" class="landing-icon" />
-        <h1>Open Bitcoin Tracker</h1>
+        <h1 lang="en" class="brand-name">Open Bitcoin Tracker</h1>
       </header>
       <div class="landing-options">
         <a class="landing-option" href={getRelativeLocaleUrl(lang, 'price-tracker')}>
@@ -55,7 +55,7 @@ const t = useTranslations(Astro.currentLocale);
   .landing-content { width: 100%; max-width: 52rem; }
   .landing-brand { text-align: center; margin-bottom: clamp(2.5rem, 6vw, 4rem); }
   .landing-icon { margin: 0 auto 1.75rem; filter: drop-shadow(0 8px 24px var(--hero-glow)); }
-  h1 { max-width: 12ch; margin-inline: auto; font-size: clamp(2.75rem, 7vw, 4.75rem); font-weight: 650; line-height: 1.06; letter-spacing: -.055em; text-wrap: balance; }
+  h1 { max-width: 12ch; margin-inline: auto; font-size: clamp(2.75rem, 7vw, 4.75rem); line-height: 1.06; letter-spacing: -.015em; text-wrap: balance; }
   .landing-options { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; }
   .landing-option {
     position: relative;

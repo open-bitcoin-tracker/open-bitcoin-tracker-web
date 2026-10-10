@@ -26,7 +26,7 @@ const homeHref = getRelativeLocaleUrl(resolveLang(Astro.currentLocale), '');
       </svg>
     </button>
     <div class="nav-menu-panel">
-      <a class="menu-brand" href={homeHref}><img src="/app-icon.png" width="36" height="36" alt="" /><span>Open Bitcoin Tracker</span></a>
+      <a class="menu-brand" href={homeHref}><img src="/app-icon.png" width="36" height="36" alt="" /><span lang="en" class="brand-name">Open Bitcoin Tracker</span></a>
       <div class="menu-links"><slot /></div>
       <div class="nav-menu-settings">
         <LanguageSwitcher placement="up" />
@@ -169,13 +169,6 @@ const homeHref = getRelativeLocaleUrl(resolveLang(Astro.currentLocale), '');
 </script>
 
 <style>
-  @font-face {
-    font-family: 'Barlow Condensed';
-    font-style: normal;
-    font-weight: 700;
-    font-display: swap;
-    src: url('/fonts/BarlowCondensed-Bold.ttf') format('truetype');
-  }
   :global(html.nav-menu-open) { overflow: hidden; scrollbar-gutter: auto; }
   .nav-menu { position: relative; flex-shrink: 0; }
   .nav-menu-trigger, .nav-menu-close {
@@ -221,7 +214,7 @@ const homeHref = getRelativeLocaleUrl(resolveLang(Astro.currentLocale), '');
     position: fixed; z-index: 1; top: calc(var(--menu-control-top) - var(--menu-control-offset)); right: calc(var(--menu-control-right) - var(--menu-control-offset));
     cursor: pointer;
   }
-  .menu-brand { display: flex; align-items: center; gap: 1rem; min-height: 36px; padding-right: 3rem; font-size: 1rem; font-weight: 600; }
+  .menu-brand { display: flex; align-items: center; gap: 1rem; min-height: 36px; padding-right: 3.5rem; font-size: clamp(1.5rem, 2.2vw, 2rem); line-height: 1.15; }
   .menu-brand img { width: 36px; height: 36px; flex-shrink: 0; border-radius: .375rem; }
   .menu-links { display: grid; align-content: start; gap: .65rem; }
   .menu-links :global(.menu-page-links) { display: contents; }
@@ -266,7 +259,7 @@ const homeHref = getRelativeLocaleUrl(resolveLang(Astro.currentLocale), '');
     .nav-menu-settings :global(.lang-switcher--up .lang-menu) { top: calc(100% + .5rem); bottom: auto; }
     .nav-menu-settings :global(.lang-switcher--up .lang-caret) { transform: none; }
     .nav-menu-settings :global(.lang-switcher--up[open] .lang-caret) { transform: rotate(180deg); }
-    .menu-brand { gap: .75rem; padding-right: 0; font-size: .9375rem; }
+    .menu-brand { gap: .75rem; padding-right: 0; font-size: clamp(1.375rem, 6vw, 1.625rem); }
     .menu-links { gap: .75rem; }
     .menu-links :global(a) { font-size: clamp(2rem, 9vw, 3.25rem); }
     .menu-links :global(.menu-secondary a) { font-size: 1.0625rem; }
