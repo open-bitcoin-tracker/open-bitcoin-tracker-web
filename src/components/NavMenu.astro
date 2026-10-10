@@ -1,127 +1,227 @@
 ---
 import LanguageSwitcher from './LanguageSwitcher.astro';
 import ThemeToggle from './ThemeToggle.astro';
-import { useTranslations } from '../i18n/utils';
+import { getRelativeLocaleUrl } from 'astro:i18n';
+import { useTranslations, resolveLang } from '../i18n/utils';
 
 const t = useTranslations(Astro.currentLocale);
+const homeHref = getRelativeLocaleUrl(resolveLang(Astro.currentLocale), '');
 ---
 
 <details class="nav-menu">
-  <summary class="nav-menu-trigger" aria-label={t.nav.menuLabel}>
+  <summary class="nav-menu-trigger" aria-label={t.nav.menuLabel} aria-haspopup="dialog" aria-controls="site-navigation-dialog">
     <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" aria-hidden="true">
-      <path class="menu-bar menu-bar--top" d="M2 12h20" />
-      <path class="menu-bar menu-bar--middle" d="M2 12h20" />
-      <path class="menu-bar menu-bar--bottom" d="M2 12h20" />
+      <path d="M2 5h20M2 12h20M2 19h20" />
     </svg>
   </summary>
-  <div class="nav-menu-panel">
-    <slot />
-    <div class="nav-menu-settings">
-      <LanguageSwitcher />
-      <ThemeToggle showLabel />
+  <!-- Open inside details preserves navigation when JavaScript is unavailable. -->
+  <dialog open id="site-navigation-dialog" class="nav-menu-dialog" aria-label={t.nav.mainAria}>
+    <div class="nav-menu-panel">
+      <button class="nav-menu-close" type="button" aria-label={t.nav.closeMenu} autofocus>
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="m5 5 14 14M5 19 19 5" /></svg>
+      </button>
+      <a class="menu-brand" href={homeHref}><img src="/app-icon.png" width="36" height="36" alt="" /><span>Open Bitcoin Tracker</span></a>
+      <div class="menu-links"><slot /></div>
+      <div class="nav-menu-settings">
+        <LanguageSwitcher placement="up" />
+        <ThemeToggle showLabel />
+      </div>
     </div>
-  </div>
+  </dialog>
 </details>
+<noscript><style is:inline>.nav-menu-close { display: none; }</style></noscript>
 
 <script>
   document.querySelectorAll<HTMLDetailsElement>('.nav-menu').forEach((menu) => {
     const trigger = menu.querySelector<HTMLElement>('.nav-menu-trigger');
+    const dialog = menu.querySelector<HTMLDialogElement>('.nav-menu-dialog');
+    const close = menu.querySelector<HTMLButtonElement>('.nav-menu-close');
+    if (!dialog || !trigger || !close) return;
 
-    document.addEventListener('click', (event) => {
-      if (menu.open && !menu.contains(event.target as Node)) menu.open = false;
-    });
-
-    menu.addEventListener('keydown', (event) => {
-      if (event.key === 'Escape' && menu.open) {
-        event.preventDefault();
-        menu.open = false;
-        trigger?.focus();
+    dialog.removeAttribute('open');
+    // Collapsing the trigger must not interrupt the modal's closing transition.
+    document.body.append(dialog);
+    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)');
+    let closing: Promise<void> | undefined;
+    const dismiss = (): Promise<void> => {
+      if (!dialog.open) return Promise.resolve();
+      if (closing) return closing;
+      if (reduce.matches) {
+        dialog.close();
+        return Promise.resolve();
       }
-    });
-
-    menu.addEventListener('focusout', (event) => {
-      if (!menu.contains(event.relatedTarget as Node | null)) menu.open = false;
-    });
-
-    menu.addEventListener('toggle', () => {
-      if (!menu.open) {
-        menu.querySelectorAll('details').forEach((dropdown) => { dropdown.open = false; });
-      }
-    });
-
-    menu.querySelectorAll('a').forEach((link) => {
-      link.addEventListener('click', () => {
-        menu.open = false;
-        trigger?.focus();
+      closing = new Promise<void>((resolve) => {
+        const finish = () => {
+          window.clearTimeout(timeout);
+          dialog.removeEventListener('transitionend', onTransitionEnd);
+          dialog.close();
+          dialog.classList.remove('is-closing');
+          closing = undefined;
+          resolve();
+        };
+        const onTransitionEnd = (event: TransitionEvent) => {
+          if (event.target === dialog && event.propertyName === 'transform') finish();
+        };
+        // Complete dismissal even if a browser cancels a transition event.
+        const timeout = window.setTimeout(finish, 500);
+        dialog.addEventListener('transitionend', onTransitionEnd);
+        dialog.classList.add('is-closing');
       });
+      return closing;
+    };
+    close.addEventListener('click', () => { void dismiss(); });
+    dialog.addEventListener('close', () => {
+      menu.open = false;
+      document.documentElement.classList.remove('nav-menu-open');
+      dialog.querySelectorAll('details').forEach((dropdown) => { dropdown.open = false; });
+      trigger.focus({ preventScroll: true });
+    });
+    dialog.addEventListener('cancel', (event) => {
+      event.preventDefault();
+      const dropdown = dialog.querySelector<HTMLDetailsElement>('.lang-switcher[open]');
+      if (dropdown) {
+        dropdown.open = false;
+        dropdown.querySelector<HTMLElement>('summary')?.focus();
+      } else void dismiss();
+    });
+    dialog.addEventListener('keydown', (event) => {
+      const dropdown = dialog.querySelector<HTMLDetailsElement>('.lang-switcher[open]');
+      if (event.key === 'Escape' && dropdown) {
+        event.preventDefault();
+        event.stopPropagation();
+        dropdown.open = false;
+        dropdown.querySelector<HTMLElement>('summary')?.focus();
+      }
+      if (event.key === 'Tab') {
+        const controls = Array.from(dialog.querySelectorAll<HTMLElement>('a[href], button:not([disabled]), summary, [tabindex="0"]'))
+          .filter((control) => control.checkVisibility());
+        const first = controls[0];
+        const last = controls.at(-1);
+        if (event.shiftKey && (document.activeElement === first || !dialog.contains(document.activeElement))) {
+          event.preventDefault();
+          last?.focus();
+        } else if (!event.shiftKey && document.activeElement === last) {
+          event.preventDefault();
+          first?.focus();
+        }
+      }
+    }, { capture: true });
+    dialog.addEventListener('click', (event) => {
+      if (event.target === dialog) void dismiss();
+    });
+    dialog.querySelectorAll('a').forEach((link) => link.addEventListener('click', (event) => {
+      if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || link.target === '_blank') {
+        void dismiss();
+        return;
+      }
+      event.preventDefault();
+      void dismiss().then(() => { window.location.assign(link.href); });
+    }));
+    menu.addEventListener('toggle', () => {
+      if (menu.open && !dialog.open) {
+        document.documentElement.classList.add('nav-menu-open');
+        dialog.showModal();
+      } else if (!menu.open && dialog.open) void dismiss();
     });
   });
 </script>
 
 <style>
+  @font-face {
+    font-family: 'Barlow Condensed';
+    font-style: normal;
+    font-weight: 700;
+    font-display: swap;
+    src: url('/fonts/BarlowCondensed-Bold.ttf') format('truetype');
+  }
+  :global(html.nav-menu-open) { overflow: hidden; scrollbar-gutter: auto; }
   .nav-menu { position: relative; flex-shrink: 0; }
   .nav-menu-trigger {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 48px;
-    height: 48px;
-    border: 0;
-    color: var(--color-ink);
-    background: transparent;
-    cursor: pointer;
-    list-style: none;
+    position: relative; z-index: 1;
+    display: flex; align-items: center; justify-content: center;
+    width: 48px; height: 48px; border: 0; color: var(--color-ink);
+    background: transparent; cursor: pointer; list-style: none;
   }
   .nav-menu-trigger::-webkit-details-marker { display: none; }
   :global(html.dark) .nav-menu-trigger { color: #fff; }
+  .nav-menu[open] > .nav-menu-trigger { color: #E9E6DF; }
   .nav-menu-trigger:hover { opacity: .75; }
-  @media (max-width: 600px) {
-    .nav-menu-trigger svg { width: 28px; height: 28px; }
+  .nav-menu-dialog {
+    --menu-ink: #E9E6DF;
+    position: fixed; inset: 0 0 0 auto; width: clamp(400px, 40vw, 640px); height: 100dvh;
+    max-width: none; max-height: none; margin: 0; padding: 0; border: 0;
+    color: var(--menu-ink); background: transparent;
+    overflow-x: hidden; overflow-y: auto; opacity: 0; transform: translateX(100%);
+    transition: transform 420ms cubic-bezier(.22, 1, .36, 1), opacity 300ms ease, display 420ms allow-discrete, overlay 420ms allow-discrete;
   }
-  .menu-bar { transform-box: view-box; transform-origin: 12px 12px; transition: transform 240ms var(--ease-out), opacity 160ms ease-out; }
-  .menu-bar--top { transform: translateY(-7px); }
-  .menu-bar--bottom { transform: translateY(7px); }
-  .nav-menu[open] .menu-bar--top { transform: rotate(45deg); }
-  .nav-menu[open] .menu-bar--middle { transform: scaleX(0); opacity: 0; }
-  .nav-menu[open] .menu-bar--bottom { transform: rotate(-45deg); }
-  @media (prefers-reduced-motion: reduce) {
-    .menu-bar { transition: none; }
-  }
+  .nav-menu-dialog[open] { display: block; opacity: 1; transform: translateX(0); }
+  .nav-menu-dialog[open].is-closing { transform: translateX(100%); opacity: 0; }
+  .nav-menu-dialog::backdrop { background: transparent; }
   .nav-menu-panel {
-    position: absolute;
-    top: calc(100% + .75rem);
-    right: 0;
-    width: min(17rem, calc(100vw - 2rem));
-    max-height: calc(100dvh - var(--nav-top, 1rem) - 48px - .75rem - max(1rem, env(safe-area-inset-bottom, 0px)));
-    overflow-y: auto;
-    padding: .5rem;
-    background: var(--color-surface);
-    border: 1px solid var(--color-divider);
-    border-radius: var(--radius-md);
-    box-shadow: var(--shadow-card-hover);
+    position: relative; display: flex; flex-direction: column; gap: 3.5rem;
+    min-height: 100dvh; padding: 3.5rem clamp(2rem, 3.5vw, 4rem) 2.5rem;
+    background: linear-gradient(165deg, #14213D, #0B1428 80%);
   }
-  .nav-menu-panel :global(a), .nav-menu-panel :global(.lang-summary), .nav-menu-panel :global(.theme-toggle) {
-    display: flex;
-    align-items: center;
-    gap: .5rem;
-    width: 100%;
-    min-height: 44px;
-    padding: .625rem .75rem;
-    border-radius: .5rem;
-    color: var(--color-ink);
-    font-size: .875rem;
+  .nav-menu-close {
+    position: absolute; top: 2rem; right: clamp(1rem, 3vw, 3rem);
+    display: flex; align-items: center; justify-content: center;
+    width: 48px; height: 48px; border-radius: 50%; color: #D5DDED;
+    background: rgb(255 255 255 / .045); cursor: pointer;
+    transition: background-color 180ms ease, transform 180ms ease;
   }
-  .nav-menu-panel :global(a:hover), .nav-menu-panel :global(.lang-summary:hover), .nav-menu-panel :global(.theme-toggle:hover) { background: var(--hover-tint); }
-  .nav-menu-settings { display: grid; gap: .25rem; }
-  .nav-menu-panel > :global(a) ~ .nav-menu-settings { margin-top: .5rem; padding-top: .5rem; border-top: 1px solid var(--color-divider); }
-  .nav-menu-panel :global(.theme-toggle) { justify-content: flex-start; cursor: pointer; }
-  .nav-menu-panel :global(.lang-current) { display: inline; }
-  .nav-menu-panel :global(.lang-caret) { margin-left: auto; }
-  .nav-menu-panel :global(.lang-menu) {
-    position: static;
-    min-width: 0;
-    max-height: none;
-    margin-top: .25rem;
-    box-shadow: none;
+  .nav-menu-close:hover { background: rgb(255 255 255 / .12); transform: rotate(90deg); }
+  .menu-brand { display: flex; align-items: center; gap: 1rem; min-height: 36px; padding-right: 3rem; font-size: 1rem; font-weight: 600; }
+  .menu-brand img { width: 36px; height: 36px; flex-shrink: 0; border-radius: .375rem; }
+  .menu-links { display: grid; align-content: start; gap: .65rem; }
+  .menu-links :global(.menu-page-links) { display: contents; }
+  .menu-links :global(a) {
+    display: block; width: fit-content; max-width: 100%; padding: .125rem 0;
+    font-family: 'Barlow Condensed', 'Inter', sans-serif; font-size: clamp(2.5rem, 4.3vw, 4rem);
+    font-weight: 700; line-height: 1.04; letter-spacing: -.015em; text-transform: uppercase;
+    color: #CBD3E6; overflow-wrap: anywhere; text-decoration: none;
+    transition: color 180ms ease, transform 180ms ease;
+  }
+  .menu-links :global(a.page-link) { color: #FFF3D9; }
+  .menu-links :global(a:hover) { color: #F7A53A; transform: translateX(.25rem); }
+  .menu-links :global(.menu-secondary) {
+    display: grid; gap: .125rem; margin-top: 1rem; padding-top: 1.5rem;
+    border-top: 1px solid rgb(203 211 230 / .2); list-style: none;
+  }
+  .menu-links :global(.menu-secondary a) {
+    display: flex; align-items: center; min-height: 44px; padding: .5rem 0;
+    font-family: 'Inter', sans-serif; font-size: 1.25rem; font-weight: 500;
+    line-height: 1.4; letter-spacing: normal; text-transform: none;
+  }
+  .nav-menu-settings { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 1rem; margin-top: auto; }
+  .nav-menu-settings :global(.lang-summary), .nav-menu-settings :global(.theme-toggle) {
+    display: inline-flex; align-items: center; gap: .5rem; min-height: 44px;
+    color: #CBD3E6; font-size: .875rem; cursor: pointer;
+  }
+  .nav-menu-settings :global(.lang-summary:hover), .nav-menu-settings :global(.theme-toggle:hover) { color: #FFF3D9; }
+  .nav-menu-settings :global(.lang-menu) {
+    background: #14213D; border-color: rgb(255 255 255 / .12); box-shadow: 0 12px 40px rgb(0 0 0 / .4);
+    max-height: min(50dvh, 24rem);
+  }
+  .nav-menu-settings :global(.lang-option) { color: #CBD3E6; }
+  .nav-menu-settings :global(.lang-option:hover), .nav-menu-settings :global(.lang-option.is-current) { color: #FFF3D9; background: rgb(255 255 255 / .06); }
+  @starting-style {
+    .nav-menu-dialog[open] { opacity: 0; transform: translateX(100%); }
+  }
+  @media (max-width: 700px) {
+    .nav-menu-trigger svg { width: 28px; height: 28px; }
+    .nav-menu-dialog { width: 100vw; }
+    .nav-menu-panel { gap: 2rem; padding: max(1.25rem, env(safe-area-inset-top)) 1.5rem max(1.5rem, env(safe-area-inset-bottom)); }
+    .nav-menu-close { top: max(1.25rem, env(safe-area-inset-top)); right: 1rem; }
+    .nav-menu-settings { order: -1; justify-content: flex-start; gap: .25rem .75rem; margin: 0 3rem 0 0; min-height: 48px; }
+    .nav-menu-settings :global(.lang-switcher--up .lang-menu) { top: calc(100% + .5rem); bottom: auto; }
+    .nav-menu-settings :global(.lang-switcher--up .lang-caret) { transform: none; }
+    .nav-menu-settings :global(.lang-switcher--up[open] .lang-caret) { transform: rotate(180deg); }
+    .menu-brand { gap: .75rem; padding-right: 0; font-size: .9375rem; }
+    .menu-links { gap: .75rem; }
+    .menu-links :global(a) { font-size: clamp(2rem, 9vw, 3.25rem); }
+    .menu-links :global(.menu-secondary a) { font-size: 1.0625rem; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .nav-menu-dialog, .nav-menu-panel, .nav-menu-close, .menu-links :global(a) { transition: none; }
   }
 </style>

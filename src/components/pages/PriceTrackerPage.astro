@@ -2,14 +2,15 @@
 import Layout from '../../layouts/Layout.astro';
 import BitcoinChart from '../BitcoinChart.astro';
 import Nav from '../Nav.astro';
-import { resolveLang } from '../../i18n/utils';
+import { resolveLang, useTranslations } from '../../i18n/utils';
 import { tracker } from '../../i18n/tracker';
 
 const lang = resolveLang(Astro.currentLocale);
 const t = tracker[lang];
+const pageTitle = `${useTranslations(Astro.currentLocale).landing.priceTracker} — Open Bitcoin Tracker`;
 ---
 
-<Layout title={t.title} description={t.description}>
+<Layout title={pageTitle} description={t.description}>
   <div class="tracker-page">
     <Nav />
     <main id="main-content" class="tracker-main">

@@ -6,7 +6,7 @@ import { useTranslations, htmlLang, stripLocale } from '../i18n/utils';
 interface Props {
   // Which page's metadata to use for <title>/description. Pages pass this;
   // explicit title/description props still override if ever needed.
-  page?: 'home' | 'about' | 'privacy';
+  page?: 'landing' | 'home' | 'about' | 'privacy';
   title?: string;
   description?: string;
 }
@@ -25,7 +25,7 @@ const ogImageAlt = t.meta.ogImageAlt;
 const siteName = 'Open Bitcoin Tracker';
 const appUrl = new URL('/android-app', Astro.site).toString();
 
-// The locale-agnostic remainder of the current path ('' | 'about' | 'privacy'),
+// The locale-agnostic remainder of the current path,
 // used to build this same page's URL in every language for hreflang.
 const localePath = stripLocale(Astro.url.pathname);
 
@@ -46,7 +46,7 @@ const alternates = [
 ];
 
 // The SoftwareApplication entity describes the app itself. It appears once per
-// locale home (not on about/privacy) and always points at the canonical app
+// Android app page and always points at the canonical app
 // URL/download, not the current localized page. softwareVersion is
 // intentionally omitted so it can't silently go stale against the release.
 const isApp = localePath === 'android-app';

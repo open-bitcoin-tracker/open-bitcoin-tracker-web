@@ -2,6 +2,10 @@ import type { Dict } from '../ui';
 
 export const ja: Dict = {
   meta: {
+    landing: {
+      title: 'Open Bitcoin Tracker',
+      description: 'ビットコインのリアルタイム価格と価格履歴、そして保有ビットコインの価値を追跡するオープンソースのAndroidアプリ。',
+    },
     home: {
       title: 'Open Bitcoin Tracker - Android向けオープンソースのビットコイン・ポートフォリオ追跡アプリ',
       description:
@@ -20,8 +24,14 @@ export const ja: Dict = {
     ogImageAlt: 'Open Bitcoin Tracker — Android向けのプライベートなビットコイン価値トラッカー',
   },
 
+  landing: {
+    priceTracker: '価格トラッカー',
+    priceDescription: 'ビットコインのリアルタイム価格と2010年からの価格履歴。',
+  },
+
   nav: {
     menuLabel: 'メニュー',
+    closeMenu: 'メニューを閉じる',
     skipToContent: 'コンテンツへ移動',
     mainAria: 'メインナビゲーション',
     github: 'GitHub',

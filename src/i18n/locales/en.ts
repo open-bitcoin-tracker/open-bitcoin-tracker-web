@@ -9,6 +9,10 @@
 // "Open Bitcoin Tracker", "OBT", "Max Hodler").
 export const en = {
   meta: {
+    landing: {
+      title: 'Open Bitcoin Tracker',
+      description: 'Live Bitcoin price and history, plus the open-source Android app to track the value of your Bitcoin stacks.',
+    },
     home: {
       title: 'Open Bitcoin Tracker - Open source bitcoin portfolio tracker for Android',
       description:
@@ -27,8 +31,14 @@ export const en = {
     ogImageAlt: 'Open Bitcoin Tracker — Private Bitcoin value tracker for Android',
   },
 
+  landing: {
+    priceTracker: 'Price Tracker',
+    priceDescription: 'Live Bitcoin price and history since 2010.',
+  },
+
   nav: {
     menuLabel: 'Menu',
+    closeMenu: 'Close menu',
     skipToContent: 'Skip to content',
     mainAria: 'Main navigation',
     github: 'GitHub',

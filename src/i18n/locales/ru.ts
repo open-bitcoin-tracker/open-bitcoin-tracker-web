@@ -2,6 +2,10 @@ import type { Dict } from '../ui';
 
 export const ru: Dict = {
   meta: {
+    landing: {
+      title: 'Open Bitcoin Tracker',
+      description: 'Курс и история цены биткоина, а также Android-приложение с открытым исходным кодом для отслеживания стоимости твоих накоплений.',
+    },
     home: {
       title: 'Open Bitcoin Tracker - Открытый трекер биткоин-портфеля для Android',
       description:
@@ -20,8 +24,14 @@ export const ru: Dict = {
     ogImageAlt: 'Open Bitcoin Tracker — Приватный трекер стоимости биткоина для Android',
   },
 
+  landing: {
+    priceTracker: 'Трекер цены',
+    priceDescription: 'Курс биткоина в реальном времени и история с 2010 года.',
+  },
+
   nav: {
     menuLabel: 'Меню',
+    closeMenu: 'Закрыть меню',
     skipToContent: 'Перейти к содержимому',
     mainAria: 'Основная навигация',
     github: 'GitHub',

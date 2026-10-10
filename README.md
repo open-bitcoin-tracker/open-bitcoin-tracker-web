@@ -23,7 +23,8 @@ The build does not run a full TypeScript check. Local development and preview do
 
 ## Pages and languages
 
-- `/`: live Bitcoin price and interactive price history since July 2010.
+- `/`: Open Bitcoin Tracker landing page with access to the price tracker and Android app.
+- `/price-tracker/`: live Bitcoin price and interactive price history since July 2010.
 - `/android-app/`: Android app overview and download links.
 - `/about/` and `/privacy/`: project information and the app privacy policy.
 

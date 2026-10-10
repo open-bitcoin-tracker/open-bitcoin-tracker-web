@@ -7,7 +7,7 @@ const lang = resolveLang(Astro.currentLocale);
 const t = tracker[lang];
 const currentPage = stripLocale(Astro.url.pathname);
 const pages = [
-  { path: '', label: t.priceChart },
+  { path: 'price-tracker', label: t.priceChart },
   { path: 'android-app', label: t.app },
 ];
 const visiblePages = pages.filter(({ path }) => currentPage !== path);

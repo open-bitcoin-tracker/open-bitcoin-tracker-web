@@ -2,6 +2,10 @@ import type { Dict } from '../ui';
 
 export const vi: Dict = {
   meta: {
+    landing: {
+      title: 'Open Bitcoin Tracker',
+      description: 'Giá Bitcoin trực tiếp, lịch sử giá và ứng dụng Android mã nguồn mở để theo dõi giá trị các khoản Bitcoin của bạn.',
+    },
     home: {
       title: 'Open Bitcoin Tracker - Trình theo dõi danh mục bitcoin mã nguồn mở cho Android',
       description:
@@ -20,8 +24,14 @@ export const vi: Dict = {
     ogImageAlt: 'Open Bitcoin Tracker — Trình theo dõi giá trị Bitcoin riêng tư cho Android',
   },
 
+  landing: {
+    priceTracker: 'Theo dõi giá',
+    priceDescription: 'Giá Bitcoin trực tiếp và lịch sử giá từ năm 2010.',
+  },
+
   nav: {
     menuLabel: 'Menu',
+    closeMenu: 'Đóng menu',
     skipToContent: 'Chuyển đến nội dung',
     mainAria: 'Điều hướng chính',
     github: 'GitHub',
