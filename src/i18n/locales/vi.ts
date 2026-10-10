@@ -27,6 +27,7 @@ export const vi: Dict = {
   landing: {
     priceTracker: 'Theo dõi giá',
     priceDescription: 'Giá Bitcoin trực tiếp và lịch sử giá từ năm 2010.',
+    earthDescription: 'Khám phá Bitcoin như một phần diện tích đất liền trên Trái Đất.',
   },
 
   nav: {

@@ -1,0 +1,73 @@
+.earth-feature .unit-select {
+  position: relative;
+  flex-shrink: 0;
+}
+.earth-feature .input-unit {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  border: 0;
+  background: transparent;
+  min-height: 36px;
+  padding: 0 6px;
+  cursor: pointer;
+  border-radius: 7px;
+}
+.earth-feature .input-unit:hover,
+.earth-feature .input-unit[aria-expanded='true'] {
+  background: var(--surface);
+  color: var(--ink);
+}
+.earth-feature .input-unit:focus-visible {
+  outline-offset: 2px;
+}
+.earth-feature .input-unit svg {
+  flex-shrink: 0;
+  transition: transform 0.15s ease;
+}
+.earth-feature .input-unit[aria-expanded='true'] svg {
+  transform: rotate(180deg);
+}
+.earth-feature .unit-options {
+  position: absolute;
+  top: calc(100% + 12px);
+  right: 0;
+  min-width: 120px;
+  padding: 5px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: var(--panel-shadow);
+  color: var(--ink);
+  outline: none;
+}
+.earth-feature .unit-option {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  min-height: 44px;
+  padding: 8px 12px;
+  border: 1px solid transparent;
+  border-radius: 7px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.earth-feature .unit-option[aria-selected='true'] {
+  background: var(--panel);
+  border-color: var(--border);
+  color: var(--orange);
+}
+.earth-feature .unit-option:hover:not([aria-selected='true']),
+.earth-feature .unit-option[data-active='true']:not([aria-selected='true']) {
+  background: var(--surface);
+}
+.earth-feature .unit-options:focus-visible .unit-option[data-active='true'] {
+  border-color: var(--orange-ink);
+}
+.earth-feature .input-unit {
+  font-size: 13px;
+  color: var(--muted);
+  font-weight: 600;
+}

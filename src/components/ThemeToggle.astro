@@ -36,6 +36,7 @@ const t = useTranslations(Astro.currentLocale);
   const reduce = window.matchMedia('(prefers-reduced-motion: reduce)');
   const sync = () => toggles.forEach((button) => button.setAttribute('aria-pressed', String(root.classList.contains('dark'))));
   sync();
+  document.addEventListener('themechange', sync);
   let transition: ViewTransition | undefined;
   const apply = () => {
     const dark = root.classList.toggle('dark');

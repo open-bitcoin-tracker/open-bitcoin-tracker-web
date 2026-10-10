@@ -34,6 +34,7 @@ export const en = {
   landing: {
     priceTracker: 'Price Tracker',
     priceDescription: 'Live Bitcoin price and history since 2010.',
+    earthDescription: 'Explore Bitcoin as a share of Earth’s land.',
   },
 
   nav: {

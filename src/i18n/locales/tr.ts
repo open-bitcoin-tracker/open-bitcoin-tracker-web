@@ -27,6 +27,7 @@ export const tr: Dict = {
   landing: {
     priceTracker: 'Fiyat takibi',
     priceDescription: 'Canlı Bitcoin fiyatı ve 2010’dan bu yana fiyat geçmişi.',
+    earthDescription: 'Bitcoin’i Dünya’nın kara yüzeyinin bir payı olarak keşfet.',
   },
 
   nav: {

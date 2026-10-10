@@ -1,0 +1,50 @@
+.earth-feature .floating-map-controls {
+  position: absolute;
+  top: 78px;
+  right: 20px;
+  z-index: 4;
+}
+.earth-feature .appearance-panel {
+  padding: 5px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: var(--panel-shadow);
+}
+.earth-feature .theme-switcher {
+  display: flex;
+  gap: 4px;
+}
+.earth-feature .theme-switcher button {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--muted);
+}
+.earth-feature .theme-switcher button[aria-pressed='true'] {
+  background: var(--panel);
+  border-color: var(--border);
+  color: var(--orange);
+  font-weight: 600;
+}
+.earth-feature .theme-switcher button:hover:not([aria-pressed='true']) {
+  color: var(--ink);
+}
+.earth-feature .theme-switcher button:focus-visible {
+  outline-offset: 0;
+}
+.earth-feature .theme-switcher svg {
+  flex-shrink: 0;
+}
+@media (max-width: 800px) {
+  .earth-feature .floating-map-controls {
+    top: 70px;
+    right: 12px;
+  }
+}

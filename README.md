@@ -16,6 +16,8 @@ npm run dev
 | Command | Purpose |
 | --- | --- |
 | `npm test` | Run chart motion and range pill tests |
+| `npm run test:earth` | Run map, calculation, preferences, and theme tests |
+| `npm run check:earth` | Type-check the Earth feature and its tests |
 | `npm run build` | Generate the production site in `dist/` |
 | `npm run preview` | Serve the built site locally |
 
@@ -23,14 +25,23 @@ The build does not run a full TypeScript check. Local development and preview do
 
 ## Pages and languages
 
-- `/`: Open Bitcoin Tracker landing page with access to the price tracker and Android app.
+- `/`: Open Bitcoin Tracker landing page with access to the price tracker, Android app, and A Bit of Earth.
 - `/price-tracker/`: live Bitcoin price and interactive price history since July 2010.
 - `/android-app/`: Android app overview and download links.
+- `/a-bit-of-earth/`: interactive map comparing a Bitcoin amount with a share of Earth's land.
 - `/about/` and `/privacy/`: project information and the app privacy policy.
 
 All pages support English, Spanish, Brazilian Portuguese, Russian, Turkish, Vietnamese, Japanese, French, German, and Italian. English has no URL prefix; Portuguese uses `/pt/` with code `pt-BR`; others use their language code.
 
 On Cloudflare Pages, `functions/_middleware.js` honors a valid `lang` cookie on root visits; otherwise it detects `Accept-Language` and stores the result for 180 days. The switcher links to the same page in another language.
+
+## A Bit of Earth
+
+The map is a browser-rendered React feature inside Astro, adapted from [A Bit of Earth](https://github.com/Max-Hodler/bitcoin-land). It uses MapLibre GL and a bundled worker, with scoped styles and Titillium Web fonts (the font license is included in `public/earth/fonts/OFL.txt`). The calculator, location search, measurements, and guide currently use English on every localized route; the surrounding navigation and landing descriptions are translated.
+
+Bitcoin amounts are calculated locally. Location search sends only the submitted place query to Photon at `https://photon.komoot.io/api/`. Set `PUBLIC_EARTH_GEOCODER_URL` at build time to use another compatible endpoint. Map tiles and glyphs are fetched directly from the providers specified in `src/features/earth/map/style.json`; attribution remains visible on desktop and mobile. The page suppresses referrer headers.
+
+Map and site controls share the existing `theme` preference. Mobile map settings are separate from the site menu and provide measurements, appearance, and the guide. The source project remains independently maintained; its standalone build and exports are not part of this website.
 
 ## Price chart
 
@@ -51,6 +62,7 @@ Intraday ranges may be shorter than requested because Kraken limits available ca
 | `src/pages/`, `src/components/pages/` | Routes and shared page content |
 | `src/components/`, `src/layouts/`, `src/styles/` | UI, metadata, and styles |
 | `src/lib/`, `src/scripts/` | Chart calculations and browser interactions |
+| `src/features/earth/`, `public/earth/` | Earth map, calculations, scoped styles, tests, and fonts |
 | `src/i18n/locales/en.ts`, `src/i18n/ui.ts` | English page copy and dictionary types |
 | `src/i18n/tracker.ts`, `src/i18n/ranges.ts` | Chart copy for every language |
 | `astro.config.mjs` | Site URL, locale routing, sitemap, and build configuration |

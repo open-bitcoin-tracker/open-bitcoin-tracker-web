@@ -1,0 +1,123 @@
+@font-face {
+  font-family: 'Titillium Web';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('/earth/fonts/TitilliumWeb-Regular.ttf') format('truetype');
+}
+@font-face {
+  font-family: 'Titillium Web';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url('/earth/fonts/TitilliumWeb-SemiBold.ttf') format('truetype');
+}
+@font-face {
+  font-family: 'Titillium Web';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url('/earth/fonts/TitilliumWeb-Bold.ttf') format('truetype');
+}
+
+.earth-feature {
+  font-family: 'Titillium Web', Arial, sans-serif;
+  color: var(--ink);
+  background: var(--page-background);
+  font-synthesis: none;
+  font-size: 16px;
+  line-height: normal;
+  --page-background: #fff;
+  --ink: #22252b;
+  --orange: #f7931a;
+  --orange-ink: #a94f00;
+  --orange-soft: #fff7ec;
+  --readout-orange: #a94f00;
+  --readout-halo: #fff7ec;
+  --border: #e3e5e8;
+  --muted: #626872;
+  --panel-shadow: 0 8px 32px #161a241a;
+  color-scheme: light;
+  --panel: #fff;
+  --surface: #f4f5f7;
+  --input-border: #d4d7dc;
+  --error: #a4372e;
+  --warning-border: #efcfaa;
+  --overlay-opacity: 0.3;
+  --globe-sky: radial-gradient(
+    ellipse at 50% 50%,
+    #dcf8ff 0%,
+    #bce7fa 34%,
+    #80a9ce 66%,
+    #35547e 100%
+  );
+}
+.earth-feature * {
+  box-sizing: border-box;
+}
+.earth-feature {
+  margin: 0;
+}
+.earth-feature button,
+.earth-feature input {
+  font: inherit;
+}
+.earth-feature button,
+.earth-feature a,
+.earth-feature input {
+  -webkit-tap-highlight-color: transparent;
+}
+.earth-feature button {
+  cursor: pointer;
+}
+.earth-feature button:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+.earth-feature button:focus-visible,
+.earth-feature a:focus-visible,
+.earth-feature input:focus-visible {
+  outline: 3px solid var(--orange-ink);
+  outline-offset: 4px;
+}
+.earth-feature button {
+  color: inherit;
+}
+.earth-feature a {
+  color: inherit;
+}
+
+.earth-feature[data-theme='dark'] {
+  color-scheme: dark;
+  --ink: #edf0f4;
+  --orange-ink: #ffb75e;
+  --orange-soft: #342a1e;
+  --readout-orange: #f7931a;
+  --readout-halo: #151a21;
+  --border: #39414d;
+  --muted: #adb6c2;
+  --panel: #1c222c;
+  --surface: #282f3b;
+  --page-background: #151a21;
+  --input-border: #46505e;
+  --error: #ff9c90;
+  --warning-border: #795837;
+  --panel-shadow: 0 8px 32px #0005;
+  --overlay-opacity: 0.2;
+  --globe-sky: radial-gradient(
+    ellipse at 50% 50%,
+    #426c88 0%,
+    #294c6b 34%,
+    #172f4e 66%,
+    #0b172c 100%
+  );
+}
+
+.earth-feature .eyebrow {
+  color: var(--orange-ink);
+}
+@media (prefers-reduced-motion: reduce) {
+  .earth-feature * {
+    scroll-behavior: auto !important;
+  }
+}

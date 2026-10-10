@@ -1,0 +1,25 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import Nav from '../Nav.astro';
+import EarthApp from '../../features/earth/App';
+import { useTranslations } from '../../i18n/utils';
+const t = useTranslations(Astro.currentLocale);
+---
+
+<Layout title="A Bit of Earth" description={t.landing.earthDescription} noReferrer>
+  <Nav />
+  <main id="main-content" class="earth-page">
+    <EarthApp client:only="react">
+      <div slot="fallback" class="earth-fallback" lang="en">
+        <p>Loading A Bit of Earth…</p>
+        <noscript>Enable JavaScript to use the interactive map and calculator.</noscript>
+      </div>
+    </EarthApp>
+  </main>
+</Layout>
+
+<style>
+  :global(html:has(.earth-page)) { overflow: hidden; scrollbar-gutter: auto; }
+  .earth-page { position: fixed; inset: 0; }
+  .earth-fallback { display: grid; place-content: center; height: 100dvh; padding: 2rem; text-align: center; }
+</style>

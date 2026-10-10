@@ -1,0 +1,56 @@
+.earth-feature.app-shell .earth-workspace {
+  position: relative;
+  height: 100dvh;
+  min-height: 0;
+  --panel-width: 320px;
+}
+.earth-feature .floating-search {
+  position: relative;
+  z-index: 5;
+  flex-shrink: 0;
+  min-height: 44px;
+}
+.earth-feature .floating-search .location-search {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+}
+.earth-feature .floating-panels {
+  position: absolute;
+  top: 20px;
+  left: 20px;
+  z-index: 4;
+  width: var(--panel-width);
+  max-height: calc(100dvh - 80px);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+@media (max-width: 800px) {
+  .earth-feature.app-shell .earth-workspace {
+    --panel-width: 300px;
+  }
+  .earth-feature .floating-panels {
+    top: 12px;
+    left: 12px;
+    max-width: calc(100% - 104px);
+    max-height: calc(100dvh - 100px);
+  }
+}
+@media (max-width: 480px) {
+  .earth-feature .floating-panels > .sidebar,
+.earth-feature.app-shell .earth-workspace > .measurement-panel,
+.earth-feature.app-shell .earth-workspace > .floating-map-controls {
+    display: none;
+  }
+  .earth-feature .floating-panels {
+    max-width: calc(100% - 80px);
+  }
+}
+
+/* Keep map controls below the shared site menu, in their own right column. */
+.earth-feature .earth-workspace > .measurement-panel { top: calc(var(--menu-control-top) + var(--menu-control-size) + 20px); }
+.earth-feature .earth-workspace > .floating-map-controls { top: calc(var(--menu-control-top) + var(--menu-control-size) + 78px); }
+.earth-feature .brand-name { font-family: inherit; font-weight: inherit; text-transform: none; }
+.earth-feature h2 { font-size: 1.5em; font-weight: 700; }

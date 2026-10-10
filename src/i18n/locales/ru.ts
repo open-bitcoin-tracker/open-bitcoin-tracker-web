@@ -27,6 +27,7 @@ export const ru: Dict = {
   landing: {
     priceTracker: 'Трекер цены',
     priceDescription: 'Курс биткоина в реальном времени и история с 2010 года.',
+    earthDescription: 'Узнай, какую долю земной суши можно сопоставить с биткоином.',
   },
 
   nav: {

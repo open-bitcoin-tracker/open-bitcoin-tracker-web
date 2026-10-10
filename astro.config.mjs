@@ -3,6 +3,7 @@ import { defineConfig } from 'astro/config';
 
 import tailwindcss from '@tailwindcss/vite';
 import sitemap from '@astrojs/sitemap';
+import react from '@astrojs/react';
 
 // English is the default and stays at the site root (no /en/ prefix); the other
 // nine languages are served under a path prefix. Portuguese is the one locale
@@ -24,6 +25,7 @@ export default defineConfig({
     },
   },
   integrations: [
+    react({ include: ["**/features/earth/**/*.tsx"] }),
     sitemap({
       // Keys are URL path segments, values are the hreflang code emitted for
       // each — so /pt/ pages advertise hreflang="pt-BR".

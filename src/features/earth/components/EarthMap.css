@@ -1,0 +1,161 @@
+.earth-feature .bitcoin-overlay {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+.earth-feature .bitcoin-overlay path {
+  fill: var(--orange);
+  fill-opacity: var(--overlay-opacity);
+  stroke: var(--orange);
+  stroke-width: 2.5;
+  stroke-linejoin: round;
+}
+.earth-feature .map-section {
+  position: absolute;
+  inset: 0;
+  background: var(--globe-sky);
+  overflow: hidden;
+}
+.earth-feature .map-container {
+  position: absolute;
+  inset: 0;
+}
+.earth-feature .maplibregl-ctrl-attrib {
+  font-size: 11px !important;
+  background: var(--panel) !important;
+  padding: 3px 7px !important;
+}
+.earth-feature .map-loading {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--page-background, var(--panel));
+  z-index: 1;
+  isolation: isolate;
+  overflow: hidden;
+  font-size: 28px;
+}
+.earth-feature .map-loading::before,
+.earth-feature .map-loading::after {
+  content: '';
+  position: absolute;
+  z-index: -1;
+  pointer-events: none;
+}
+.earth-feature .map-loading::before {
+  inset: 0;
+  background-image:
+    linear-gradient(var(--border) 1px, transparent 1px),
+    linear-gradient(90deg, var(--border) 1px, transparent 1px);
+  background-size: 64px 64px;
+  opacity: 0.8;
+}
+.earth-feature .map-loading::after {
+  top: 50%;
+  left: 50%;
+  width: 100vmax;
+  aspect-ratio: 1;
+  transform: translate(-50%, -50%) scale(0.03);
+  background: radial-gradient(
+    circle closest-side,
+    transparent 30%,
+    color-mix(in srgb, var(--orange) 8%, transparent) 48%,
+    color-mix(in srgb, var(--orange) 18%, transparent) 62%,
+    color-mix(in srgb, var(--orange) 8%, transparent) 74%,
+    transparent 88%
+  );
+  opacity: 0;
+  animation: map-loading-wave 6.5s linear infinite;
+}
+@keyframes map-loading-wave {
+  10% {
+    opacity: 0.65;
+  }
+  80% {
+    opacity: 0.55;
+  }
+  to {
+    transform: translate(-50%, -50%) scale(2.2);
+    opacity: 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .earth-feature .map-loading::after {
+    display: none;
+  }
+}
+.earth-feature .map-error {
+  position: absolute;
+  top: 88px;
+  left: calc(var(--panel-width) + 40px);
+  right: 24px;
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  background: var(--orange-soft);
+  border: 1px solid var(--warning-border);
+  padding: 15px 18px;
+  border-radius: 8px;
+  z-index: 3;
+  font-size: 13px;
+}
+.earth-feature .map-error p {
+  flex: 1;
+  margin: 0;
+  line-height: 1.5;
+}
+.earth-feature .map-error svg {
+  flex-shrink: 0;
+}
+.earth-feature .map-error button {
+  background: var(--panel);
+  border: 1px solid var(--warning-border);
+  padding: 8px 10px;
+  border-radius: 5px;
+  white-space: nowrap;
+  font-size: 12px;
+}
+.earth-feature .tiny-note {
+  position: absolute;
+  bottom: 113px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 9px 12px;
+  border-radius: 6px;
+  background: var(--orange-soft);
+  font-size: 12px;
+  max-width: 360px;
+  text-align: center;
+  width: max-content;
+}
+@media (max-width: 800px) {
+  .earth-feature .map-error {
+    top: auto;
+    bottom: 105px;
+    left: 12px;
+    right: 12px;
+    flex-wrap: wrap;
+  }
+  .earth-feature .tiny-note {
+    bottom: 155px;
+    width: calc(100% - 32px);
+    max-width: 340px;
+  }
+  .earth-feature .maplibregl-ctrl-attrib {
+    font-size: 10px !important;
+  }
+}
+@media (max-width: 480px) {
+  .earth-feature .maplibregl-ctrl-attrib {
+    max-width: 100%;
+  }
+}
+
+.earth-feature .maplibregl-ctrl-attrib,
+.earth-feature .maplibregl-ctrl-attrib a {
+  color: var(--ink) !important;
+}

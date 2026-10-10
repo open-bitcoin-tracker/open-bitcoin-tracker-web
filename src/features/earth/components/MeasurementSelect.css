@@ -1,0 +1,28 @@
+.earth-feature .measurement-panel {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  z-index: 7;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: var(--panel-shadow);
+}
+.earth-feature .measurement-panel .input-unit {
+  min-height: 44px;
+  padding: 0 12px;
+  gap: 8px;
+  border-radius: 11px;
+}
+.earth-feature .measurement-panel .input-unit:focus-visible {
+  outline-offset: -3px;
+}
+.earth-feature .measurement-panel .unit-options {
+  min-width: 156px;
+}
+@media (max-width: 800px) {
+  .earth-feature .measurement-panel {
+    top: 12px;
+    right: 12px;
+  }
+}
