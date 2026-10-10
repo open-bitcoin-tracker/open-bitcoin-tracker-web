@@ -15,6 +15,15 @@
   src: url("/fonts/InterVariable.woff2") format("woff2");
 }
 
+/* Match the modal close button using viewport coordinates, including when
+   opening the dialog removes the page's scrollbar gutter. */
+:root { --menu-viewport-width: 100vw; --menu-control-size: 56px; --menu-control-offset: 4px; --menu-control-top: 2rem; --menu-control-right: clamp(1rem, calc(var(--menu-viewport-width) * .03), 3rem); }
+/* Extra circle padding preserves the original close button's center. */
+.site-nav { position: fixed; top: calc(var(--menu-control-top) - var(--menu-control-offset)); left: calc(var(--menu-viewport-width) - var(--menu-control-right) - var(--menu-control-size) + var(--menu-control-offset)); z-index: 50; }
+@media (max-width: 700px) {
+  :root { --menu-control-top: max(1.25rem, env(safe-area-inset-top)); --menu-control-right: 1rem; }
+}
+
 @theme {
   --color-paper: #F8F7F3;
   --color-surface: #FFFFFF;

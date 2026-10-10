@@ -10,16 +10,22 @@ const homeHref = getRelativeLocaleUrl(resolveLang(Astro.currentLocale), '');
 
 <details class="nav-menu">
   <summary class="nav-menu-trigger" aria-label={t.nav.menuLabel} aria-haspopup="dialog" aria-controls="site-navigation-dialog">
-    <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" aria-hidden="true">
-      <path d="M2 5h20M2 12h20M2 19h20" />
+    <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" aria-hidden="true">
+      <path class="menu-bar menu-bar--top" d="M2 12h20" />
+      <path class="menu-bar menu-bar--middle" d="M2 12h20" />
+      <path class="menu-bar menu-bar--bottom" d="M2 12h20" />
     </svg>
   </summary>
   <!-- Open inside details preserves navigation when JavaScript is unavailable. -->
   <dialog open id="site-navigation-dialog" class="nav-menu-dialog" aria-label={t.nav.mainAria}>
+    <button class="nav-menu-close" type="button" aria-label={t.nav.closeMenu} autofocus>
+      <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" aria-hidden="true">
+        <path class="menu-bar menu-bar--top" d="M2 12h20" />
+        <path class="menu-bar menu-bar--middle" d="M2 12h20" />
+        <path class="menu-bar menu-bar--bottom" d="M2 12h20" />
+      </svg>
+    </button>
     <div class="nav-menu-panel">
-      <button class="nav-menu-close" type="button" aria-label={t.nav.closeMenu} autofocus>
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="m5 5 14 14M5 19 19 5" /></svg>
-      </button>
       <a class="menu-brand" href={homeHref}><img src="/app-icon.png" width="36" height="36" alt="" /><span>Open Bitcoin Tracker</span></a>
       <div class="menu-links"><slot /></div>
       <div class="nav-menu-settings">
@@ -32,35 +38,58 @@ const homeHref = getRelativeLocaleUrl(resolveLang(Astro.currentLocale), '');
 <noscript><style is:inline>.nav-menu-close { display: none; }</style></noscript>
 
 <script>
+  // Root scrollbar-gutter changes CSS viewport units when the modal opens.
+  // Keep both controls anchored to the same actual viewport width instead.
+  const syncMenuViewport = () => {
+    document.documentElement.style.setProperty('--menu-viewport-width', `${window.innerWidth}px`);
+  };
+  syncMenuViewport();
+  window.addEventListener('resize', syncMenuViewport);
   document.querySelectorAll<HTMLDetailsElement>('.nav-menu').forEach((menu) => {
     const trigger = menu.querySelector<HTMLElement>('.nav-menu-trigger');
     const dialog = menu.querySelector<HTMLDialogElement>('.nav-menu-dialog');
+    const panel = menu.querySelector<HTMLElement>('.nav-menu-panel');
     const close = menu.querySelector<HTMLButtonElement>('.nav-menu-close');
-    if (!dialog || !trigger || !close) return;
+    if (!dialog || !panel || !trigger || !close) return;
 
     dialog.removeAttribute('open');
     // Collapsing the trigger must not interrupt the modal's closing transition.
     document.body.append(dialog);
     const reduce = window.matchMedia('(prefers-reduced-motion: reduce)');
     let closing: Promise<void> | undefined;
+    let openingFrame: number | undefined;
+    const closeDialog = () => {
+      if (openingFrame !== undefined) window.cancelAnimationFrame(openingFrame);
+      openingFrame = undefined;
+      dialog.classList.remove('is-opening');
+      // Reveal the identical resting control before leaving the top layer.
+      // Waiting for the asynchronous close event leaves a blank frame.
+      menu.open = false;
+      document.documentElement.classList.remove('nav-menu-open');
+      dialog.close();
+      trigger.focus({ preventScroll: true });
+    };
     const dismiss = (): Promise<void> => {
       if (!dialog.open) return Promise.resolve();
       if (closing) return closing;
+      if (openingFrame !== undefined) window.cancelAnimationFrame(openingFrame);
+      openingFrame = undefined;
+      dialog.classList.remove('is-opening');
       if (reduce.matches) {
-        dialog.close();
+        closeDialog();
         return Promise.resolve();
       }
       closing = new Promise<void>((resolve) => {
         const finish = () => {
           window.clearTimeout(timeout);
           dialog.removeEventListener('transitionend', onTransitionEnd);
-          dialog.close();
+          closeDialog();
           dialog.classList.remove('is-closing');
           closing = undefined;
           resolve();
         };
         const onTransitionEnd = (event: TransitionEvent) => {
-          if (event.target === dialog && event.propertyName === 'transform') finish();
+          if (event.target === panel && event.propertyName === 'transform') finish();
         };
         // Complete dismissal even if a browser cancels a transition event.
         const timeout = window.setTimeout(finish, 500);
@@ -120,7 +149,20 @@ const homeHref = getRelativeLocaleUrl(resolveLang(Astro.currentLocale), '');
     menu.addEventListener('toggle', () => {
       if (menu.open && !dialog.open) {
         document.documentElement.classList.add('nav-menu-open');
+        dialog.classList.add('is-opening');
         dialog.showModal();
+        // Establish the hamburger's initial frame explicitly: opening must
+        // animate even when entering the top layer skips @starting-style.
+        void close.offsetWidth;
+        if (reduce.matches) dialog.classList.remove('is-opening');
+        else openingFrame = window.requestAnimationFrame(() => {
+          // Paint the resting bars in the top layer before starting the morph.
+          // A single callback may run before the new control's first paint.
+          openingFrame = window.requestAnimationFrame(() => {
+            dialog.classList.remove('is-opening');
+            openingFrame = undefined;
+          });
+        });
       } else if (!menu.open && dialog.open) void dismiss();
     });
   });
@@ -136,40 +178,49 @@ const homeHref = getRelativeLocaleUrl(resolveLang(Astro.currentLocale), '');
   }
   :global(html.nav-menu-open) { overflow: hidden; scrollbar-gutter: auto; }
   .nav-menu { position: relative; flex-shrink: 0; }
+  .nav-menu-trigger, .nav-menu-close {
+    display: flex; align-items: center; justify-content: center;
+    width: var(--menu-control-size); height: var(--menu-control-size); border: 0; border-radius: 50%;
+    color: #D5DDED;
+    /* The original close-button tint over the menu's existing blue surface. */
+    background: linear-gradient(rgb(255 255 255 / .045), rgb(255 255 255 / .045)), #14213D;
+    transition: background-color 180ms ease;
+  }
   .nav-menu-trigger {
     position: relative; z-index: 1;
-    display: flex; align-items: center; justify-content: center;
-    width: 48px; height: 48px; border: 0; color: var(--color-ink);
-    background: transparent; cursor: pointer; list-style: none;
+    cursor: pointer; list-style: none;
   }
   .nav-menu-trigger::-webkit-details-marker { display: none; }
-  :global(html.dark) .nav-menu-trigger { color: #fff; }
-  .nav-menu[open] > .nav-menu-trigger { color: #E9E6DF; }
-  .nav-menu-trigger:hover { opacity: .75; }
+  :global(html.nav-menu-open) .nav-menu-trigger { visibility: hidden; }
+  .menu-bar { transform-box: view-box; transform-origin: 12px 12px; transition: transform 240ms cubic-bezier(.22, 1, .36, 1), opacity 160ms ease; }
+  .menu-bar--top { transform: translateY(-7px); }
+  .menu-bar--bottom { transform: translateY(7px); }
+  .nav-menu-dialog[open]:not(.is-closing):not(.is-opening) .menu-bar--top { transform: rotate(45deg); }
+  .nav-menu-dialog[open]:not(.is-closing):not(.is-opening) .menu-bar--middle { transform: scaleX(0); opacity: 0; }
+  .nav-menu-dialog[open]:not(.is-closing):not(.is-opening) .menu-bar--bottom { transform: rotate(-45deg); }
   .nav-menu-dialog {
     --menu-ink: #E9E6DF;
     position: fixed; inset: 0 0 0 auto; width: clamp(400px, 40vw, 640px); height: 100dvh;
     max-width: none; max-height: none; margin: 0; padding: 0; border: 0;
     color: var(--menu-ink); background: transparent;
-    overflow-x: hidden; overflow-y: auto; opacity: 0; transform: translateX(100%);
-    transition: transform 420ms cubic-bezier(.22, 1, .36, 1), opacity 300ms ease, display 420ms allow-discrete, overlay 420ms allow-discrete;
+    overflow-x: hidden; overflow-y: auto;
+    transition: display 420ms allow-discrete, overlay 420ms allow-discrete;
   }
-  .nav-menu-dialog[open] { display: block; opacity: 1; transform: translateX(0); }
-  .nav-menu-dialog[open].is-closing { transform: translateX(100%); opacity: 0; }
+  .nav-menu-dialog[open] { display: block; }
+  .nav-menu-dialog[open] .nav-menu-panel { opacity: 1; transform: translateX(0); }
+  .nav-menu-dialog[open].is-closing .nav-menu-panel { transform: translateX(100%); opacity: 0; }
   .nav-menu-dialog::backdrop { background: transparent; }
   .nav-menu-panel {
     position: relative; display: flex; flex-direction: column; gap: 3.5rem;
     min-height: 100dvh; padding: 3.5rem clamp(2rem, 3.5vw, 4rem) 2.5rem;
     background: linear-gradient(165deg, #14213D, #0B1428 80%);
+    opacity: 0; transform: translateX(100%);
+    transition: transform 420ms cubic-bezier(.22, 1, .36, 1), opacity 300ms ease;
   }
   .nav-menu-close {
-    position: absolute; top: 2rem; right: clamp(1rem, 3vw, 3rem);
-    display: flex; align-items: center; justify-content: center;
-    width: 48px; height: 48px; border-radius: 50%; color: #D5DDED;
-    background: rgb(255 255 255 / .045); cursor: pointer;
-    transition: background-color 180ms ease, transform 180ms ease;
+    position: fixed; z-index: 1; top: calc(var(--menu-control-top) - var(--menu-control-offset)); right: calc(var(--menu-control-right) - var(--menu-control-offset));
+    cursor: pointer;
   }
-  .nav-menu-close:hover { background: rgb(255 255 255 / .12); transform: rotate(90deg); }
   .menu-brand { display: flex; align-items: center; gap: 1rem; min-height: 36px; padding-right: 3rem; font-size: 1rem; font-weight: 600; }
   .menu-brand img { width: 36px; height: 36px; flex-shrink: 0; border-radius: .375rem; }
   .menu-links { display: grid; align-content: start; gap: .65rem; }
@@ -205,13 +256,12 @@ const homeHref = getRelativeLocaleUrl(resolveLang(Astro.currentLocale), '');
   .nav-menu-settings :global(.lang-option) { color: #CBD3E6; }
   .nav-menu-settings :global(.lang-option:hover), .nav-menu-settings :global(.lang-option.is-current) { color: #FFF3D9; background: rgb(255 255 255 / .06); }
   @starting-style {
-    .nav-menu-dialog[open] { opacity: 0; transform: translateX(100%); }
+    .nav-menu-dialog[open] .nav-menu-panel { opacity: 0; transform: translateX(100%); }
   }
   @media (max-width: 700px) {
-    .nav-menu-trigger svg { width: 28px; height: 28px; }
+    .nav-menu-trigger svg, .nav-menu-close svg { width: 24px; height: 24px; }
     .nav-menu-dialog { width: 100vw; }
     .nav-menu-panel { gap: 2rem; padding: max(1.25rem, env(safe-area-inset-top)) 1.5rem max(1.5rem, env(safe-area-inset-bottom)); }
-    .nav-menu-close { top: max(1.25rem, env(safe-area-inset-top)); right: 1rem; }
     .nav-menu-settings { order: -1; justify-content: flex-start; gap: .25rem .75rem; margin: 0 3rem 0 0; min-height: 48px; }
     .nav-menu-settings :global(.lang-switcher--up .lang-menu) { top: calc(100% + .5rem); bottom: auto; }
     .nav-menu-settings :global(.lang-switcher--up .lang-caret) { transform: none; }
@@ -222,6 +272,6 @@ const homeHref = getRelativeLocaleUrl(resolveLang(Astro.currentLocale), '');
     .menu-links :global(.menu-secondary a) { font-size: 1.0625rem; }
   }
   @media (prefers-reduced-motion: reduce) {
-    .nav-menu-dialog, .nav-menu-panel, .nav-menu-close, .menu-links :global(a) { transition: none; }
+    .nav-menu-dialog, .nav-menu-panel, .nav-menu-trigger, .nav-menu-close, .menu-bar, .menu-links :global(a) { transition: none; }
   }
 </style>
