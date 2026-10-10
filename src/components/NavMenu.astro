@@ -8,9 +8,10 @@ const t = useTranslations(Astro.currentLocale);
 
 <details class="nav-menu">
   <summary class="nav-menu-trigger" aria-label={t.nav.menuLabel}>
-    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
-      <path class="menu-bars" d="M1 5h22M1 12h22M1 19h22" />
-      <path class="menu-close" d="m3 3 18 18M3 21 21 3" />
+    <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" aria-hidden="true">
+      <path class="menu-bar menu-bar--top" d="M2 12h20" />
+      <path class="menu-bar menu-bar--middle" d="M2 12h20" />
+      <path class="menu-bar menu-bar--bottom" d="M2 12h20" />
     </svg>
   </summary>
   <div class="nav-menu-panel">
@@ -74,8 +75,15 @@ const t = useTranslations(Astro.currentLocale);
   .nav-menu-trigger::-webkit-details-marker { display: none; }
   :global(html.dark) .nav-menu-trigger { color: #fff; }
   .nav-menu-trigger:hover { opacity: .75; }
-  .menu-close, .nav-menu[open] .menu-bars { display: none; }
-  .nav-menu[open] .menu-close { display: inline; }
+  .menu-bar { transform-box: view-box; transform-origin: 12px 12px; transition: transform 240ms var(--ease-out), opacity 160ms ease-out; }
+  .menu-bar--top { transform: translateY(-7px); }
+  .menu-bar--bottom { transform: translateY(7px); }
+  .nav-menu[open] .menu-bar--top { transform: rotate(45deg); }
+  .nav-menu[open] .menu-bar--middle { transform: scaleX(0); opacity: 0; }
+  .nav-menu[open] .menu-bar--bottom { transform: rotate(-45deg); }
+  @media (prefers-reduced-motion: reduce) {
+    .menu-bar { transition: none; }
+  }
   .nav-menu-panel {
     position: absolute;
     top: calc(100% + .75rem);
