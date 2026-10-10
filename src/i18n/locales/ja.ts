@@ -7,7 +7,7 @@ export const ja: Dict = {
       description: 'ビットコインのリアルタイム価格と価格履歴、そして保有ビットコインの価値を追跡するオープンソースのAndroidアプリ。',
     },
     home: {
-      title: 'Open Bitcoin Tracker - Android向けオープンソースのビットコイン・ポートフォリオ追跡アプリ',
+      title: 'Android向けOpen Bitcoin Tracker',
       description:
         'ビットコインのスタックの価値を追跡する、プライバシー重視のオープンソース Android アプリ。アカウント不要、解析なし、テレメトリーなし。',
     },
@@ -44,7 +44,7 @@ export const ja: Dict = {
   },
 
   hero: {
-    titleHighlight: '貯めたビットコイン',
+    subtitle: 'Android向け',
     tagline: 'Android向けオープンソースのビットコイン・ポートフォリオ追跡アプリ。',
     downloadApk: 'APK をダウンロード',
     viewGithub: 'GitHub で見る',

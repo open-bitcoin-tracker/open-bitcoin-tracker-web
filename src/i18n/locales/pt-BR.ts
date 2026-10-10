@@ -7,7 +7,7 @@ export const ptBR: Dict = {
       description: 'Preço e histórico do Bitcoin ao vivo e um app Android de código aberto para trackear o valor dos seus stacks.',
     },
     home: {
-      title: 'Open Bitcoin Tracker - Trackeador de portfólio de bitcoin de código aberto para Android',
+      title: 'Open Bitcoin Tracker para Android',
       description:
         'Um app Android de código aberto e focado em privacidade para trackear o valor dos seus stacks de Bitcoin. Sem contas, sem análises, sem telemetria.',
     },
@@ -44,7 +44,7 @@ export const ptBR: Dict = {
   },
 
   hero: {
-    titleHighlight: 'stacks de bitcoin',
+    subtitle: 'Para Android',
     tagline: 'Trackeador de portfólio de bitcoin de código aberto para Android.',
     downloadApk: 'Baixar APK',
     viewGithub: 'Ver no GitHub',

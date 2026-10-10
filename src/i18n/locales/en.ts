@@ -14,7 +14,7 @@ export const en = {
       description: 'Live Bitcoin price and history, plus the open-source Android app to track the value of your Bitcoin stacks.',
     },
     home: {
-      title: 'Open Bitcoin Tracker - Open source bitcoin portfolio tracker for Android',
+      title: 'Open Bitcoin Tracker for Android',
       description:
         'A privacy-focused, open-source Android app to track the value of your Bitcoin stacks. No accounts, no analytics, no telemetry.',
     },
@@ -56,7 +56,7 @@ export const en = {
   },
 
   hero: {
-    titleHighlight: 'bitcoin stacks',
+    subtitle: 'For Android',
     tagline: 'Open source bitcoin portfolio tracker for Android.',
     downloadApk: 'Download APK',
     viewGithub: 'View on GitHub',

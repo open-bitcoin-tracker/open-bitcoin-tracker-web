@@ -7,7 +7,7 @@ export const vi: Dict = {
       description: 'Giá Bitcoin trực tiếp, lịch sử giá và ứng dụng Android mã nguồn mở để theo dõi giá trị các khoản Bitcoin của bạn.',
     },
     home: {
-      title: 'Open Bitcoin Tracker - Trình theo dõi danh mục bitcoin mã nguồn mở cho Android',
+      title: 'Open Bitcoin Tracker dành cho Android',
       description:
         'Một ứng dụng Android mã nguồn mở, chú trọng quyền riêng tư để theo dõi giá trị các stack Bitcoin của bạn. Không tài khoản, không phân tích, không đo từ xa.',
     },
@@ -44,7 +44,7 @@ export const vi: Dict = {
   },
 
   hero: {
-    titleHighlight: 'bitcoin bạn tích lũy',
+    subtitle: 'Dành cho Android',
     tagline: 'Trình theo dõi danh mục bitcoin mã nguồn mở cho Android.',
     downloadApk: 'Tải APK',
     viewGithub: 'Xem trên GitHub',

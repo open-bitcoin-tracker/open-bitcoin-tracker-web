@@ -7,7 +7,7 @@ export const fr: Dict = {
       description: 'Le cours du Bitcoin en direct, son historique et une appli Android open source pour tracker la valeur de tes stacks.',
     },
     home: {
-      title: 'Open Bitcoin Tracker - Tracker de portfolio bitcoin open source pour Android',
+      title: 'Open Bitcoin Tracker pour Android',
       description:
         'Une application Android open source et respectueuse de la vie privée pour tracker la valeur de tes stacks de Bitcoin. Pas de comptes, pas d’analyses, pas de télémétrie.',
     },
@@ -44,7 +44,7 @@ export const fr: Dict = {
   },
 
   hero: {
-    titleHighlight: 'stacks de bitcoin',
+    subtitle: 'Pour Android',
     tagline: 'Tracker de portfolio bitcoin open source pour Android.',
     downloadApk: 'Télécharger l’APK',
     viewGithub: 'Voir sur GitHub',

@@ -7,7 +7,7 @@ export const tr: Dict = {
       description: 'Canlı Bitcoin fiyatı ve fiyat geçmişi ile birikimlerinin değerini takip etmek için açık kaynaklı Android uygulaması.',
     },
     home: {
-      title: 'Open Bitcoin Tracker - Android için açık kaynaklı bitcoin portföy takipçisi',
+      title: 'Android için Open Bitcoin Tracker',
       description:
         "Bitcoin stack'lerinizin değerini takip etmek için gizliliğe önem veren, açık kaynaklı bir Android uygulaması. Hesap yok, analiz yok, telemetri yok.",
     },
@@ -44,7 +44,7 @@ export const tr: Dict = {
   },
 
   hero: {
-    titleHighlight: 'Bitcoin birikiminin',
+    subtitle: 'Android için',
     tagline: 'Android için açık kaynaklı bitcoin portföy takipçisi.',
     downloadApk: 'APK indir',
     viewGithub: "GitHub'da görüntüle",

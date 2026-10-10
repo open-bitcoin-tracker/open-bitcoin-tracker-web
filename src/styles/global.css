@@ -120,9 +120,9 @@ html.dark {
 }
 
 /* The brand orange stays intact; small accent text uses a darker shade on paper. */
-:root { --color-accent-text: #995000; --ease-out: cubic-bezier(.22, 1, .36, 1); --live-price-font-size: clamp(4rem, 10vw, 8rem); --tracker-gutter: clamp(1rem, 3vw, 4rem); --live-price-top: max(var(--tracker-gutter), env(safe-area-inset-top, 0px)); }
+:root { --color-accent-text: #995000; --ease-out: cubic-bezier(.22, 1, .36, 1); --live-price-font-size: clamp(4.4rem, 11vw, 8.8rem); --tracker-gutter: clamp(1rem, 3vw, 4rem); --live-price-top: max(var(--tracker-gutter), env(safe-area-inset-top, 0px)); }
 @media (max-width: 600px) {
-  :root { --live-price-font-size: clamp(2.5rem, 13vw, 4rem); }
+  :root { --live-price-font-size: clamp(2.75rem, 14.3vw, 4.4rem); }
 }
 html.dark { --color-accent-text: #F7A53A; }
 
@@ -174,11 +174,10 @@ html { scrollbar-gutter: stable; }
 .hero-grid { display: grid; grid-template-columns: 1.15fr 1fr; gap: 1.5rem; align-items: center; padding-top: 4rem; padding-bottom: 3.5rem; }
 .hero-copy { position: relative; z-index: 2; padding-block: 1rem; }
 .eyebrow { font-size: .8125rem; font-weight: 500; line-height: 1.6; color: var(--color-ink-muted); }
-.hero-eyebrow { display: flex; align-items: center; gap: .75rem; margin-bottom: 1.75rem; }
-.eyebrow-line { width: 24px; height: 2px; background: var(--color-accent); flex-shrink: 0; }
-.hero-copy h1 { max-width: 11ch; font-size: clamp(3.5rem, 6.25vw, 5.65rem); font-weight: 650; line-height: 1.08; letter-spacing: -.065em; text-wrap: balance; overflow-wrap: anywhere; }
-.hero-copy h1 em { font-family: var(--font-display); font-style: normal; font-weight: 700; color: #AE6208; }
-html.dark .hero-copy h1 em { color: var(--color-accent); }
+.hero-copy h1 { max-width: 14ch; font-size: clamp(3.5rem, 6.25vw, 5.65rem); font-weight: 650; line-height: 1.08; letter-spacing: -.065em; text-wrap: balance; overflow-wrap: anywhere; }
+.hero-copy h1 .brand-name { letter-spacing: -.015em; }
+.hero-bitcoin { color: var(--color-accent-text); }
+.hero-subtitle { display: block; margin-top: .75rem; font-size: clamp(.875rem, .3em, 1.5rem); font-weight: 500; line-height: 1.3; letter-spacing: -.02em; color: var(--color-ink-muted); }
 :lang(ja) .hero-copy h1 { letter-spacing: -.035em; line-height: 1.2; }
 .hero-description { max-width: 27rem; margin-top: 1.75rem; color: var(--color-ink-muted); font-size: 1.125rem; line-height: 1.75; text-wrap: pretty; }
 .hero-actions { display: flex; flex-wrap: wrap; gap: .75rem; margin-top: 2rem; }
@@ -289,7 +288,6 @@ html.dark .hero-copy h1 em { color: var(--color-accent); }
   .hero-grid { grid-template-columns: 1fr; gap: 1rem; padding-top: 3rem; padding-bottom: 2rem; }
   .hero-copy { padding: 0; }
   .hero-copy h1 { font-size: clamp(3.45rem, 10.5vw, 5rem); max-width: 13ch; }
-  .hero-eyebrow { margin-bottom: 1.5rem; max-width: 28rem; }
   .hero-description { margin-top: 1.5rem; max-width: 31rem; font-size: 1.0625rem; }
   .hero-actions .button { padding-inline: 1.1rem; min-height: 50px; font-size: .875rem; }
   .hero-stage { height: 620px; margin-top: 1.5rem; }

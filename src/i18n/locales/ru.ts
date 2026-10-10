@@ -7,7 +7,7 @@ export const ru: Dict = {
       description: 'Курс и история цены биткоина, а также Android-приложение с открытым исходным кодом для отслеживания стоимости твоих накоплений.',
     },
     home: {
-      title: 'Open Bitcoin Tracker - Открытый трекер биткоин-портфеля для Android',
+      title: 'Open Bitcoin Tracker для Android',
       description:
         'Конфиденциальное приложение для Android с открытым исходным кодом для отслеживания стоимости ваших стеков биткоина. Без аккаунтов, без аналитики, без телеметрии.',
     },
@@ -44,7 +44,7 @@ export const ru: Dict = {
   },
 
   hero: {
-    titleHighlight: 'накопленного биткоина',
+    subtitle: 'Для Android',
     tagline: 'Открытый трекер биткоин-портфеля для Android.',
     downloadApk: 'Скачать APK',
     viewGithub: 'Открыть на GitHub',
