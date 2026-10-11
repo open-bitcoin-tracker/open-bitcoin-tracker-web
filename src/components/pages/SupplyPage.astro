@@ -1,15 +1,12 @@
 ---
-import { getRelativeLocaleUrl } from 'astro:i18n';
 import Layout from '../../layouts/Layout.astro';
 import Nav from '../Nav.astro';
 import SupplyContainer from '../SupplyContainer.astro';
 import SupplyPeople from '../SupplyPeople.astro';
-import { resolveLang } from '../../i18n/utils';
 import { supply, currencies } from '../../i18n/supply';
 import rawSnapshot from '../../features/supply/snapshot.json';
-import { BITCOIN_MAX, SATOSHIS_PER_BTC, MAX_PROJECTION_DAYS, DAY_MS, annualRate, projectionAnchor, equalShare, formatDate, formatNumber, interpolate, isValidSnapshot, type SupplySnapshot } from '../../features/supply/model';
+import { BITCOIN_MAX, MAX_PROJECTION_DAYS, DAY_MS, annualRate, projectionAnchor, equalShare, formatDate, formatNumber, interpolate, isValidSnapshot, type SupplySnapshot } from '../../features/supply/model';
 
-const lang = resolveLang(Astro.currentLocale);
 const t = supply;
 const locale = 'en-US';
 const snapshot = rawSnapshot as SupplySnapshot;
@@ -17,26 +14,17 @@ if (!isValidSnapshot(snapshot)) throw new Error('Invalid supply snapshot. Verify
 const n = (value: number, digits = 0) => formatNumber(value, locale, digits);
 const date = (value: string, monthOnly = false) => formatDate(value, locale, monthOnly);
 const bitcoinShare = equalShare(BITCOIN_MAX, snapshot.population.persons);
-const clientCopy = Object.fromEntries(['projected', 'recorded', 'paused', 'pause', 'resume', 'stale', 'reduced', 'unavailable', 'populationEstimate', 'populationRecorded', 'populationFallback', 'populationUnavailable', 'bitcoinShareBasis', 'sats'].map((key) => [key, t[key as keyof typeof t]]));
+const clientCopy = Object.fromEntries(['projected', 'recorded', 'paused', 'pause', 'resume', 'stale', 'reduced', 'unavailable', 'populationEstimate', 'populationRecorded', 'populationFallback', 'populationUnavailable', 'bitcoinShareBasis'].map((key) => [key, t[key as keyof typeof t]]));
 ---
 <Layout title={`${t.title} — Open Bitcoin Tracker`} description={t.intro}>
   <Nav />
-  <main id="main-content" class="supply-page" lang="en" data-supply data-motion="still">
-    <a class="supply-brand" href={getRelativeLocaleUrl(lang, '')}><img src="/app-icon.png" width="28" height="28" alt="" /><span lang="en" class="brand-name">{t.back}</span></a>
-    <header class="supply-heading">
-      <h1>{t.title}</h1>
-      <button type="button" class="motion-control" data-pause hidden>
-        <svg class="pause-icon" width="12" height="12" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M3 2h3v12H3zm7 0h3v12h-3z" /></svg>
-        <svg class="play-icon" width="12" height="12" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="m4 2 10 6-10 6z" /></svg>
-        <span data-pause-label>{t.pause}</span>
-      </button>
-    </header>
+  <main id="main-content" class="supply-page" lang="en" aria-labelledby="supply-page-title" data-supply data-motion="still">
+    <h1 id="supply-page-title" class="page-title">{t.title}</h1>
 
+    <div class="population-heading">
+      <p class="population-band" aria-live="off"><strong data-population>{n(snapshot.population.persons)}</strong><span data-population-label>{t.populationRecorded}</span></p>
+    </div>
     <section class="supply-board" aria-label={t.title}>
-      <div class="board-heading">
-        <p class="population-band" aria-live="off"><strong data-population>{n(snapshot.population.persons)}</strong><span data-population-label>{t.populationRecorded}</span></p>
-        <h2 class="experiment-heading">{t.experiment}</h2>
-      </div>
       <div class="currency-grid">
         <article class="supply-column bitcoin-column">
           <h2 class="column-heading"><span class="currency-icon btc-icon" aria-hidden="true">₿</span>{t.bitcoin}</h2>
@@ -47,7 +35,6 @@ const clientCopy = Object.fromEntries(['projected', 'recorded', 'paused', 'pause
             <SupplyPeople accent />
             <p class="share-number"><span aria-hidden="true">₿</span><span data-btc-share>{n(bitcoinShare, 8)}</span><span class="currency-name"> bitcoins</span></p>
             <p class="share-caption">{t.perPerson}</p>
-            <p class="satoshi-share" data-satoshi-share>{interpolate(t.sats, { sats: n(Math.round(bitcoinShare * SATOSHIS_PER_BTC / 1_000) * 1_000) })}</p>
           </div>
         </article>
         {snapshot.fiat.map((money) => {
@@ -59,7 +46,7 @@ const clientCopy = Object.fromEntries(['projected', 'recorded', 'paused', 'pause
             <SupplyContainer kind="fiat" symbol={currency.symbol} />
             <div class="share fiat-share" aria-label={`${currency.name} per person`}>
               <SupplyPeople />
-              <p class="share-number" aria-live="off">≈ <span aria-hidden="true">{currency.symbol}</span><span data-money-share>{n(equalShare(money.latest.amount, snapshot.population.persons))}</span><span class="currency-name"> {currency.plural}</span></p>
+              <p class="share-number" aria-live="off"><span aria-hidden="true">{currency.symbol}</span><span data-money-share>{n(equalShare(money.latest.amount, snapshot.population.persons))}</span><span class="currency-name"> {currency.plural}</span></p>
               <p class="share-caption">{t.perPerson}</p>
             </div>
           </article>;
@@ -119,6 +106,13 @@ const clientCopy = Object.fromEntries(['projected', 'recorded', 'paused', 'pause
         </div>
       </details>
     </section>
+    <footer class="supply-controls">
+      <button type="button" class="motion-control" data-pause hidden>
+        <svg class="pause-icon" width="12" height="12" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M3 2h3v12H3zm7 0h3v12h-3z" /></svg>
+        <svg class="play-icon" width="12" height="12" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="m4 2 10 6-10 6z" /></svg>
+        <span data-pause-label>{t.pause}</span>
+      </button>
+    </footer>
   </main>
   <script id="supply-data" type="application/json" set:html={JSON.stringify({ snapshot, locale, copy: clientCopy }).replace(/</g, '\\u003c')} />
   <script>import '../../scripts/supply';</script>
@@ -126,15 +120,10 @@ const clientCopy = Object.fromEntries(['projected', 'recorded', 'paused', 'pause
 <style>
   .supply-page { --supply-fiat: #aecdbb; --supply-fiat-text: #286045; --supply-fiat-ink: #234632; max-width: 1220px; margin: 0 auto; padding: 3.25rem clamp(1.25rem, 4vw, 3rem) 2rem; }
   :global(html.dark) .supply-page { --supply-fiat: #93bfa8; --supply-fiat-text: #a2ceb5; --supply-fiat-ink: #214431; }
-  .supply-brand { display: inline-flex; gap: .625rem; align-items: center; padding-right: 4rem; font-size: 1.25rem; }
-  .supply-brand img { border-radius: 7px; }
-  .supply-heading { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: 2rem 0 1.5rem; }
-  h1 { font-size: clamp(1.875rem, 4vw, 2.5rem); font-weight: 650; letter-spacing: -.045em; line-height: 1.15; }
   .supply-board { background: var(--color-surface); border: 1px solid var(--color-divider); border-radius: 24px; overflow: hidden; }
-  .board-heading { text-align: center; padding: 1rem; background: var(--color-paper); }
-  .population-band { display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: .375rem .5rem; font-size: .75rem; color: var(--color-ink-muted); }
-  .population-band strong { font-size: 1.125rem; font-weight: 600; font-variant-numeric: tabular-nums; color: var(--color-ink); letter-spacing: -.025em; }
-  .experiment-heading { margin-top: .375rem; font-size: .8125rem; color: var(--color-ink-muted); font-weight: 550; }
+  .population-heading { text-align: center; margin-bottom: 1.5rem; }
+  .population-band { display: flex; flex-direction: column; align-items: center; gap: .5rem; font-size: .8125rem; color: var(--color-ink-muted); }
+  .population-band strong { font-size: clamp(2rem, 8vw, 4rem); font-weight: 650; line-height: 1.1; font-variant-numeric: tabular-nums; color: var(--color-ink); letter-spacing: -.04em; white-space: nowrap; }
   .currency-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .supply-column { min-width: 0; padding: 1.25rem 1.25rem 1.5rem; border-top: 1px solid var(--color-divider); }
   .supply-column:not(:nth-child(3n)) { border-right: 1px solid var(--color-divider); }
@@ -146,17 +135,18 @@ const clientCopy = Object.fromEntries(['projected', 'recorded', 'paused', 'pause
   .fiat-icon { background: var(--supply-fiat); color: var(--supply-fiat-ink); }
   .value-label { font-size: .75rem; color: var(--color-ink-muted); font-weight: 550; }
   .total-number { font-size: clamp(.95rem, 1.6vw, 1.2rem); font-variant-numeric: tabular-nums; letter-spacing: -.04em; line-height: 1.5; margin-top: .25rem; font-weight: 600; min-height: 2.5rem; white-space: nowrap; }
-  .btc-total { font-size: 1.6rem; color: var(--color-accent-text); }
+  .btc-total { font-size: 1.6rem; color: #F7931A; }
   .fiat-total { color: var(--supply-fiat-text); padding-top: .35rem; }
-  .currency-name { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; border: 0; }
+  .page-title, .currency-name { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; border: 0; }
   .share { padding-top: .5rem; text-align: center; min-width: 0; }
   .share-number { margin-top: .375rem; font-size: 1.65rem; font-weight: 600; letter-spacing: -.045em; font-variant-numeric: tabular-nums; white-space: nowrap; }
-  .bitcoin-share .share-number, .satoshi-share { color: var(--color-accent-text); }
+  .bitcoin-share .share-number { color: #F7931A; }
   .fiat-share .share-number { color: var(--supply-fiat-text); }
   .share-caption { font-size: .6875rem; color: var(--color-ink-muted); margin-top: .125rem; }
-  .satoshi-share { font-size: .75rem; margin-top: .375rem; }
   .supply-column :global(.container-scene) { max-width: 240px; }
   .share :global(.people-illustration) { width: 135px; }
+  .bitcoin-share :global(.people-illustration) { --color-accent-text: #F7931A; }
+  .supply-controls { display: flex; justify-content: center; margin-top: 1.25rem; }
   .motion-control { display: inline-flex; flex-shrink: 0; align-items: center; gap: .375rem; min-height: 44px; padding: .375rem .75rem; border: 1px solid var(--color-divider); border-radius: 8px; cursor: pointer; background: var(--color-surface); font-size: .75rem; }
   .motion-control .play-icon { display: none; }
   .motion-control[aria-pressed="true"] .pause-icon { display: none; }
@@ -190,13 +180,11 @@ const clientCopy = Object.fromEntries(['projected', 'recorded', 'paused', 'pause
     .total-number { font-size: clamp(1rem, 2.2vw, 1.2rem); }
     .btc-total { font-size: 1.6rem; }
   }
-  @media (max-width: 600px) {
+  @media (max-width: 700px) {
     .supply-page { padding-top: 1.625rem; }
-    .supply-brand { font-size: 1.125rem; }
-    .supply-brand img { width: 24px; height: 24px; }
-    .supply-heading { padding-top: 3rem; display: block; }
-    h1 { font-size: 1.875rem; padding-right: 3.5rem; }
-    .motion-control { margin-top: .75rem; }
+    .population-heading { min-height: calc(var(--menu-control-top) + var(--menu-control-size) - 1.625rem - .5rem); }
+  }
+  @media (max-width: 600px) {
     .currency-grid { grid-template-columns: 1fr; }
     .supply-column:nth-child(odd) { border-right: 0; }
     .total-number { font-size: clamp(1rem, 4.8vw, 1.2rem); }

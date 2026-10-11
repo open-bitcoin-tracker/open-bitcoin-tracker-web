@@ -7,7 +7,7 @@ export const supply = {
   maximum: 'Maximum supply',
   recorded: '{aggregate} · recorded',
   projected: '{aggregate} · projection',
-  populationEstimate: 'people worldwide · estimate',
+  populationEstimate: 'people worldwide',
   populationRecorded: 'people worldwide · annual projection',
   populationFallback: 'Outside the bundled population range. Showing the annual projection for {date}; no extrapolation.',
   populationUnavailable: 'Population estimate unavailable. Showing the bundled annual projection.',

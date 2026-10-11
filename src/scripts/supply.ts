@@ -1,7 +1,7 @@
-import { BITCOIN_MAX, SATOSHIS_PER_BTC, equalShare, formatDate, formatNumber, interpolate, projectMoney, projectPopulation, annualRate, type SupplySnapshot } from '../features/supply/model';
+import { BITCOIN_MAX, equalShare, formatDate, formatNumber, interpolate, projectMoney, projectPopulation, annualRate, type SupplySnapshot } from '../features/supply/model';
 import type { SupplyCopy } from '../i18n/supply';
 
-type ClientCopy = Pick<SupplyCopy, 'projected' | 'recorded' | 'paused' | 'pause' | 'resume' | 'stale' | 'reduced' | 'unavailable' | 'populationEstimate' | 'populationRecorded' | 'populationFallback' | 'populationUnavailable' | 'bitcoinShareBasis' | 'sats'>;
+type ClientCopy = Pick<SupplyCopy, 'projected' | 'recorded' | 'paused' | 'pause' | 'resume' | 'stale' | 'reduced' | 'unavailable' | 'populationEstimate' | 'populationRecorded' | 'populationFallback' | 'populationUnavailable' | 'bitcoinShareBasis'>;
 const root = document.querySelector<HTMLElement>('[data-supply]');
 const json = document.getElementById('supply-data');
 if (root && json) {
@@ -20,7 +20,6 @@ if (root && json) {
   const populationLabel = root.querySelector<HTMLElement>('[data-population-label]');
   const populationStatus = root.querySelector<HTMLElement>('[data-population-status]');
   const bitcoinShare = root.querySelector<HTMLElement>('[data-btc-share]');
-  const satoshiShare = root.querySelector<HTMLElement>('[data-satoshi-share]');
   const bitcoinBasis = root.querySelector<HTMLElement>('[data-btc-basis]');
   const button = root.querySelector<HTMLButtonElement>('[data-pause]');
   const buttonLabel = root.querySelector<HTMLElement>('[data-pause-label]');
@@ -36,7 +35,6 @@ if (root && json) {
   const visitPopulation = projectPopulation(snapshot, frozenAt).persons ?? snapshot.population.persons;
   const visitBitcoinShare = equalShare(BITCOIN_MAX, visitPopulation);
   setText(bitcoinShare, formatNumber(visitBitcoinShare, locale, 8));
-  setText(satoshiShare, interpolate(copy.sats, { sats: formatNumber(Math.round(visitBitcoinShare * SATOSHIS_PER_BTC / 1_000) * 1_000, locale) }));
   setText(bitcoinBasis, interpolate(copy.bitcoinShareBasis, { population: formatNumber(visitPopulation, locale) }));
   const render = () => {
     const now = Date.now();
