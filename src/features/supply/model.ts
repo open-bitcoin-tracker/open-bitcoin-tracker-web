@@ -33,6 +33,7 @@ export interface MoneySnapshot {
 }
 export interface SupplySnapshot {
   checkedAt: string;
+  gold: GoldSnapshot;
   fiat: MoneySnapshot[];
   population: {
     persons: number;
@@ -43,6 +44,65 @@ export interface SupplySnapshot {
     source: string;
     download: string;
   };
+}
+
+export interface GoldSnapshot {
+  stock: { tonnes: number; date: string; releasedAt: string; roundedToTonnes: number; source: string };
+  mineProduction: { tonnes: number; year: number; releasedAt: string; source: string };
+  checkedAt: string;
+}
+
+function utcDate(value: string): number {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return NaN;
+  const time = Date.parse(`${value}T00:00:00Z`);
+  return Number.isFinite(time) && new Date(time).toISOString().slice(0, 10) === value ? time : NaN;
+}
+
+export function goldAnchor(gold: GoldSnapshot): number {
+  // A quarter-end observation becomes the starting stock at the next UTC day.
+  return utcDate(gold.stock.date) + DAY_MS;
+}
+
+export function goldExpiry(gold: GoldSnapshot): number {
+  // Quarterly stock publications lag their observation; bound this model from
+  // publication rather than extending an old quarterly baseline indefinitely.
+  return utcDate(gold.stock.releasedAt) + MAX_PROJECTION_DAYS * DAY_MS;
+}
+
+export function isValidGold(gold: GoldSnapshot | undefined): gold is GoldSnapshot {
+  if (!gold?.stock || !gold.mineProduction) return false;
+  const { stock, mineProduction: mining } = gold;
+  const date = utcDate(stock.date), release = utcDate(stock.releasedAt), checked = utcDate(gold.checkedAt);
+  return Number.isFinite(date) && /-(03-31|06-30|09-30|12-31)$/.test(stock.date)
+    && Number.isFinite(stock.tonnes) && stock.tonnes > 0
+    && Number.isFinite(stock.roundedToTonnes) && stock.roundedToTonnes > 0
+    && Number.isInteger(mining.year) && mining.year >= 1900 && mining.year <= Number(stock.date.slice(0, 4))
+    && Number.isFinite(mining.tonnes) && mining.tonnes >= 0
+    && Number.isFinite(release) && release >= goldAnchor(gold)
+    && Number.isFinite(utcDate(mining.releasedAt)) && utcDate(mining.releasedAt) >= Date.UTC(mining.year + 1, 0, 1)
+    && utcDate(mining.releasedAt) <= release
+    && Number.isFinite(checked) && checked >= release
+    && [stock.source, mining.source].every(url => /^https:\/\/www\.gold\.org\//.test(url));
+}
+
+export function annualMiningRate(gold: GoldSnapshot): number {
+  const year = gold.mineProduction.year;
+  // New metal mined during the year, not the year-on-year change in output.
+  return gold.mineProduction.tonnes / ((Date.UTC(year + 1, 0, 1) - Date.UTC(year, 0, 1)) / 1_000);
+}
+
+export function projectGold(gold: GoldSnapshot | undefined, now: number): { tonnes: number | null; state: ProjectionState } {
+  if (!isValidGold(gold) || !Number.isFinite(now)) return { tonnes: null, state: 'unavailable' };
+  const recorded = gold.stock.tonnes;
+  if (now < utcDate(gold.stock.releasedAt)) return { tonnes: recorded, state: 'recorded' };
+  if (now > goldExpiry(gold)) return { tonnes: recorded, state: 'stale' };
+  const tonnes = recorded + annualMiningRate(gold) * (now - goldAnchor(gold)) / 1_000;
+  if (!Number.isFinite(tonnes) || tonnes <= 0) return { tonnes: recorded, state: 'stale' };
+  return { tonnes, state: 'projected' };
+}
+
+export function goldShareGrams(tonnes: number, population: number): number {
+  return equalShare(tonnes * 1_000_000, population);
 }
 
 function populationTime(date: string): number {
@@ -127,7 +187,7 @@ export function isValidMoney(money: MoneySnapshot): boolean {
 export function isValidSnapshot(snapshot: SupplySnapshot): boolean {
   return snapshot.fiat.length === Object.keys(FIAT_UNITS).length
     && new Set(snapshot.fiat.map(({ id }) => id)).size === snapshot.fiat.length
-    && snapshot.fiat.every(isValidMoney) && isValidPopulation(snapshot.population)
+    && snapshot.fiat.every(isValidMoney) && isValidPopulation(snapshot.population) && isValidGold(snapshot.gold)
     && Number.isFinite(Date.parse(snapshot.checkedAt));
 }
 
