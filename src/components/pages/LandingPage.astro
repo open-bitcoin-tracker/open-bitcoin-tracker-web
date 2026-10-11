@@ -106,9 +106,9 @@ const t = useTranslations(Astro.currentLocale);
     background: radial-gradient(ellipse at 15% 10%, var(--hero-glow), transparent 50%);
   }
   .landing-content { width: 100%; max-width: 72rem; }
-  .landing-brand { display: flex; align-items: center; gap: clamp(.75rem, 2vw, 1.5rem); container-type: inline-size; margin-bottom: clamp(2rem, 4vw, 3rem); }
+  .landing-brand { display: flex; flex-direction: column; align-items: center; gap: clamp(.75rem, 2vw, 1.5rem); container-type: inline-size; margin-bottom: clamp(2rem, 4vw, 3rem); text-align: center; }
   .landing-icon { width: 72px; height: 72px; flex-shrink: 0; border-radius: 18px; }
-  h1 { min-width: 0; font-size: clamp(1.1875rem, 8cqi, 5.5rem); line-height: 1.06; letter-spacing: -.015em; white-space: nowrap; }
+  h1 { min-width: 0; max-width: 100%; font-size: clamp(1.1875rem, 8cqi, 5.5rem); line-height: 1.06; letter-spacing: -.015em; white-space: normal; }
   .landing-options { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1.25rem; }
   .landing-option {
     position: relative;

@@ -36,7 +36,7 @@ The build does not run a full TypeScript check. Local development and preview do
 
 All pages support English, Spanish, Brazilian Portuguese, Russian, Turkish, Vietnamese, Japanese, French, German, and Italian. English has no URL prefix; Portuguese uses `/pt/` with code `pt-BR`; others use their language code.
 
-On Cloudflare Pages, `functions/_middleware.js` honors a valid `lang` cookie on root visits; otherwise it detects `Accept-Language` and stores the result for 180 days. The switcher links to the same page in another language. The Bitcoin and fiat money feature currently uses English content on every localized route; its surrounding navigation remains localized.
+On Cloudflare Pages, `functions/_middleware.js` honors a valid `lang` cookie on root visits; otherwise it detects `Accept-Language` and stores the result for 180 days. The switcher links to the same page in another language. The Bitcoin vs fiat feature currently uses English content on every localized route; its surrounding navigation remains localized.
 
 ## A Bit of Earth
 
@@ -46,7 +46,7 @@ Bitcoin amounts are calculated locally. Location search sends only the submitted
 
 The map follows the existing `theme` preference controlled by the shared site menu. Measurements are always available at the map's bottom-left corner; the separate mobile map menu opens the guide. The source project remains independently maintained; its standalone build and exports are not part of this website.
 
-## Bitcoin and fiat money
+## Bitcoin vs fiat
 
 The six currency panels compare **Bitcoin’s 21 million maximum under current consensus rules** with five native monetary aggregates. Bitcoin’s maximum is not the already circulating amount. Broad money includes deposits and other liquid instruments, not only printed cash. Definitions, coverage, seasonal adjustment and source precision differ; there is no currency conversion, purchasing-power comparison or global sum. Equal shares are a thought experiment, not actual distribution, an entitlement or a limit on holdings. The existing `/bitcoin-and-the-dollar/` route remains available in every locale, with English feature content and localized navigation.
 

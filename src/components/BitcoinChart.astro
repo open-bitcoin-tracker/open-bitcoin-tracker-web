@@ -104,9 +104,9 @@ const lastDate = new Intl.DateTimeFormat(lang, { year: 'numeric', month: 'short'
   .range-slot:has(.range-step) { display: grid; grid-template-columns: minmax(0, 1fr) max-content minmax(0, 1fr); }
   .range-slot:has(.range-step) .range-select { grid-area: 1 / 1 / 2 / -1; display: grid; grid-template-columns: subgrid; align-items: center; padding-inline: 0; }
   .range-slot:has(.range-step) [data-range-label] { grid-column: 2; }
-  .range-slot[data-highlighted="true"] .range-select { color: var(--color-accent-text); font-weight: 700; cursor: grab; }
+  .range-slot[data-highlighted="true"] .range-select { color: #F7931A; font-weight: 700; cursor: grab; }
   .range-bar[data-dragging="true"] .range-select { cursor: grabbing; }
-  .range-step { grid-row: 1; justify-self: center; z-index: 1; display: flex; justify-content: center; align-items: center; width: 100%; max-width: 20px; height: 100%; border-radius: 999px; visibility: hidden; color: var(--color-accent-text); }
+  .range-step { grid-row: 1; justify-self: center; z-index: 1; display: flex; justify-content: center; align-items: center; width: 100%; max-width: 20px; height: 100%; border-radius: 999px; visibility: hidden; color: #F7931A; }
   .range-step svg { max-width: 100%; }
   .range-step[data-range-step="1"] { grid-column: 1; }
   .range-step[data-range-step="-1"] { grid-column: 3; }

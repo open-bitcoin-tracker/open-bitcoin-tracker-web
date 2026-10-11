@@ -197,7 +197,7 @@ html { scrollbar-gutter: stable; }
 .eyebrow { font-size: .8125rem; font-weight: 500; line-height: 1.6; color: var(--color-ink-muted); }
 .hero-copy h1 { max-width: 14ch; font-size: clamp(3.5rem, 6.25vw, 5.65rem); font-weight: 650; line-height: 1.08; letter-spacing: -.065em; text-wrap: balance; overflow-wrap: anywhere; }
 .hero-copy h1 .brand-name { letter-spacing: -.015em; }
-.hero-bitcoin { color: var(--color-accent-text); }
+.hero-bitcoin { color: inherit; }
 .hero-subtitle { display: block; margin-top: .75rem; font-size: clamp(.875rem, .3em, 1.5rem); font-weight: 500; line-height: 1.3; letter-spacing: -.02em; color: var(--color-ink-muted); }
 :lang(ja) .hero-copy h1 { letter-spacing: -.035em; line-height: 1.2; }
 .hero-description { max-width: 27rem; margin-top: 1.75rem; color: var(--color-ink-muted); font-size: 1.125rem; line-height: 1.75; text-wrap: pretty; }
