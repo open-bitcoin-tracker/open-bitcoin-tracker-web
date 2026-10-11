@@ -4,7 +4,7 @@ import { readFileSync } from 'node:fs';
 import { runInNewContext } from 'node:vm';
 import ts from 'typescript';
 import * as model from '../src/features/supply/model.ts';
-import { supply } from '../src/i18n/supply.ts';
+import { currencies, supply } from '../src/i18n/supply.ts';
 
 const snapshot = JSON.parse(readFileSync(new URL('../src/features/supply/snapshot.json', import.meta.url), 'utf8')) as model.SupplySnapshot;
 const script = ts.transpileModule(readFileSync(new URL('../src/scripts/supply.ts', import.meta.url), 'utf8'), {
@@ -18,34 +18,51 @@ class Control extends EventTarget {
   checked = false;
   dataset: Record<string, string> = {};
   attributes: Record<string, string> = {};
+  parentElement: Control | null = null;
+  get selectedOptions() {
+    const currency = currencies[this.value as keyof typeof currencies];
+    return [{ textContent: this.value === 'gold' ? supply.gold : currency?.name, dataset: { symbol: currency?.symbol } }];
+  }
+  prepend(child: Control) { child.parentElement = this; }
+  focus(_options?: FocusOptions) {}
   setAttribute(name: string, value: string) { this.attributes[name] = value; }
 }
 function harness(reduced = false, when = Date.parse('2026-10-10T12:00:00Z'), data = snapshot) {
   let now = when;
-  const controls = Object.fromEntries(['motion-status', 'population', 'population-label', 'population-status', 'btc-share', 'btc-basis', 'pause', 'pause-label', 'gold', 'gold-total', 'gold-share', 'gold-label', 'gold-status', 'asset-select', 'compare-all', 'comparison-controls'].map(name => [name, new Control()]));
+  const controls = Object.fromEntries(['motion-status', 'population', 'population-label', 'population-status', 'btc-share', 'btc-basis', 'pause', 'pause-label', 'gold', 'gold-total', 'gold-share', 'gold-label', 'gold-status', 'asset-select', 'asset-picker', 'picker-gold', 'picker-symbol', 'picker-name', 'compare-all', 'comparison-controls'].map(name => [name, new Control()]));
   const shares = data.fiat.map(() => new Control());
-  const rows = Object.fromEntries(['bitcoin', 'gold', ...data.fiat.map(money => money.id)].map(id => [id, new Control()]));
-  const panels = data.fiat.map(money => {
-    const children = Object.fromEntries(['money-total', 'total-label', 'status'].map(name => [name, new Control()]));
+  const panels = data.fiat.map((money, index) => {
+    const children: Record<string, Control> = { ...Object.fromEntries(['money-total', 'total-label', 'status'].map(name => [name, new Control()])), 'money-share': shares[index] };
     return Object.assign(new Control(), { id: money.id, children, querySelector: (selector: string) => children[selector.slice(6, -1)] });
   });
   const root = { dataset: { motion: 'still', view: 'all' }, querySelector: (selector: string) => {
     if (selector.startsWith('[data-currency=')) return panels.find(p => selector.includes(`"${p.id}"`));
     if (selector.startsWith('[data-money-share=')) return shares[data.fiat.findIndex(money => selector.includes(`"${money.id}"`))];
-    if (selector.startsWith('[data-share-asset=')) return rows[Object.keys(rows).find(id => selector.includes(`"${id}"`))!];
     if (selector.startsWith('[data-projection-status=')) return panels.find(p => selector.includes(`"${p.id}"`))!.children.status;
     return controls[selector.slice(6, -1)];
   } };
   const media = Object.assign(new EventTarget(), { matches: reduced });
-  const document = Object.assign(new EventTarget(), { hidden: false, querySelector: () => root,
+  const document = Object.assign(new EventTarget(), { hidden: false, activeElement: null as Control | null, querySelector: () => root,
     getElementById: () => ({ textContent: JSON.stringify({ snapshot: data, locale: 'en-US', copy: supply }) }),
   });
+  for (const panel of [controls.gold, ...panels]) {
+    panel.prepend = (child: Control) => {
+      child.parentElement = panel;
+      const focused = document.activeElement === controls['asset-select'];
+      document.activeElement = null;
+      if (focused) controls['asset-select'].dispatchEvent(new Event('blur'));
+    };
+  }
+  controls['asset-select'].focus = () => {
+    document.activeElement = controls['asset-select'];
+    controls['asset-select'].dispatchEvent(new Event('focus'));
+  };
   let callback: (() => void) | undefined;
   const window = Object.assign(new EventTarget(), { matchMedia: () => media,
     setInterval: (fn: () => void) => { callback = fn; return 1; }, clearInterval: () => { callback = undefined; },
   });
   runInNewContext(script, { require: () => model, exports: {}, document, window, Date: { now: () => now } });
-  return { controls, panels, shares, rows, root, document, media, advance: (ms: number) => { now += ms; callback?.(); } };
+  return { controls, panels, shares, root, document, media, advance: (ms: number) => { now += ms; callback?.(); } };
 }
 const values = (h: ReturnType<typeof harness>) => h.panels.map((p, i) => [p.children['money-total'].textContent, h.shares[i].textContent]);
 
@@ -54,18 +71,46 @@ test('default pair is USD; all six assets switch both panel and per-person selec
   assert.equal(h.root.dataset.view, 'focus');
   assert.equal(h.controls['comparison-controls'].hidden, false);
   assert.equal(h.panels[0].attributes['data-selected'], 'true');
-  assert.equal(h.rows.usd.attributes['data-selected'], 'true');
+  assert.equal(h.panels[0].children['money-share'], h.shares[0]);
+  assert.equal(h.controls['asset-picker'].parentElement, h.panels[0]);
+  assert.equal(h.controls['asset-picker'].hidden, false);
   for (const id of ['gold', 'usd', 'eur', 'jpy', 'cny', 'gbp']) {
+    h.document.activeElement = h.controls['asset-select'];
     h.controls['asset-select'].value = id;
     h.controls['asset-select'].dispatchEvent(new Event('change'));
     assert.equal(h.controls.gold.attributes['data-selected'], String(id === 'gold'));
     h.panels.forEach(panel => assert.equal(panel.attributes['data-selected'], String(panel.id === id)));
-    assert.deepEqual(Object.entries(h.rows).filter(([,row]) => row.attributes['data-selected'] === 'true').map(([key]) => key), [id]);
+    const selectedPanel = id === 'gold' ? h.controls.gold : h.panels.find(panel => panel.id === id);
+    assert.equal(h.controls['asset-picker'].parentElement, selectedPanel);
+    assert.equal(h.document.activeElement, h.controls['asset-select']);
+    assert.equal(h.controls['picker-gold'].hidden, id !== 'gold');
+    assert.equal(h.controls['picker-symbol'].hidden, id === 'gold');
+    assert.equal(h.controls['picker-name'].textContent, id === 'gold' ? supply.gold : currencies[id as keyof typeof currencies].name);
+    if (id !== 'gold') assert.equal(h.controls['picker-symbol'].textContent, currencies[id as keyof typeof currencies].symbol);
     assert.equal(h.controls['btc-share'].textContent, bitcoin);
   }
   h.controls['asset-select'].value = 'chf';
   h.controls['asset-select'].dispatchEvent(new Event('change'));
   assert.equal(h.controls['asset-select'].value, 'gbp');
+});
+
+test('pointer selection stays borderless; keyboard focus survives selecting another card', () => {
+  const h = harness(), select = h.controls['asset-select'], picker = h.controls['asset-picker'];
+  h.document.dispatchEvent(new Event('pointerdown'));
+  select.focus();
+  select.value = 'eur'; select.dispatchEvent(new Event('change'));
+  assert.equal(h.document.activeElement, select);
+  assert.equal(picker.dataset.keyboardFocus, 'false');
+  h.document.dispatchEvent(Object.assign(new Event('keydown'), { key: 'ArrowDown' }));
+  select.value = 'jpy'; select.dispatchEvent(new Event('change'));
+  assert.equal(h.document.activeElement, select);
+  assert.equal(picker.dataset.keyboardFocus, 'true');
+  h.document.dispatchEvent(new Event('pointerdown'));
+  assert.equal(picker.dataset.keyboardFocus, 'false');
+  h.document.activeElement = null; select.dispatchEvent(new Event('blur'));
+  h.document.dispatchEvent(Object.assign(new Event('keydown'), { key: 'Tab' }));
+  select.focus();
+  assert.equal(picker.dataset.keyboardFocus, 'true');
 });
 
 test('switching pair and overview preserves shared pause, fixed Bitcoin and chosen asset', () => {
@@ -75,6 +120,7 @@ test('switching pair and overview preserves shared pause, fixed Bitcoin and chos
   h.controls['asset-select'].value = 'gold'; h.controls['asset-select'].dispatchEvent(new Event('change'));
   h.controls['compare-all'].checked = true; h.controls['compare-all'].dispatchEvent(new Event('change'));
   assert.equal(h.root.dataset.view, 'all');
+  assert.equal(h.controls['asset-picker'].hidden, true);
   h.advance(60_000);
   assert.deepEqual(values(h), frozen);
   assert.equal(h.controls['gold-total'].textContent, gold);
@@ -83,6 +129,7 @@ test('switching pair and overview preserves shared pause, fixed Bitcoin and chos
   assert.equal(h.root.dataset.motion, 'paused');
   h.controls['compare-all'].checked = false; h.controls['compare-all'].dispatchEvent(new Event('change'));
   assert.equal(h.root.dataset.view, 'focus');
+  assert.equal(h.controls['asset-picker'].hidden, false);
   assert.equal(h.controls['asset-select'].value, 'gold');
   assert.equal(h.controls.gold.attributes['data-selected'], 'true');
   assert.equal(h.controls.gold.dataset.goldMotion, 'paused');

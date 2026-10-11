@@ -29,22 +29,44 @@ if (root && json) {
   const button = root.querySelector<HTMLButtonElement>('[data-pause]');
   const buttonLabel = root.querySelector<HTMLElement>('[data-pause-label]');
   const assetSelect = root.querySelector<HTMLSelectElement>('[data-asset-select]');
+  const assetPicker = root.querySelector<HTMLElement>('[data-asset-picker]');
+  const pickerGold = root.querySelector<HTMLElement>('[data-picker-gold]');
+  const pickerSymbol = root.querySelector<HTMLElement>('[data-picker-symbol]');
+  const pickerName = root.querySelector<HTMLElement>('[data-picker-name]');
   const compareAll = root.querySelector<HTMLInputElement>('[data-compare-all]');
   const comparisonControls = root.querySelector<HTMLElement>('[data-comparison-controls]');
   const comparisonAssets = [
     { id: 'gold', panel: goldPanel },
     ...panels.map(({ money, panel }) => ({ id: money.id, panel })),
-  ].map(asset => ({ ...asset, row: root.querySelector<HTMLElement>(`[data-share-asset="${asset.id}"]`) }));
+  ];
   let selectedAsset = 'usd';
   const updateComparison = () => {
     const candidate = assetSelect?.value;
     if (comparisonAssets.some(asset => asset.id === candidate)) selectedAsset = candidate!;
     else if (assetSelect) assetSelect.value = selectedAsset;
     root.dataset.view = compareAll?.checked ? 'all' : 'focus';
-    for (const { id, panel, row } of comparisonAssets) {
+    for (const { id, panel } of comparisonAssets) {
       const selected = String(id === selectedAsset);
       panel?.setAttribute('data-selected', selected);
-      row?.setAttribute('data-selected', selected);
+    }
+    const selectedPanel = comparisonAssets.find(asset => asset.id === selectedAsset)?.panel;
+    if (assetPicker) {
+      assetPicker.hidden = Boolean(compareAll?.checked);
+      const option = assetSelect?.selectedOptions[0];
+      if (option?.textContent) {
+        assetPicker.setAttribute('aria-label', option.textContent);
+        if (pickerName) pickerName.textContent = option.textContent;
+      }
+      if (pickerGold) pickerGold.hidden = selectedAsset !== 'gold';
+      if (pickerSymbol) {
+        pickerSymbol.hidden = selectedAsset === 'gold';
+        pickerSymbol.textContent = option?.dataset.symbol ?? '';
+      }
+      if (selectedPanel && assetPicker.parentElement !== selectedPanel) {
+        const focused = document.activeElement === assetSelect;
+        selectedPanel.prepend(assetPicker);
+        if (focused) assetSelect?.focus({ preventScroll: true });
+      }
     }
   };
   // One set of nodes and one clock: switching views never resets the visit's
@@ -52,6 +74,21 @@ if (root && json) {
   updateComparison();
   assetSelect?.addEventListener('change', updateComparison);
   compareAll?.addEventListener('change', updateComparison);
+  // Native selects can match :focus-visible after a pointer opens their popup.
+  // Track keyboard entry explicitly so pointer selection leaves no focus box.
+  let keyboardSelection = false;
+  const updatePickerFocus = () => {
+    if (assetPicker) assetPicker.dataset.keyboardFocus = String(keyboardSelection && document.activeElement === assetSelect);
+  };
+  document.addEventListener('pointerdown', () => { keyboardSelection = false; updatePickerFocus(); }, { capture: true });
+  document.addEventListener('keydown', (event) => {
+    if (event.key === 'Tab' || document.activeElement === assetSelect && ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Home', 'End', 'Enter', ' '].includes(event.key)) {
+      keyboardSelection = true;
+      updatePickerFocus();
+    }
+  });
+  assetSelect?.addEventListener('focus', updatePickerFocus);
+  assetSelect?.addEventListener('blur', updatePickerFocus);
   if (comparisonControls) comparisonControls.hidden = false;
   const reduce = window.matchMedia('(prefers-reduced-motion: reduce)');
   let paused = false;

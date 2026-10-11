@@ -25,12 +25,6 @@ const clientCopy = Object.fromEntries(['projected', 'recorded', 'goldProjected',
     <h1 id="supply-page-title" class="page-title">{t.title}</h1>
 
     <div class="comparison-controls" data-comparison-controls hidden>
-      <div class="asset-picker"><label for="comparison-asset">{t.compareBitcoinWith}</label>
-        <select id="comparison-asset" data-asset-select>
-          <option value="gold">{t.gold}</option>
-          {snapshot.fiat.map((money) => <option value={money.id} selected={money.id === 'usd'}>{currencies[money.id].name}</option>)}
-        </select>
-      </div>
       <label class="overview-toggle"><input type="checkbox" data-compare-all /><span>{t.compareAll}</span></label>
     </div>
     <div class="asset-comparison">
@@ -48,6 +42,10 @@ const clientCopy = Object.fromEntries(['projected', 'recorded', 'goldProjected',
           <p class="total-number btc-total"><span aria-hidden="true">₿</span>{n(BITCOIN_MAX)}<span class="currency-name"> bitcoins</span></p>
         </div>
           <SupplyContainer kind="bitcoin" />
+          <div class="share bitcoin-share" data-share-asset="bitcoin">
+            <SupplyPeople accent />
+            <div class="share-copy"><p class="share-number"><span aria-hidden="true">₿</span><span data-btc-share>{n(bitcoinShare, 8)}</span><span class="currency-name"> bitcoins</span></p><p class="share-caption">{t.perPerson}</p></div>
+          </div>
     </section>
     <section class="supply-board" aria-label={t.goldAndFiat}>
       <div class="currency-grid">
@@ -56,45 +54,40 @@ const clientCopy = Object.fromEntries(['projected', 'recorded', 'goldProjected',
           <p class="value-label" data-gold-label>{t.goldRecorded}</p>
           <p class="total-number gold-total" aria-live="off"><span data-gold-total>{n(gold.stock.tonnes)}</span> <span class="mass-unit">{t.tonnes}</span></p>
           <SupplyContainer kind="gold" />
+          <div class="share gold-share" data-share-asset="gold">
+            <SupplyPeople />
+            <div class="share-copy"><p class="share-number" aria-live="off"><span data-gold-share>{n(goldShareGrams(gold.stock.tonnes, snapshot.population.persons), 2)}</span> <abbr title="grams" class="mass-unit">{t.grams}</abbr></p><p class="share-caption">{t.perPerson}</p></div>
+          </div>
         </article>
         {snapshot.fiat.map((money) => {
           const currency = currencies[money.id];
           return <article class="supply-column fiat-column" data-currency={money.id} data-selected={money.id === 'usd' ? 'true' : undefined} data-money-motion="still" data-direction={annualRate(money) < 0 ? 'down' : 'up'}>
+            {money.id === 'usd' && <h2 class="column-heading selected-asset-heading" data-asset-picker hidden aria-label={currency.name}>
+              <span class="currency-icon gold-icon" data-picker-gold hidden aria-hidden="true"><svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="m6 7-3 10h18L18 7Z" fill="currentColor" /><path d="M8 9h8" stroke="var(--supply-gold)" stroke-width="2" /></svg></span>
+              <span class="currency-icon fiat-icon" data-picker-symbol aria-hidden="true">{currency.symbol}</span>
+              <label class="control-label" for="comparison-asset">{t.compareBitcoinWith}</label>
+              <span class="asset-choice">
+                <span data-picker-name aria-hidden="true">{currency.name}</span>
+                <svg class="asset-chevron" width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="m3 4.5 3 3 3-3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" /></svg>
+                <select id="comparison-asset" data-asset-select>
+                  <option value="gold">{t.gold}</option>
+                  {snapshot.fiat.map((asset) => <option value={asset.id} data-symbol={currencies[asset.id].symbol} selected={asset.id === 'usd'}>{currencies[asset.id].name}</option>)}
+                </select>
+              </span>
+            </h2>}
             <h2 class="column-heading"><span class="currency-icon fiat-icon" aria-hidden="true">{currency.symbol}</span>{currency.name}</h2>
             <p class="value-label" data-total-label>{interpolate(t.recorded, { aggregate: money.aggregate })}</p>
             <p class="total-number fiat-total" aria-live="off"><span aria-hidden="true">{currency.symbol}</span><span data-money-total>{n(money.latest.amount)}</span><span class="currency-name"> {currency.plural}</span></p>
             <SupplyContainer kind="fiat" symbol={currency.symbol} />
+            <div class="share fiat-share" data-share-asset={money.id}>
+              <SupplyPeople />
+              <div class="share-copy"><p class="share-number" aria-live="off"><span aria-hidden="true">{currency.symbol}</span><span data-money-share={money.id}>{n(equalShare(money.latest.amount, snapshot.population.persons))}</span><span class="currency-name"> {currency.plural}</span></p><p class="share-caption">{t.perPerson}</p></div>
+            </div>
           </article>;
         })}
       </div>
     </section>
     </div>
-
-    <section class="per-person-section" aria-labelledby="per-person-heading">
-      <h2 id="per-person-heading">{t.perPersonTitle}</h2>
-      <div class="share-board">
-        <table class="share-table" data-share-table aria-labelledby="per-person-heading">
-          <thead><tr><th scope="col">{t.asset}</th><th scope="col">{t.amountPerPerson}</th></tr></thead>
-          <tbody>
-            <tr data-share-asset="bitcoin">
-              <th scope="row"><span class="row-asset"><span class="currency-icon btc-icon" aria-hidden="true">₿</span>{t.bitcoin}</span></th>
-              <td><div class="share bitcoin-share"><SupplyPeople accent /><p class="share-number"><span aria-hidden="true">₿</span><span data-btc-share>{n(bitcoinShare, 8)}</span><span class="currency-name"> bitcoins</span></p></div></td>
-            </tr>
-            <tr data-share-asset="gold">
-              <th scope="row"><span class="row-asset"><span class="currency-icon gold-icon" aria-hidden="true"><svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="m6 7-3 10h18L18 7Z" fill="currentColor" /><path d="M8 9h8" stroke="var(--supply-gold)" stroke-width="2" /></svg></span>{t.gold}</span></th>
-              <td><div class="share gold-share"><SupplyPeople /><p class="share-number" aria-live="off"><span data-gold-share>{n(goldShareGrams(gold.stock.tonnes, snapshot.population.persons), 2)}</span> <abbr title="grams" class="mass-unit">{t.grams}</abbr></p></div></td>
-            </tr>
-            {snapshot.fiat.map((money) => {
-              const currency = currencies[money.id];
-              return <tr data-share-asset={money.id} data-selected={money.id === 'usd' ? 'true' : undefined}>
-                <th scope="row"><span class="row-asset"><span class="currency-icon fiat-icon" aria-hidden="true">{currency.symbol}</span>{currency.name}</span></th>
-                <td><div class="share fiat-share"><SupplyPeople /><p class="share-number" aria-live="off"><span aria-hidden="true">{currency.symbol}</span><span data-money-share={money.id}>{n(equalShare(money.latest.amount, snapshot.population.persons))}</span><span class="currency-name"> {currency.plural}</span></p></div></td>
-              </tr>;
-            })}
-          </tbody>
-        </table>
-      </div>
-    </section>
 
     <section class="method" id="sources">
       <details>
@@ -177,7 +170,7 @@ const clientCopy = Object.fromEntries(['projected', 'recorded', 'goldProjected',
 <style>
   .supply-page { --supply-fiat: #aecdbb; --supply-fiat-text: #286045; --supply-fiat-ink: #234632; --supply-gold: #dfc36b; --supply-gold-text: #79601d; --supply-gold-ink: #604b16; max-width: 1220px; margin: 0 auto; padding: 3.25rem clamp(1.25rem, 4vw, 3rem) 2rem; }
   :global(html.dark) .supply-page { --supply-fiat: #93bfa8; --supply-fiat-text: #a2ceb5; --supply-fiat-ink: #214431; --supply-gold-text: #dfc36b; }
-  .bitcoin-feature { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: center; gap: 1.5rem; padding: 1.25rem 1.5rem; margin-bottom: 1.25rem; background: radial-gradient(ellipse at 50% 50%, var(--hero-glow), transparent 75%), var(--color-surface); border: 1px solid var(--color-divider); border-radius: 24px; }
+  .bitcoin-feature { display: grid; grid-template-columns: minmax(0, 1fr) minmax(160px, 240px) minmax(0, 1fr); align-items: center; gap: 1.5rem; padding: 1.25rem 1.5rem; margin-bottom: 1.25rem; background: radial-gradient(ellipse at 50% 50%, var(--hero-glow), transparent 75%), var(--color-surface); border: 1px solid var(--color-divider); border-radius: 24px; }
   .bitcoin-feature :global(.container-scene) { max-width: 240px; }
   .supply-board { background: var(--color-surface); border: 1px solid var(--color-divider); border-radius: 24px; overflow: hidden; }
   .population-heading { display: flex; align-items: center; justify-content: center; gap: 1.25rem; text-align: center; padding: 1.25rem; margin-bottom: 1.25rem; border: 1px solid var(--color-divider); border-radius: 24px; background: var(--color-surface); }
@@ -187,8 +180,13 @@ const clientCopy = Object.fromEntries(['projected', 'recorded', 'goldProjected',
   .population-band strong { font-size: clamp(2rem, 8vw, 4rem); font-weight: 650; line-height: 1.1; font-variant-numeric: tabular-nums; color: var(--color-ink); letter-spacing: -.04em; white-space: nowrap; }
   .comparison-controls { display: flex; align-items: flex-end; justify-content: space-between; flex-wrap: wrap; gap: .75rem 1rem; margin-bottom: 1.25rem; }
   .comparison-controls[hidden] { display: none; }
-  .asset-picker { display: grid; gap: .375rem; max-width: 100%; font-size: .75rem; font-weight: 550; color: var(--color-ink-muted); }
-  .asset-picker select { min-height: 44px; width: 220px; max-width: 100%; padding: .5rem .75rem; border: 1px solid var(--color-divider); border-radius: 10px; background: var(--color-surface); color: var(--color-ink); font-size: 1rem; font-weight: 600; cursor: pointer; }
+  .asset-choice { position: relative; display: inline-flex; align-items: center; gap: .375rem; min-height: 44px; min-width: 0; max-width: 100%; }
+  .asset-choice [data-picker-name] { white-space: nowrap; }
+  .asset-chevron { flex-shrink: 0; }
+  .asset-choice select { position: absolute; inset: 0; width: 100%; height: 100%; min-width: 0; border: 0; opacity: 0; font-size: 1rem; cursor: pointer; }
+  .selected-asset-heading[data-keyboard-focus='true'] .asset-choice { outline: 2px solid var(--color-accent-text); outline-offset: 4px; border-radius: 4px; }
+  .selected-asset-heading .currency-icon { flex-shrink: 0; }
+  .selected-asset-heading[hidden], [data-picker-gold][hidden], [data-picker-symbol][hidden] { display: none; }
   .overview-toggle { display: inline-flex; align-items: center; gap: .5rem; min-height: 44px; padding: .5rem .75rem; border: 1px solid var(--color-divider); border-radius: 10px; background: var(--color-surface); font-size: .8125rem; cursor: pointer; }
   .overview-toggle input { width: 16px; height: 16px; accent-color: #F7931A; cursor: pointer; }
   .currency-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); }
@@ -209,24 +207,15 @@ const clientCopy = Object.fromEntries(['projected', 'recorded', 'goldProjected',
   .gold-share { --supply-fiat-text: var(--supply-gold-text); }
   .gold-total { padding-top: .35rem; }
   .mass-unit { font-size: .75em; letter-spacing: 0; text-decoration: none; }
-  .page-title, .currency-name { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; border: 0; }
-  .per-person-section { margin-top: 2rem; }
-  .per-person-section h2 { font-size: 1.125rem; font-weight: 650; margin-bottom: .875rem; }
-  .share-board { background: var(--color-surface); border: 1px solid var(--color-divider); border-radius: 24px; overflow: hidden; }
-  .share-table { width: 100%; border-collapse: collapse; table-layout: fixed; }
-  .share-table th, .share-table td { padding: .875rem 1.25rem; vertical-align: middle; }
-  .share-table thead { font-size: .75rem; color: var(--color-ink-muted); background: color-mix(in srgb, var(--color-ink) 3%, var(--color-surface)); }
-  .share-table th { text-align: left; font-weight: 550; width: 40%; }
-  .share-table thead th:last-child { text-align: right; width: 60%; }
-  .share-table tbody tr { border-top: 1px solid var(--color-divider); }
-  .row-asset { display: flex; align-items: center; gap: .625rem; font-size: .875rem; }
-  .row-asset .currency-icon { flex-shrink: 0; }
-  .share { display: flex; align-items: center; justify-content: space-between; gap: 1rem; min-width: 0; }
-  .share-number { font-size: clamp(1.05rem, 2.4vw, 1.5rem); font-weight: 600; letter-spacing: -.045em; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .page-title, .currency-name, .control-label { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; border: 0; }
+  .share { display: flex; align-items: center; justify-content: space-between; gap: .75rem; min-width: 0; margin-top: 1rem; padding-top: .875rem; border-top: 1px solid var(--color-divider); }
+  .share-copy { min-width: 0; text-align: right; }
+  .share-number { font-size: clamp(1.1rem, 2.3vw, 1.5rem); font-weight: 600; letter-spacing: -.045em; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .share-caption { color: var(--color-ink-muted); font-size: .75rem; margin-top: .125rem; }
   .bitcoin-share .share-number { color: #F7931A; }
   .fiat-share .share-number { color: var(--supply-fiat-text); }
   .supply-column :global(.container-scene) { max-width: 240px; }
-  .share :global(.people-illustration) { width: 115px; max-width: 100%; flex-shrink: 0; margin: 0; }
+  .share :global(.people-illustration) { width: 96px; max-width: 100%; flex-shrink: 0; margin: 0; }
   .bitcoin-share :global(.people-illustration) { --color-accent-text: #F7931A; }
   .supply-controls { display: flex; justify-content: center; margin-top: 1.25rem; }
   .motion-control { display: inline-flex; flex-shrink: 0; align-items: center; gap: .375rem; min-height: 44px; padding: .375rem .75rem; border: 1px solid var(--color-divider); border-radius: 8px; cursor: pointer; background: var(--color-surface); font-size: .75rem; }
@@ -256,6 +245,8 @@ const clientCopy = Object.fromEntries(['projected', 'recorded', 'goldProjected',
   .refresh-note { margin-top: 2rem; border-top: 1px solid var(--color-divider); padding-top: 1rem; }
   a:focus-visible, summary:focus-visible, button:focus-visible, select:focus-visible, input:focus-visible { outline: 2px solid var(--color-accent-text); outline-offset: 4px; }
   @media (max-width: 1000px) {
+    .bitcoin-feature { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .bitcoin-share { grid-column: 1 / -1; justify-content: center; }
     .currency-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     .supply-column:not(:nth-child(3n)) { border-right: 0; }
     .supply-column:nth-child(odd) { border-right: 1px solid var(--color-divider); }
@@ -270,10 +261,6 @@ const clientCopy = Object.fromEntries(['projected', 'recorded', 'goldProjected',
     .population-heading { flex-direction: column; gap: .75rem; padding: 1rem; }
   }
   @media (max-width: 600px) {
-    .share-table th, .share-table td { padding: .75rem; }
-    .share { flex-direction: column; align-items: flex-end; gap: .25rem; }
-    .share :global(.people-illustration) { width: 90px; }
-    .row-asset { gap: .5rem; font-size: .8125rem; }
     .currency-grid { grid-template-columns: 1fr; }
     .supply-column:nth-child(odd) { border-right: 0; }
     .total-number { font-size: clamp(1rem, 4.8vw, 1.2rem); }
@@ -285,21 +272,22 @@ const clientCopy = Object.fromEntries(['projected', 'recorded', 'goldProjected',
   .supply-page[data-view='focus'] .population-readout .column-heading { justify-content: flex-start; }
   .supply-page[data-view='focus'] .population-band { align-items: flex-start; }
   .supply-page[data-view='focus'] .population-band strong { font-size: clamp(2rem, 3vw, 2.5rem); }
-  .supply-page[data-view='focus'] .population-heading :global(.world-illustration) { width: 200px; margin: auto auto 0; }
-  .supply-page[data-view='focus'] .bitcoin-feature { display: block; margin-bottom: 0; padding: 1rem; }
+  .supply-page[data-view='focus'] .population-heading :global(.world-illustration) { width: 200px; margin: auto; }
+  .supply-page[data-view='focus'] .bitcoin-feature { display: flex; flex-direction: column; align-items: stretch; gap: 0; margin-bottom: 0; padding: 1rem; }
   .supply-page[data-view='focus'] .bitcoin-supply { text-align: left; }
+  .supply-page[data-view='focus'] .asset-comparison .column-heading { min-height: 44px; }
   .supply-page[data-view='focus'] .bitcoin-supply .column-heading { justify-content: flex-start; }
-  .supply-page[data-view='focus'] .currency-grid { grid-template-columns: minmax(0, 1fr); }
-  .supply-page[data-view='focus'] .supply-column { padding: 1rem; border: 0; }
-  .supply-page[data-view='focus'] .supply-column:not([data-selected='true']), .supply-page[data-view='focus'] [data-share-asset]:not([data-share-asset='bitcoin']):not([data-selected='true']) { display: none; }
+  .supply-page[data-view='focus'] .currency-grid { grid-template-columns: minmax(0, 1fr); height: 100%; }
+  .supply-page[data-view='focus'] .supply-column { display: flex; flex-direction: column; padding: 1rem; border: 0; }
+  .supply-page[data-view='focus'] .supply-column > .column-heading:not(.selected-asset-heading) { display: none; }
+  .supply-page[data-view='focus'] .supply-column:not([data-selected='true']) { display: none; }
+  .supply-page[data-view='focus'] .share { justify-content: space-between; }
   .supply-page[data-view='focus'] .total-number { font-size: clamp(1.25rem, 2.2vw, 1.6rem); min-height: 2.5rem; }
   .supply-page[data-view='focus'] .btc-total { font-size: 1.8rem; }
   .supply-page[data-view='focus'] .asset-comparison :global(.container-scene) { max-width: 200px; }
-  .supply-page[data-view='focus'] .per-person-section { margin-top: 1.25rem; }
   @media (min-width: 701px) {
     .comparison-controls { padding-right: calc(var(--menu-control-size) + 1rem); }
     .supply-page[data-view='focus'] { padding-top: 2rem; }
-    .supply-page[data-view='focus'] .share-table th, .supply-page[data-view='focus'] .share-table td { padding-block: .75rem; }
   }
   @media (min-width: 701px) and (max-width: 1000px) {
     .supply-page[data-view='focus'] .asset-comparison { grid-template-columns: repeat(2, minmax(0, 1fr)); }
