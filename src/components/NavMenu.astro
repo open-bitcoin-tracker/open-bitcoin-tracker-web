@@ -2,10 +2,11 @@
 import LanguageSwitcher from './LanguageSwitcher.astro';
 import ThemeToggle from './ThemeToggle.astro';
 import { getRelativeLocaleUrl } from 'astro:i18n';
-import { useTranslations, resolveLang } from '../i18n/utils';
+import { useTranslations, resolveLang, stripLocale } from '../i18n/utils';
 
 const t = useTranslations(Astro.currentLocale);
 const homeHref = getRelativeLocaleUrl(resolveLang(Astro.currentLocale), '');
+const isHome = stripLocale(Astro.url.pathname) === '';
 ---
 
 <details class="nav-menu">
@@ -26,7 +27,7 @@ const homeHref = getRelativeLocaleUrl(resolveLang(Astro.currentLocale), '');
       </svg>
     </button>
     <div class="nav-menu-panel">
-      <a class="menu-brand" href={homeHref}><img src="/app-icon.png" width="36" height="36" alt="" /><span lang="en" class="brand-name">Open Bitcoin Tracker</span></a>
+      <a class="menu-brand" href={homeHref} aria-current={isHome ? 'page' : undefined}><img src="/app-icon.png" width="36" height="36" alt="" /><span lang="en" class="brand-name">Open Bitcoin Tracker</span></a>
       <div class="menu-links"><slot /></div>
       <div class="nav-menu-settings">
         <LanguageSwitcher placement="up" />
@@ -170,14 +171,35 @@ const homeHref = getRelativeLocaleUrl(resolveLang(Astro.currentLocale), '');
 
 <style>
   :global(html.nav-menu-open) { overflow: hidden; scrollbar-gutter: auto; }
+  /* Share the page theme even after the modal is moved into body. */
+  :global(:root) {
+    --menu-ink: var(--color-ink);
+    --menu-panel-bg: linear-gradient(165deg, var(--color-surface), var(--color-paper) 80%);
+    --menu-link-ink: var(--color-ink-muted);
+    --menu-primary-ink: var(--color-ink);
+    --menu-divider: var(--color-divider);
+    --menu-dropdown-bg: var(--color-surface);
+    --menu-dropdown-border: var(--color-divider);
+    --menu-dropdown-shadow: var(--shadow-card-hover);
+    --menu-option-hover: var(--hover-tint);
+  }
+  :global(html.dark) {
+    --menu-ink: #E9E6DF;
+    --menu-panel-bg: linear-gradient(165deg, #14213D, #0B1428 80%);
+    --menu-link-ink: #CBD3E6;
+    --menu-primary-ink: #FFF3D9;
+    --menu-divider: rgb(203 211 230 / .2);
+    --menu-dropdown-bg: #14213D;
+    --menu-dropdown-border: rgb(255 255 255 / .12);
+    --menu-dropdown-shadow: 0 12px 40px rgb(0 0 0 / .4);
+    --menu-option-hover: rgb(255 255 255 / .06);
+  }
   .nav-menu { position: relative; flex-shrink: 0; }
   .nav-menu-trigger, .nav-menu-close {
     display: flex; align-items: center; justify-content: center;
     width: var(--menu-control-size); height: var(--menu-control-size); border: 0; border-radius: 50%;
-    color: #D5DDED;
-    /* The original close-button tint over the menu's existing blue surface. */
-    background: linear-gradient(rgb(255 255 255 / .045), rgb(255 255 255 / .045)), #14213D;
-    transition: background-color 180ms ease;
+    color: var(--menu-control-ink);
+    background: var(--menu-control-bg);
   }
   .nav-menu-trigger {
     position: relative; z-index: 1;
@@ -192,7 +214,6 @@ const homeHref = getRelativeLocaleUrl(resolveLang(Astro.currentLocale), '');
   .nav-menu-dialog[open]:not(.is-closing):not(.is-opening) .menu-bar--middle { transform: scaleX(0); opacity: 0; }
   .nav-menu-dialog[open]:not(.is-closing):not(.is-opening) .menu-bar--bottom { transform: rotate(-45deg); }
   .nav-menu-dialog {
-    --menu-ink: #E9E6DF;
     position: fixed; inset: 0 0 0 auto; width: clamp(400px, 40vw, 640px); height: 100dvh;
     max-width: none; max-height: none; margin: 0; padding: 0; border: 0;
     color: var(--menu-ink); background: transparent;
@@ -206,7 +227,7 @@ const homeHref = getRelativeLocaleUrl(resolveLang(Astro.currentLocale), '');
   .nav-menu-panel {
     position: relative; display: flex; flex-direction: column; gap: var(--menu-panel-gap);
     min-height: 100dvh; padding: var(--menu-panel-top) clamp(2rem, 3.5vw, 4rem) 2.5rem;
-    background: linear-gradient(165deg, #14213D, #0B1428 80%);
+    background: var(--menu-panel-bg);
     opacity: 0; transform: translateX(100%);
     transition: transform 420ms cubic-bezier(.22, 1, .36, 1), opacity 300ms ease;
   }
@@ -215,6 +236,7 @@ const homeHref = getRelativeLocaleUrl(resolveLang(Astro.currentLocale), '');
     cursor: pointer;
   }
   .menu-brand { display: flex; align-items: center; gap: 1rem; min-height: var(--menu-brand-height); padding-right: 3.5rem; font-size: var(--menu-brand-size); line-height: 1.15; }
+  .menu-brand[aria-current='page'] { color: var(--color-accent); }
   .menu-brand img { width: 36px; height: 36px; flex-shrink: 0; border-radius: .375rem; }
   .menu-links { display: grid; align-content: start; gap: .65rem; }
   .menu-links :global(.menu-page-links) { display: contents; }
@@ -222,14 +244,15 @@ const homeHref = getRelativeLocaleUrl(resolveLang(Astro.currentLocale), '');
     display: block; width: fit-content; max-width: 100%; padding: .125rem 0;
     font-family: 'Barlow Condensed', 'Inter', sans-serif; font-size: clamp(2.5rem, 4.3vw, 4rem);
     font-weight: 700; line-height: 1.04; letter-spacing: -.015em; text-transform: uppercase;
-    color: #CBD3E6; overflow-wrap: anywhere; text-decoration: none;
-    transition: color 180ms ease, transform 180ms ease;
+    color: var(--menu-link-ink); overflow-wrap: anywhere; text-decoration: none;
   }
-  .menu-links :global(a.page-link) { color: #FFF3D9; }
-  .menu-links :global(a:hover) { color: #F7A53A; transform: translateX(.25rem); }
+  .menu-links :global(a.page-link) { color: var(--menu-primary-ink); }
+  .menu-links :global(a:hover) { color: var(--color-accent); }
+  .menu-links :global(a:focus-visible) { color: var(--color-accent); }
+  .menu-links :global(a[aria-current='page']) { color: var(--color-accent); }
   .menu-links :global(.menu-secondary) {
     display: grid; gap: .125rem; margin-top: 1rem; padding-top: 1.5rem;
-    border-top: 1px solid rgb(203 211 230 / .2); list-style: none;
+    border-top: 1px solid var(--menu-divider); list-style: none;
   }
   .menu-links :global(.menu-secondary a) {
     display: flex; align-items: center; min-height: 44px; padding: .5rem 0;
@@ -239,15 +262,15 @@ const homeHref = getRelativeLocaleUrl(resolveLang(Astro.currentLocale), '');
   .nav-menu-settings { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 1rem; margin-top: auto; }
   .nav-menu-settings :global(.lang-summary), .nav-menu-settings :global(.theme-toggle) {
     display: inline-flex; align-items: center; gap: .5rem; min-height: 44px;
-    color: #CBD3E6; font-size: .875rem; cursor: pointer;
+    color: var(--menu-link-ink); font-size: .875rem; cursor: pointer;
   }
-  .nav-menu-settings :global(.lang-summary:hover), .nav-menu-settings :global(.theme-toggle:hover) { color: #FFF3D9; }
+  .nav-menu-settings :global(.lang-summary:hover), .nav-menu-settings :global(.theme-toggle:hover) { color: var(--menu-primary-ink); }
   .nav-menu-settings :global(.lang-menu) {
-    background: #14213D; border-color: rgb(255 255 255 / .12); box-shadow: 0 12px 40px rgb(0 0 0 / .4);
+    background: var(--menu-dropdown-bg); border-color: var(--menu-dropdown-border); box-shadow: var(--menu-dropdown-shadow);
     max-height: min(50dvh, 24rem);
   }
-  .nav-menu-settings :global(.lang-option) { color: #CBD3E6; }
-  .nav-menu-settings :global(.lang-option:hover), .nav-menu-settings :global(.lang-option.is-current) { color: #FFF3D9; background: rgb(255 255 255 / .06); }
+  .nav-menu-settings :global(.lang-option) { color: var(--menu-link-ink); }
+  .nav-menu-settings :global(.lang-option:hover), .nav-menu-settings :global(.lang-option.is-current) { color: var(--menu-primary-ink); background: var(--menu-option-hover); }
   @starting-style {
     .nav-menu-dialog[open] .nav-menu-panel { opacity: 0; transform: translateX(100%); }
   }
@@ -265,6 +288,6 @@ const homeHref = getRelativeLocaleUrl(resolveLang(Astro.currentLocale), '');
     .menu-links :global(.menu-secondary a) { font-size: 1.0625rem; }
   }
   @media (prefers-reduced-motion: reduce) {
-    .nav-menu-dialog, .nav-menu-panel, .nav-menu-trigger, .nav-menu-close, .menu-bar, .menu-links :global(a) { transition: none; }
+    .nav-menu-dialog, .nav-menu-panel, .menu-bar { transition: none; }
   }
 </style>

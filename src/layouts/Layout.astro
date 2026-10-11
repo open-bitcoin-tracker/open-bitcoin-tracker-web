@@ -108,6 +108,17 @@ const jsonLd = {
       })();
     </script>
 
+    <!-- Menu colors must be available before route styles load, including in
+         development where Vite injects component CSS asynchronously. -->
+    <style is:inline>
+      :root { color-scheme: light; --menu-control-ink: #1F1B14; --menu-control-bg: #FFFFFF; }
+      html.dark {
+        color-scheme: dark;
+        --menu-control-ink: #D5DDED;
+        --menu-control-bg: linear-gradient(rgb(255 255 255 / .045), rgb(255 255 255 / .045)), #14213D;
+      }
+      .nav-menu-trigger, .nav-menu-close { color: var(--menu-control-ink); background: var(--menu-control-bg); }
+    </style>
     <meta name="color-scheme" content="light dark" />
     <meta name="generator" content={Astro.generator} />
 

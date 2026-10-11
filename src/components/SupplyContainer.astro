@@ -31,7 +31,7 @@ const coins = Array.from({ length: 18 }, (_, index) => ({
 <style>
   .container-scene { width: min(100%, 350px); margin: 0 auto; }
   svg { display: block; width: 100%; overflow: visible; }
-  .bitcoin { --token: var(--color-accent); --token-ink: #5c3404; --box-color: var(--color-accent-text); }
+  .bitcoin { --token: var(--color-accent); --token-ink: #1F1B14; --box-color: var(--color-accent); }
   .fiat { --token: var(--supply-fiat); --token-ink: var(--supply-fiat-ink); --box-color: var(--supply-fiat-text); }
   .gold { --token: var(--supply-gold); --token-ink: var(--supply-gold-ink); --box-color: var(--supply-gold-text); }
   .ground { fill: var(--color-ink); opacity: .06; }
@@ -45,7 +45,7 @@ const coins = Array.from({ length: 18 }, (_, index) => ({
   .bill { fill: var(--token); stroke: var(--token-ink); stroke-width: 1; stroke-opacity: .45; }
   .bill-ring { stroke: var(--token-ink); stroke-opacity: .4; }
   .fiat text { font-size: 20px; }
-  .cap { fill: var(--color-accent); stroke: var(--color-accent-text); stroke-width: 1.5; }
+  .cap { fill: var(--color-accent); stroke: var(--color-accent); stroke-width: 1.5; }
   .cap-highlight { stroke: white; stroke-opacity: .55; }
   .open-rim { stroke: var(--box-color); stroke-width: 2; }
   .falling-token { opacity: 0; }

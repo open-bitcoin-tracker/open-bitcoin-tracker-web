@@ -62,6 +62,7 @@
   --color-ink-muted: #6E6A60;
   --color-divider: rgb(31 27 20 / 0.08);
   --color-accent: #F7931A;
+  --color-emphasis-ink: var(--color-ink);
   --color-accent-soft: #FFF3E0;
 
   /* Channel triplets — the same color as --color-ink / --color-paper but as
@@ -96,6 +97,7 @@
   --color-ink-muted: #6E6A60;
   --color-divider: rgb(31 27 20 / 0.08);
   --color-accent: #F7931A;
+  --color-emphasis-ink: var(--color-ink);
   --color-accent-soft: #FFF3E0;
 
   --color-ink-rgb: 31 27 20;
@@ -121,7 +123,7 @@ html.dark {
   --color-ink: #E6E3DD;          /* text primary */
   --color-ink-muted: #A49E94;    /* warm gray, with readable contrast on both navy surfaces */
   --color-divider: rgb(255 255 255 / 0.14);
-  --color-accent: #F7A53A;       /* app's lighter bitcoin orange — better on navy */
+  --color-emphasis-ink: var(--color-accent);
   --color-accent-soft: #16294A;  /* navy-tinted chip bg (app "muted surface") */
 
   --color-ink-rgb: 230 227 221;  /* white-ish, so ink-alpha overlays read on navy */
@@ -130,7 +132,7 @@ html.dark {
   --nav-bg: rgb(15 30 58 / 0.9);
   --nav-border: rgb(255 255 255 / 0.10);
   --hover-tint: rgb(255 255 255 / 0.06);
-  --hero-glow: rgb(247 165 58 / 0.16);
+  --hero-glow: rgb(247 147 26 / 0.16);
   --phone-shadow: rgb(0 0 0 / 0.55);
 
   /* Soft ink shadows vanish on dark navy; use denser blacks to keep depth. */
@@ -140,12 +142,11 @@ html.dark {
   color-scheme: dark;
 }
 
-/* The brand orange stays intact; small accent text uses a darker shade on paper. */
-:root { --color-accent-text: #995000; --ease-out: cubic-bezier(.22, 1, .36, 1); --live-price-font-size: clamp(4.4rem, 11vw, 8.8rem); --tracker-gutter: clamp(1rem, 3vw, 4rem); --live-price-top: max(var(--tracker-gutter), env(safe-area-inset-top, 0px)); }
+/* One Bitcoin orange in both themes; emphasis text uses neutral ink on paper. */
+:root { --ease-out: cubic-bezier(.22, 1, .36, 1); --live-price-font-size: clamp(4.4rem, 11vw, 8.8rem); --tracker-gutter: clamp(1rem, 3vw, 4rem); --live-price-top: max(var(--tracker-gutter), env(safe-area-inset-top, 0px)); }
 @media (max-width: 600px) {
   :root { --live-price-font-size: clamp(2.75rem, 14.3vw, 4.4rem); }
 }
-html.dark { --color-accent-text: #F7A53A; }
 
 @layer base {
   html { color-scheme: light; background: var(--color-surface); color: var(--color-ink); -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; scroll-behavior: smooth; scroll-padding-top: 1rem; }
@@ -154,7 +155,7 @@ html.dark { --color-accent-text: #F7A53A; }
   button, summary, a { -webkit-tap-highlight-color: transparent; }
   button { cursor: pointer; }
   a, button, summary { touch-action: manipulation; }
-  :focus-visible { outline: 2px solid var(--color-accent-text); outline-offset: 5px; }
+  :focus-visible { outline: 2px solid var(--color-accent); outline-offset: 5px; }
   img { max-width: 100%; }
 }
 
@@ -169,7 +170,7 @@ html.dark { --color-accent-text: #F7A53A; }
 .section-intro { text-align: center; max-width: 50rem; margin-inline: auto; }
 .section-intro .section-description { margin-inline: auto; }
 .text-link { display: inline-flex; color: var(--color-ink); font-size: .875rem; font-weight: 600; text-decoration: underline; text-decoration-color: var(--color-accent); text-underline-offset: 6px; text-decoration-thickness: 1px; transition: color .2s; }
-.text-link:hover { color: var(--color-accent-text); }
+.text-link:hover { color: var(--color-emphasis-ink); }
 
 html { scrollbar-gutter: stable; }
 .button { display: inline-flex; align-items: center; justify-content: center; gap: .625rem; min-height: 54px; padding: .9rem 1.5rem; border-radius: 14px; font-size: .9375rem; font-weight: 600; line-height: 1.2; text-align: center; }
@@ -178,7 +179,8 @@ html { scrollbar-gutter: stable; }
 .cta-primary:active { transform: translateY(0); }
 .cta-secondary { color: var(--color-ink); background: var(--color-surface); border: 1px solid var(--color-divider); transition: border-color .25s, transform .25s var(--ease-out); }
 .cta-secondary:hover { border-color: var(--color-accent); transform: translateY(-3px); }
-.cta-accent { color: var(--color-accent-text) !important; border: 1px solid var(--color-divider); background: var(--color-accent-soft); transition: border-color .25s, transform .25s; }
+.cta-accent { color: var(--color-emphasis-ink) !important; border: 1px solid var(--color-divider); background: var(--color-accent-soft); transition: border-color .25s, transform .25s; }
+.cta-accent svg { color: var(--color-accent); }
 .cta-accent:hover { border-color: var(--color-accent); transform: translateY(-2px); }
 .nav-download { min-height: 42px; padding: .65rem 1.125rem; font-size: .875rem; border-radius: 11px; }
 
@@ -204,7 +206,7 @@ html { scrollbar-gutter: stable; }
 .hero-actions { display: flex; flex-wrap: wrap; gap: .75rem; margin-top: 2rem; }
 .hero-trust { display: flex; flex-wrap: wrap; align-items: center; gap: .625rem 1.125rem; margin-top: 1.5rem; color: var(--color-ink-muted); font-size: .8125rem; }
 .hero-trust span, .hero-trust a { display: inline-flex; align-items: center; gap: .35rem; }
-.hero-trust svg { color: var(--color-accent-text); }
+.hero-trust svg { color: var(--color-accent); }
 .hero-trust a { color: var(--color-ink); }
 .hero-trust a:hover { text-decoration: underline; text-underline-offset: 3px; }
 .hero-stage { position: relative; display: flex; align-items: center; justify-content: center; height: 660px; isolation: isolate; }
@@ -217,7 +219,7 @@ html { scrollbar-gutter: stable; }
 .feature-card { height: 100%; padding: 1.75rem; border: 1px solid var(--color-divider); border-radius: 20px; background: var(--color-surface); }
 .feature-card > div { display: flex; align-items: center; gap: .875rem; }
 .feature-card :is(h2, h3) { font-size: 1rem; font-weight: 600; line-height: 1.4; letter-spacing: -.025em; }
-.feature-icon-wrap { display: flex; align-items: center; justify-content: center; width: 40px; height: 40px; flex-shrink: 0; color: var(--color-accent-text); background: var(--color-accent-soft); border-radius: 12px; }
+.feature-icon-wrap { display: flex; align-items: center; justify-content: center; width: 40px; height: 40px; flex-shrink: 0; color: var(--color-accent); background: var(--color-accent-soft); border-radius: 12px; }
 .feature-body { margin-top: 1rem; font-size: 1rem; line-height: 1.7; color: var(--color-ink-muted); }
 .hero-benefits .feature-card { border: 0; border-top: 1px solid var(--color-divider); padding: 1.5rem 0 0; border-radius: 0; background: transparent; }
 .hero-benefits .feature-body { margin-left: 54px; max-width: 30rem; margin-top: .375rem; }
@@ -228,7 +230,7 @@ html { scrollbar-gutter: stable; }
 .prices-copy .section-heading { max-width: 10ch; }
 .price-features { margin-top: 3rem; }
 .price-feature { display: flex; align-items: flex-start; gap: 1rem; padding-block: 1.5rem; border-top: 1px solid var(--color-divider); }
-.price-feature-icon { display: flex; align-items: center; justify-content: center; width: 44px; height: 44px; border-radius: 12px; background: var(--color-accent-soft); color: var(--color-accent-text); flex-shrink: 0; }
+.price-feature-icon { display: flex; align-items: center; justify-content: center; width: 44px; height: 44px; border-radius: 12px; background: var(--color-accent-soft); color: var(--color-accent); flex-shrink: 0; }
 .price-feature h3 { font-size: 1rem; font-weight: 600; letter-spacing: -.025em; }
 .price-feature p { margin-top: .375rem; color: var(--color-ink-muted); font-size: 1rem; line-height: 1.6; }
 .prices-stage { position: relative; height: 700px; display: flex; align-items: center; justify-content: center; border-radius: 32px; background: var(--color-paper); isolation: isolate; }
@@ -255,7 +257,7 @@ html { scrollbar-gutter: stable; }
 .privacy-section { padding-top: 3rem; }
 .privacy-panel { display: grid; grid-template-columns: .9fr 1.3fr; gap: 3rem; padding: clamp(2rem, 4.5vw, 4rem); border: 1px solid var(--color-divider); border-radius: 32px; background: var(--color-surface); }
 .privacy-intro { display: flex; flex-direction: column; align-items: flex-start; justify-content: center; }
-.privacy-symbol { position: relative; width: 112px; height: 112px; margin-block: .5rem 2rem; display: flex; align-items: center; justify-content: center; color: var(--color-accent-text); }
+.privacy-symbol { position: relative; width: 112px; height: 112px; margin-block: .5rem 2rem; display: flex; align-items: center; justify-content: center; color: var(--color-accent); }
 .privacy-symbol::before, .privacy-symbol::after { content: ''; position: absolute; inset: 0; border: 1px solid var(--color-divider); border-radius: 50%; }
 .privacy-symbol::after { inset: -12px; border-style: dashed; opacity: .6; }
 .privacy-intro .section-heading { max-width: 9ch; }

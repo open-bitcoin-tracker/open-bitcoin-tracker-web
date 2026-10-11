@@ -31,7 +31,6 @@
   --page-background: var(--color-paper);
   --ink: var(--color-ink);
   --orange: var(--color-accent);
-  --orange-ink: var(--color-accent-text);
   --orange-soft: var(--color-accent-soft);
   --border: var(--color-divider);
   --muted: var(--color-ink-muted);
@@ -40,8 +39,8 @@
   --hover: var(--hover-tint);
   --panel-shadow: var(--shadow-card-hover);
   --input-border: color-mix(in srgb, var(--ink) 16%, transparent);
-  --focus-ring: color-mix(in srgb, var(--orange) 15%, transparent);
-  --warning-border: color-mix(in srgb, var(--orange) 35%, var(--border));
+  --focus-ring: var(--orange);
+  --warning-border: var(--orange);
   --text-eyebrow: .75rem;
   --text-caption: .8125rem;
   --text-label: .875rem;
@@ -49,9 +48,9 @@
   --text-body: 1rem;
   --text-intro: 1.0625rem;
   --text-heading: 1.5rem;
-  /* Map graphics keep their original color and halo independently of UI. */
-  --map-orange: #f7931a;
-  --readout-orange: #a94f00;
+  /* Keep map accents on the shared brand color, with legible readout text. */
+  --map-orange: var(--orange);
+  --readout-ink: var(--color-emphasis-ink);
   --readout-halo: #fff7ec;
   color-scheme: light;
   --error: #a4372e;
@@ -89,7 +88,7 @@
 .earth-feature button:focus-visible,
 .earth-feature a:focus-visible,
 .earth-feature input:focus-visible {
-  outline: 3px solid var(--orange-ink);
+  outline: 3px solid var(--orange);
   outline-offset: 4px;
 }
 .earth-feature button {
@@ -101,7 +100,6 @@
 
 .earth-feature[data-theme='dark'] {
   color-scheme: dark;
-  --readout-orange: #f7931a;
   --readout-halo: #151a21;
   --error: #ff9c90;
   --overlay-opacity: 0.2;
@@ -115,7 +113,7 @@
 }
 
 .earth-feature .eyebrow {
-  color: var(--orange-ink);
+  color: var(--color-emphasis-ink);
 }
 @media (prefers-reduced-motion: reduce) {
   .earth-feature * {

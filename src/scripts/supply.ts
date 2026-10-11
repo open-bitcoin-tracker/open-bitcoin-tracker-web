@@ -28,7 +28,9 @@ if (root && json) {
   const bitcoinBasis = root.querySelector<HTMLElement>('[data-btc-basis]');
   const button = root.querySelector<HTMLButtonElement>('[data-pause]');
   const buttonLabel = root.querySelector<HTMLElement>('[data-pause-label]');
-  const assetSelect = root.querySelector<HTMLSelectElement>('[data-asset-select]');
+  const assetTrigger = root.querySelector<HTMLElement>('[data-asset-trigger]');
+  const assetMenu = root.querySelector<HTMLDetailsElement>('[data-asset-menu]');
+  const assetOptions = Array.from(root.querySelectorAll<HTMLButtonElement>('[data-asset-option]'));
   const assetPicker = root.querySelector<HTMLElement>('[data-asset-picker]');
   const pickerGold = root.querySelector<HTMLElement>('[data-picker-gold]');
   const pickerSymbol = root.querySelector<HTMLElement>('[data-picker-symbol]');
@@ -41,10 +43,8 @@ if (root && json) {
   ];
   let selectedAsset = 'usd';
   const updateComparison = () => {
-    const candidate = assetSelect?.value;
-    if (comparisonAssets.some(asset => asset.id === candidate)) selectedAsset = candidate!;
-    else if (assetSelect) assetSelect.value = selectedAsset;
     root.dataset.view = compareAll?.checked ? 'all' : 'focus';
+    if (compareAll?.checked && assetMenu) assetMenu.open = false;
     for (const { id, panel } of comparisonAssets) {
       const selected = String(id === selectedAsset);
       panel?.setAttribute('data-selected', selected);
@@ -52,7 +52,7 @@ if (root && json) {
     const selectedPanel = comparisonAssets.find(asset => asset.id === selectedAsset)?.panel;
     if (assetPicker) {
       assetPicker.hidden = Boolean(compareAll?.checked);
-      const option = assetSelect?.selectedOptions[0];
+      const option = assetOptions.find(option => option.dataset.assetOption === selectedAsset);
       if (option?.textContent) {
         assetPicker.setAttribute('aria-label', option.textContent);
         if (pickerName) pickerName.textContent = option.textContent;
@@ -63,32 +63,59 @@ if (root && json) {
         pickerSymbol.textContent = option?.dataset.symbol ?? '';
       }
       if (selectedPanel && assetPicker.parentElement !== selectedPanel) {
-        const focused = document.activeElement === assetSelect;
+        const focused = document.activeElement === assetTrigger;
         selectedPanel.prepend(assetPicker);
-        if (focused) assetSelect?.focus({ preventScroll: true });
+        if (focused) assetTrigger?.focus({ preventScroll: true });
       }
     }
+    for (const option of assetOptions) option.setAttribute('aria-pressed', String(option.dataset.assetOption === selectedAsset));
   };
   // One set of nodes and one clock: switching views never resets the visit's
   // Bitcoin share, pause state, model time, or any projection fallback.
   updateComparison();
-  assetSelect?.addEventListener('change', updateComparison);
   compareAll?.addEventListener('change', updateComparison);
-  // Native selects can match :focus-visible after a pointer opens their popup.
-  // Track keyboard entry explicitly so pointer selection leaves no focus box.
-  let keyboardSelection = false;
-  const updatePickerFocus = () => {
-    if (assetPicker) assetPicker.dataset.keyboardFocus = String(keyboardSelection && document.activeElement === assetSelect);
+  assetOptions.forEach(option => option.addEventListener('click', () => {
+    const id = option.dataset.assetOption;
+    if (!comparisonAssets.some(asset => asset.id === id)) return;
+    selectedAsset = id!;
+    if (assetMenu) assetMenu.open = false;
+    updateComparison();
+    assetTrigger?.focus({ preventScroll: true });
+  }));
+  // Match the language switcher's native disclosure and dismissal behavior.
+  // Option buttons retain ordinary Tab/Enter/Space controls; arrows, endpoints
+  // and first-letter navigation also work without changing the model clock.
+  const closeAssetMenu = (restoreFocus = false) => {
+    if (assetMenu) assetMenu.open = false;
+    assetTrigger?.setAttribute('aria-expanded', 'false');
+    if (restoreFocus) assetTrigger?.focus({ preventScroll: true });
   };
-  document.addEventListener('pointerdown', () => { keyboardSelection = false; updatePickerFocus(); }, { capture: true });
-  document.addEventListener('keydown', (event) => {
-    if (event.key === 'Tab' || document.activeElement === assetSelect && ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Home', 'End', 'Enter', ' '].includes(event.key)) {
-      keyboardSelection = true;
-      updatePickerFocus();
+  assetMenu?.addEventListener('toggle', () => assetTrigger?.setAttribute('aria-expanded', String(assetMenu.open)));
+  assetMenu?.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape' && assetMenu.open) {
+      event.preventDefault(); event.stopPropagation(); closeAssetMenu(true); return;
+    }
+    const active = assetOptions.findIndex(option => option === document.activeElement);
+    const selected = assetOptions.findIndex(option => option.dataset.assetOption === selectedAsset);
+    let next = -1;
+    if (event.key === 'Home') next = 0;
+    else if (event.key === 'End') next = assetOptions.length - 1;
+    else if (event.key === 'ArrowDown') next = active < 0 ? selected : (active + 1) % assetOptions.length;
+    else if (event.key === 'ArrowUp') next = active < 0 ? selected : (active + assetOptions.length - 1) % assetOptions.length;
+    else if (event.key.length === 1 && event.key !== ' ' && !event.altKey && !event.ctrlKey && !event.metaKey) {
+      for (let step = 1; step <= assetOptions.length; step++) {
+        const index = (active + step) % assetOptions.length;
+        if (assetOptions[index].textContent?.trim().toLowerCase().startsWith(event.key.toLowerCase())) { next = index; break; }
+      }
+    }
+    if (next >= 0) {
+      event.preventDefault(); assetMenu.open = true;
+      assetTrigger?.setAttribute('aria-expanded', 'true');
+      assetOptions[next]?.focus({ preventScroll: true });
     }
   });
-  assetSelect?.addEventListener('focus', updatePickerFocus);
-  assetSelect?.addEventListener('blur', updatePickerFocus);
+  document.addEventListener('click', (event) => { if (assetMenu?.open && !assetMenu.contains(event.target as Node)) closeAssetMenu(); });
+  document.addEventListener('focusin', () => { if (assetMenu?.open && !assetMenu.contains(document.activeElement)) closeAssetMenu(); });
   if (comparisonControls) comparisonControls.hidden = false;
   const reduce = window.matchMedia('(prefers-reduced-motion: reduce)');
   let paused = false;

@@ -9,7 +9,7 @@
   max-width: calc(100% - 40px);
   margin: 0;
   padding: 0;
-  color: var(--readout-orange);
+  color: var(--readout-ink);
   font-weight: 600;
   -webkit-text-stroke: 3px var(--readout-halo);
   paint-order: stroke fill;

@@ -30,16 +30,16 @@ const clientCopy = Object.fromEntries(['projected', 'recorded', 'goldProjected',
     <div class="asset-comparison">
     <section class="population-heading" aria-labelledby="population-heading">
       <div class="population-readout">
-        <h2 id="population-heading" class="column-heading">{t.populationMethodTitle}</h2>
-        <p class="population-band" aria-live="off"><strong data-population>{n(snapshot.population.persons)}</strong><span data-population-label>{t.populationRecorded}</span></p>
+        <h2 id="population-heading" class="column-heading"><span class="currency-icon fiat-icon" aria-hidden="true"><svg width="20" height="20" viewBox="90 13 120 120" fill="none" focusable="false"><clipPath id="supply-population-icon-clip"><circle cx="150" cy="73" r="56" /></clipPath><path clip-path="url(#supply-population-icon-clip)" d="m103 35 18-7 13 6 6 16-10 9-13-2-10 10-14-7Zm23 33 13 4 7 17-8 12-2 22-11-5-9-25-5-10Zm35-44 13 2 5 9 23 7 9 20-18 7-13-10-9 8-18-3-7-12 9-8Zm-1 43 21 5 7 12-11 16-12 9-7-21-9-10Zm31 29 14-2 10 13-9 8-19-5Z" fill="currentColor" /><circle cx="150" cy="73" r="57" stroke="currentColor" stroke-width="6" /></svg></span>{t.populationMethodTitle}</h2>
+        <p class="population-band" aria-live="off"><strong data-population>{n(snapshot.population.persons)}</strong></p>
       </div>
       <SupplyWorld />
     </section>
     <section class="bitcoin-feature" aria-labelledby="bitcoin-heading">
         <div class="bitcoin-supply">
           <h2 id="bitcoin-heading" class="column-heading"><span class="currency-icon btc-icon" aria-hidden="true">₿</span>{t.bitcoin}</h2>
-          <p class="value-label">{t.maximum}</p>
           <p class="total-number btc-total"><span aria-hidden="true">₿</span>{n(BITCOIN_MAX)}<span class="currency-name"> bitcoins</span></p>
+          <p class="value-label">{t.maximum}</p>
         </div>
           <SupplyContainer kind="bitcoin" />
           <div class="share bitcoin-share" data-share-asset="bitcoin">
@@ -51,8 +51,8 @@ const clientCopy = Object.fromEntries(['projected', 'recorded', 'goldProjected',
       <div class="currency-grid">
         <article class="supply-column gold-column" data-gold data-gold-motion="still">
           <h2 class="column-heading"><span class="currency-icon gold-icon" aria-hidden="true"><svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="m6 7-3 10h18L18 7Z" fill="currentColor" /><path d="M8 9h8" stroke="var(--supply-gold)" stroke-width="2" /></svg></span>{t.gold}</h2>
-          <p class="value-label" data-gold-label>{t.goldRecorded}</p>
           <p class="total-number gold-total" aria-live="off"><span data-gold-total>{n(gold.stock.tonnes)}</span> <span class="mass-unit">{t.tonnes}</span></p>
+          <p class="value-label" data-gold-label>{t.goldRecorded}</p>
           <SupplyContainer kind="gold" />
           <div class="share gold-share" data-share-asset="gold">
             <SupplyPeople />
@@ -62,22 +62,24 @@ const clientCopy = Object.fromEntries(['projected', 'recorded', 'goldProjected',
         {snapshot.fiat.map((money) => {
           const currency = currencies[money.id];
           return <article class="supply-column fiat-column" data-currency={money.id} data-selected={money.id === 'usd' ? 'true' : undefined} data-money-motion="still" data-direction={annualRate(money) < 0 ? 'down' : 'up'}>
-            {money.id === 'usd' && <h2 class="column-heading selected-asset-heading" data-asset-picker hidden aria-label={currency.name}>
+            {money.id === 'usd' && <div class="column-heading selected-asset-heading" role="heading" aria-level="2" data-asset-picker hidden aria-label={currency.name}>
               <span class="currency-icon gold-icon" data-picker-gold hidden aria-hidden="true"><svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="m6 7-3 10h18L18 7Z" fill="currentColor" /><path d="M8 9h8" stroke="var(--supply-gold)" stroke-width="2" /></svg></span>
               <span class="currency-icon fiat-icon" data-picker-symbol aria-hidden="true">{currency.symbol}</span>
-              <label class="control-label" for="comparison-asset">{t.compareBitcoinWith}</label>
-              <span class="asset-choice">
-                <span data-picker-name aria-hidden="true">{currency.name}</span>
-                <svg class="asset-chevron" width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="m3 4.5 3 3 3-3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" /></svg>
-                <select id="comparison-asset" data-asset-select>
-                  <option value="gold">{t.gold}</option>
-                  {snapshot.fiat.map((asset) => <option value={asset.id} data-symbol={currencies[asset.id].symbol} selected={asset.id === 'usd'}>{currencies[asset.id].name}</option>)}
-                </select>
-              </span>
-            </h2>}
+              <span class="control-label" id="asset-picker-label">{t.compareBitcoinWith}</span>
+              <details class="asset-choice" data-asset-menu>
+                <summary class="asset-trigger" id="comparison-asset" data-asset-trigger aria-labelledby="asset-picker-label asset-picker-name" aria-controls="asset-options" aria-expanded="false">
+                  <span id="asset-picker-name" data-picker-name>{currency.name}</span>
+                  <svg class="asset-chevron" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9" /></svg>
+                </summary>
+                <ul class="asset-options" id="asset-options" role="list" aria-label={t.compareBitcoinWith}>
+                  <li><button type="button" class="asset-option" data-asset-option="gold" aria-pressed="false">{t.gold}</button></li>
+                  {snapshot.fiat.map((asset) => <li><button type="button" class="asset-option" data-asset-option={asset.id} data-symbol={currencies[asset.id].symbol} aria-pressed={asset.id === 'usd' ? 'true' : 'false'}>{currencies[asset.id].name}</button></li>)}
+                </ul>
+              </details>
+            </div>}
             <h2 class="column-heading"><span class="currency-icon fiat-icon" aria-hidden="true">{currency.symbol}</span>{currency.name}</h2>
-            <p class="value-label" data-total-label>{interpolate(t.recorded, { aggregate: money.aggregate })}</p>
             <p class="total-number fiat-total" aria-live="off"><span aria-hidden="true">{currency.symbol}</span><span data-money-total>{n(money.latest.amount)}</span><span class="currency-name"> {currency.plural}</span></p>
+            <p class="value-label" data-total-label>{interpolate(t.recorded, { aggregate: money.aggregate })}</p>
             <SupplyContainer kind="fiat" symbol={currency.symbol} />
             <div class="share fiat-share" data-share-asset={money.id}>
               <SupplyPeople />
@@ -177,18 +179,24 @@ const clientCopy = Object.fromEntries(['projected', 'recorded', 'goldProjected',
   .population-readout { min-width: 0; }
   .population-readout .column-heading { justify-content: center; margin-bottom: .5rem; }
   .population-band { display: flex; flex-direction: column; align-items: center; gap: .5rem; font-size: .8125rem; color: var(--color-ink-muted); }
-  .population-band strong { font-size: clamp(2rem, 8vw, 4rem); font-weight: 650; line-height: 1.1; font-variant-numeric: tabular-nums; color: var(--color-ink); letter-spacing: -.04em; white-space: nowrap; }
+  .population-band strong { font-size: 1.6rem; font-weight: 650; line-height: 1.1; font-variant-numeric: tabular-nums; color: var(--color-ink); letter-spacing: -.04em; white-space: nowrap; }
   .comparison-controls { display: flex; align-items: flex-end; justify-content: space-between; flex-wrap: wrap; gap: .75rem 1rem; margin-bottom: 1.25rem; }
   .comparison-controls[hidden] { display: none; }
-  .asset-choice { position: relative; display: inline-flex; align-items: center; gap: .375rem; min-height: 44px; min-width: 0; max-width: 100%; }
-  .asset-choice [data-picker-name] { white-space: nowrap; }
-  .asset-chevron { flex-shrink: 0; }
-  .asset-choice select { position: absolute; inset: 0; width: 100%; height: 100%; min-width: 0; border: 0; opacity: 0; font-size: 1rem; cursor: pointer; }
-  .selected-asset-heading[data-keyboard-focus='true'] .asset-choice { outline: 2px solid var(--color-accent-text); outline-offset: 4px; border-radius: 4px; }
+  .asset-choice { position: relative; min-width: 0; max-width: 100%; }
+  .asset-trigger { display: inline-flex; align-items: center; justify-content: flex-start; gap: .375rem; min-height: 44px; padding: 0; color: var(--color-ink); font-size: 1rem; font-weight: 650; white-space: nowrap; list-style: none; user-select: none; }
+  .asset-trigger::-webkit-details-marker { display: none; }
+  .asset-chevron { flex-shrink: 0; opacity: .7; transition: transform .2s ease; }
+  .asset-choice[open] .asset-chevron { transform: rotate(180deg); }
+  .asset-options { position: absolute; top: calc(100% + .5rem); left: 0; z-index: 60; margin: 0; padding: .375rem; list-style: none; min-width: 11rem; max-height: min(50dvh, 24rem); overflow-y: auto; background: var(--menu-dropdown-bg, var(--color-surface)); border: 1px solid var(--menu-dropdown-border, var(--color-divider)); border-radius: var(--radius-md); box-shadow: var(--menu-dropdown-shadow, var(--shadow-card-hover)); }
+  .asset-option { display: block; width: 100%; padding: .5rem .75rem; border: 0; border-radius: .5rem; background: transparent; color: var(--menu-link-ink, var(--color-ink-muted)); font-size: 14px; font-weight: 400; text-align: left; white-space: nowrap; cursor: pointer; transition: background-color .15s ease, color .15s ease; }
+  .asset-option:hover, .asset-option[aria-pressed='true'] { color: var(--menu-primary-ink, var(--color-ink)); background: var(--menu-option-hover, var(--hover-tint)); }
+  .asset-option[aria-pressed='true'] { font-weight: 600; }
+  .asset-option:focus-visible { outline-offset: -2px; }
+  @media (prefers-reduced-motion: reduce) { .asset-chevron, .asset-option { transition: none; } }
   .selected-asset-heading .currency-icon { flex-shrink: 0; }
   .selected-asset-heading[hidden], [data-picker-gold][hidden], [data-picker-symbol][hidden] { display: none; }
   .overview-toggle { display: inline-flex; align-items: center; gap: .5rem; min-height: 44px; padding: .5rem .75rem; border: 1px solid var(--color-divider); border-radius: 10px; background: var(--color-surface); font-size: .8125rem; cursor: pointer; }
-  .overview-toggle input { width: 16px; height: 16px; accent-color: #F7931A; cursor: pointer; }
+  .overview-toggle input { width: 16px; height: 16px; accent-color: var(--color-accent); cursor: pointer; }
   .currency-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .supply-column { min-width: 0; padding: 1.25rem 1.25rem 1.5rem; border-top: 1px solid var(--color-divider); }
   .supply-column:not(:nth-child(3n)) { border-right: 1px solid var(--color-divider); }
@@ -196,12 +204,12 @@ const clientCopy = Object.fromEntries(['projected', 'recorded', 'goldProjected',
   .fiat-column { background: radial-gradient(ellipse at 50% 45%, color-mix(in srgb, var(--supply-fiat) 12%, transparent), transparent 65%); }
   .column-heading { display: flex; align-items: center; gap: .625rem; font-size: 1rem; font-weight: 650; margin-bottom: .75rem; }
   .currency-icon { width: 28px; height: 28px; display: inline-grid; place-items: center; border-radius: 50%; font-size: 19px; font-weight: 600; }
-  .btc-icon { background: var(--color-accent); color: #4f2d03; }
+  .btc-icon { background: var(--color-accent); color: #1F1B14; }
   .fiat-icon { background: var(--supply-fiat); color: var(--supply-fiat-ink); }
   .gold-icon { background: var(--supply-gold); color: var(--supply-gold-ink); }
   .value-label { font-size: .75rem; color: var(--color-ink-muted); font-weight: 550; }
   .total-number { font-size: clamp(.95rem, 1.6vw, 1.2rem); font-variant-numeric: tabular-nums; letter-spacing: -.04em; line-height: 1.5; margin-top: .25rem; font-weight: 600; min-height: 2.5rem; white-space: nowrap; }
-  .btc-total { font-size: 1.6rem; color: #F7931A; }
+  .btc-total { font-size: 1.6rem; color: var(--color-emphasis-ink); }
   .fiat-total { color: var(--supply-fiat-text); padding-top: .35rem; }
   .gold-total, .gold-share .share-number { color: var(--supply-gold-text); }
   .gold-share { --supply-fiat-text: var(--supply-gold-text); }
@@ -212,11 +220,10 @@ const clientCopy = Object.fromEntries(['projected', 'recorded', 'goldProjected',
   .share-copy { min-width: 0; text-align: right; }
   .share-number { font-size: clamp(1.1rem, 2.3vw, 1.5rem); font-weight: 600; letter-spacing: -.045em; font-variant-numeric: tabular-nums; white-space: nowrap; }
   .share-caption { color: var(--color-ink-muted); font-size: .75rem; margin-top: .125rem; }
-  .bitcoin-share .share-number { color: #F7931A; }
+  .bitcoin-share .share-number { color: var(--color-emphasis-ink); }
   .fiat-share .share-number { color: var(--supply-fiat-text); }
   .supply-column :global(.container-scene) { max-width: 240px; }
   .share :global(.people-illustration) { width: 96px; max-width: 100%; flex-shrink: 0; margin: 0; }
-  .bitcoin-share :global(.people-illustration) { --color-accent-text: #F7931A; }
   .supply-controls { display: flex; justify-content: center; margin-top: 1.25rem; }
   .motion-control { display: inline-flex; flex-shrink: 0; align-items: center; gap: .375rem; min-height: 44px; padding: .375rem .75rem; border: 1px solid var(--color-divider); border-radius: 8px; cursor: pointer; background: var(--color-surface); font-size: .75rem; }
   .motion-control .play-icon { display: none; }
@@ -241,9 +248,9 @@ const clientCopy = Object.fromEntries(['projected', 'recorded', 'goldProjected',
   .series-name { overflow-wrap: anywhere; font-size: .6875rem; }
   [data-population-status]:empty, [data-projection-status]:empty, [data-motion-status]:empty, [data-gold-status]:empty { display: none; }
   .source-links { display: flex; flex-wrap: wrap; gap: .5rem 1.5rem; margin-top: .75rem; }
-  .source-links a { color: var(--color-accent-text); text-decoration: underline; text-underline-offset: .25rem; padding-block: .25rem; }
+  .source-links a { color: var(--color-emphasis-ink); text-decoration: underline; text-decoration-color: var(--color-accent); text-underline-offset: .25rem; padding-block: .25rem; }
   .refresh-note { margin-top: 2rem; border-top: 1px solid var(--color-divider); padding-top: 1rem; }
-  a:focus-visible, summary:focus-visible, button:focus-visible, select:focus-visible, input:focus-visible { outline: 2px solid var(--color-accent-text); outline-offset: 4px; }
+  a:focus-visible, summary:focus-visible, button:focus-visible, select:focus-visible, input:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 4px; }
   @media (max-width: 1000px) {
     .bitcoin-feature { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     .bitcoin-share { grid-column: 1 / -1; justify-content: center; }
@@ -264,14 +271,14 @@ const clientCopy = Object.fromEntries(['projected', 'recorded', 'goldProjected',
     .currency-grid { grid-template-columns: 1fr; }
     .supply-column:nth-child(odd) { border-right: 0; }
     .total-number { font-size: clamp(1rem, 4.8vw, 1.2rem); }
-    .btc-total { font-size: 1.8rem; }
+    .population-band strong, .btc-total { font-size: 1.8rem; }
     .observation-grid { grid-template-columns: 1fr; }
   }
   .supply-page[data-view='focus'] .asset-comparison { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1.25rem; }
   .supply-page[data-view='focus'] .population-heading { flex-direction: column; align-items: stretch; gap: .75rem; padding: 1rem; margin-bottom: 0; }
   .supply-page[data-view='focus'] .population-readout .column-heading { justify-content: flex-start; }
   .supply-page[data-view='focus'] .population-band { align-items: flex-start; }
-  .supply-page[data-view='focus'] .population-band strong { font-size: clamp(2rem, 3vw, 2.5rem); }
+  .supply-page[data-view='focus'] .population-band strong { font-size: 1.8rem; }
   .supply-page[data-view='focus'] .population-heading :global(.world-illustration) { width: 200px; margin: auto; }
   .supply-page[data-view='focus'] .bitcoin-feature { display: flex; flex-direction: column; align-items: stretch; gap: 0; margin-bottom: 0; padding: 1rem; }
   .supply-page[data-view='focus'] .bitcoin-supply { text-align: left; }

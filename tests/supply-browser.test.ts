@@ -14,14 +14,23 @@ const script = ts.transpileModule(readFileSync(new URL('../src/scripts/supply.ts
 class Control extends EventTarget {
   textContent = '';
   hidden = false;
-  value = 'usd';
   checked = false;
   dataset: Record<string, string> = {};
   attributes: Record<string, string> = {};
   parentElement: Control | null = null;
-  get selectedOptions() {
-    const currency = currencies[this.value as keyof typeof currencies];
-    return [{ textContent: this.value === 'gold' ? supply.gold : currency?.name, dataset: { symbol: currency?.symbol } }];
+  private expanded = false;
+  get open() { return this.expanded; }
+  set open(value: boolean) {
+    if (this.expanded === value) return;
+    this.expanded = value;
+    this.dispatchEvent(new Event('toggle'));
+  }
+  contains(node: unknown): boolean {
+    while (node instanceof Control) {
+      if (node === this) return true;
+      node = node.parentElement;
+    }
+    return false;
   }
   prepend(child: Control) { child.parentElement = this; }
   focus(_options?: FocusOptions) {}
@@ -29,13 +38,20 @@ class Control extends EventTarget {
 }
 function harness(reduced = false, when = Date.parse('2026-10-10T12:00:00Z'), data = snapshot) {
   let now = when;
-  const controls = Object.fromEntries(['motion-status', 'population', 'population-label', 'population-status', 'btc-share', 'btc-basis', 'pause', 'pause-label', 'gold', 'gold-total', 'gold-share', 'gold-label', 'gold-status', 'asset-select', 'asset-picker', 'picker-gold', 'picker-symbol', 'picker-name', 'compare-all', 'comparison-controls'].map(name => [name, new Control()]));
+  const controls = Object.fromEntries(['motion-status', 'population', 'population-label', 'population-status', 'btc-share', 'btc-basis', 'pause', 'pause-label', 'gold', 'gold-total', 'gold-share', 'gold-label', 'gold-status', 'asset-trigger', 'asset-menu', 'asset-picker', 'picker-gold', 'picker-symbol', 'picker-name', 'compare-all', 'comparison-controls'].map(name => [name, new Control()]));
+  const options = ['gold', ...data.fiat.map(money => money.id)].map(id => Object.assign(new Control(), {
+    textContent: id === 'gold' ? supply.gold : currencies[id as keyof typeof currencies].name,
+    dataset: { assetOption: id, symbol: id === 'gold' ? '' : currencies[id as keyof typeof currencies].symbol },
+    parentElement: controls['asset-menu'],
+  }));
+  controls['asset-menu'].parentElement = controls['asset-picker'];
+  controls['asset-trigger'].parentElement = controls['asset-menu'];
   const shares = data.fiat.map(() => new Control());
   const panels = data.fiat.map((money, index) => {
     const children: Record<string, Control> = { ...Object.fromEntries(['money-total', 'total-label', 'status'].map(name => [name, new Control()])), 'money-share': shares[index] };
     return Object.assign(new Control(), { id: money.id, children, querySelector: (selector: string) => children[selector.slice(6, -1)] });
   });
-  const root = { dataset: { motion: 'still', view: 'all' }, querySelector: (selector: string) => {
+  const root = { dataset: { motion: 'still', view: 'all' }, querySelectorAll: () => options, querySelector: (selector: string) => {
     if (selector.startsWith('[data-currency=')) return panels.find(p => selector.includes(`"${p.id}"`));
     if (selector.startsWith('[data-money-share=')) return shares[data.fiat.findIndex(money => selector.includes(`"${money.id}"`))];
     if (selector.startsWith('[data-projection-status=')) return panels.find(p => selector.includes(`"${p.id}"`))!.children.status;
@@ -48,23 +64,28 @@ function harness(reduced = false, when = Date.parse('2026-10-10T12:00:00Z'), dat
   for (const panel of [controls.gold, ...panels]) {
     panel.prepend = (child: Control) => {
       child.parentElement = panel;
-      const focused = document.activeElement === controls['asset-select'];
-      document.activeElement = null;
-      if (focused) controls['asset-select'].dispatchEvent(new Event('blur'));
+      if (controls['asset-picker'].contains(document.activeElement)) document.activeElement = null;
     };
   }
-  controls['asset-select'].focus = () => {
-    document.activeElement = controls['asset-select'];
-    controls['asset-select'].dispatchEvent(new Event('focus'));
+  for (const control of [...Object.values(controls), ...options]) control.focus = () => {
+    document.activeElement = control;
+    document.dispatchEvent(new Event('focusin'));
   };
   let callback: (() => void) | undefined;
   const window = Object.assign(new EventTarget(), { matchMedia: () => media,
     setInterval: (fn: () => void) => { callback = fn; return 1; }, clearInterval: () => { callback = undefined; },
   });
   runInNewContext(script, { require: () => model, exports: {}, document, window, Date: { now: () => now } });
-  return { controls, panels, shares, root, document, media, advance: (ms: number) => { now += ms; callback?.(); } };
+  return { controls, panels, shares, options, root, document, media,
+    key: (key: string) => controls['asset-menu'].dispatchEvent(Object.assign(new Event('keydown', { cancelable: true }), { key })),
+    advance: (ms: number) => { now += ms; callback?.(); } };
 }
 const values = (h: ReturnType<typeof harness>) => h.panels.map((p, i) => [p.children['money-total'].textContent, h.shares[i].textContent]);
+const selectAsset = (h: ReturnType<typeof harness>, id: string) => {
+  const option = h.options.find(option => option.dataset.assetOption === id)!;
+  h.controls['asset-menu'].open = true;
+  option.focus(); option.dispatchEvent(new Event('click'));
+};
 
 test('default pair is USD; all six assets switch both panel and per-person selection', () => {
   const h = harness(), bitcoin = h.controls['btc-share'].textContent;
@@ -75,49 +96,61 @@ test('default pair is USD; all six assets switch both panel and per-person selec
   assert.equal(h.controls['asset-picker'].parentElement, h.panels[0]);
   assert.equal(h.controls['asset-picker'].hidden, false);
   for (const id of ['gold', 'usd', 'eur', 'jpy', 'cny', 'gbp']) {
-    h.document.activeElement = h.controls['asset-select'];
-    h.controls['asset-select'].value = id;
-    h.controls['asset-select'].dispatchEvent(new Event('change'));
+    selectAsset(h, id);
     assert.equal(h.controls.gold.attributes['data-selected'], String(id === 'gold'));
     h.panels.forEach(panel => assert.equal(panel.attributes['data-selected'], String(panel.id === id)));
     const selectedPanel = id === 'gold' ? h.controls.gold : h.panels.find(panel => panel.id === id);
     assert.equal(h.controls['asset-picker'].parentElement, selectedPanel);
-    assert.equal(h.document.activeElement, h.controls['asset-select']);
+    assert.equal(h.document.activeElement, h.controls['asset-trigger']);
+    assert.equal(h.controls['asset-menu'].open, false);
+    h.options.forEach(option => assert.equal(option.attributes['aria-pressed'], String(option.dataset.assetOption === id)));
     assert.equal(h.controls['picker-gold'].hidden, id !== 'gold');
     assert.equal(h.controls['picker-symbol'].hidden, id === 'gold');
     assert.equal(h.controls['picker-name'].textContent, id === 'gold' ? supply.gold : currencies[id as keyof typeof currencies].name);
     if (id !== 'gold') assert.equal(h.controls['picker-symbol'].textContent, currencies[id as keyof typeof currencies].symbol);
     assert.equal(h.controls['btc-share'].textContent, bitcoin);
   }
-  h.controls['asset-select'].value = 'chf';
-  h.controls['asset-select'].dispatchEvent(new Event('change'));
-  assert.equal(h.controls['asset-select'].value, 'gbp');
+  h.options[0].dataset.assetOption = 'chf';
+  h.options[0].dispatchEvent(new Event('click'));
+  assert.equal(h.controls['picker-name'].textContent, currencies.gbp.name);
 });
 
-test('pointer selection stays borderless; keyboard focus survives selecting another card', () => {
-  const h = harness(), select = h.controls['asset-select'], picker = h.controls['asset-picker'];
-  h.document.dispatchEvent(new Event('pointerdown'));
-  select.focus();
-  select.value = 'eur'; select.dispatchEvent(new Event('change'));
-  assert.equal(h.document.activeElement, select);
-  assert.equal(picker.dataset.keyboardFocus, 'false');
-  h.document.dispatchEvent(Object.assign(new Event('keydown'), { key: 'ArrowDown' }));
-  select.value = 'jpy'; select.dispatchEvent(new Event('change'));
-  assert.equal(h.document.activeElement, select);
-  assert.equal(picker.dataset.keyboardFocus, 'true');
-  h.document.dispatchEvent(new Event('pointerdown'));
-  assert.equal(picker.dataset.keyboardFocus, 'false');
-  h.document.activeElement = null; select.dispatchEvent(new Event('blur'));
-  h.document.dispatchEvent(Object.assign(new Event('keydown'), { key: 'Tab' }));
-  select.focus();
-  assert.equal(picker.dataset.keyboardFocus, 'true');
+test('asset menu supports arrows, endpoints, first letters, selection and Escape', () => {
+  const h = harness(), trigger = h.controls['asset-trigger'], menu = h.controls['asset-menu'];
+  trigger.focus(); h.key('ArrowDown');
+  assert.equal(menu.open, true);
+  assert.equal(trigger.attributes['aria-expanded'], 'true');
+  assert.equal(h.document.activeElement, h.options[1]);
+  h.key('Home'); assert.equal(h.document.activeElement, h.options[0]);
+  h.key('ArrowUp'); assert.equal(h.document.activeElement, h.options[5]);
+  h.key('ArrowDown'); assert.equal(h.document.activeElement, h.options[0]);
+  h.key('End'); assert.equal(h.document.activeElement, h.options[5]);
+  h.key('j'); assert.equal(h.document.activeElement, h.options[3]);
+  h.document.activeElement!.dispatchEvent(new Event('click'));
+  assert.equal(h.controls['picker-name'].textContent, currencies.jpy.name);
+  assert.equal(menu.open, false);
+  assert.equal(trigger.attributes['aria-expanded'], 'false');
+  assert.equal(h.document.activeElement, trigger);
+  h.key('ArrowDown'); h.key('Escape');
+  assert.equal(menu.open, false);
+  assert.equal(h.document.activeElement, trigger);
+});
+
+test('asset menu dismisses on outside click or focus without changing the selection', () => {
+  const h = harness(), menu = h.controls['asset-menu'];
+  menu.open = true; h.document.dispatchEvent(new Event('click'));
+  assert.equal(menu.open, false);
+  menu.open = true; h.controls.pause.focus();
+  assert.equal(menu.open, false);
+  assert.equal(h.document.activeElement, h.controls.pause);
+  assert.equal(h.controls['picker-name'].textContent, currencies.usd.name);
 });
 
 test('switching pair and overview preserves shared pause, fixed Bitcoin and chosen asset', () => {
   const h = harness(), bitcoin = h.controls['btc-share'].textContent;
   h.controls.pause.dispatchEvent(new Event('click'));
   const frozen = values(h), people = h.controls.population.textContent, gold = h.controls['gold-total'].textContent;
-  h.controls['asset-select'].value = 'gold'; h.controls['asset-select'].dispatchEvent(new Event('change'));
+  selectAsset(h, 'gold');
   h.controls['compare-all'].checked = true; h.controls['compare-all'].dispatchEvent(new Event('change'));
   assert.equal(h.root.dataset.view, 'all');
   assert.equal(h.controls['asset-picker'].hidden, true);
@@ -130,7 +163,7 @@ test('switching pair and overview preserves shared pause, fixed Bitcoin and chos
   h.controls['compare-all'].checked = false; h.controls['compare-all'].dispatchEvent(new Event('change'));
   assert.equal(h.root.dataset.view, 'focus');
   assert.equal(h.controls['asset-picker'].hidden, false);
-  assert.equal(h.controls['asset-select'].value, 'gold');
+  assert.equal(h.controls['picker-name'].textContent, supply.gold);
   assert.equal(h.controls.gold.attributes['data-selected'], 'true');
   assert.equal(h.controls.gold.dataset.goldMotion, 'paused');
   h.controls.pause.dispatchEvent(new Event('click'));
@@ -141,7 +174,7 @@ test('switching pair and overview preserves shared pause, fixed Bitcoin and chos
 
 test('view changes preserve reduced motion and independently expired selected assets', () => {
   const h = harness(true, Date.parse('2026-11-15'));
-  h.controls['asset-select'].value = 'gold'; h.controls['asset-select'].dispatchEvent(new Event('change'));
+  selectAsset(h, 'gold');
   h.controls['compare-all'].checked = true; h.controls['compare-all'].dispatchEvent(new Event('change'));
   assert.equal(h.controls.pause.hidden, true);
   assert.equal(h.controls.gold.dataset.goldMotion, 'still');

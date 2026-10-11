@@ -159,10 +159,10 @@
 }
 .earth-feature .guide-section-trigger[aria-expanded='true'] {
   background: var(--orange-soft);
-  color: var(--orange-ink);
+  color: var(--color-emphasis-ink);
 }
 .earth-feature .guide-section-trigger[aria-expanded='true'] svg {
-  color: var(--orange-ink);
+  color: var(--orange);
 }
 .earth-feature .guide-section-trigger:focus-visible {
   outline-offset: -3px;
@@ -257,12 +257,13 @@
   gap: 8px;
   width: fit-content;
   margin: 14px 0;
-  color: var(--orange-ink);
+  color: var(--color-emphasis-ink);
   font-size: var(--text-label);
   text-underline-offset: 4px;
 }
 .earth-feature .model-sources a svg {
   flex-shrink: 0;
+  color: var(--orange);
 }
 .earth-feature .model-sources p {
   font-size: var(--text-caption);
@@ -292,17 +293,17 @@
   stroke-linejoin: round;
 }
 .earth-feature .art-coin-edge {
-  fill: #fbc276;
-  stroke: #ca7921;
+  fill: var(--orange);
+  stroke: #1F1B14;
   stroke-width: 1.3;
 }
 .earth-feature .art-coin {
-  fill: #ffdbab;
-  stroke: #ca7921;
+  fill: var(--orange);
+  stroke: #1F1B14;
   stroke-width: 1.3;
 }
 .earth-feature .art-coin-glyph {
-  fill: #a94f00;
+  fill: #1F1B14;
   font-size: 21px;
   font-family: inherit;
 }
@@ -314,15 +315,6 @@
 }
 .earth-feature[data-theme='dark'] .art-grid {
   stroke: #99c4ae;
-}
-.earth-feature[data-theme='dark'] .art-coin-edge {
-  fill: #9c5b20;
-}
-.earth-feature[data-theme='dark'] .art-coin {
-  fill: #d89543;
-}
-.earth-feature[data-theme='dark'] .art-coin-glyph {
-  fill: #34220e;
 }
 @keyframes guide-slide-in {
   from {

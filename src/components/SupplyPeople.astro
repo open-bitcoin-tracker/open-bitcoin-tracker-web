@@ -3,11 +3,14 @@ interface Props { accent?: boolean; }
 const { accent = false } = Astro.props;
 ---
 <svg class:list={['people-illustration', { accent }]} viewBox="0 0 230 75" fill="none" aria-hidden="true">
-  {[15, 65, 115, 165, 215].map((x,i) => <g class:list={['person', { 'person-focus': i === 2 }]}><circle cx={x} cy="14" r="9" /><path d={`M${x-12} 43v-9a12 12 0 0 1 24 0v9M${x-6} 35v28M${x+6} 35v28`} stroke-width="6" stroke-linecap="round" /></g>)}
+  <g class="person">
+    <circle cx="115" cy="12" r="8" />
+    <rect x="108" y="25" width="14" height="23" rx="4" />
+    <path d="m108 28-5 3-4 15m23-18 5 3 4 15M110 45v20m10-20v20" fill="none" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" />
+  </g>
 </svg>
 <style>
  .people-illustration { display: block; width: 210px; max-width: 85%; margin: 0 auto; }
- .person { fill: var(--color-ink-muted); stroke: var(--color-ink-muted); opacity: .3; }
- .person-focus { opacity: 1; fill: var(--supply-fiat-text); stroke: var(--supply-fiat-text); }
- .accent .person-focus { fill: var(--color-accent-text); stroke: var(--color-accent-text); }
+ .person { fill: var(--supply-fiat-text); stroke: var(--supply-fiat-text); }
+ .accent .person { fill: var(--color-accent); stroke: var(--color-accent); }
 </style>

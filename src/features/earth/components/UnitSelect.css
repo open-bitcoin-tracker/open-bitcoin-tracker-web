@@ -57,14 +57,14 @@
 .earth-feature .unit-option[aria-selected='true'] {
   background: var(--orange-soft);
   border-color: var(--border);
-  color: var(--orange-ink);
+  color: var(--color-emphasis-ink);
 }
 .earth-feature .unit-option:hover:not([aria-selected='true']),
 .earth-feature .unit-option[data-active='true']:not([aria-selected='true']) {
   background: var(--hover);
 }
 .earth-feature .unit-options:focus-visible .unit-option[data-active='true'] {
-  border-color: var(--orange-ink);
+  border-color: var(--orange);
 }
 .earth-feature .input-unit {
   font-size: var(--text-label);

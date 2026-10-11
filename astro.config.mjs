@@ -47,6 +47,15 @@ export default defineConfig({
     }),
   ],
   vite: {
-    plugins: [tailwindcss()]
+    plugins: [
+      tailwindcss(),
+      {
+        name: 'obt-vite-cache',
+        // Builds and tests must not replace the running dev server's prebundles.
+        config(_config, { mode }) {
+          return { cacheDir: `node_modules/.vite/obt-${mode}` };
+        },
+      },
+    ]
   }
 });

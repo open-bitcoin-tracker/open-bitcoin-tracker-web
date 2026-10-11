@@ -9,21 +9,22 @@ const lang = resolveLang(Astro.currentLocale);
 const t = tracker[lang];
 const currentPage = stripLocale(Astro.url.pathname);
 const pages = [
-  { path: 'price-tracker', label: t.priceChart },
-  { path: 'android-app', label: t.app },
+  { path: 'price-tracker', label: t.priceChart, english: false },
+  { path: 'android-app', label: t.app, english: false },
+  { path: aBitOfEarth.path, label: aBitOfEarth.title, english: true },
+  { path: bitcoinAndDollar.path, label: supply.title, english: true },
 ];
-const visiblePages = pages.filter(({ path }) => currentPage !== path);
 ---
 
 <div class="menu-page-links">
-  {visiblePages.map(({ path, label }) => (
+  {pages.map(({ path, label, english }) => (
     <a
       href={getRelativeLocaleUrl(lang, path)}
       class="page-link"
+      lang={english ? 'en' : undefined}
+      aria-current={currentPage === path ? 'page' : undefined}
     >
       {label}
     </a>
   ))}
-  {currentPage !== aBitOfEarth.path && <a href={getRelativeLocaleUrl(lang, aBitOfEarth.path)} class="page-link" lang="en">{aBitOfEarth.title}</a>}
-  {currentPage !== bitcoinAndDollar.path && <a href={getRelativeLocaleUrl(lang, bitcoinAndDollar.path)} class="page-link" lang="en">{supply.title}</a>}
 </div>

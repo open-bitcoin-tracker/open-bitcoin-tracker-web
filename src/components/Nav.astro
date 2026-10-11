@@ -1,19 +1,20 @@
 ---
 import { getRelativeLocaleUrl } from 'astro:i18n';
-import { useTranslations, resolveLang } from '../i18n/utils';
+import { useTranslations, resolveLang, stripLocale } from '../i18n/utils';
 import NavMenu from './NavMenu.astro';
 import PageTabs from './PageTabs.astro';
 import { tracker } from '../i18n/tracker';
 const t = useTranslations(Astro.currentLocale);
 const lang = resolveLang(Astro.currentLocale);
 const links = tracker[lang];
+const currentPage = stripLocale(Astro.url.pathname);
 ---
 <nav class="site-nav" aria-label={t.nav.mainAria}>
   <NavMenu>
     <PageTabs />
     <ul class="menu-secondary" role="list">
-      <li><a href={getRelativeLocaleUrl(lang, 'about')}>{links.about}</a></li>
-      <li><a href={getRelativeLocaleUrl(lang, 'privacy')}>{links.privacy}</a></li>
+      <li><a href={getRelativeLocaleUrl(lang, 'about')} aria-current={currentPage === 'about' ? 'page' : undefined}>{links.about}</a></li>
+      <li><a href={getRelativeLocaleUrl(lang, 'privacy')} aria-current={currentPage === 'privacy' ? 'page' : undefined}>{links.privacy}</a></li>
       <li><a href="https://github.com/open-bitcoin-tracker/open-bitcoin-tracker-web" target="_blank" rel="noopener noreferrer">GitHub</a></li>
     </ul>
   </NavMenu>
