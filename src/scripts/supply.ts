@@ -1,25 +1,20 @@
-import { BITCOIN_MAX, SATOSHIS_PER_BTC, equalShare, formatDate, formatNumber, interpolate, projectMoney, projectPopulation, projectGold, goldShareGrams, annualMiningRate, annualRate, MAX_SCENARIO_YEARS, scenarioDate, projectScenarioPopulation, scenarioMoney, scenarioGold, type SupplySnapshot } from '../features/supply/model';
+import { BITCOIN_MAX, SATOSHIS_PER_BTC, equalShare, formatDate, formatNumber, interpolate, projectMoney, projectPopulation, annualRate, MAX_SCENARIO_YEARS, scenarioDate, projectScenarioPopulation, scenarioMoney, type SupplySnapshot } from '../features/supply/model';
 import type { SupplyCopy } from '../i18n/supply';
 
-type ClientCopy = Pick<SupplyCopy, 'projected' | 'recorded' | 'goldProjected' | 'goldRecorded' | 'goldStale' | 'goldUnavailable' | 'paused' | 'pause' | 'resume' | 'stale' | 'reduced' | 'unavailable' | 'populationFallback' | 'populationUnavailable' | 'bitcoinShareBasis' | 'todayYear' | 'scenarioYear' | 'todayNote' | 'scenarioNote' | 'scenarioUnavailable' | 'scenarioProjected' | 'goldScenario' | 'bitcoinScenarioBasis'>;
+type ClientCopy = Pick<SupplyCopy, 'projected' | 'recorded' | 'paused' | 'pause' | 'resume' | 'stale' | 'reduced' | 'unavailable' | 'populationFallback' | 'populationUnavailable' | 'bitcoinShareBasis' | 'todayNote' | 'scenarioNote' | 'scenarioUnavailable' | 'scenarioProjected' | 'bitcoinScenarioBasis'>;
 const root = document.querySelector<HTMLElement>('[data-supply]');
 const json = document.getElementById('supply-data');
 if (root && json) {
-  const { snapshot, locale, copy } = JSON.parse(json.textContent ?? '{}') as { snapshot: SupplySnapshot; locale: string; copy: ClientCopy };
+  const { snapshot, locale, copy } = JSON.parse(json.textContent ?? '{}') as { snapshot: Pick<SupplySnapshot, 'checkedAt' | 'population' | 'fiat'>; locale: string; copy: ClientCopy };
   const panels = snapshot.fiat.map((money) => {
     const panel = root.querySelector<HTMLElement>(`[data-currency="${money.id}"]`);
     return { money, panel,
       total: panel?.querySelector<HTMLElement>('[data-money-total]') ?? null,
       share: root.querySelector<HTMLElement>(`[data-money-share="${money.id}"]`),
-      label: panel?.querySelector<HTMLElement>('[data-total-label]') ?? null,
+      label: root.querySelector<HTMLElement>(`[data-total-label="${money.id}"]`),
       status: root.querySelector<HTMLElement>(`[data-projection-status="${money.id}"]`),
     };
   });
-  const goldPanel = root.querySelector<HTMLElement>('[data-gold]');
-  const goldTotal = root.querySelector<HTMLElement>('[data-gold-total]');
-  const goldShare = root.querySelector<HTMLElement>('[data-gold-share]');
-  const goldLabel = root.querySelector<HTMLElement>('[data-gold-label]');
-  const goldStatus = root.querySelector<HTMLElement>('[data-gold-status]');
   const motionStatus = root.querySelector<HTMLElement>('[data-motion-status]');
   const populationTotal = root.querySelector<HTMLElement>('[data-population]');
   const populationStatus = root.querySelector<HTMLElement>('[data-population-status]');
@@ -32,19 +27,16 @@ if (root && json) {
   const assetMenu = root.querySelector<HTMLDetailsElement>('[data-asset-menu]');
   const assetOptions = Array.from(root.querySelectorAll<HTMLButtonElement>('[data-asset-option]'));
   const assetPicker = root.querySelector<HTMLElement>('[data-asset-picker]');
-  const pickerGold = root.querySelector<HTMLElement>('[data-picker-gold]');
   const pickerSymbol = root.querySelector<HTMLElement>('[data-picker-symbol]');
   const pickerName = root.querySelector<HTMLElement>('[data-picker-name]');
   const yearControls = root.querySelector<HTMLElement>('[data-year-controls]');
   const previousYear = root.querySelector<HTMLButtonElement>('[data-year-previous]');
   const nextYear = root.querySelector<HTMLButtonElement>('[data-year-next]');
-  const resetYear = root.querySelector<HTMLButtonElement>('[data-year-reset]');
   const selectedYear = root.querySelector<HTMLElement>('[data-selected-year]');
   const scenarioNote = root.querySelector<HTMLElement>('[data-scenario-note]');
-  const comparisonAssets = [
-    { id: 'gold', panel: goldPanel },
-    ...panels.map(({ money, panel }) => ({ id: money.id, panel })),
-  ].map(asset => ({ ...asset, shareCard: root.querySelector<HTMLElement>(`[data-share-asset="${asset.id}"]`) }));
+  const comparisonAssets = panels.map(({ money, panel }) => ({
+    id: money.id, panel, shareCard: root.querySelector<HTMLElement>(`[data-share-asset="${money.id}"]`),
+  }));
   let selectedAsset = 'usd';
   const updateSelectedAsset = () => {
     for (const { id, panel, shareCard } of comparisonAssets) {
@@ -60,9 +52,7 @@ if (root && json) {
         assetPicker.setAttribute('aria-label', option.textContent);
         if (pickerName) pickerName.textContent = option.textContent;
       }
-      if (pickerGold) pickerGold.hidden = selectedAsset !== 'gold';
       if (pickerSymbol) {
-        pickerSymbol.hidden = selectedAsset === 'gold';
         pickerSymbol.textContent = option?.dataset.symbol ?? '';
       }
       if (selectedPanel && assetPicker.parentElement !== selectedPanel) {
@@ -128,7 +118,7 @@ if (root && json) {
   const setText = (element: HTMLElement | null, text: string) => {
     if (element && element.textContent !== text) element.textContent = text;
   };
-  // A one-time visit snapshot keeps Bitcoin's share fixed while gold, fiat and
+  // A one-time visit snapshot keeps Bitcoin's share fixed while fiat and
   // population follow one shared model time. No persisted demographic clock.
   const visitPopulation = projectPopulation(snapshot, frozenAt).persons ?? snapshot.population.persons;
   const visitBitcoinShare = equalShare(BITCOIN_MAX, visitPopulation);
@@ -152,14 +142,6 @@ if (root && json) {
     shownBitcoinShare = people === null ? NaN : equalShare(BITCOIN_MAX, people);
     renderBitcoin();
     setText(bitcoinBasis, people === null ? copy.scenarioUnavailable : interpolate(copy.bitcoinScenarioBasis, { date, population: formatNumber(people, locale) }));
-    const tonnes = scenarioGold(snapshot.gold, at);
-    setText(goldTotal, tonnes === null ? '—' : formatNumber(tonnes, locale, 3));
-    setText(goldShare, tonnes === null || people === null ? '—' : formatNumber(goldShareGrams(tonnes, people), locale, 2));
-    setText(goldLabel, copy.goldScenario);
-    setText(goldStatus, tonnes === null ? copy.scenarioUnavailable : '');
-    const goldCanMove = tonnes !== null && annualMiningRate(snapshot.gold) > 0;
-    canMove ||= goldCanMove;
-    if (goldPanel) goldPanel.dataset.goldMotion = goldCanMove ? motion : 'still';
     for (const { money, panel, total, share, label, status } of panels) {
       const amount = scenarioMoney(money, at);
       setText(total, amount === null ? '—' : formatNumber(amount, locale));
@@ -184,8 +166,7 @@ if (root && json) {
     root.dataset.mode = selectedYears > 0 ? 'scenario' : 'today';
     if (previousYear) previousYear.disabled = selectedYears === 0;
     if (nextYear) nextYear.disabled = selectedYears === MAX_SCENARIO_YEARS;
-    if (resetYear) resetYear.disabled = selectedYears === 0;
-    setText(selectedYear, interpolate(selectedYears > 0 ? copy.scenarioYear : copy.todayYear, { year: String(new Date(selectedYears > 0 ? shownAt : now).getUTCFullYear() + selectedYears) }));
+    setText(selectedYear, String(new Date(selectedYears > 0 ? shownAt : now).getUTCFullYear() + selectedYears));
     if (selectedYears > 0) {
       renderScenario(scenarioDate(shownAt, selectedYears));
       return;
@@ -205,17 +186,6 @@ if (root && json) {
     setText(motionStatus, reduce.matches ? copy.reduced : paused ? copy.paused : '');
     const motion = !reduce.matches && !document.hidden ? paused ? 'paused' : 'running' : 'still';
     let canMove = currentPopulation.state === 'estimated' && currentPopulation.rate !== 0;
-    const currentGold = projectGold(snapshot.gold, now);
-    const shownGold = currentGold.state === 'projected' ? projectGold(snapshot.gold, shownAt) : currentGold;
-    const recordedGold = snapshot.gold?.stock?.tonnes;
-    const tonnes = shownGold.tonnes ?? (Number.isFinite(recordedGold) && recordedGold > 0 ? recordedGold : null);
-    setText(goldTotal, tonnes === null ? '—' : formatNumber(tonnes, locale, shownGold.state === 'projected' ? 3 : 0));
-    setText(goldShare, tonnes === null ? '—' : formatNumber(goldShareGrams(tonnes, people), locale, 2));
-    setText(goldLabel, shownGold.state === 'projected' ? copy.goldProjected : copy.goldRecorded);
-    setText(goldStatus, currentGold.state === 'stale' ? copy.goldStale : currentGold.state === 'unavailable' ? copy.goldUnavailable : '');
-    const goldCanMove = currentGold.state === 'projected' && annualMiningRate(snapshot.gold) > 0;
-    canMove ||= goldCanMove;
-    if (goldPanel) goldPanel.dataset.goldMotion = goldCanMove ? motion : 'still';
     for (const { money, panel, total, share, label, status } of panels) {
       const current = projectMoney(money, now);
       const shown = current.state === 'projected' ? projectMoney(money, shownAt) : current;
@@ -252,7 +222,6 @@ if (root && json) {
   if (yearControls) yearControls.hidden = false;
   previousYear?.addEventListener('click', () => changeYear(selectedYears - 1));
   nextYear?.addEventListener('click', () => changeYear(selectedYears + 1));
-  resetYear?.addEventListener('click', () => changeYear(0));
   button?.addEventListener('click', () => {
     paused = !paused;
     if (paused) frozenAt = Date.now();

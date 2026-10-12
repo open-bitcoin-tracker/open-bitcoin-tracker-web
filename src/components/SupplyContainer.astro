@@ -1,9 +1,7 @@
 ---
-import SupplyGoldBar from './SupplyGoldBar.astro';
-interface Props { kind: 'bitcoin' | 'fiat' | 'gold'; symbol?: string; }
+interface Props { kind: 'bitcoin' | 'fiat'; symbol?: string; }
 const { kind, symbol = '$' } = Astro.props;
 const bitcoin = kind === 'bitcoin';
-const gold = kind === 'gold';
 const coins = Array.from({ length: 21 }, (_, index) => ({
   x: 85 + (index % 7) * 30,
   y: 238 - Math.floor(index / 7) * 40,
@@ -16,15 +14,14 @@ const coins = Array.from({ length: 21 }, (_, index) => ({
     <path class="box-side" d="M286 108 336 84v156l-50 24Z" />
     <rect class="box-fill" x="64" y="108" width="222" height="156" rx="4" />
     <g class="stored-tokens">
-      {bitcoin ? coins.map(({ x, y }) => <g><circle class="coin" cx={x} cy={y} r="14" /><circle class="coin-ring" cx={x} cy={y} r="10.5" /><text x={x} y={y + 5} text-anchor="middle">₿</text></g>) : gold ?
-        Array.from({ length: 5 }, (_, i) => <g transform={`translate(${90 + (i % 2) * 91} ${228 - Math.floor(i / 2) * 32})`}><SupplyGoldBar /></g>) :
+      {bitcoin ? coins.map(({ x, y }) => <g><circle class="coin" cx={x} cy={y} r="14" /><circle class="coin-ring" cx={x} cy={y} r="10.5" /><text x={x} y={y + 5} text-anchor="middle">₿</text></g>) :
         Array.from({ length: 5 }, (_, i) => <g transform={`translate(${90 + (i % 2) * 91} ${228 - Math.floor(i / 2) * 32}) rotate(${i % 2 ? 9 : -6})`}><rect class="bill" width="76" height="31" rx="3" /><rect class="bill-ring" x="5" y="5" width="66" height="21" rx="2" /><text x="38" y="23" text-anchor="middle">{symbol}</text></g>)}
     </g>
     <path class="box-front" d="M64 108v156h222V108" />
     {bitcoin ? <g class="cap"><path d="M57 105 111 79h232l-54 26Z" /><path d="M57 105v11h232v-11M289 105l54-26v11l-54 26" /><path class="cap-highlight" d="M67 102h210" /></g> :
       <g class="open-rim"><path d="M64 108 114 84h222l-50 24H64Z" /><path d="M114 84v14" /></g>}
     {!bitcoin && <g class="falling-tokens">
-      {[{x:110,y:0,r:-12},{x:183,y:9,r:12},{x:250,y:-6,r:-7},{x:140,y:18,r:8}].map(({x,y,r},i) => <g class={`falling-token falling-token-${i}`} style={`--delay: ${i * -1.15}s; --turn: ${r}deg;`}><g transform={`translate(${x} ${y}) rotate(${r})`}>{gold ? <g transform="scale(.8)"><SupplyGoldBar /></g> : <><rect class="bill" width="60" height="27" rx="3" /><rect class="bill-ring" x="5" y="4" width="50" height="19" rx="2" /><text x="30" y="20" text-anchor="middle">{symbol}</text></>}</g></g>)}
+      {[{x:110,y:0,r:-12},{x:183,y:9,r:12},{x:250,y:-6,r:-7},{x:140,y:18,r:8}].map(({x,y,r},i) => <g class={`falling-token falling-token-${i}`} style={`--delay: ${i * -1.15}s; --turn: ${r}deg;`}><g transform={`translate(${x} ${y}) rotate(${r})`}><rect class="bill" width="60" height="27" rx="3" /><rect class="bill-ring" x="5" y="4" width="50" height="19" rx="2" /><text x="30" y="20" text-anchor="middle">{symbol}</text></g></g>)}
     </g>}
   </svg>
 </div>
@@ -33,7 +30,6 @@ const coins = Array.from({ length: 21 }, (_, index) => ({
   svg { display: block; width: 100%; overflow: visible; }
   .bitcoin { --token: var(--color-accent); --token-ink: #1F1B14; --box-color: var(--color-accent); }
   .fiat { --token: var(--supply-fiat); --token-ink: var(--supply-fiat-ink); --box-color: var(--supply-fiat-text); }
-  .gold { --token: var(--supply-gold); --token-ink: var(--supply-gold-ink); --box-color: var(--supply-gold-text); }
   .ground { fill: var(--color-ink); opacity: .06; }
   .box-back { fill: var(--box-color); opacity: .07; }
   .box-side { fill: var(--box-color); fill-opacity: .06; stroke: var(--box-color); stroke-width: 1.5; stroke-opacity: .55; }
@@ -50,9 +46,9 @@ const coins = Array.from({ length: 21 }, (_, index) => ({
   .cap-highlight { stroke: white; stroke-opacity: .55; }
   .open-rim { stroke: var(--box-color); stroke-width: 2; }
   .falling-token { opacity: 0; }
-  :global([data-money-motion='running']) .falling-token, :global([data-gold-motion='running']) .falling-token { animation: token-fall 4.6s linear infinite; animation-delay: var(--delay); }
+  :global([data-money-motion='running']) .falling-token { animation: token-fall 4.6s linear infinite; animation-delay: var(--delay); }
   :global([data-direction='down']) .falling-token { animation-direction: reverse; }
-  :global([data-money-motion='paused']) .falling-token, :global([data-gold-motion='paused']) .falling-token { animation: token-fall 4.6s linear infinite; animation-delay: var(--delay); animation-play-state: paused; }
+  :global([data-money-motion='paused']) .falling-token { animation: token-fall 4.6s linear infinite; animation-delay: var(--delay); animation-play-state: paused; }
   :global([data-direction='down'][data-money-motion='paused']) .falling-token { animation-direction: reverse; }
   @keyframes token-fall { 0% { transform: translateY(-15px); opacity: 0; } 12%, 66% { opacity: 1; } 88%, 100% { transform: translateY(160px); opacity: 0; } }
   @media (prefers-reduced-motion: reduce) { .falling-token { animation: none !important; opacity: 0; } }

@@ -132,7 +132,7 @@ export interface PopulationProjection {
   date?: string;
 }
 
-export function projectPopulation(snapshot: SupplySnapshot, now: number): PopulationProjection {
+export function projectPopulation(snapshot: Pick<SupplySnapshot, 'population'>, now: number): PopulationProjection {
   const population = snapshot.population;
   if (!isValidPopulation(population) || !Number.isFinite(now)) return { persons: null, state: 'unavailable', rate: 0 };
   const first = population.points[0];
@@ -227,13 +227,13 @@ export function scenarioDate(visitAt: number, years: number): number {
   return Date.UTC(year, month, day, visit.getUTCHours(), visit.getUTCMinutes(), visit.getUTCSeconds(), visit.getUTCMilliseconds());
 }
 
-export function projectScenarioPopulation(snapshot: SupplySnapshot, at: number): PopulationProjection {
+export function projectScenarioPopulation(snapshot: Pick<SupplySnapshot, 'population'>, at: number): PopulationProjection {
   const result = projectPopulation({ ...snapshot, population: { ...snapshot.population, points: snapshot.population.scenarioPoints } }, at);
   // Never silently substitute an endpoint population for a future date.
   return result.state === 'estimated' ? result : { persons: null, state: 'unavailable', rate: 0 };
 }
 
-export function scenarioPopulation(snapshot: SupplySnapshot, at: number): number | null {
+export function scenarioPopulation(snapshot: Pick<SupplySnapshot, 'population'>, at: number): number | null {
   return projectScenarioPopulation(snapshot, at).persons;
 }
 
