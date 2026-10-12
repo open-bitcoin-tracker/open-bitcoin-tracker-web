@@ -39,23 +39,21 @@ if (root && json) {
   const pickerGold = root.querySelector<HTMLElement>('[data-picker-gold]');
   const pickerSymbol = root.querySelector<HTMLElement>('[data-picker-symbol]');
   const pickerName = root.querySelector<HTMLElement>('[data-picker-name]');
-  const compareAll = root.querySelector<HTMLInputElement>('[data-compare-all]');
-  const comparisonControls = root.querySelector<HTMLElement>('[data-comparison-controls]');
+  const bitcoinControls = root.querySelector<HTMLElement>('[data-bitcoin-controls]');
   const comparisonAssets = [
     { id: 'gold', panel: goldPanel },
     ...panels.map(({ money, panel }) => ({ id: money.id, panel })),
-  ];
+  ].map(asset => ({ ...asset, shareCard: root.querySelector<HTMLElement>(`[data-share-asset="${asset.id}"]`) }));
   let selectedAsset = 'usd';
-  const updateComparison = () => {
-    root.dataset.view = compareAll?.checked ? 'all' : 'focus';
-    if (compareAll?.checked && assetMenu) assetMenu.open = false;
-    for (const { id, panel } of comparisonAssets) {
+  const updateSelectedAsset = () => {
+    for (const { id, panel, shareCard } of comparisonAssets) {
       const selected = String(id === selectedAsset);
       panel?.setAttribute('data-selected', selected);
+      shareCard?.setAttribute('data-selected', selected);
     }
     const selectedPanel = comparisonAssets.find(asset => asset.id === selectedAsset)?.panel;
     if (assetPicker) {
-      assetPicker.hidden = Boolean(compareAll?.checked);
+      assetPicker.hidden = false;
       const option = assetOptions.find(option => option.dataset.assetOption === selectedAsset);
       if (option?.textContent) {
         assetPicker.setAttribute('aria-label', option.textContent);
@@ -74,16 +72,16 @@ if (root && json) {
     }
     for (const option of assetOptions) option.setAttribute('aria-pressed', String(option.dataset.assetOption === selectedAsset));
   };
-  // One set of nodes and one clock: switching views never resets the visit's
-  // Bitcoin share, pause state, model time, or any projection fallback.
-  updateComparison();
-  compareAll?.addEventListener('change', updateComparison);
+  // Asset changes preserve the visit's Bitcoin share and the shared clock.
+  updateSelectedAsset();
+  const staticHeading = root.querySelector<HTMLElement>('[data-static-asset-heading]');
+  if (staticHeading) staticHeading.hidden = true;
   assetOptions.forEach(option => option.addEventListener('click', () => {
     const id = option.dataset.assetOption;
     if (!comparisonAssets.some(asset => asset.id === id)) return;
     selectedAsset = id!;
     if (assetMenu) assetMenu.open = false;
-    updateComparison();
+    updateSelectedAsset();
     assetTrigger?.focus({ preventScroll: true });
   }));
   // Match the language switcher's native disclosure and dismissal behavior.
@@ -120,7 +118,7 @@ if (root && json) {
   });
   document.addEventListener('click', (event) => { if (assetMenu?.open && !assetMenu.contains(event.target as Node)) closeAssetMenu(); });
   document.addEventListener('focusin', () => { if (assetMenu?.open && !assetMenu.contains(document.activeElement)) closeAssetMenu(); });
-  if (comparisonControls) comparisonControls.hidden = false;
+  if (bitcoinControls) bitcoinControls.hidden = false;
   const reduce = window.matchMedia('(prefers-reduced-motion: reduce)');
   let paused = false;
   let frozenAt = Date.now();

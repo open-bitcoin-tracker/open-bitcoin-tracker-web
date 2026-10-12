@@ -38,7 +38,7 @@ class Control extends EventTarget {
 }
 function harness(reduced = false, when = Date.parse('2026-10-10T12:00:00Z'), data = snapshot) {
   let now = when;
-  const controls = Object.fromEntries(['motion-status', 'population', 'population-label', 'population-status', 'btc-share', 'btc-total', 'btc-total-unit', 'btc-share-unit', 'bitcoin-sats', 'btc-basis', 'pause', 'pause-label', 'gold', 'gold-total', 'gold-share', 'gold-label', 'gold-status', 'asset-trigger', 'asset-menu', 'asset-picker', 'picker-gold', 'picker-symbol', 'picker-name', 'compare-all', 'comparison-controls'].map(name => [name, new Control()]));
+  const controls = Object.fromEntries(['motion-status', 'population', 'population-label', 'population-status', 'btc-share', 'btc-total', 'btc-total-unit', 'btc-share-unit', 'bitcoin-sats', 'btc-basis', 'pause', 'pause-label', 'gold', 'gold-total', 'gold-share', 'gold-label', 'gold-status', 'asset-trigger', 'asset-menu', 'asset-picker', 'picker-gold', 'picker-symbol', 'picker-name', 'bitcoin-controls', 'static-asset-heading'].map(name => [name, new Control()]));
   const options = ['gold', ...data.fiat.map(money => money.id)].map(id => Object.assign(new Control(), {
     textContent: id === 'gold' ? supply.gold : currencies[id as keyof typeof currencies].name,
     dataset: { assetOption: id, symbol: id === 'gold' ? '' : currencies[id as keyof typeof currencies].symbol },
@@ -46,12 +46,16 @@ function harness(reduced = false, when = Date.parse('2026-10-10T12:00:00Z'), dat
   }));
   controls['asset-menu'].parentElement = controls['asset-picker'];
   controls['asset-trigger'].parentElement = controls['asset-menu'];
+  const goldShareCard = new Control();
   const shares = data.fiat.map(() => new Control());
+  const shareCards = data.fiat.map(() => new Control());
   const panels = data.fiat.map((money, index) => {
-    const children: Record<string, Control> = { ...Object.fromEntries(['money-total', 'total-label', 'status'].map(name => [name, new Control()])), 'money-share': shares[index] };
+    const children: Record<string, Control> = Object.fromEntries(['money-total', 'total-label', 'status'].map(name => [name, new Control()]));
+    shares[index].parentElement = shareCards[index];
     return Object.assign(new Control(), { id: money.id, children, querySelector: (selector: string) => children[selector.slice(6, -1)] });
   });
-  const root = { dataset: { motion: 'still', view: 'all' } as Record<string, string>, querySelectorAll: () => options, querySelector: (selector: string) => {
+  const root = { dataset: { motion: 'still' } as Record<string, string>, querySelectorAll: () => options, querySelector: (selector: string) => {
+    if (selector.startsWith('[data-share-asset=')) return selector.includes('"gold"') ? goldShareCard : shareCards[data.fiat.findIndex(money => selector.includes(`"${money.id}"`))];
     if (selector.startsWith('[data-currency=')) return panels.find(p => selector.includes(`"${p.id}"`));
     if (selector.startsWith('[data-money-share=')) return shares[data.fiat.findIndex(money => selector.includes(`"${money.id}"`))];
     if (selector.startsWith('[data-projection-status=')) return panels.find(p => selector.includes(`"${p.id}"`))!.children.status;
@@ -76,7 +80,7 @@ function harness(reduced = false, when = Date.parse('2026-10-10T12:00:00Z'), dat
     setInterval: (fn: () => void) => { callback = fn; return 1; }, clearInterval: () => { callback = undefined; },
   });
   runInNewContext(script, { require: () => model, exports: {}, document, window, Date: { now: () => now } });
-  return { controls, panels, shares, options, root, document, media,
+  return { controls, panels, shares, shareCards, goldShareCard, options, root, document, media,
     key: (key: string) => controls['asset-menu'].dispatchEvent(Object.assign(new Event('keydown', { cancelable: true }), { key })),
     advance: (ms: number) => { now += ms; callback?.(); } };
 }
@@ -115,7 +119,7 @@ test('Bitcoin defaults to BTC and switches both amounts to whole sats and back w
   assert.equal(h.controls['btc-share-unit'].attributes.class, 'currency-name');
 });
 
-test('Bitcoin unit changes preserve pause, asset selection, overview and reduced motion', () => {
+test('Bitcoin unit changes preserve pause, asset selection and reduced motion', () => {
   for (const reduced of [false, true]) {
     const h = harness(reduced);
     if (!reduced) h.controls.pause.dispatchEvent(new Event('click'));
@@ -125,18 +129,13 @@ test('Bitcoin unit changes preserve pause, asset selection, overview and reduced
     h.controls['bitcoin-sats'].checked = true;
     h.controls['bitcoin-sats'].dispatchEvent(new Event('change'));
     const sats = h.controls['btc-share'].textContent;
-    h.controls['compare-all'].checked = true;
-    h.controls['compare-all'].dispatchEvent(new Event('change'));
     h.advance(60_000);
-    assert.equal(h.root.dataset.view, 'all');
     assert.equal(h.root.dataset.bitcoinUnit, 'sats');
     assert.equal(h.controls['btc-share'].textContent, sats);
     assert.deepEqual(values(h), frozen);
     assert.equal(h.controls.population.textContent, people);
     assert.equal(h.controls['gold-total'].textContent, gold);
     assert.equal(h.root.dataset.motion, reduced ? 'still' : 'paused');
-    h.controls['compare-all'].checked = false;
-    h.controls['compare-all'].dispatchEvent(new Event('change'));
     assert.equal(h.controls['picker-name'].textContent, supply.gold);
     assert.equal(h.controls['btc-share'].textContent, sats);
   }
@@ -144,16 +143,20 @@ test('Bitcoin unit changes preserve pause, asset selection, overview and reduced
 
 test('default pair is USD; all six assets switch both panel and per-person selection', () => {
   const h = harness(), bitcoin = h.controls['btc-share'].textContent;
-  assert.equal(h.root.dataset.view, 'focus');
-  assert.equal(h.controls['comparison-controls'].hidden, false);
+  assert.equal(h.controls['bitcoin-controls'].hidden, false);
+  assert.equal(h.controls['static-asset-heading'].hidden, true);
   assert.equal(h.panels[0].attributes['data-selected'], 'true');
-  assert.equal(h.panels[0].children['money-share'], h.shares[0]);
+  assert.equal(h.shareCards[0].attributes['data-selected'], 'true');
   assert.equal(h.controls['asset-picker'].parentElement, h.panels[0]);
   assert.equal(h.controls['asset-picker'].hidden, false);
   for (const id of ['gold', 'usd', 'eur', 'jpy', 'cny', 'gbp']) {
     selectAsset(h, id);
     assert.equal(h.controls.gold.attributes['data-selected'], String(id === 'gold'));
-    h.panels.forEach(panel => assert.equal(panel.attributes['data-selected'], String(panel.id === id)));
+    assert.equal(h.goldShareCard.attributes['data-selected'], String(id === 'gold'));
+    h.panels.forEach((panel, index) => {
+      assert.equal(panel.attributes['data-selected'], String(panel.id === id));
+      assert.equal(h.shareCards[index].attributes['data-selected'], String(panel.id === id));
+    });
     const selectedPanel = id === 'gold' ? h.controls.gold : h.panels.find(panel => panel.id === id);
     assert.equal(h.controls['asset-picker'].parentElement, selectedPanel);
     assert.equal(h.document.activeElement, h.controls['asset-trigger']);
@@ -201,22 +204,22 @@ test('asset menu dismisses on outside click or focus without changing the select
   assert.equal(h.controls['picker-name'].textContent, currencies.usd.name);
 });
 
-test('switching pair and overview preserves shared pause, fixed Bitcoin and chosen asset', () => {
+test('switching selected assets preserves shared pause and fixed Bitcoin', () => {
   const h = harness(), bitcoin = h.controls['btc-share'].textContent;
   h.controls.pause.dispatchEvent(new Event('click'));
   const frozen = values(h), people = h.controls.population.textContent, gold = h.controls['gold-total'].textContent;
   selectAsset(h, 'gold');
-  h.controls['compare-all'].checked = true; h.controls['compare-all'].dispatchEvent(new Event('change'));
-  assert.equal(h.root.dataset.view, 'all');
-  assert.equal(h.controls['asset-picker'].hidden, true);
+  assert.equal(h.controls['asset-picker'].hidden, false);
   h.advance(60_000);
   assert.deepEqual(values(h), frozen);
   assert.equal(h.controls['gold-total'].textContent, gold);
   assert.equal(h.controls.population.textContent, people);
   assert.equal(h.controls['btc-share'].textContent, bitcoin);
   assert.equal(h.root.dataset.motion, 'paused');
-  h.controls['compare-all'].checked = false; h.controls['compare-all'].dispatchEvent(new Event('change'));
-  assert.equal(h.root.dataset.view, 'focus');
+  selectAsset(h, 'eur');
+  assert.equal(h.shareCards[1].attributes['data-selected'], 'true');
+  assert.equal(h.goldShareCard.attributes['data-selected'], 'false');
+  selectAsset(h, 'gold');
   assert.equal(h.controls['asset-picker'].hidden, false);
   assert.equal(h.controls['picker-name'].textContent, supply.gold);
   assert.equal(h.controls.gold.attributes['data-selected'], 'true');
@@ -227,15 +230,13 @@ test('switching pair and overview preserves shared pause, fixed Bitcoin and chos
   assert.equal(h.controls['btc-share'].textContent, bitcoin);
 });
 
-test('view changes preserve reduced motion and independently expired selected assets', () => {
+test('asset changes preserve reduced motion and independently expired projections', () => {
   const h = harness(true, Date.parse('2026-11-15'));
   selectAsset(h, 'gold');
-  h.controls['compare-all'].checked = true; h.controls['compare-all'].dispatchEvent(new Event('change'));
   assert.equal(h.controls.pause.hidden, true);
   assert.equal(h.controls.gold.dataset.goldMotion, 'still');
   assert.ok(h.panels.every(panel => panel.dataset.moneyMotion === 'still'));
   h.advance(2 * model.DAY_MS);
-  h.controls['compare-all'].checked = false; h.controls['compare-all'].dispatchEvent(new Event('change'));
   assert.equal(h.controls['gold-total'].textContent, model.formatNumber(snapshot.gold.stock.tonnes, 'en-US'));
   assert.equal(h.controls['gold-status'].textContent, supply.goldStale);
   assert.equal(h.controls.gold.attributes['data-selected'], 'true');

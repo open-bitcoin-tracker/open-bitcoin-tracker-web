@@ -4,9 +4,9 @@ interface Props { kind: 'bitcoin' | 'fiat' | 'gold'; symbol?: string; }
 const { kind, symbol = '$' } = Astro.props;
 const bitcoin = kind === 'bitcoin';
 const gold = kind === 'gold';
-const coins = Array.from({ length: 18 }, (_, index) => ({
-  x: 94 + (index % 6) * 35 + (Math.floor(index / 6) % 2) * 7,
-  y: 227 - Math.floor(index / 6) * 35,
+const coins = Array.from({ length: 21 }, (_, index) => ({
+  x: 85 + (index % 7) * 30,
+  y: 238 - Math.floor(index / 7) * 40,
 }));
 ---
 <div class:list={['container-scene', kind]} aria-hidden="true">
@@ -16,7 +16,7 @@ const coins = Array.from({ length: 18 }, (_, index) => ({
     <path class="box-side" d="M286 108 336 84v156l-50 24Z" />
     <rect class="box-fill" x="64" y="108" width="222" height="156" rx="4" />
     <g class="stored-tokens">
-      {bitcoin ? coins.map(({ x, y }) => <g><circle class="coin" cx={x} cy={y} r="20" /><circle class="coin-ring" cx={x} cy={y} r="15" /><text x={x} y={y + 7} text-anchor="middle">₿</text></g>) : gold ?
+      {bitcoin ? coins.map(({ x, y }) => <g><circle class="coin" cx={x} cy={y} r="14" /><circle class="coin-ring" cx={x} cy={y} r="10.5" /><text x={x} y={y + 5} text-anchor="middle">₿</text></g>) : gold ?
         Array.from({ length: 5 }, (_, i) => <g transform={`translate(${90 + (i % 2) * 91} ${228 - Math.floor(i / 2) * 32})`}><SupplyGoldBar /></g>) :
         Array.from({ length: 5 }, (_, i) => <g transform={`translate(${90 + (i % 2) * 91} ${228 - Math.floor(i / 2) * 32}) rotate(${i % 2 ? 9 : -6})`}><rect class="bill" width="76" height="31" rx="3" /><rect class="bill-ring" x="5" y="5" width="66" height="21" rx="2" /><text x="38" y="23" text-anchor="middle">{symbol}</text></g>)}
     </g>
@@ -42,6 +42,7 @@ const coins = Array.from({ length: 18 }, (_, index) => ({
   .coin { fill: var(--token); stroke: var(--token-ink); stroke-opacity: .25; }
   .coin-ring { stroke: var(--token-ink); stroke-opacity: .22; }
   text { fill: var(--token-ink); font: 600 23px 'Inter', sans-serif; }
+  .bitcoin text { font-size: 17px; }
   .bill { fill: var(--token); stroke: var(--token-ink); stroke-width: 1; stroke-opacity: .45; }
   .bill-ring { stroke: var(--token-ink); stroke-opacity: .4; }
   .fiat text { font-size: 20px; }
