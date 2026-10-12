@@ -38,7 +38,7 @@ class Control extends EventTarget {
 }
 function harness(reduced = false, when = Date.parse('2026-10-10T12:00:00Z'), data = snapshot) {
   let now = when;
-  const controls = Object.fromEntries(['motion-status', 'population', 'population-label', 'population-status', 'btc-share', 'btc-basis', 'pause', 'pause-label', 'gold', 'gold-total', 'gold-share', 'gold-label', 'gold-status', 'asset-trigger', 'asset-menu', 'asset-picker', 'picker-gold', 'picker-symbol', 'picker-name', 'compare-all', 'comparison-controls'].map(name => [name, new Control()]));
+  const controls = Object.fromEntries(['motion-status', 'population', 'population-label', 'population-status', 'btc-share', 'btc-total', 'btc-total-unit', 'btc-share-unit', 'bitcoin-sats', 'btc-basis', 'pause', 'pause-label', 'gold', 'gold-total', 'gold-share', 'gold-label', 'gold-status', 'asset-trigger', 'asset-menu', 'asset-picker', 'picker-gold', 'picker-symbol', 'picker-name', 'compare-all', 'comparison-controls'].map(name => [name, new Control()]));
   const options = ['gold', ...data.fiat.map(money => money.id)].map(id => Object.assign(new Control(), {
     textContent: id === 'gold' ? supply.gold : currencies[id as keyof typeof currencies].name,
     dataset: { assetOption: id, symbol: id === 'gold' ? '' : currencies[id as keyof typeof currencies].symbol },
@@ -51,7 +51,7 @@ function harness(reduced = false, when = Date.parse('2026-10-10T12:00:00Z'), dat
     const children: Record<string, Control> = { ...Object.fromEntries(['money-total', 'total-label', 'status'].map(name => [name, new Control()])), 'money-share': shares[index] };
     return Object.assign(new Control(), { id: money.id, children, querySelector: (selector: string) => children[selector.slice(6, -1)] });
   });
-  const root = { dataset: { motion: 'still', view: 'all' }, querySelectorAll: () => options, querySelector: (selector: string) => {
+  const root = { dataset: { motion: 'still', view: 'all' } as Record<string, string>, querySelectorAll: () => options, querySelector: (selector: string) => {
     if (selector.startsWith('[data-currency=')) return panels.find(p => selector.includes(`"${p.id}"`));
     if (selector.startsWith('[data-money-share=')) return shares[data.fiat.findIndex(money => selector.includes(`"${money.id}"`))];
     if (selector.startsWith('[data-projection-status=')) return panels.find(p => selector.includes(`"${p.id}"`))!.children.status;
@@ -86,6 +86,61 @@ const selectAsset = (h: ReturnType<typeof harness>, id: string) => {
   h.controls['asset-menu'].open = true;
   option.focus(); option.dispatchEvent(new Event('click'));
 };
+
+test('Bitcoin defaults to BTC and switches both amounts to whole sats and back without losing precision', () => {
+  const when = Date.parse('2026-10-10T12:00:00Z'), h = harness(false, when);
+  const bitcoin = h.controls['btc-share'].textContent;
+  const basis = h.controls['btc-basis'].textContent;
+  assert.equal(h.root.dataset.bitcoinUnit, 'btc');
+  assert.equal(h.controls['btc-total'].textContent, '21,000,000');
+  assert.equal(h.controls['btc-total-unit'].textContent, ' bitcoins');
+  assert.equal(h.controls['btc-share-unit'].attributes.class, 'currency-name');
+  h.controls['bitcoin-sats'].checked = true;
+  h.controls['bitcoin-sats'].dispatchEvent(new Event('change'));
+  assert.equal(h.root.dataset.bitcoinUnit, 'sats');
+  assert.equal(h.controls['btc-total'].textContent, '2,100,000,000,000,000');
+  const expectedShare = Math.round(2_100_000_000_000_000 / model.projectPopulation(snapshot, when).persons!);
+  assert.equal(h.controls['btc-share'].textContent, expectedShare.toLocaleString('en-US'));
+  for (const name of ['btc-total-unit', 'btc-share-unit']) {
+    assert.equal(h.controls[name].textContent, ' sats');
+    assert.equal(h.controls[name].attributes.class, 'bitcoin-unit');
+  }
+  h.advance(10 * model.DAY_MS);
+  h.controls['bitcoin-sats'].checked = false;
+  h.controls['bitcoin-sats'].dispatchEvent(new Event('change'));
+  assert.equal(h.controls['btc-share'].textContent, bitcoin);
+  assert.equal(h.controls['btc-total'].textContent, '21,000,000');
+  assert.equal(h.controls['btc-basis'].textContent, basis);
+  assert.equal(h.controls['btc-share-unit'].textContent, ' bitcoins');
+  assert.equal(h.controls['btc-share-unit'].attributes.class, 'currency-name');
+});
+
+test('Bitcoin unit changes preserve pause, asset selection, overview and reduced motion', () => {
+  for (const reduced of [false, true]) {
+    const h = harness(reduced);
+    if (!reduced) h.controls.pause.dispatchEvent(new Event('click'));
+    const frozen = values(h), people = h.controls.population.textContent;
+    const gold = h.controls['gold-total'].textContent;
+    selectAsset(h, 'gold');
+    h.controls['bitcoin-sats'].checked = true;
+    h.controls['bitcoin-sats'].dispatchEvent(new Event('change'));
+    const sats = h.controls['btc-share'].textContent;
+    h.controls['compare-all'].checked = true;
+    h.controls['compare-all'].dispatchEvent(new Event('change'));
+    h.advance(60_000);
+    assert.equal(h.root.dataset.view, 'all');
+    assert.equal(h.root.dataset.bitcoinUnit, 'sats');
+    assert.equal(h.controls['btc-share'].textContent, sats);
+    assert.deepEqual(values(h), frozen);
+    assert.equal(h.controls.population.textContent, people);
+    assert.equal(h.controls['gold-total'].textContent, gold);
+    assert.equal(h.root.dataset.motion, reduced ? 'still' : 'paused');
+    h.controls['compare-all'].checked = false;
+    h.controls['compare-all'].dispatchEvent(new Event('change'));
+    assert.equal(h.controls['picker-name'].textContent, supply.gold);
+    assert.equal(h.controls['btc-share'].textContent, sats);
+  }
+});
 
 test('default pair is USD; all six assets switch both panel and per-person selection', () => {
   const h = harness(), bitcoin = h.controls['btc-share'].textContent;

@@ -33,6 +33,7 @@ export const supply = {
   amountPerPerson: 'Amount per person',
   compareBitcoinWith: 'Compare Bitcoin with',
   compareAll: 'Compare all',
+  showBitcoinSats: 'Show Bitcoin in sats',
   sats: '≈ {sats} satoshis',
   pause: 'Pause',
   resume: 'Resume',

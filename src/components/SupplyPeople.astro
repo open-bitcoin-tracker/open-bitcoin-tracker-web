@@ -2,7 +2,7 @@
 interface Props { accent?: boolean; }
 const { accent = false } = Astro.props;
 ---
-<svg class:list={['people-illustration', { accent }]} viewBox="0 0 230 75" fill="none" aria-hidden="true">
+<svg class:list={['people-illustration', { accent }]} width="28" height="28" viewBox="77.5 0 75 75" fill="none" aria-hidden="true" focusable="false">
   <g class="person">
     <circle cx="115" cy="12" r="8" />
     <rect x="108" y="25" width="14" height="23" rx="4" />
@@ -10,7 +10,7 @@ const { accent = false } = Astro.props;
   </g>
 </svg>
 <style>
- .people-illustration { display: block; width: 210px; max-width: 85%; margin: 0 auto; }
+ .people-illustration { display: block; width: 28px; height: 28px; flex-shrink: 0; }
  .person { fill: var(--supply-fiat-text); stroke: var(--supply-fiat-text); }
  .accent .person { fill: var(--color-accent); stroke: var(--color-accent); }
 </style>

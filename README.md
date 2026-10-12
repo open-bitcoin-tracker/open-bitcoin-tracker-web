@@ -116,6 +116,8 @@ Population is reviewed **manually each year**, or when a new WPP revision is ava
 
 The static site has no live feed or background refresh service. Rebuild after updates; until then, old source dates remain visible and expired projections fall back to recorded data. Supply tests cover native scaling, gold mass/gram conversion and mine output, independent rates/expiry/signs, leap days, population interpolation, shared controls, reduced motion, hidden tabs, fixed Bitcoin shares and conservative refresh/import behavior.
 
+The “Show Bitcoin in sats” checkbox beside “Compare all” switches both Bitcoin card amounts between BTC (the default) and whole satoshis. Sats use 100,000,000 per BTC, keep the ₿ prefix and add “sats” after the number. Per-person sats round from the unrounded share fixed at page load; switching units or views preserves that basis and the shared pause state.
+
 ## Price chart
 
 The chart defaults to All time and logarithmic scale. Select or drag the range pill; use chevrons or Up/Down to cycle the selected count. Log/Lin switches scale. Press and drag to inspect prices, or focus the chart and use Left/Right, Home/End, and Escape. Releasing restores the live price and range change. Transitions respect reduced motion.

@@ -1,4 +1,4 @@
-import { BITCOIN_MAX, equalShare, formatDate, formatNumber, interpolate, projectMoney, projectPopulation, projectGold, goldShareGrams, annualMiningRate, annualRate, type SupplySnapshot } from '../features/supply/model';
+import { BITCOIN_MAX, SATOSHIS_PER_BTC, equalShare, formatDate, formatNumber, interpolate, projectMoney, projectPopulation, projectGold, goldShareGrams, annualMiningRate, annualRate, type SupplySnapshot } from '../features/supply/model';
 import type { SupplyCopy } from '../i18n/supply';
 
 type ClientCopy = Pick<SupplyCopy, 'projected' | 'recorded' | 'goldProjected' | 'goldRecorded' | 'goldStale' | 'goldUnavailable' | 'paused' | 'pause' | 'resume' | 'stale' | 'reduced' | 'unavailable' | 'populationEstimate' | 'populationRecorded' | 'populationFallback' | 'populationUnavailable' | 'bitcoinShareBasis'>;
@@ -25,6 +25,10 @@ if (root && json) {
   const populationLabel = root.querySelector<HTMLElement>('[data-population-label]');
   const populationStatus = root.querySelector<HTMLElement>('[data-population-status]');
   const bitcoinShare = root.querySelector<HTMLElement>('[data-btc-share]');
+  const bitcoinTotal = root.querySelector<HTMLElement>('[data-btc-total]');
+  const bitcoinTotalUnit = root.querySelector<HTMLElement>('[data-btc-total-unit]');
+  const bitcoinShareUnit = root.querySelector<HTMLElement>('[data-btc-share-unit]');
+  const bitcoinSats = root.querySelector<HTMLInputElement>('[data-bitcoin-sats]');
   const bitcoinBasis = root.querySelector<HTMLElement>('[data-btc-basis]');
   const button = root.querySelector<HTMLButtonElement>('[data-pause]');
   const buttonLabel = root.querySelector<HTMLElement>('[data-pause-label]');
@@ -128,7 +132,19 @@ if (root && json) {
   // population follow one shared model time. No persisted demographic clock.
   const visitPopulation = projectPopulation(snapshot, frozenAt).persons ?? snapshot.population.persons;
   const visitBitcoinShare = equalShare(BITCOIN_MAX, visitPopulation);
-  setText(bitcoinShare, formatNumber(visitBitcoinShare, locale, 8));
+  const renderBitcoinUnit = () => {
+    const sats = bitcoinSats?.checked ?? false;
+    root.dataset.bitcoinUnit = sats ? 'sats' : 'btc';
+    setText(bitcoinTotal, formatNumber(BITCOIN_MAX * (sats ? SATOSHIS_PER_BTC : 1), locale));
+    // Convert the unrounded visit share; changing units never changes its basis.
+    setText(bitcoinShare, formatNumber(visitBitcoinShare * (sats ? SATOSHIS_PER_BTC : 1), locale, sats ? 0 : 8));
+    for (const unit of [bitcoinTotalUnit, bitcoinShareUnit]) {
+      setText(unit, sats ? ' sats' : ' bitcoins');
+      unit?.setAttribute('class', sats ? 'bitcoin-unit' : 'currency-name');
+    }
+  };
+  renderBitcoinUnit();
+  bitcoinSats?.addEventListener('change', renderBitcoinUnit);
   setText(bitcoinBasis, interpolate(copy.bitcoinShareBasis, { population: formatNumber(visitPopulation, locale) }));
   const render = () => {
     const now = Date.now();
