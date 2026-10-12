@@ -1,5 +1,5 @@
 {
-  "checkedAt": "2026-10-11",
+  "checkedAt": "2026-10-12",
   "gold": {
     "stock": {
       "tonnes": 222600,
@@ -95,7 +95,7 @@
     {
       "id": "cny",
       "currency": "CNY",
-      "series": "PBC Financial Statistics Report · M2",
+      "series": "PBC Financial Statistics Report \u00b7 M2",
       "aggregate": "M2",
       "adjustment": "Not seasonally adjusted",
       "basis": "End of month",
@@ -120,7 +120,7 @@
     {
       "id": "gbp",
       "currency": "GBP",
-      "series": "B53Q · Table J",
+      "series": "B53Q \u00b7 Table J",
       "aggregate": "M4ex",
       "adjustment": "Seasonally adjusted",
       "basis": "End of month",
@@ -140,7 +140,7 @@
       "dataSource": "https://www.bankofengland.co.uk/-/media/boe/files/statistics/money-and-credit/2026/tables-a-and-k-august-2026.xlsx",
       "previousDataSource": "https://www.bankofengland.co.uk/-/media/boe/files/statistics/money-and-credit/2025/tables-a-and-k-august-2025.xlsx",
       "definitionSource": "https://www.bankofengland.co.uk/statistics/faqs",
-      "note": "Table J, amounts outstanding, excluding intermediate other financial corporations. The 2025 point is from its original September 29, 2025 release; the stock difference can include revisions and breaks and is not the Bank’s break-adjusted growth rate."
+      "note": "Table J, amounts outstanding, excluding intermediate other financial corporations. The 2025 point is from its original September 29, 2025 release; the stock difference can include revisions and breaks and is not the Bank\u2019s break-adjusted growth rate."
     }
   ],
   "population": {
@@ -167,6 +167,81 @@
     "revision": "WPP 2024",
     "variant": "Medium",
     "source": "https://population.un.org/wpp/",
-    "download": "https://population.un.org/wpp/assets/Excel%20Files/1_Indicator%20(Standard)/EXCEL_FILES/1_General/WPP2024_GEN_F01_DEMOGRAPHIC_INDICATORS_COMPACT.xlsx"
+    "download": "https://population.un.org/wpp/assets/Excel%20Files/1_Indicator%20(Standard)/EXCEL_FILES/1_General/WPP2024_GEN_F01_DEMOGRAPHIC_INDICATORS_COMPACT.xlsx",
+    "scenarioPoints": [
+      {
+        "date": "2025-07-01",
+        "persons": 8231613070
+      },
+      {
+        "date": "2026-07-01",
+        "persons": 8300678395
+      },
+      {
+        "date": "2027-07-01",
+        "persons": 8369094344
+      },
+      {
+        "date": "2028-07-01",
+        "persons": 8436618886
+      },
+      {
+        "date": "2029-07-01",
+        "persons": 8503285323
+      },
+      {
+        "date": "2030-07-01",
+        "persons": 8569124911
+      },
+      {
+        "date": "2031-07-01",
+        "persons": 8634119333
+      },
+      {
+        "date": "2032-07-01",
+        "persons": 8698229812
+      },
+      {
+        "date": "2033-07-01",
+        "persons": 8761449081
+      },
+      {
+        "date": "2034-07-01",
+        "persons": 8823784909
+      },
+      {
+        "date": "2035-07-01",
+        "persons": 8885210181
+      },
+      {
+        "date": "2036-07-01",
+        "persons": 8945686614
+      },
+      {
+        "date": "2037-07-01",
+        "persons": 9005152624
+      },
+      {
+        "date": "2038-07-01",
+        "persons": 9063572926
+      },
+      {
+        "date": "2039-07-01",
+        "persons": 9120928380
+      },
+      {
+        "date": "2040-07-01",
+        "persons": 9177190203
+      },
+      {
+        "date": "2041-07-01",
+        "persons": 9232281575
+      },
+      {
+        "date": "2042-07-01",
+        "persons": 9286110371
+      }
+    ],
+    "checkedAt": "2026-10-12"
   }
 }

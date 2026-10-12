@@ -1,11 +1,74 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { readFileSync } from 'node:fs';
-import { annualRate, annualMiningRate, BITCOIN_MAX, DAY_MS, equalShare, goldAnchor, goldExpiry, goldShareGrams, isValidGold, isValidMoney, isValidSnapshot, MAX_PROJECTION_DAYS, projectGold, projectMoney, projectPopulation, projectionAnchor, type SupplySnapshot } from '../src/features/supply/model.ts';
+import { annualRate, annualMiningRate, BITCOIN_MAX, DAY_MS, equalShare, goldAnchor, goldExpiry, goldShareGrams, isValidGold, isValidMoney, isValidSnapshot, MAX_PROJECTION_DAYS, projectGold, projectMoney, projectPopulation, projectionAnchor, scenarioDate, scenarioMoney, scenarioGold, scenarioPopulation, type SupplySnapshot } from '../src/features/supply/model.ts';
 import { importReviewedMoney, parseH6, refreshedSnapshot, scaleSource, type ReviewedMoneyImport } from '../src/features/supply/refresh.ts';
 
 const snapshot = JSON.parse(readFileSync(new URL('../src/features/supply/snapshot.json', import.meta.url), 'utf8')) as SupplySnapshot;
 const usd = snapshot.fiat[0];
+
+test('scenario calendar dates span fifteen years and clamp leap-day anniversaries', () => {
+  const visit = Date.parse('2026-10-12T16:20:00Z');
+  assert.equal(scenarioDate(visit, 1), Date.parse('2027-10-12T16:20:00Z'));
+  assert.equal(scenarioDate(visit, 15), Date.parse('2041-10-12T16:20:00Z'));
+  for (const offset of [-1, 0, 1.5, 16, NaN]) assert.ok(Number.isNaN(scenarioDate(visit, offset)));
+  assert.ok(Number.isNaN(scenarioDate(NaN, 1)));
+  const leap = Date.parse('2028-02-29T23:00:00Z');
+  assert.equal(scenarioDate(leap, 1), Date.parse('2029-02-28T23:00:00Z'));
+  assert.equal(scenarioDate(leap, 4), Date.parse('2032-02-29T23:00:00Z'));
+});
+
+test('future population uses verified UN points through 2042 without extending today or substituting endpoints', () => {
+  assert.equal(snapshot.population.scenarioPoints.length, 18);
+  assert.deepEqual(snapshot.population.scenarioPoints.slice(0, 4), snapshot.population.points);
+  assert.equal(snapshot.population.scenarioPoints.at(-2)!.persons, 9_232_281_575);
+  assert.equal(snapshot.population.scenarioPoints.at(-1)!.persons, 9_286_110_371);
+  const at = Date.parse('2041-10-12T00:00:00Z');
+  const fraction = (at - Date.parse('2041-07-01')) / (365 * DAY_MS);
+  assert.equal(scenarioPopulation(snapshot, at), 9_232_281_575 + (9_286_110_371 - 9_232_281_575) * fraction);
+  assert.equal(projectPopulation(snapshot, at).state, 'snapshot');
+  assert.equal(projectPopulation(snapshot, at).date, '2028-07-01');
+  assert.equal(scenarioPopulation(snapshot, Date.parse('2042-07-01') + 1), null);
+  assert.equal(scenarioPopulation(snapshot, Date.parse('2025-07-01') - 1), null);
+  for (let year = 1; year <= 15; year++) {
+    // Latest day of the current year also needs the 2042 interpolation endpoint.
+    assert.ok(scenarioPopulation(snapshot, scenarioDate(Date.parse('2026-12-31'), year))! > 0);
+  }
+  const bad = structuredClone(snapshot); bad.population.scenarioPoints[5].date = '2031-07-01';
+  assert.equal(isValidSnapshot(bad), false);
+  assert.equal(scenarioPopulation(bad, at), null);
+});
+
+test('future scenarios continue absolute historical additions for all assets while today stays expired', () => {
+  const at = Date.parse('2041-10-12');
+  for (const money of snapshot.fiat) {
+    const years = (at - Date.parse('2026-09-01')) / (365 * DAY_MS);
+    assert.ok(Math.abs(scenarioMoney(money, at)! - (money.latest.amount + (money.latest.amount - money.previousYear.amount) * years)) < 1);
+    assert.equal(projectMoney(money, at).state, 'stale');
+    assert.equal(scenarioMoney(money, Date.parse(money.releasedAt) - 1), null);
+  }
+  assert.equal(scenarioGold(snapshot.gold, at), 222_600 + 3_671.6 * (at - Date.parse('2026-07-01')) / (365 * DAY_MS));
+  assert.equal(projectGold(snapshot.gold, at).state, 'stale');
+  assert.equal(scenarioGold(snapshot.gold, Date.parse(snapshot.gold.stock.releasedAt) - 1), null);
+});
+
+test('future models preserve flat and contracting rates and never replace impossible estimates with recorded totals', () => {
+  const at = Date.parse('2041-10-12');
+  const flat = structuredClone(usd); flat.previousYear.amount = flat.latest.amount;
+  assert.equal(scenarioMoney(flat, at), flat.latest.amount);
+  const shrinking = structuredClone(usd); shrinking.previousYear.amount = shrinking.latest.amount + 1e11;
+  assert.ok(scenarioMoney(shrinking, at)! < shrinking.latest.amount);
+  shrinking.previousYear.amount = shrinking.latest.amount * 100;
+  assert.equal(scenarioMoney(shrinking, at), null);
+  const invalid = structuredClone(usd); invalid.currency = 'EUR';
+  assert.equal(scenarioMoney(invalid, at), null);
+  const noMining = structuredClone(snapshot.gold); noMining.mineProduction.tonnes = 0;
+  assert.equal(scenarioGold(noMining, at), noMining.stock.tonnes);
+  noMining.mineProduction.tonnes = -1;
+  assert.equal(scenarioGold(noMining, at), null);
+  assert.equal(scenarioGold(snapshot.gold, NaN), null);
+  assert.equal(scenarioMoney(usd, NaN), null);
+});
 
 test('gold adds full mine output in tonnes, excludes recycled market supply and converts shares to grams', () => {
   const gold = snapshot.gold;
@@ -220,7 +283,7 @@ const reviewed: ReviewedMoneyImport[] = snapshot.fiat.map(money => ({ id: money.
 
 test('reviewed imports scale each source unit and keep unrelated snapshots intact', () => {
   assert.deepEqual(reviewed.map(m => scaleSource(m.latest.value, m.sourceMultiplier)), snapshot.fiat.map(m => m.latest.amount));
-  assert.deepEqual(importReviewedMoney(snapshot, reviewed, '2026-10-11'), snapshot);
+  assert.deepEqual(importReviewedMoney(snapshot, reviewed, '2026-10-11'), { ...snapshot, checkedAt: '2026-10-11' });
   const partial = structuredClone(reviewed[1]); partial.latest.value += 1;
   const next = importReviewedMoney(snapshot, [partial], '2026-10-11');
   assert.equal(next.fiat[1].latest.amount, snapshot.fiat[1].latest.amount + 1e6);

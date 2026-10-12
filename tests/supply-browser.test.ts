@@ -15,6 +15,7 @@ class Control extends EventTarget {
   textContent = '';
   hidden = false;
   checked = false;
+  disabled = false;
   dataset: Record<string, string> = {};
   attributes: Record<string, string> = {};
   parentElement: Control | null = null;
@@ -38,7 +39,7 @@ class Control extends EventTarget {
 }
 function harness(reduced = false, when = Date.parse('2026-10-10T12:00:00Z'), data = snapshot) {
   let now = when;
-  const controls = Object.fromEntries(['motion-status', 'population', 'population-label', 'population-status', 'btc-share', 'btc-total', 'btc-total-unit', 'btc-share-unit', 'bitcoin-sats', 'btc-basis', 'pause', 'pause-label', 'gold', 'gold-total', 'gold-share', 'gold-label', 'gold-status', 'asset-trigger', 'asset-menu', 'asset-picker', 'picker-gold', 'picker-symbol', 'picker-name', 'bitcoin-controls', 'static-asset-heading'].map(name => [name, new Control()]));
+  const controls = Object.fromEntries(['motion-status', 'population', 'population-status', 'btc-share', 'btc-total', 'btc-basis', 'pause', 'pause-label', 'gold', 'gold-total', 'gold-share', 'gold-label', 'gold-status', 'asset-trigger', 'asset-menu', 'asset-picker', 'picker-gold', 'picker-symbol', 'picker-name', 'static-asset-heading', 'year-controls', 'year-previous', 'year-next', 'year-reset', 'selected-year', 'scenario-note'].map(name => [name, new Control()]));
   const options = ['gold', ...data.fiat.map(money => money.id)].map(id => Object.assign(new Control(), {
     textContent: id === 'gold' ? supply.gold : currencies[id as keyof typeof currencies].name,
     dataset: { assetOption: id, symbol: id === 'gold' ? '' : currencies[id as keyof typeof currencies].symbol },
@@ -79,7 +80,8 @@ function harness(reduced = false, when = Date.parse('2026-10-10T12:00:00Z'), dat
   const window = Object.assign(new EventTarget(), { matchMedia: () => media,
     setInterval: (fn: () => void) => { callback = fn; return 1; }, clearInterval: () => { callback = undefined; },
   });
-  runInNewContext(script, { require: () => model, exports: {}, document, window, Date: { now: () => now } });
+  class ClockDate extends Date { static now() { return now; } }
+  runInNewContext(script, { require: () => model, exports: {}, document, window, Date: ClockDate });
   return { controls, panels, shares, shareCards, goldShareCard, options, root, document, media,
     key: (key: string) => controls['asset-menu'].dispatchEvent(Object.assign(new Event('keydown', { cancelable: true }), { key })),
     advance: (ms: number) => { now += ms; callback?.(); } };
@@ -91,59 +93,242 @@ const selectAsset = (h: ReturnType<typeof harness>, id: string) => {
   option.focus(); option.dispatchEvent(new Event('click'));
 };
 
-test('Bitcoin defaults to BTC and switches both amounts to whole sats and back without losing precision', () => {
-  const when = Date.parse('2026-10-10T12:00:00Z'), h = harness(false, when);
-  const bitcoin = h.controls['btc-share'].textContent;
-  const basis = h.controls['btc-basis'].textContent;
-  assert.equal(h.root.dataset.bitcoinUnit, 'btc');
-  assert.equal(h.controls['btc-total'].textContent, '21,000,000');
-  assert.equal(h.controls['btc-total-unit'].textContent, ' bitcoins');
-  assert.equal(h.controls['btc-share-unit'].attributes.class, 'currency-name');
-  h.controls['bitcoin-sats'].checked = true;
-  h.controls['bitcoin-sats'].dispatchEvent(new Event('change'));
-  assert.equal(h.root.dataset.bitcoinUnit, 'sats');
+const yearClick = (h: ReturnType<typeof harness>, action: 'next' | 'previous' | 'reset') => h.controls[`year-${action}`].dispatchEvent(new Event('click'));
+
+test('Bitcoin uses whole satoshis exclusively and rounds only after converting the unrounded share', () => {
+  const when = Date.parse('2026-10-12T16:00:00Z'), h = harness(false, when);
+  const people = model.projectPopulation(snapshot, when).persons!;
   assert.equal(h.controls['btc-total'].textContent, '2,100,000,000,000,000');
-  const expectedShare = Math.round(2_100_000_000_000_000 / model.projectPopulation(snapshot, when).persons!);
-  assert.equal(h.controls['btc-share'].textContent, expectedShare.toLocaleString('en-US'));
-  for (const name of ['btc-total-unit', 'btc-share-unit']) {
-    assert.equal(h.controls[name].textContent, ' sats');
-    assert.equal(h.controls[name].attributes.class, 'bitcoin-unit');
-  }
+  assert.equal(h.controls['btc-share'].textContent, model.formatNumber(model.BITCOIN_MAX * model.SATOSHIS_PER_BTC / people, 'en-US'));
+  // Use a flat, known denominator to check native satoshi scaling and rounding.
+  const data = structuredClone(snapshot);
+  data.population.points = [{ date: '2026-07-01', persons: 8_232_000_000 }, { date: '2027-07-01', persons: 8_232_000_000 }];
+  data.population.persons = 8_232_000_000;
+  const exact = harness(false, when, data);
+  assert.equal(exact.controls['btc-share'].textContent, '255,102');
+  const original = h.controls['btc-share'].textContent;
   h.advance(10 * model.DAY_MS);
-  h.controls['bitcoin-sats'].checked = false;
-  h.controls['bitcoin-sats'].dispatchEvent(new Event('change'));
-  assert.equal(h.controls['btc-share'].textContent, bitcoin);
-  assert.equal(h.controls['btc-total'].textContent, '21,000,000');
-  assert.equal(h.controls['btc-basis'].textContent, basis);
-  assert.equal(h.controls['btc-share-unit'].textContent, ' bitcoins');
-  assert.equal(h.controls['btc-share-unit'].attributes.class, 'currency-name');
+  selectAsset(h, 'gold');
+  assert.equal(h.controls['btc-share'].textContent, original);
+  yearClick(h, 'next');
+  assert.equal(h.controls['btc-total'].textContent, '2,100,000,000,000,000');
+  assert.notEqual(h.controls['btc-share'].textContent, original);
+  yearClick(h, 'reset');
+  assert.equal(h.controls['btc-share'].textContent, original);
 });
 
-test('Bitcoin unit changes preserve pause, asset selection and reduced motion', () => {
-  for (const reduced of [false, true]) {
-    const h = harness(reduced);
-    if (!reduced) h.controls.pause.dispatchEvent(new Event('click'));
-    const frozen = values(h), people = h.controls.population.textContent;
-    const gold = h.controls['gold-total'].textContent;
+test('year controls cover today through fifteen years with synchronized totals and shares for every asset', () => {
+  const visit = Date.parse('2026-10-12T16:00:00Z'), h = harness(false, visit);
+  assert.equal(h.controls['year-controls'].hidden, false);
+  assert.equal(h.controls['selected-year'].textContent, 'Today · 2026');
+  assert.equal(h.controls['year-previous'].disabled, true);
+  assert.equal(h.controls['year-reset'].disabled, true);
+  for (let years = 1; years <= 15; years++) {
+    yearClick(h, 'next');
+    const at = model.scenarioDate(visit, years), people = model.scenarioPopulation(snapshot, at)!;
+    assert.equal(h.root.dataset.mode, 'scenario');
+    assert.equal(h.controls['selected-year'].textContent, `${2026 + years}`);
+    assert.equal(h.controls.population.textContent, model.formatNumber(people, 'en-US'));
+    assert.equal(h.controls['btc-share'].textContent, model.formatNumber(model.BITCOIN_MAX * model.SATOSHIS_PER_BTC / people, 'en-US'));
+    assert.equal(h.controls['btc-total'].textContent, '2,100,000,000,000,000');
+    assert.equal(h.controls['gold-total'].textContent, model.formatNumber(model.scenarioGold(snapshot.gold, at)!, 'en-US', 3));
+    assert.equal(h.controls['gold-share'].textContent, model.formatNumber(model.goldShareGrams(model.scenarioGold(snapshot.gold, at)!, people), 'en-US', 2));
+    for (const [index, money] of snapshot.fiat.entries()) {
+      selectAsset(h, money.id);
+      const amount = model.scenarioMoney(money, at)!;
+      assert.equal(h.panels[index].children['money-total'].textContent, model.formatNumber(amount, 'en-US'));
+      assert.equal(h.shares[index].textContent, model.formatNumber(amount / people, 'en-US'));
+      assert.equal(h.panels[index].children['total-label'].textContent, `${money.aggregate} · scenario estimate`);
+      assert.equal(h.panels[index].children.status.textContent, '');
+      assert.equal(h.controls['btc-share'].textContent, model.formatNumber(model.BITCOIN_MAX * model.SATOSHIS_PER_BTC / people, 'en-US'));
+    }
     selectAsset(h, 'gold');
-    h.controls['bitcoin-sats'].checked = true;
-    h.controls['bitcoin-sats'].dispatchEvent(new Event('change'));
-    const sats = h.controls['btc-share'].textContent;
-    h.advance(60_000);
-    assert.equal(h.root.dataset.bitcoinUnit, 'sats');
-    assert.equal(h.controls['btc-share'].textContent, sats);
-    assert.deepEqual(values(h), frozen);
-    assert.equal(h.controls.population.textContent, people);
-    assert.equal(h.controls['gold-total'].textContent, gold);
-    assert.equal(h.root.dataset.motion, reduced ? 'still' : 'paused');
-    assert.equal(h.controls['picker-name'].textContent, supply.gold);
-    assert.equal(h.controls['btc-share'].textContent, sats);
+    assert.equal(h.root.dataset.motion, 'running');
+    assert.equal(h.controls.gold.dataset.goldMotion, 'running');
+    assert.ok(h.panels.every(p => p.dataset.moneyMotion === 'running'));
+    assert.equal(h.controls.pause.hidden, false);
+    assert.ok(h.controls['scenario-note'].textContent.includes(`October 12, ${2026 + years}`));
   }
+  assert.equal(h.controls['year-next'].disabled, true);
+  yearClick(h, 'next');
+  assert.equal(h.controls['selected-year'].textContent, '2041');
+  yearClick(h, 'previous');
+  assert.equal(h.controls['selected-year'].textContent, '2040');
+  assert.equal(h.controls['year-next'].disabled, false);
+  yearClick(h, 'reset');
+  assert.equal(h.root.dataset.mode, 'today');
+  yearClick(h, 'previous');
+  assert.equal(h.controls['selected-year'].textContent, 'Today · 2026');
+});
+
+test('year changes preserve satoshi shares, asset, pause and reduced motion; reset restores the visit basis', () => {
+  for (const reduced of [false, true]) {
+    const h = harness(reduced), original = values(h), people = h.controls.population.textContent;
+    selectAsset(h, 'eur');
+    if (!reduced) h.controls.pause.dispatchEvent(new Event('click'));
+    const originalSats = h.controls['btc-share'].textContent, basis = h.controls['btc-basis'].textContent;
+    yearClick(h, 'next');
+    assert.equal(h.controls['picker-name'].textContent, currencies.eur.name);
+    assert.notEqual(h.controls['btc-share'].textContent, originalSats);
+    const future = values(h), futurePeople = h.controls.population.textContent;
+    h.advance(60_000);
+    assert.deepEqual(values(h), future);
+    assert.equal(h.controls.population.textContent, futurePeople);
+    h.document.hidden = true; h.document.dispatchEvent(new Event('visibilitychange'));
+    h.advance(60_000);
+    h.document.hidden = false; h.document.dispatchEvent(new Event('visibilitychange'));
+    assert.deepEqual(values(h), future);
+    yearClick(h, 'previous');
+    assert.equal(h.root.dataset.mode, 'today');
+    assert.equal(h.root.dataset.motion, reduced ? 'still' : 'paused');
+    assert.deepEqual(values(h), original);
+    assert.equal(h.controls.population.textContent, people);
+    assert.equal(h.controls['btc-share'].textContent, originalSats);
+    assert.equal(h.controls['btc-basis'].textContent, basis);
+  }
+});
+
+test('future mode remains separate from expiry and reset checks the real clock while paused', () => {
+  const h = harness(false, Date.parse('2026-11-15'));
+  h.controls.pause.dispatchEvent(new Event('click'));
+  yearClick(h, 'next');
+  assert.equal(h.controls['gold-status'].textContent, '');
+  h.advance(20 * model.DAY_MS);
+  yearClick(h, 'reset');
+  assert.equal(h.controls['gold-status'].textContent, supply.goldStale);
+  assert.equal(h.controls['gold-total'].textContent, model.formatNumber(snapshot.gold.stock.tonnes, 'en-US'));
+  assert.equal(h.panels[0].children.status.textContent, supply.stale);
+  yearClick(h, 'next');
+  assert.equal(h.panels[0].children.status.textContent, '');
+  assert.equal(h.controls['gold-status'].textContent, '');
+});
+
+test('future counters and symbolic assets keep moving on the shared clock, including after today expires', () => {
+  const when = Date.parse('2026-12-01T12:00:00Z'), h = harness(false, when);
+  assert.ok(h.panels.every(p => p.dataset.moneyMotion === 'still'));
+  assert.equal(h.controls.gold.dataset.goldMotion, 'still');
+  yearClick(h, 'next');
+  const before = values(h), gold = h.controls['gold-total'].textContent;
+  const people = h.controls.population.textContent, bitcoin = h.controls['btc-share'].textContent;
+  assert.equal(h.root.dataset.motion, 'running');
+  assert.ok(h.panels.every(p => p.dataset.moneyMotion === 'running'));
+  assert.equal(h.controls.gold.dataset.goldMotion, 'running');
+  assert.equal(h.controls.pause.hidden, false);
+  h.advance(10 * model.DAY_MS);
+  assert.notDeepEqual(values(h), before);
+  assert.notEqual(h.controls['gold-total'].textContent, gold);
+  assert.notEqual(h.controls.population.textContent, people);
+  assert.notEqual(h.controls['btc-share'].textContent, bitcoin);
+  const at = model.scenarioDate(when + 10 * model.DAY_MS, 1), population = model.scenarioPopulation(snapshot, at)!;
+  assert.equal(h.controls['btc-share'].textContent, model.formatNumber(model.BITCOIN_MAX * model.SATOSHIS_PER_BTC / population, 'en-US'));
+  h.panels.forEach((p, index) => {
+    const amount = model.scenarioMoney(snapshot.fiat[index], at)!;
+    assert.equal(p.children['money-total'].textContent, model.formatNumber(amount, 'en-US'));
+    assert.equal(h.shares[index].textContent, model.formatNumber(amount / population, 'en-US'));
+  });
+  selectAsset(h, 'gold');
+  const switchedGold = h.controls['gold-total'].textContent;
+  h.advance(60_000);
+  assert.notEqual(h.controls['gold-total'].textContent, switchedGold);
+  assert.equal(h.controls.gold.dataset.goldMotion, 'running');
+  h.document.hidden = true; h.document.dispatchEvent(new Event('visibilitychange'));
+  const hidden = values(h), hiddenGold = h.controls['gold-total'].textContent;
+  assert.equal(h.root.dataset.motion, 'still');
+  assert.ok(h.panels.every(p => p.dataset.moneyMotion === 'still'));
+  h.advance(60_000);
+  assert.deepEqual(values(h), hidden);
+  assert.equal(h.controls['gold-total'].textContent, hiddenGold);
+  h.document.hidden = false; h.document.dispatchEvent(new Event('visibilitychange'));
+  assert.notDeepEqual(values(h), hidden);
+  assert.notEqual(h.controls['gold-total'].textContent, hiddenGold);
+  assert.equal(h.root.dataset.motion, 'running');
+});
+
+test('future pause and reduced motion freeze all estimates; resume and switching retain the year offset', () => {
+  const h = harness();
+  yearClick(h, 'next');
+  h.controls.pause.dispatchEvent(new Event('click'));
+  const frozen = values(h), people = h.controls.population.textContent, bitcoin = h.controls['btc-share'].textContent;
+  const gold = h.controls['gold-total'].textContent;
+  h.advance(10 * model.DAY_MS);
+  assert.deepEqual(values(h), frozen);
+  assert.equal(h.controls.population.textContent, people);
+  assert.equal(h.controls['btc-share'].textContent, bitcoin);
+  assert.equal(h.controls['gold-total'].textContent, gold);
+  assert.equal(h.root.dataset.motion, 'paused');
+  assert.ok(h.panels.every(p => p.dataset.moneyMotion === 'paused'));
+  assert.equal(h.controls.gold.dataset.goldMotion, 'paused');
+  assert.equal(h.controls['pause-label'].textContent, supply.resume);
+  selectAsset(h, 'jpy');
+  yearClick(h, 'next');
+  assert.equal(h.controls['selected-year'].textContent, '2028');
+  assert.equal(h.root.dataset.motion, 'paused');
+  const shifted = values(h);
+  h.advance(60_000);
+  assert.deepEqual(values(h), shifted);
+  h.controls.pause.dispatchEvent(new Event('click'));
+  assert.equal(h.root.dataset.motion, 'running');
+  assert.notDeepEqual(values(h), shifted);
+  assert.equal(h.controls['picker-name'].textContent, currencies.jpy.name);
+  h.media.matches = true; h.media.dispatchEvent(new Event('change'));
+  const reduced = values(h), reducedBitcoin = h.controls['btc-share'].textContent;
+  const reducedGold = h.controls['gold-total'].textContent, reducedPeople = h.controls.population.textContent;
+  h.advance(10 * model.DAY_MS);
+  assert.deepEqual(values(h), reduced);
+  assert.equal(h.controls['btc-share'].textContent, reducedBitcoin);
+  assert.equal(h.controls.population.textContent, reducedPeople);
+  assert.equal(h.controls['gold-total'].textContent, reducedGold);
+  assert.equal(h.root.dataset.motion, 'still');
+  assert.equal(h.controls.pause.hidden, true);
+  assert.equal(h.controls['motion-status'].textContent, supply.reduced);
+  h.media.matches = false; h.media.dispatchEvent(new Event('change'));
+  assert.equal(h.controls['selected-year'].textContent, '2028');
+  assert.equal(h.root.dataset.motion, 'running');
+  assert.notDeepEqual(values(h), reduced);
+});
+
+test('future flat, invalid and exhausted assets stay still without borrowing another model’s motion', () => {
+  const data = structuredClone(snapshot);
+  data.fiat[0].previousYear.amount = data.fiat[0].latest.amount;
+  data.fiat[1].previousYear.amount = data.fiat[1].latest.amount + 1e11;
+  data.fiat[2].currency = 'USD';
+  data.fiat[3].previousYear.amount *= 100;
+  data.gold.mineProduction.tonnes = 0;
+  const h = harness(false, Date.parse('2026-10-12'), data);
+  yearClick(h, 'next');
+  assert.equal(h.panels[0].dataset.moneyMotion, 'still');
+  assert.equal(h.panels[1].dataset.moneyMotion, 'running');
+  assert.equal(h.panels[2].dataset.moneyMotion, 'still');
+  assert.equal(h.panels[3].dataset.moneyMotion, 'still');
+  assert.equal(h.controls.gold.dataset.goldMotion, 'still');
+  const shrinking = h.panels[1].children['money-total'].textContent;
+  h.advance(model.DAY_MS);
+  assert.equal(h.panels[0].children['money-total'].textContent, model.formatNumber(data.fiat[0].latest.amount, 'en-US'));
+  assert.notEqual(h.panels[1].children['money-total'].textContent, shrinking);
+  assert.equal(h.panels[2].children.status.textContent, supply.scenarioUnavailable);
+  assert.equal(h.panels[3].children.status.textContent, supply.scenarioUnavailable);
+});
+
+test('unavailable future denominators and exhausted assets show dashes rather than recorded shares', () => {
+  const data = structuredClone(snapshot); data.population.scenarioPoints = data.population.points;
+  const h = harness(false, Date.parse('2026-10-12'), data);
+  yearClick(h, 'next'); yearClick(h, 'next');
+  assert.equal(h.controls.population.textContent, '—');
+  assert.equal(h.controls['btc-share'].textContent, '—');
+  assert.equal(h.controls['gold-share'].textContent, '—');
+  assert.ok(h.shares.every(share => share.textContent === '—'));
+  assert.equal(h.controls['population-status'].textContent, supply.scenarioUnavailable);
+  const shrinking = structuredClone(snapshot); shrinking.fiat[0].previousYear.amount *= 100;
+  const other = harness(false, Date.parse('2026-10-12'), shrinking);
+  yearClick(other, 'next');
+  assert.equal(other.panels[0].children['money-total'].textContent, '—');
+  assert.equal(other.shares[0].textContent, '—');
+  assert.equal(other.panels[0].children.status.textContent, supply.scenarioUnavailable);
+  assert.notEqual(other.controls['btc-share'].textContent, '—');
 });
 
 test('default pair is USD; all six assets switch both panel and per-person selection', () => {
   const h = harness(), bitcoin = h.controls['btc-share'].textContent;
-  assert.equal(h.controls['bitcoin-controls'].hidden, false);
   assert.equal(h.controls['static-asset-heading'].hidden, true);
   assert.equal(h.panels[0].attributes['data-selected'], 'true');
   assert.equal(h.shareCards[0].attributes['data-selected'], 'true');
@@ -276,7 +461,7 @@ test('one pause freezes gold, five fiats and population; Bitcoin remains fixed o
 test('gold and fiat shares use their own amounts and population at the same shown time', () => {
   const when = Date.parse('2026-10-10T12:00:00Z'), h = harness(false, when);
   const population = model.projectPopulation(snapshot, when).persons!;
-  assert.equal(h.controls['btc-share'].textContent, model.formatNumber(model.equalShare(model.BITCOIN_MAX, population), 'en-US', 8));
+  assert.equal(h.controls['btc-share'].textContent, model.formatNumber(model.equalShare(model.BITCOIN_MAX, population) * model.SATOSHIS_PER_BTC, 'en-US'));
   assert.ok(h.controls['btc-basis'].textContent.includes(model.formatNumber(population, 'en-US')));
   h.advance(10 * model.DAY_MS);
   const later = when + 10 * model.DAY_MS;
@@ -369,7 +554,6 @@ test('outside both model ranges all motion stops and the nearest annual populati
   assert.equal(h.controls.gold.dataset.goldMotion, 'still');
   assert.equal(h.controls.pause.hidden, true);
   assert.equal(h.controls.population.textContent, model.formatNumber(snapshot.population.points.at(-1)!.persons, 'en-US'));
-  assert.equal(h.controls['population-label'].textContent, supply.populationRecorded);
   assert.ok(h.controls['population-status'].textContent.includes('July 1, 2028'));
 });
 

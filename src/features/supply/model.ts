@@ -2,6 +2,7 @@ export const BITCOIN_MAX = 21_000_000;
 export const SATOSHIS_PER_BTC = 100_000_000;
 export const DAY_MS = 86_400_000;
 export const MAX_PROJECTION_DAYS = 90;
+export const MAX_SCENARIO_YEARS = 15;
 
 export const FIAT_UNITS = {
   usd: { currency: 'USD', aggregate: 'M2', multiplier: 1e9, sourceUnit: 'billions', basis: 'Monthly average', adjustment: 'Seasonally adjusted', series: 'M2SL' },
@@ -39,6 +40,9 @@ export interface SupplySnapshot {
     persons: number;
     date: string;
     points: { date: string; persons: number }[];
+    // Kept separate so today's bounded population model is unchanged.
+    scenarioPoints: { date: string; persons: number }[];
+    checkedAt: string;
     revision: string;
     variant: string;
     source: string;
@@ -188,6 +192,7 @@ export function isValidSnapshot(snapshot: SupplySnapshot): boolean {
   return snapshot.fiat.length === Object.keys(FIAT_UNITS).length
     && new Set(snapshot.fiat.map(({ id }) => id)).size === snapshot.fiat.length
     && snapshot.fiat.every(isValidMoney) && isValidPopulation(snapshot.population) && isValidGold(snapshot.gold)
+    && isValidPopulation({ ...snapshot.population, points: snapshot.population.scenarioPoints })
     && Number.isFinite(Date.parse(snapshot.checkedAt));
 }
 
@@ -208,6 +213,42 @@ export function projectMoney(money: MoneySnapshot, now: number): { amount: numbe
   // Never silently clamp an invalid projection into a fabricated observation.
   if (!Number.isFinite(amount) || amount <= 0) return { amount: recorded, state: 'stale' };
   return { amount, state: 'projected' };
+}
+
+// Future mode is an explicit conditional scenario, never an extension of the
+// bounded live counters. Calendar anniversaries retain the shared UTC clock;
+// Feb 29 clamps to
+// Feb 28 in non-leap years, avoiding JavaScript's rollover to March.
+export function scenarioDate(visitAt: number, years: number): number {
+  if (!Number.isFinite(visitAt) || !Number.isInteger(years) || years < 1 || years > MAX_SCENARIO_YEARS) return NaN;
+  const visit = new Date(visitAt);
+  const year = visit.getUTCFullYear() + years, month = visit.getUTCMonth();
+  const day = Math.min(visit.getUTCDate(), new Date(Date.UTC(year, month + 1, 0)).getUTCDate());
+  return Date.UTC(year, month, day, visit.getUTCHours(), visit.getUTCMinutes(), visit.getUTCSeconds(), visit.getUTCMilliseconds());
+}
+
+export function projectScenarioPopulation(snapshot: SupplySnapshot, at: number): PopulationProjection {
+  const result = projectPopulation({ ...snapshot, population: { ...snapshot.population, points: snapshot.population.scenarioPoints } }, at);
+  // Never silently substitute an endpoint population for a future date.
+  return result.state === 'estimated' ? result : { persons: null, state: 'unavailable', rate: 0 };
+}
+
+export function scenarioPopulation(snapshot: SupplySnapshot, at: number): number | null {
+  return projectScenarioPopulation(snapshot, at).persons;
+}
+
+export function scenarioMoney(money: MoneySnapshot, at: number): number | null {
+  if (!isValidMoney(money) || !Number.isFinite(at) || at < Date.parse(money.releasedAt)) return null;
+  const amount = money.latest.amount + annualRate(money) * (at - projectionAnchor(money.latest.month)) / 1_000;
+  // A negative-rate scenario can exhaust its stock; no invented zero or
+  // recorded fallback should be presented as an estimate for that date.
+  return Number.isFinite(amount) && amount > 0 ? amount : null;
+}
+
+export function scenarioGold(gold: GoldSnapshot, at: number): number | null {
+  if (!isValidGold(gold) || !Number.isFinite(at) || at < utcDate(gold.stock.releasedAt)) return null;
+  const tonnes = gold.stock.tonnes + annualMiningRate(gold) * (at - goldAnchor(gold)) / 1_000;
+  return Number.isFinite(tonnes) && tonnes > 0 ? tonnes : null;
 }
 
 export function equalShare(total: number, population: number): number {

@@ -1,7 +1,7 @@
-import { BITCOIN_MAX, SATOSHIS_PER_BTC, equalShare, formatDate, formatNumber, interpolate, projectMoney, projectPopulation, projectGold, goldShareGrams, annualMiningRate, annualRate, type SupplySnapshot } from '../features/supply/model';
+import { BITCOIN_MAX, SATOSHIS_PER_BTC, equalShare, formatDate, formatNumber, interpolate, projectMoney, projectPopulation, projectGold, goldShareGrams, annualMiningRate, annualRate, MAX_SCENARIO_YEARS, scenarioDate, projectScenarioPopulation, scenarioMoney, scenarioGold, type SupplySnapshot } from '../features/supply/model';
 import type { SupplyCopy } from '../i18n/supply';
 
-type ClientCopy = Pick<SupplyCopy, 'projected' | 'recorded' | 'goldProjected' | 'goldRecorded' | 'goldStale' | 'goldUnavailable' | 'paused' | 'pause' | 'resume' | 'stale' | 'reduced' | 'unavailable' | 'populationEstimate' | 'populationRecorded' | 'populationFallback' | 'populationUnavailable' | 'bitcoinShareBasis'>;
+type ClientCopy = Pick<SupplyCopy, 'projected' | 'recorded' | 'goldProjected' | 'goldRecorded' | 'goldStale' | 'goldUnavailable' | 'paused' | 'pause' | 'resume' | 'stale' | 'reduced' | 'unavailable' | 'populationFallback' | 'populationUnavailable' | 'bitcoinShareBasis' | 'todayYear' | 'scenarioYear' | 'todayNote' | 'scenarioNote' | 'scenarioUnavailable' | 'scenarioProjected' | 'goldScenario' | 'bitcoinScenarioBasis'>;
 const root = document.querySelector<HTMLElement>('[data-supply]');
 const json = document.getElementById('supply-data');
 if (root && json) {
@@ -22,13 +22,9 @@ if (root && json) {
   const goldStatus = root.querySelector<HTMLElement>('[data-gold-status]');
   const motionStatus = root.querySelector<HTMLElement>('[data-motion-status]');
   const populationTotal = root.querySelector<HTMLElement>('[data-population]');
-  const populationLabel = root.querySelector<HTMLElement>('[data-population-label]');
   const populationStatus = root.querySelector<HTMLElement>('[data-population-status]');
   const bitcoinShare = root.querySelector<HTMLElement>('[data-btc-share]');
   const bitcoinTotal = root.querySelector<HTMLElement>('[data-btc-total]');
-  const bitcoinTotalUnit = root.querySelector<HTMLElement>('[data-btc-total-unit]');
-  const bitcoinShareUnit = root.querySelector<HTMLElement>('[data-btc-share-unit]');
-  const bitcoinSats = root.querySelector<HTMLInputElement>('[data-bitcoin-sats]');
   const bitcoinBasis = root.querySelector<HTMLElement>('[data-btc-basis]');
   const button = root.querySelector<HTMLButtonElement>('[data-pause]');
   const buttonLabel = root.querySelector<HTMLElement>('[data-pause-label]');
@@ -39,7 +35,12 @@ if (root && json) {
   const pickerGold = root.querySelector<HTMLElement>('[data-picker-gold]');
   const pickerSymbol = root.querySelector<HTMLElement>('[data-picker-symbol]');
   const pickerName = root.querySelector<HTMLElement>('[data-picker-name]');
-  const bitcoinControls = root.querySelector<HTMLElement>('[data-bitcoin-controls]');
+  const yearControls = root.querySelector<HTMLElement>('[data-year-controls]');
+  const previousYear = root.querySelector<HTMLButtonElement>('[data-year-previous]');
+  const nextYear = root.querySelector<HTMLButtonElement>('[data-year-next]');
+  const resetYear = root.querySelector<HTMLButtonElement>('[data-year-reset]');
+  const selectedYear = root.querySelector<HTMLElement>('[data-selected-year]');
+  const scenarioNote = root.querySelector<HTMLElement>('[data-scenario-note]');
   const comparisonAssets = [
     { id: 'gold', panel: goldPanel },
     ...panels.map(({ money, panel }) => ({ id: money.id, panel })),
@@ -118,10 +119,11 @@ if (root && json) {
   });
   document.addEventListener('click', (event) => { if (assetMenu?.open && !assetMenu.contains(event.target as Node)) closeAssetMenu(); });
   document.addEventListener('focusin', () => { if (assetMenu?.open && !assetMenu.contains(document.activeElement)) closeAssetMenu(); });
-  if (bitcoinControls) bitcoinControls.hidden = false;
   const reduce = window.matchMedia('(prefers-reduced-motion: reduce)');
   let paused = false;
-  let frozenAt = Date.now();
+  const visitAt = Date.now();
+  let frozenAt = visitAt;
+  let selectedYears = 0;
   let timer: number | undefined;
   const setText = (element: HTMLElement | null, text: string) => {
     if (element && element.textContent !== text) element.textContent = text;
@@ -130,29 +132,73 @@ if (root && json) {
   // population follow one shared model time. No persisted demographic clock.
   const visitPopulation = projectPopulation(snapshot, frozenAt).persons ?? snapshot.population.persons;
   const visitBitcoinShare = equalShare(BITCOIN_MAX, visitPopulation);
-  const renderBitcoinUnit = () => {
-    const sats = bitcoinSats?.checked ?? false;
-    root.dataset.bitcoinUnit = sats ? 'sats' : 'btc';
-    setText(bitcoinTotal, formatNumber(BITCOIN_MAX * (sats ? SATOSHIS_PER_BTC : 1), locale));
-    // Convert the unrounded visit share; changing units never changes its basis.
-    setText(bitcoinShare, formatNumber(visitBitcoinShare * (sats ? SATOSHIS_PER_BTC : 1), locale, sats ? 0 : 8));
-    for (const unit of [bitcoinTotalUnit, bitcoinShareUnit]) {
-      setText(unit, sats ? ' sats' : ' bitcoins');
-      unit?.setAttribute('class', sats ? 'bitcoin-unit' : 'currency-name');
-    }
+  let shownBitcoinShare = visitBitcoinShare;
+  const renderBitcoin = () => {
+    setText(bitcoinTotal, formatNumber(BITCOIN_MAX * SATOSHIS_PER_BTC, locale));
+    // Convert the unrounded active share before rounding to whole satoshis.
+    setText(bitcoinShare, Number.isFinite(shownBitcoinShare) ? formatNumber(shownBitcoinShare * SATOSHIS_PER_BTC, locale) : '—');
   };
-  renderBitcoinUnit();
-  bitcoinSats?.addEventListener('change', renderBitcoinUnit);
+  renderBitcoin();
   setText(bitcoinBasis, interpolate(copy.bitcoinShareBasis, { population: formatNumber(visitPopulation, locale) }));
+  const renderScenario = (at: number) => {
+    const population = projectScenarioPopulation(snapshot, at);
+    const people = population.persons;
+    const motion = !reduce.matches && !document.hidden ? paused ? 'paused' : 'running' : 'still';
+    let canMove = population.state === 'estimated' && population.rate !== 0;
+    const date = formatDate(new Date(at).toISOString(), locale);
+    setText(scenarioNote, interpolate(copy.scenarioNote, { date }));
+    setText(populationTotal, people === null ? '—' : formatNumber(people, locale));
+    setText(populationStatus, people === null ? copy.scenarioUnavailable : '');
+    shownBitcoinShare = people === null ? NaN : equalShare(BITCOIN_MAX, people);
+    renderBitcoin();
+    setText(bitcoinBasis, people === null ? copy.scenarioUnavailable : interpolate(copy.bitcoinScenarioBasis, { date, population: formatNumber(people, locale) }));
+    const tonnes = scenarioGold(snapshot.gold, at);
+    setText(goldTotal, tonnes === null ? '—' : formatNumber(tonnes, locale, 3));
+    setText(goldShare, tonnes === null || people === null ? '—' : formatNumber(goldShareGrams(tonnes, people), locale, 2));
+    setText(goldLabel, copy.goldScenario);
+    setText(goldStatus, tonnes === null ? copy.scenarioUnavailable : '');
+    const goldCanMove = tonnes !== null && annualMiningRate(snapshot.gold) > 0;
+    canMove ||= goldCanMove;
+    if (goldPanel) goldPanel.dataset.goldMotion = goldCanMove ? motion : 'still';
+    for (const { money, panel, total, share, label, status } of panels) {
+      const amount = scenarioMoney(money, at);
+      setText(total, amount === null ? '—' : formatNumber(amount, locale));
+      setText(share, amount === null || people === null ? '—' : formatNumber(equalShare(amount, people), locale));
+      setText(label, interpolate(copy.scenarioProjected, { aggregate: money.aggregate }));
+      setText(status, amount === null ? copy.scenarioUnavailable : '');
+      const moneyCanMove = amount !== null && annualRate(money) !== 0;
+      canMove ||= moneyCanMove;
+      if (panel) panel.dataset.moneyMotion = moneyCanMove ? motion : 'still';
+    }
+    root.dataset.motion = canMove ? motion : 'still';
+    setText(motionStatus, reduce.matches ? copy.reduced : paused ? copy.paused : '');
+    if (button) {
+      button.hidden = !canMove || reduce.matches;
+      button.setAttribute('aria-pressed', String(paused));
+    }
+    setText(buttonLabel, paused ? copy.resume : copy.pause);
+  };
   const render = () => {
     const now = Date.now();
-    // Expiry checks use wall time even while the displayed model time is frozen.
     const shownAt = paused || reduce.matches ? frozenAt : now;
+    root.dataset.mode = selectedYears > 0 ? 'scenario' : 'today';
+    if (previousYear) previousYear.disabled = selectedYears === 0;
+    if (nextYear) nextYear.disabled = selectedYears === MAX_SCENARIO_YEARS;
+    if (resetYear) resetYear.disabled = selectedYears === 0;
+    setText(selectedYear, interpolate(selectedYears > 0 ? copy.scenarioYear : copy.todayYear, { year: String(new Date(selectedYears > 0 ? shownAt : now).getUTCFullYear() + selectedYears) }));
+    if (selectedYears > 0) {
+      renderScenario(scenarioDate(shownAt, selectedYears));
+      return;
+    }
+    setText(scenarioNote, copy.todayNote);
+    shownBitcoinShare = visitBitcoinShare;
+    renderBitcoin();
+    setText(bitcoinBasis, interpolate(copy.bitcoinShareBasis, { population: formatNumber(visitPopulation, locale) }));
+    // Expiry checks use wall time even while the displayed model time is frozen.
     const currentPopulation = projectPopulation(snapshot, now);
     const shownPopulation = currentPopulation.state === 'estimated' ? projectPopulation(snapshot, shownAt) : currentPopulation;
     const people = shownPopulation.persons ?? snapshot.population.persons;
     setText(populationTotal, formatNumber(people, locale));
-    setText(populationLabel, shownPopulation.state === 'estimated' ? copy.populationEstimate : copy.populationRecorded);
     setText(populationStatus, shownPopulation.state === 'snapshot'
       ? interpolate(copy.populationFallback, { date: formatDate(shownPopulation.date!, locale) })
       : shownPopulation.state === 'unavailable' ? copy.populationUnavailable : '');
@@ -198,6 +244,15 @@ if (root && json) {
     // Quiet counters, no animation frame loop; continue bounded-range checks.
     if (!document.hidden) timer = window.setInterval(render, paused || reduce.matches || button?.hidden ? 30_000 : 100);
   };
+  const changeYear = (years: number) => {
+    if (years < 0 || years > MAX_SCENARIO_YEARS) return;
+    selectedYears = years;
+    schedule();
+  };
+  if (yearControls) yearControls.hidden = false;
+  previousYear?.addEventListener('click', () => changeYear(selectedYears - 1));
+  nextYear?.addEventListener('click', () => changeYear(selectedYears + 1));
+  resetYear?.addEventListener('click', () => changeYear(0));
   button?.addEventListener('click', () => {
     paused = !paused;
     if (paused) frozenAt = Date.now();

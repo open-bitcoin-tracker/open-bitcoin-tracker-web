@@ -6,7 +6,7 @@ import SupplyPeople from '../SupplyPeople.astro';
 import SupplyWorld from '../SupplyWorld.astro';
 import { supply, currencies } from '../../i18n/supply';
 import rawSnapshot from '../../features/supply/snapshot.json';
-import { BITCOIN_MAX, MAX_PROJECTION_DAYS, DAY_MS, annualRate, annualMiningRate, goldAnchor, goldExpiry, goldShareGrams, projectionAnchor, equalShare, formatDate, formatNumber, interpolate, isValidSnapshot, type SupplySnapshot } from '../../features/supply/model';
+import { BITCOIN_MAX, SATOSHIS_PER_BTC, MAX_PROJECTION_DAYS, DAY_MS, annualRate, annualMiningRate, goldAnchor, goldExpiry, goldShareGrams, projectionAnchor, equalShare, formatDate, formatNumber, interpolate, isValidSnapshot, type SupplySnapshot } from '../../features/supply/model';
 
 const t = supply;
 const locale = 'en-US';
@@ -16,22 +16,26 @@ const n = (value: number, digits = 0) => formatNumber(value, locale, digits);
 const date = (value: string, monthOnly = false) => formatDate(value, locale, monthOnly);
 const bitcoinShare = equalShare(BITCOIN_MAX, snapshot.population.persons);
 const gold = snapshot.gold;
-const clientCopy = Object.fromEntries(['projected', 'recorded', 'goldProjected', 'goldRecorded', 'goldStale', 'goldUnavailable', 'paused', 'pause', 'resume', 'stale', 'reduced', 'unavailable', 'populationEstimate', 'populationRecorded', 'populationFallback', 'populationUnavailable', 'bitcoinShareBasis'].map((key) => [key, t[key as keyof typeof t]]));
+const clientCopy = Object.fromEntries(['projected', 'recorded', 'goldProjected', 'goldRecorded', 'goldStale', 'goldUnavailable', 'paused', 'pause', 'resume', 'stale', 'reduced', 'unavailable', 'populationFallback', 'populationUnavailable', 'bitcoinShareBasis', 'todayYear', 'scenarioYear', 'todayNote', 'scenarioNote', 'scenarioUnavailable', 'scenarioProjected', 'goldScenario', 'bitcoinScenarioBasis'].map((key) => [key, t[key as keyof typeof t]]));
 ---
 <Layout title={`${t.title} — Open Bitcoin Tracker`} description={t.intro}>
   <Nav />
   <main id="main-content" class="supply-page" lang="en" aria-labelledby="supply-page-title" data-supply data-motion="still">
     <h1 id="supply-page-title" class="page-title">{t.title}</h1>
 
-    <div class="bitcoin-controls" data-bitcoin-controls hidden>
-      <label class="bitcoin-unit-toggle"><input type="checkbox" data-bitcoin-sats /><span>{t.showBitcoinSats}</span></label>
-    </div>
     <div class="asset-comparison">
+      <section class="population-heading" aria-labelledby="population-heading">
+        <div class="population-readout">
+          <h2 id="population-heading" class="column-heading"><span class="currency-icon population-icon" aria-hidden="true"><svg width="20" height="20" viewBox="90 13 120 120" fill="none" focusable="false"><clipPath id="supply-population-icon-clip"><circle cx="150" cy="73" r="56" /></clipPath><path clip-path="url(#supply-population-icon-clip)" d="m103 35 18-7 13 6 6 16-10 9-13-2-10 10-14-7Zm23 33 13 4 7 17-8 12-2 22-11-5-9-25-5-10Zm35-44 13 2 5 9 23 7 9 20-18 7-13-10-9 8-18-3-7-12 9-8Zm-1 43 21 5 7 12-11 16-12 9-7-21-9-10Zm31 29 14-2 10 13-9 8-19-5Z" fill="currentColor" /><circle cx="150" cy="73" r="57" stroke="currentColor" stroke-width="6" /></svg></span>{t.populationMethodTitle}</h2>
+          <p class="population-band" aria-live="off"><strong data-population>{n(snapshot.population.persons)}</strong></p>
+        </div>
+        <SupplyWorld />
+      </section>
       <div class="asset-totals">
         <section class="bitcoin-feature" aria-labelledby="bitcoin-heading">
           <div class="bitcoin-supply">
             <h2 id="bitcoin-heading" class="column-heading"><span class="currency-icon btc-icon" aria-hidden="true">₿</span>{t.bitcoin}</h2>
-            <p class="total-number btc-total"><span aria-hidden="true">₿</span><span data-btc-total>{n(BITCOIN_MAX)}</span><span class="currency-name" data-btc-total-unit> bitcoins</span></p>
+            <p class="total-number btc-total"><span aria-hidden="true">₿</span><span data-btc-total>{n(BITCOIN_MAX * SATOSHIS_PER_BTC)}</span><span class="bitcoin-unit"> sats</span></p>
             <p class="value-label">{t.maximum}</p>
           </div>
           <SupplyContainer kind="bitcoin" />
@@ -70,33 +74,33 @@ const clientCopy = Object.fromEntries(['projected', 'recorded', 'goldProjected',
           </div>
         </section>
       </div>
-      <section class="population-heading" aria-labelledby="population-heading">
-        <div class="population-readout">
-          <h2 id="population-heading" class="column-heading"><span class="currency-icon fiat-icon" aria-hidden="true"><svg width="20" height="20" viewBox="90 13 120 120" fill="none" focusable="false"><clipPath id="supply-population-icon-clip"><circle cx="150" cy="73" r="56" /></clipPath><path clip-path="url(#supply-population-icon-clip)" d="m103 35 18-7 13 6 6 16-10 9-13-2-10 10-14-7Zm23 33 13 4 7 17-8 12-2 22-11-5-9-25-5-10Zm35-44 13 2 5 9 23 7 9 20-18 7-13-10-9 8-18-3-7-12 9-8Zm-1 43 21 5 7 12-11 16-12 9-7-21-9-10Zm31 29 14-2 10 13-9 8-19-5Z" fill="currentColor" /><circle cx="150" cy="73" r="57" stroke="currentColor" stroke-width="6" /></svg></span>{t.populationMethodTitle}</h2>
-          <p class="population-band" aria-live="off"><strong data-population>{n(snapshot.population.persons)}</strong></p>
-        </div>
-        <SupplyWorld />
-      </section>
       <div class="share-comparison">
         <section class="share bitcoin-share" data-share-asset="bitcoin" aria-labelledby="bitcoin-share-heading">
-          <h3 id="bitcoin-share-heading" class="column-heading share-heading"><SupplyPeople accent />{t.perPersonTitle}<span class="share-asset-name">{t.bitcoin}</span></h3>
-          <p class="share-number"><span aria-hidden="true">₿</span><span data-btc-share>{n(bitcoinShare, 8)}</span><span class="currency-name" data-btc-share-unit> bitcoins</span></p>
+          <h3 id="bitcoin-share-heading" class="column-heading share-heading"><SupplyPeople accent />{interpolate(t.perPersonTitle, { asset: t.bitcoin })}</h3>
+          <p class="share-number"><span aria-hidden="true">₿</span><span data-btc-share>{n(bitcoinShare * SATOSHIS_PER_BTC)}</span><span class="bitcoin-unit"> sats</span></p>
         </section>
         <div class="share-grid">
           <section class="share gold-share" data-share-asset="gold" aria-labelledby="gold-share-heading">
-            <h3 id="gold-share-heading" class="column-heading share-heading"><SupplyPeople />{t.perPersonTitle}<span class="share-asset-name">{t.gold}</span></h3>
+            <h3 id="gold-share-heading" class="column-heading share-heading"><SupplyPeople />{interpolate(t.perPersonTitle, { asset: t.gold })}</h3>
             <p class="share-number" aria-live="off"><span data-gold-share>{n(goldShareGrams(gold.stock.tonnes, snapshot.population.persons), 2)}</span> <abbr title="grams" class="mass-unit">{t.grams}</abbr></p>
           </section>
           {snapshot.fiat.map((money) => {
             const currency = currencies[money.id];
             return <section class="share fiat-share" data-share-asset={money.id} data-selected={money.id === 'usd' ? 'true' : undefined} aria-labelledby={`${money.id}-share-heading`}>
-              <h3 id={`${money.id}-share-heading`} class="column-heading share-heading"><SupplyPeople />{t.perPersonTitle}<span class="share-asset-name">{currency.name}</span></h3>
+              <h3 id={`${money.id}-share-heading`} class="column-heading share-heading"><SupplyPeople />{interpolate(t.perPersonTitle, { asset: currency.name })}</h3>
               <p class="share-number" aria-live="off"><span aria-hidden="true">{currency.symbol}</span><span data-money-share={money.id}>{n(equalShare(money.latest.amount, snapshot.population.persons))}</span><span class="currency-name"> {currency.plural}</span></p>
             </section>;
           })}
         </div>
       </div>
     </div>
+    <div class="year-controls" data-year-controls hidden role="group" aria-label={t.yearControls}>
+      <button type="button" data-year-previous disabled>{t.previousYear}</button>
+      <output class="selected-year" data-selected-year aria-live="polite" aria-atomic="true"></output>
+      <button type="button" data-year-next>{t.nextYear}</button>
+      <button type="button" data-year-reset disabled>{t.backToToday}</button>
+    </div>
+    <p class="scenario-note" data-scenario-note></p>
     <section class="method" id="sources">
       <details>
         <summary><span>{t.methodTitle}</span><span class="details-plus" aria-hidden="true">+</span></summary>
@@ -149,6 +153,10 @@ const clientCopy = Object.fromEntries(['projected', 'recorded', 'goldProjected',
           })}
           <noscript><p>{t.nojs}</p></noscript>
 
+          <h3>{t.scenarioMethodTitle}</h3>
+          <p>{t.scenarioMethod}</p>
+          <p>{interpolate(t.scenarioPopulationMethod, { start: date(snapshot.population.scenarioPoints[0].date), end: date(snapshot.population.scenarioPoints.at(-1)!.date), checked: date(snapshot.population.checkedAt) })}</p>
+
           <h3>{t.populationMethodTitle}</h3>
           <p>{interpolate(t.populationMethod, { points: snapshot.population.points.map((point) => `${date(point.date)}: ${n(point.persons)}`).join('; ') })}</p>
           <p>{interpolate(t.populationInterpolation, { start: date(snapshot.population.points[0].date), end: date(snapshot.population.points.at(-1)!.date) })}</p>
@@ -176,8 +184,8 @@ const clientCopy = Object.fromEntries(['projected', 'recorded', 'goldProjected',
   <script>import '../../scripts/supply';</script>
 </Layout>
 <style>
-  .supply-page { --supply-fiat: #aecdbb; --supply-fiat-text: #286045; --supply-fiat-ink: #234632; --supply-gold: #dfc36b; --supply-gold-text: #79601d; --supply-gold-ink: #604b16; max-width: 1220px; margin: 0 auto; padding: 3.25rem clamp(1.25rem, 4vw, 3rem) 2rem; }
-  :global(html.dark) .supply-page { --supply-fiat: #93bfa8; --supply-fiat-text: #a2ceb5; --supply-fiat-ink: #214431; --supply-gold-text: #dfc36b; }
+  .supply-page { --supply-fiat: #aecdbb; --supply-fiat-text: #286045; --supply-fiat-ink: #234632; --supply-gold: #dfc36b; --supply-gold-text: #79601d; --supply-gold-ink: #604b16; --supply-population: #b1cdec; --supply-population-ink: #27527f; --supply-population-land: #6d99c8; --supply-population-text: #2f6398; max-width: 1220px; margin: 0 auto; padding: 3.25rem clamp(1.25rem, 4vw, 3rem) 2rem; }
+  :global(html.dark) .supply-page { --supply-fiat: #93bfa8; --supply-fiat-text: #a2ceb5; --supply-fiat-ink: #214431; --supply-gold-text: #dfc36b; --supply-population: #8db8e8; --supply-population-ink: #183e69; --supply-population-land: #82aee1; --supply-population-text: #a5caf2; }
   .asset-comparison { display: grid; gap: 1.25rem; }
   .asset-totals, .share-comparison { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1.25rem; min-width: 0; }
   .bitcoin-feature { display: flex; flex-direction: column; align-items: stretch; padding: 1rem; background: radial-gradient(ellipse at 50% 50%, var(--hero-glow), transparent 75%), var(--color-surface); border: 1px solid var(--color-divider); border-radius: 24px; }
@@ -188,8 +196,14 @@ const clientCopy = Object.fromEntries(['projected', 'recorded', 'goldProjected',
   .population-readout .column-heading { justify-content: center; margin-bottom: .5rem; }
   .population-band { display: flex; flex-direction: column; align-items: center; gap: .5rem; font-size: .8125rem; color: var(--color-ink-muted); }
   .population-band strong { font-size: 1.6rem; font-weight: 650; line-height: 1.1; font-variant-numeric: tabular-nums; color: var(--color-ink); letter-spacing: -.04em; white-space: nowrap; }
-  .bitcoin-controls { display: flex; align-items: flex-end; justify-content: flex-end; flex-wrap: wrap; gap: .75rem 1rem; margin-bottom: 1.25rem; }
-  .bitcoin-controls[hidden] { display: none; }
+  .year-controls { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: .5rem; margin: 1.25rem 0 .75rem; }
+  .year-controls[hidden] { display: none; }
+  .year-controls button { min-height: 44px; padding: .5rem .75rem; border: 1px solid var(--color-divider); border-radius: 10px; background: var(--color-surface); font-size: .8125rem; cursor: pointer; }
+  .year-controls button:disabled { opacity: .45; cursor: default; }
+  .year-controls button:hover:not(:disabled) { border-color: var(--color-ink-muted); }
+  .selected-year { min-width: 9rem; text-align: center; font-weight: 650; font-variant-numeric: tabular-nums; }
+  .scenario-note { max-width: 850px; margin: 0 auto 1rem; text-align: center; color: var(--color-ink-muted); font-size: .8125rem; line-height: 1.6; }
+  .scenario-note:empty { display: none; }
   .asset-choice { position: relative; min-width: 0; max-width: 100%; }
   .asset-trigger { display: inline-flex; align-items: center; justify-content: flex-start; gap: .375rem; min-height: 44px; padding: 0; color: var(--color-ink-muted); font-size: 1rem; font-weight: 650; white-space: nowrap; list-style: none; user-select: none; }
   .asset-trigger::-webkit-details-marker { display: none; }
@@ -203,8 +217,6 @@ const clientCopy = Object.fromEntries(['projected', 'recorded', 'goldProjected',
   @media (prefers-reduced-motion: reduce) { .asset-chevron, .asset-option { transition: none; } }
   .selected-asset-heading .currency-icon { flex-shrink: 0; }
   [data-static-asset-heading][hidden], .selected-asset-heading[hidden], [data-picker-gold][hidden], [data-picker-symbol][hidden] { display: none; }
-  .bitcoin-unit-toggle { display: inline-flex; align-items: center; gap: .5rem; min-height: 44px; padding: .5rem .75rem; border: 1px solid var(--color-divider); border-radius: 10px; background: var(--color-surface); font-size: .8125rem; cursor: pointer; }
-  .bitcoin-unit-toggle input { width: 16px; height: 16px; accent-color: var(--color-accent); cursor: pointer; }
   .currency-grid, .share-grid { display: grid; grid-template-columns: minmax(0, 1fr); }
   .currency-grid { height: 100%; }
   .supply-column:not([data-selected='true']), .share-grid > .share:not([data-selected='true']) { display: none; }
@@ -216,10 +228,11 @@ const clientCopy = Object.fromEntries(['projected', 'recorded', 'goldProjected',
   .currency-icon { width: 28px; height: 28px; display: inline-grid; place-items: center; border-radius: 50%; font-size: 19px; font-weight: 600; }
   .btc-icon { background: var(--color-accent); color: #1F1B14; }
   .fiat-icon { background: var(--supply-fiat); color: var(--supply-fiat-ink); }
+  .population-icon { background: var(--supply-population); color: var(--supply-population-ink); }
   .gold-icon { background: var(--supply-gold); color: var(--supply-gold-ink); }
   .value-label { font-size: .75rem; color: var(--color-ink-muted); font-weight: 550; }
   .total-number { color: var(--color-ink); font-size: clamp(1.25rem, 2.2vw, 1.6rem); font-variant-numeric: tabular-nums; letter-spacing: -.04em; line-height: 1.5; margin-top: .25rem; font-weight: 600; min-height: 2.5rem; white-space: nowrap; }
-  .btc-total { font-size: 1.8rem; }
+  .btc-total { font-size: clamp(.875rem, 1.6vw, 1.25rem); }
   .fiat-total { padding-top: .35rem; }
   .gold-share { --supply-fiat-text: var(--supply-gold-text); }
   .gold-total { padding-top: .35rem; }
@@ -227,7 +240,6 @@ const clientCopy = Object.fromEntries(['projected', 'recorded', 'goldProjected',
   .bitcoin-unit { font-size: .75em; letter-spacing: 0; }
   .page-title, .currency-name, .control-label { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; border: 0; }
   .share { min-width: 0; padding: 1rem; border: 1px solid var(--color-divider); border-radius: 24px; background: var(--color-surface); text-align: left; }
-  .share-asset-name { margin-left: auto; font-size: .75rem; font-weight: 550; }
   .share-number { color: var(--color-ink); font-size: clamp(1.1rem, 2.3vw, 1.5rem); font-weight: 600; letter-spacing: -.045em; font-variant-numeric: tabular-nums; white-space: nowrap; }
   .supply-controls { display: flex; justify-content: center; margin-top: 1.25rem; }
   .motion-control { display: inline-flex; flex-shrink: 0; align-items: center; gap: .375rem; min-height: 44px; padding: .375rem .75rem; border: 1px solid var(--color-divider); border-radius: 8px; cursor: pointer; background: var(--color-surface); font-size: .75rem; }
@@ -257,7 +269,6 @@ const clientCopy = Object.fromEntries(['projected', 'recorded', 'goldProjected',
   .refresh-note { margin-top: 2rem; border-top: 1px solid var(--color-divider); padding-top: 1rem; }
   a:focus-visible, summary:focus-visible, button:focus-visible, select:focus-visible, input:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 4px; }
   @media (min-width: 701px) {
-    .bitcoin-controls { padding-right: calc(var(--menu-control-size) + 1rem); }
     .supply-page { padding-top: 2rem; }
   }
   @media (max-width: 700px) {
@@ -265,11 +276,10 @@ const clientCopy = Object.fromEntries(['projected', 'recorded', 'goldProjected',
     .asset-totals, .share-comparison { grid-template-columns: minmax(0, 1fr); }
     .population-heading { flex-direction: column; gap: .75rem; padding: 1rem; }
     .total-number { font-size: clamp(1rem, 4.8vw, 1.6rem); }
-    .btc-total { font-size: 1.8rem; }
+    .btc-total { font-size: clamp(.875rem, 3.4vw, 1.25rem); }
   }
   @media (max-width: 600px) {
     .population-band strong { font-size: 1.8rem; }
     .observation-grid { grid-template-columns: 1fr; }
   }
-  .supply-page[data-bitcoin-unit='sats'] .btc-total { font-size: clamp(1rem, 1.6vw, 1.25rem); }
 </style>
