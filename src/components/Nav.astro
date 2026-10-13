@@ -14,8 +14,6 @@ const currentPage = stripLocale(Astro.url.pathname);
     <PageTabs />
     <ul class="menu-secondary" role="list">
       <li><a href={getRelativeLocaleUrl(lang, 'about')} aria-current={currentPage === 'about' ? 'page' : undefined}>{links.about}</a></li>
-      <li><a href={getRelativeLocaleUrl(lang, 'privacy')} aria-current={currentPage === 'privacy' ? 'page' : undefined}>{links.privacy}</a></li>
-      <li><a href="https://github.com/open-bitcoin-tracker/open-bitcoin-tracker-web" target="_blank" rel="noopener noreferrer">GitHub</a></li>
     </ul>
   </NavMenu>
 </nav>
