@@ -11,8 +11,7 @@
   box-shadow: var(--panel-shadow);
 }
 .earth-feature .place-search:focus-within {
-  border-color: var(--orange);
-  box-shadow: 0 0 0 3px var(--focus-ring);
+  border-color: var(--muted);
 }
 .earth-feature .place-search input {
   width: 100%;
