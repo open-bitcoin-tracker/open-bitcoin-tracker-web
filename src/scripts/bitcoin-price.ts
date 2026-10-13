@@ -3,8 +3,12 @@ import { ChartMotion } from '../lib/bitcoin-chart-motion';
 import { createPriceChangeFormatter } from '../lib/bitcoin-price-change';
 import type { TrackerCopy } from '../i18n/tracker';
 import type { RangeCopy } from '../i18n/ranges';
-import { candleWindow, historyForRange, parseCandles, rangeSlots, stepRange, type BitcoinRange, type RangeUnit } from '../lib/bitcoin-range';
+import { candleWindow, historyForRange, parseCandles, stepRange, type BitcoinRange, type RangeUnit } from '../lib/bitcoin-range';
 import { createRangePill } from './bitcoin-range-pill';
+import { readRangePreferences, saveRangePreferences } from '../lib/bitcoin-range-preferences';
+import { CurrencyRates, isCurrency, type Currency } from '../lib/bitcoin-currency';
+import { readDisplayPreferences, saveDisplayPreferences } from '../lib/bitcoin-display-preferences';
+import type { ChartSettingsCopy } from '../i18n/chart-settings';
 
 const root = document.querySelector<HTMLElement>('[data-bitcoin-tracker]');
 if (root) startTracker(root);
@@ -12,28 +16,45 @@ if (root) startTracker(root);
 function startTracker(root: HTMLElement) {
   const t: TrackerCopy = JSON.parse(root.dataset.copy!);
   const r: RangeCopy = JSON.parse(root.dataset.rangeCopy!);
+  const settingsCopy: ChartSettingsCopy = JSON.parse(root.dataset.settingsCopy!);
   const locale = root.dataset.locale || 'en';
   const priceEl = root.querySelector<HTMLElement>('[data-price]')!;
   const priceChangeEl = root.querySelector<HTMLElement>('[data-price-change]')!;
-  const formatPriceChange = createPriceChangeFormatter(locale);
+  const display = readDisplayPreferences();
+  let currency: Currency = display.currency;
+  let formatPriceChange = createPriceChangeFormatter(locale, currency);
   const chart = root.querySelector<SVGSVGElement>('[data-chart]')!;
   const line = root.querySelector<SVGPathElement>('[data-chart-line]')!;
   const area = root.querySelector<SVGPathElement>('[data-chart-area]')!;
   const fillGradient = root.querySelector<SVGLinearGradientElement>('[data-chart-fill-gradient]')!;
   const marker = root.querySelector<SVGGElement>('[data-chart-marker]')!;
   const markerLine = root.querySelector<SVGLineElement>('[data-chart-marker-line]')!;
-  const markerDot = root.querySelector<SVGCircleElement>('[data-chart-marker-dot]')!;
+  const markerPoint = root.querySelector<SVGGElement>('[data-chart-marker-point]')!;
+  const markerWaves = root.querySelector<HTMLElement>('[data-chart-marker-waves]')!;
   const markerGradient = root.querySelector<SVGLinearGradientElement>('[data-chart-marker-gradient]')!;
   const historyStatus = root.querySelector<HTMLElement>('[data-history-status]')!;
-  const money = new Intl.NumberFormat(locale, { style: 'currency', currency: 'USD', minimumFractionDigits: 0, maximumFractionDigits: 0 });
+  const chartLoading = root.querySelector<HTMLElement>('[data-chart-loading]')!;
+  const loadingDescription = root.querySelector<HTMLElement>('[data-loading-description]')!;
+  let money = new Intl.NumberFormat(locale, { style: 'currency', currency, minimumFractionDigits: 0, maximumFractionDigits: 0 });
   const date = new Intl.DateTimeFormat(locale, { year: 'numeric', month: 'short', day: 'numeric', timeZone: 'UTC' });
   const dateTime = new Intl.DateTimeFormat(locale, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit', timeZone: 'UTC' });
   const rangeBar = root.querySelector<HTMLElement>('[data-range-bar]')!;
   const chartControls = root.querySelector<HTMLElement>('[data-chart-controls]')!;
-  const scaleToggle = root.querySelector<HTMLButtonElement>('[data-scale-toggle]')!;
-  const counts = Object.fromEntries(rangeSlots.map(({ unit, initial }) => [unit, initial])) as Record<RangeUnit, number>;
-  let selected: BitcoinRange = { unit: 'all' };
-  let scale: ChartScale = 'logarithmic';
+  const settingsMenu = root.querySelector<HTMLDetailsElement>('[data-chart-settings]')!;
+  const settingsTrigger = root.querySelector<HTMLElement>('[data-settings-trigger]')!;
+  const currencyOptions = [...root.querySelectorAll<HTMLInputElement>('[data-currency-option]')];
+  const currencyStatus = root.querySelector<HTMLElement>('[data-currency-status]')!;
+  const scaleOptions = [...root.querySelectorAll<HTMLInputElement>('[data-scale-option]')];
+  const preferences = readRangePreferences();
+  const counts = preferences.counts;
+  let selected: BitcoinRange = preferences.selected === 'all'
+    ? { unit: 'all' }
+    : { unit: preferences.selected, count: counts[preferences.selected] };
+  let scale: ChartScale = display.scale;
+  const exchangeRates = new CurrencyRates();
+  const historyStart = Number(root.dataset.historyStart);
+  let currencyLoading = false;
+  let currencyError: 'rates' | 'history' | undefined;
   const candles = new Map<number, { points: HistoryPoint[]; updated: number }>();
   const candleRequests = new Map<number, Promise<void>>();
   const candleErrors = new Set<number>();
@@ -59,6 +80,10 @@ function startTracker(root: HTMLElement) {
   const motion = new ChartMotion();
   const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
   let feedState: 'connecting' | 'live' | 'delayed' | 'offline' = 'connecting';
+  if (currency !== 'USD') {
+    line.setAttribute('d', '');
+    area.setAttribute('d', '');
+  }
 
   function rangeKey() {
     return selected.unit === 'all' ? 'all' : `${selected.unit}:${selected.count}`;
@@ -93,22 +118,30 @@ function startTracker(root: HTMLElement) {
   function draw() {
     paintFrame = 0;
     const window = candleWindow(selected);
-    const source = window ? candles.get(window.interval)?.points ?? [] : history;
+    const usdSource = window ? candles.get(window.interval)?.points ?? [] : history;
+    const source = exchangeRates.convert(usdSource, currency) ?? [];
+    const rate = exchangeRates.current(currency);
+    const convertedLive = livePoint && rate ? { time: livePoint.time, price: livePoint.price * rate.rate } : undefined;
     const rangePoints = historyForRange(source, selected);
     const lastTime = rangePoints.at(-1)?.time;
     const maxGap = window ? window.interval * 60_000 * 2 : 2 * DAY_MS;
-    const points = lastTime !== undefined && livePoint && livePoint.time >= lastTime && livePoint.time - lastTime < maxGap ? [...rangePoints, livePoint] : rangePoints;
-    const loading = window ? candleRequests.has(window.interval) && !source.length : !history.length && !historyError;
+    const points = lastTime !== undefined && convertedLive && convertedLive.time >= lastTime && convertedLive.time - lastTime < maxGap ? [...rangePoints, convertedLive] : rangePoints;
+    const currencyPending = currencyLoading && (!source.length || !rate);
+    const loading = (window ? candleRequests.has(window.interval) && !usdSource.length : !history.length && !historyError) || currencyPending;
     const unavailable = window ? candleErrors.has(window.interval) : historyError;
     chart.setAttribute('aria-busy', String(loading));
-    historyStatus.hidden = !loading && !unavailable;
-    historyStatus.textContent = loading ? r.loading : window ? r.unavailable : t.history;
+    chartLoading.hidden = !loading;
+    const loadingMessage = currencyPending ? settingsCopy.fxLoading : r.loading;
+    if (loadingDescription.textContent !== loadingMessage) loadingDescription.textContent = loadingMessage;
+    historyStatus.hidden = loading || !unavailable;
+    historyStatus.textContent = window ? r.unavailable : t.history;
     const label = rangeLabel(selected);
     const formatter = window ? dateTime : date;
     const period = points.length ? `${formatter.format(points[0].time)} — ${formatter.format(points.at(-1)!.time)}` : loading ? r.loading : r.unavailable;
     const scaleLabel = scale === 'logarithmic' ? t.scale : t.linearScale;
-    chart.setAttribute('aria-label', `${t.price} — ${scaleLabel}`);
-    root.querySelector<SVGDescElement>('[data-chart-description]')!.textContent = `${label}: ${period}. ${scaleLabel}.`;
+    chart.setAttribute('aria-label', `${t.price} (${currency}) — ${scaleLabel}`);
+    root.querySelector<SVGDescElement>('[data-chart-description]')!.textContent = `${label}: ${period}. ${scaleLabel}. ${currency}.`;
+    updateCurrencyStatus();
     // Keep the outgoing curve while a new candle interval is loading.
     if (loading && points.length < 2) return;
     plottedPoints = points;
@@ -120,7 +153,7 @@ function startTracker(root: HTMLElement) {
       plottedPositions = [];
     } else {
       // Long ranges share the full curve; only the camera window changes.
-      const renderPoints = points.at(-1) === livePoint ? [...source, livePoint!] : source;
+      const renderPoints = points.at(-1) === convertedLive ? [...source, convertedLive!] : source;
       const now = performance.now();
       motion.update({ points: renderPoints, viewport: chartViewport(points, scale), scale, rangeKey: plottedRangeKey, seriesKey: window ? `candles:${window.interval}` : 'daily' }, now, reduceMotion.matches || document.hidden);
       paintMotion(now);
@@ -142,18 +175,21 @@ function startTracker(root: HTMLElement) {
     if (point && position) {
       markerLine.setAttribute('x1', String(position.x));
       markerLine.setAttribute('x2', String(position.x));
-      markerDot.setAttribute('cx', String(position.x));
-      markerDot.setAttribute('cy', String(position.y));
+      markerPoint.setAttribute('transform', `translate(${position.x} ${position.y})`);
+      markerWaves.style.transform = `translate3d(${position.x}px, ${position.y}px, 0)`;
+      markerWaves.hidden = document.hidden;
       marker.setAttribute('visibility', 'visible');
-      priceEl.textContent = money.format(point.price);
+      setPriceText(money.format(point.price));
       priceEl.removeAttribute('aria-label');
       const formatter = candleWindow(selected) ? dateTime : date;
       priceChangeEl.textContent = `${formatter.format(point.time)}${candleWindow(selected) ? ' UTC' : ''}`;
       return;
     }
     marker.setAttribute('visibility', 'hidden');
-    priceEl.textContent = livePoint ? money.format(livePoint.price) : '—';
-    if (livePoint) priceEl.removeAttribute('aria-label');
+    markerWaves.hidden = true;
+    const rate = exchangeRates.current(currency);
+    setPriceText(livePoint && rate ? money.format(livePoint.price * rate.rate) : '—');
+    if (livePoint && rate) priceEl.removeAttribute('aria-label');
     else priceEl.setAttribute('aria-label', t.unavailable);
     priceChangeEl.textContent = formatPriceChange(plottedPoints);
   }
@@ -161,6 +197,11 @@ function startTracker(root: HTMLElement) {
   function clearSelection() {
     selectionRatio = undefined;
     updatePriceDisplay();
+  }
+
+  function setPriceText(value: string) {
+    priceEl.textContent = value;
+    priceEl.style.setProperty('--price-chars', String([...value].length));
   }
 
   function selectAtPointer(event: PointerEvent) {
@@ -236,6 +277,7 @@ function startTracker(root: HTMLElement) {
   function selectRange(unit: BitcoinRange['unit']) {
     clearSelection();
     selected = unit === 'all' ? { unit } : { unit, count: counts[unit] };
+    saveRangePreferences({ counts, selected: unit });
     updateRangeBar();
     void refreshCandles();
     scheduleDraw();
@@ -261,17 +303,82 @@ function startTracker(root: HTMLElement) {
   });
   updateRangeBar();
   chartControls.hidden = false;
+  void refreshCandles();
 
-  scaleToggle.addEventListener('click', () => {
-    clearSelection();
-    scale = scale === 'logarithmic' ? 'linear' : 'logarithmic';
-    const label = scale === 'logarithmic' ? t.scale : t.linearScale;
-    scaleToggle.textContent = scale === 'logarithmic' ? t.logScaleShort : t.linearScaleShort;
-    scaleToggle.setAttribute('aria-pressed', String(scale === 'logarithmic'));
-    scaleToggle.setAttribute('aria-label', label);
-    scaleToggle.setAttribute('title', label);
-    scheduleDraw();
+  for (const option of scaleOptions) {
+    option.checked = option.value === scale;
+    option.addEventListener('change', () => {
+      if (!option.checked || (option.value !== 'logarithmic' && option.value !== 'linear')) return;
+      clearSelection();
+      scale = option.value;
+      saveDisplayPreferences({ scale, currency });
+      scheduleDraw();
+    });
+  }
+  for (const option of currencyOptions) {
+    option.checked = option.value === currency;
+    option.addEventListener('change', () => {
+      if (!option.checked || !isCurrency(option.value)) return;
+      clearSelection();
+      currency = option.value;
+      money = new Intl.NumberFormat(locale, { style: 'currency', currency, maximumFractionDigits: 0 });
+      formatPriceChange = createPriceChangeFormatter(locale, currency);
+      saveDisplayPreferences({ scale, currency });
+      currencyError = undefined;
+      currencyLoading = false;
+      // Discard the old currency's scene immediately, including under reduced motion.
+      motion.clear();
+      plottedPoints = [];
+      plottedPositions = [];
+      line.setAttribute('d', '');
+      area.setAttribute('d', '');
+      void refreshCurrency();
+      updatePriceDisplay();
+      updateCurrencyStatus();
+      scheduleDraw();
+    });
+  }
+  settingsMenu.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape' && settingsMenu.open) {
+      event.preventDefault();
+      settingsMenu.open = false;
+      settingsTrigger.focus({ preventScroll: true });
+    }
   });
+  document.addEventListener('click', (event) => {
+    if (settingsMenu.open && !settingsMenu.contains(event.target as Node)) settingsMenu.open = false;
+  });
+  document.addEventListener('focusin', (event) => {
+    if (settingsMenu.open && !settingsMenu.contains(event.target as Node)) settingsMenu.open = false;
+  });
+
+  function updateCurrencyStatus() {
+    const rate = exchangeRates.current(currency);
+    const window = candleWindow(selected);
+    const source = window ? candles.get(window.interval)?.points ?? [] : history;
+    const missingHistory = source.length > 0 && !exchangeRates.convert(source, currency);
+    const unavailable = currency !== 'USD' && (!rate || currencyError || missingHistory);
+    currencyStatus.hidden = currency === 'USD' || currencyLoading || !unavailable;
+    currencyStatus.textContent = !rate || currencyError === 'rates' ? settingsCopy.fxUnavailable : settingsCopy.fxHistoryUnavailable;
+  }
+
+  async function refreshCurrency() {
+    if (stopped || document.hidden || !exchangeRates.needsRefresh(currency)) return;
+    const target = currency;
+    currencyLoading = true;
+    currencyError = undefined;
+    updateCurrencyStatus();
+    const requests = [
+      exchangeRates.refreshLatest().finally(() => { if (!stopped && target === currency) { updatePriceDisplay(); scheduleDraw(); } }),
+      exchangeRates.refreshHistory(target, historyStart),
+    ];
+    const results = await Promise.allSettled(requests);
+    if (stopped || target !== currency) return;
+    currencyLoading = false;
+    currencyError = results[0].status === 'rejected' ? 'rates' : results[1].status === 'rejected' ? 'history' : undefined;
+    updateCurrencyStatus();
+    scheduleDraw();
+  }
 
   function scheduleDraw() {
     if (!paintFrame && !stopped) paintFrame = requestAnimationFrame(draw);
@@ -302,12 +409,12 @@ function startTracker(root: HTMLElement) {
     return body.result;
   }
 
-  async function refreshCandles() {
+  async function refreshCandles(force = false) {
     const window = candleWindow(selected);
-    if (!window || stopped) return;
+    if (!window || stopped || document.hidden) return;
     const { interval } = window;
     const cached = candles.get(interval);
-    if (cached && Date.now() - cached.updated < 60_000) return;
+    if (!force && cached && Date.now() - cached.updated < 60_000) return;
     if (candleRequests.has(interval)) return candleRequests.get(interval);
     const request = (async () => {
       try {
@@ -327,7 +434,7 @@ function startTracker(root: HTMLElement) {
   }
 
   async function refreshHistory() {
-    if (historyLoading || stopped) return;
+    if (historyLoading || stopped || document.hidden) return;
     historyLoading = true;
     try {
       const result = await getJson('https://api.kraken.com/0/public/OHLC?pair=XBTUSD&interval=1440');
@@ -404,6 +511,9 @@ function startTracker(root: HTMLElement) {
   }
 
   new ResizeObserver(scheduleDraw).observe(chart);
+  new ResizeObserver(() => {
+    document.documentElement.style.setProperty('--tracker-price-height', `${priceEl.getBoundingClientRect().height}px`);
+  }).observe(priceEl);
   // Bundled data is also rendered at build time, so the chart works before JS.
   void (async () => {
     try {
@@ -417,6 +527,7 @@ function startTracker(root: HTMLElement) {
 
   connect();
   void pollPrice();
+  void refreshCurrency();
   const watchdog = setInterval(() => {
     if (stopped) return;
     if (socket && (Date.now() - lastMessage > 30_000 || (feedState === 'live' && Date.now() - lastStreamTick > 60_000))) {
@@ -425,17 +536,18 @@ function startTracker(root: HTMLElement) {
     }
   }, 5000);
   const pollTimer = setInterval(() => { void pollPrice(); }, 30_000);
-  const historyTimer = setInterval(() => { if (history.length) void refreshHistory(); }, 300_000);
-  const candleTimer = setInterval(() => { void refreshCandles(); }, 60_000);
+  const historyTimer = setInterval(() => { if (history.length) void refreshHistory(); }, 900_000);
+  const candleTimer = setInterval(() => { void refreshCandles(); void refreshCurrency(); }, 60_000);
 
   window.addEventListener('offline', () => { setStatus('offline'); socket?.close(); });
-  window.addEventListener('online', () => { connect(); void pollPrice(); if (history.length) void refreshHistory(); void refreshCandles(); });
+  window.addEventListener('online', () => { connect(); void pollPrice(); if (history.length) void refreshHistory(); void refreshCandles(); void refreshCurrency(); });
   document.addEventListener('visibilitychange', () => {
     if (document.hidden) {
+      markerWaves.hidden = true;
       motion.finish();
       cancelAnimationFrame(motionFrame);
       motionFrame = 0;
-    } else if (!stopped) { scheduleDraw(); connect(); void pollPrice(); if (history.length) void refreshHistory(); void refreshCandles(); }
+    } else if (!stopped) { scheduleDraw(); connect(); void pollPrice(); if (history.length) void refreshHistory(); void refreshCandles(true); void refreshCurrency(); }
   });
   window.addEventListener('pagehide', () => {
     stopped = true;

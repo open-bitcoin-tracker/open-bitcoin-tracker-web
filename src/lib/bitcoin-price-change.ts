@@ -1,9 +1,9 @@
 import type { HistoryPoint } from './bitcoin-chart';
 
-// Match the Android subtitle: whole dollars, compact large percentages,
+// Match the Android subtitle: whole currency units, compact large percentages,
 // and enough decimal places to keep a small percentage change visible.
-export function createPriceChangeFormatter(locale: string) {
-  const money = new Intl.NumberFormat(locale, { style: 'currency', currency: 'USD', maximumFractionDigits: 0 });
+export function createPriceChangeFormatter(locale: string, currency = 'USD') {
+  const money = new Intl.NumberFormat(locale, { style: 'currency', currency, maximumFractionDigits: 0 });
   const number = (value: number, decimals = 0) => new Intl.NumberFormat(locale, {
     minimumFractionDigits: decimals, maximumFractionDigits: decimals,
   }).format(value);

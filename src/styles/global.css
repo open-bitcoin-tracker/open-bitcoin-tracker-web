@@ -143,9 +143,9 @@ html.dark {
 }
 
 /* One Bitcoin orange in both themes; emphasis text uses neutral ink on paper. */
-:root { --ease-out: cubic-bezier(.22, 1, .36, 1); --live-price-font-size: clamp(4.4rem, 11vw, 8.8rem); --tracker-gutter: clamp(1rem, 3vw, 4rem); --live-price-top: max(var(--tracker-gutter), env(safe-area-inset-top, 0px)); }
+:root { --ease-out: cubic-bezier(.22, 1, .36, 1); --live-price-font-size: clamp(5.25rem, 13.2vw, 10.5rem); --tracker-gutter: clamp(1rem, 3vw, 4rem); --live-price-top: max(var(--tracker-gutter), env(safe-area-inset-top, 0px)); }
 @media (max-width: 600px) {
-  :root { --live-price-font-size: clamp(2.75rem, 14.3vw, 4.4rem); }
+  :root { --live-price-font-size: clamp(3rem, 16vw, 5rem); }
 }
 
 @layer base {

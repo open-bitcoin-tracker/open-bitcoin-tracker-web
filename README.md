@@ -119,13 +119,21 @@ Bitcoin amounts on this comparison use **whole satoshis exclusively**, including
 
 ## Price chart
 
-The chart defaults to All time and logarithmic scale. Select or drag the range pill; use chevrons or Up/Down to cycle the selected count. Log/Lin switches scale. Press and drag to inspect prices, or focus the chart and use Left/Right, Home/End, and Escape. Releasing restores the live price and range change. Transitions respect reduced motion.
+The chart defaults to All time, logarithmic scale, and USD. Each range's count and the last selected range are saved in browser local storage and restored on the next visit, including across language changes. The three-dot menu to the right of the range bar offers logarithmic/linear scale and USD, EUR, GBP, AUD, CAD, CHF, or JPY, matching the Android app's currency list. Scale and currency choices are also saved. If storage is unavailable, the controls still work with the defaults. Select or drag the range pill; use chevrons or Up/Down to cycle the selected count. Press and drag to inspect prices, or focus the chart and use Left/Right, Home/End, and Escape. Releasing restores the live price and range change. Transitions and the selected point's waves respect reduced motion. Scale and all seven currency choices appear directly in the settings menu as matching radio options. Native arrow-key controls switch selections; Escape closes the menu and restores focus to the three-dot trigger. Outside interaction also dismisses the menu.
 
 Prices come directly from Kraken in the browser:
 
 - WebSocket ticker for live BTC/USD, with REST polling every 30 seconds while the stream is unavailable.
 - 15-minute candles for day ranges; hourly candles for weeks and one month. These refresh every minute while selected.
-- Daily history for longer ranges, merging bundled data with recent candles by UTC day every five minutes.
+- Daily history for longer ranges, merging bundled data with recent candles by UTC day every 15 minutes.
+
+When the selected history or exchange rates are loading, a large orange spinner appears at the center of the viewport instead of visible loading messages. Loading remains announced to screen readers, errors stay visible, and reduced motion keeps the spinner still. On narrow screens the burger menu aligns with the price readout and keeps the same position when opening the navigation.
+
+History polling pauses while the tab is hidden. Returning to the tab refreshes daily history and the selected intraday candles immediately. The live ticker continues to update the chart endpoint between history refreshes.
+
+Non-USD prices convert Kraken's USD series using daily **European Central Bank reference exchange rates** through [Frankfurter's v2 ECB provider endpoint](https://frankfurter.dev/). These are reference conversions, not live BTC/fiat exchange quotes. The live BTC/USD endpoint uses the latest available reference rate; every historical point uses the most recent rate on or before that point's UTC date. Weekend and holiday observations carry forward for at most seven days; rates are never interpolated, clamped before the first observation, or replaced with 1:1 conversions. Missing or expired rates display an unavailable state rather than prices in the wrong currency.
+
+Exchange rates load only after selecting/restoring a non-USD currency. Latest quotes share one request for the six fiat currencies; historical data loads only for the selected currency. Requests are deduplicated and cached in memory for one hour; failed requests retry at the next minute check while visible. Subsequent history updates fetch an overlapping recent window rather than downloading the full history again. Converted history is reused between ticker updates. Exchange-rate refreshes pause while hidden and check freshness on return; USD remains independent of the FX service. Currency selection changes the live readout, inspected prices, historical curve, accessible chart description, and absolute/percentage range change.
 
 Intraday ranges may be shorter than requested because Kraken limits available candles. The bundled chart renders without JavaScript; live prices and controls require it.
 
@@ -139,6 +147,7 @@ Intraday ranges may be shorter than requested because Kraken limits available ca
 | `src/features/earth/`, `public/earth/` | Earth map, calculations, scoped styles, tests, and fonts |
 | `src/i18n/locales/en.ts`, `src/i18n/ui.ts` | English page copy and dictionary types |
 | `src/i18n/tracker.ts`, `src/i18n/ranges.ts` | Chart copy for every language |
+| `src/i18n/chart-settings.ts`, `src/lib/bitcoin-currency.ts` | Localized chart settings and ECB exchange-rate conversion |
 | `src/i18n/supply.ts`, `src/features/supply/`, `scripts/refresh-supply.ts` | English supply-page copy, official snapshot, model, and refresh script |
 | `astro.config.mjs` | Site URL, locale routing, sitemap, and build configuration |
 | `functions/_middleware.js`, `wrangler.toml` | Cloudflare Pages language redirect and runtime configuration |
