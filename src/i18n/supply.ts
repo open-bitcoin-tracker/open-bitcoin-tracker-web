@@ -4,8 +4,6 @@ export const supply = {
   cardDescription: 'Compare Bitcoin’s maximum with five money supplies and an equal share per person.',
   intro: 'Bitcoin’s maximum supply, five monetary aggregates, and a hypothetical equal share per person.',
   bitcoin: 'Bitcoin',
-  maximum: 'Fixed supply',
-  fiatSupplyCap: 'No supply cap',
   recorded: '{aggregate} · recorded',
   projected: '{aggregate} · projection',
   populationFallback: 'Outside the bundled population range. Showing the annual projection for {date}; no extrapolation.',
@@ -62,7 +60,7 @@ export const supply = {
 };
 
 export const currencies = {
-  usd: { name: 'US dollar', plural: 'US dollars', symbol: '$', definition: 'US M2 includes currency, liquid deposits, small-denomination time deposits and retail money market funds. It is not the worldwide dollar supply.' },
+  usd: { name: 'US Dollar', plural: 'US Dollars', symbol: '$', definition: 'US M2 includes currency, liquid deposits, small-denomination time deposits and retail money market funds. It is not the worldwide dollar supply.' },
   eur: { name: 'Euro', plural: 'euros', symbol: '€', definition: 'Euro area M2 includes currency, overnight deposits, deposits with agreed maturity up to two years and deposits redeemable at notice up to three months. The ECB calls M2 intermediate money; its broader M3 is not used here.' },
   jpy: { name: 'Japanese yen', plural: 'Japanese yen', symbol: '¥', definition: 'Japan’s M2 includes currency, deposit money, quasi-money and certificates of deposit at domestically licensed banks and the other institutions in the M2 coverage.' },
   cny: { name: 'Chinese yuan', plural: 'Chinese yuan', symbol: '¥', definition: 'China’s M2 covers narrow money plus time deposits and other deposits. These are reported end-month balances.' },

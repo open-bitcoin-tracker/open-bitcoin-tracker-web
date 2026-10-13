@@ -38,7 +38,6 @@ const clientCopy = Object.fromEntries(['projected', 'recorded', 'paused', 'pause
           <div class="bitcoin-supply">
             <h2 id="bitcoin-heading" class="column-heading"><span class="currency-icon btc-icon" aria-hidden="true">₿</span>{t.bitcoin}</h2>
             <p class="total-number btc-total"><span class="bitcoin-amount"><span aria-hidden="true">₿</span><span data-btc-total>{n(BITCOIN_MAX * SATOSHIS_PER_BTC)}</span></span><span class="bitcoin-unit"> sats</span></p>
-            <p class="value-label">{t.maximum}</p>
           </div>
           <SupplyContainer kind="bitcoin" />
         </section>
@@ -62,7 +61,6 @@ const clientCopy = Object.fromEntries(['projected', 'recorded', 'paused', 'pause
                 </div>}
                 {money.id === 'usd' && <h2 data-static-asset-heading class="column-heading"><span class="currency-icon fiat-icon" aria-hidden="true">{currency.symbol}</span>{currency.name}</h2>}
                 <p class="total-number fiat-total" aria-live="off"><span aria-hidden="true">{currency.symbol}</span><span data-money-total>{n(money.latest.amount)}</span><span class="currency-name"> {currency.plural}</span></p>
-                <p class="value-label">{t.fiatSupplyCap}</p>
                 <SupplyContainer kind="fiat" symbol={currency.symbol} assetId={money.id} />
               </article>;
             })}
@@ -163,7 +161,6 @@ const clientCopy = Object.fromEntries(['projected', 'recorded', 'paused', 'pause
     --supply-icon-size: 32px;
     --supply-total-size: clamp(1.25rem, 2.2vw, 1.6rem);
     --supply-share-size: clamp(1.1rem, 2.3vw, 1.5rem);
-    --supply-label-size: .8125rem;
     --supply-control-size: .875rem;
     --supply-scene-width: 240px;
     --supply-page-padding-block: 2rem;
@@ -179,24 +176,25 @@ const clientCopy = Object.fromEntries(['projected', 'recorded', 'paused', 'pause
   :global(html.dark) .supply-page { --supply-fiat: #93bfa8; --supply-fiat-text: #a2ceb5; --supply-fiat-ink: #214431; --supply-population: #8db8e8; --supply-population-ink: #183e69; --supply-population-land: #82aee1; --supply-population-text: #a5caf2; }
   .asset-comparison { display: grid; gap: var(--supply-gap); }
   .asset-totals, .share-comparison { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--supply-gap); min-width: 0; }
-  .bitcoin-feature { display: flex; flex-direction: column; align-items: stretch; padding: var(--supply-padding); background: radial-gradient(ellipse at 50% 65%, var(--hero-glow), transparent 75%), var(--color-surface); border: 1px solid color-mix(in srgb, var(--color-accent) 24%, var(--color-divider)); border-radius: var(--supply-radius); }
-  .asset-comparison :global(.container-scene) { width: min(100%, var(--supply-scene-width)); max-width: none; margin-block: auto 0; }
+  .bitcoin-feature { display: flex; flex-direction: column; align-items: stretch; padding: var(--supply-padding); background: radial-gradient(ellipse at 50% 65%, var(--hero-glow), transparent 75%), var(--color-surface); border: 1px solid var(--color-divider); border-radius: var(--supply-radius); }
+  .asset-comparison :global(.container-scene) { width: min(100%, var(--supply-scene-width)); max-width: none; margin-block: 0; }
+  .asset-comparison :global(.container-scene.fiat) { position: relative; z-index: 0; }
   .supply-board { min-width: 0; }
   .population-heading { display: flex; align-items: center; justify-content: center; text-align: center; padding: var(--supply-padding); border: 1px solid transparent; }
   .population-readout { min-width: 0; }
   .population-readout .column-heading { justify-content: center; margin-bottom: .5rem; }
   .population-band { display: flex; flex-direction: column; align-items: center; gap: .5rem; font-size: .8125rem; color: var(--color-ink-muted); }
   .population-band strong { font-size: var(--supply-total-size); font-weight: 600; line-height: 1.2; font-variant-numeric: tabular-nums; color: var(--color-ink); letter-spacing: -.045em; white-space: nowrap; }
-  .year-controls { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); align-items: center; gap: clamp(.5rem, 1.25vw, 2rem); min-height: var(--menu-control-size); width: min(36rem, calc(100% - var(--menu-control-size) - 1rem)); margin: 0 auto var(--supply-gap); }
+  .year-controls { --year-button-size: clamp(3rem, min(5vw, 8dvh), 5rem); display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); align-items: center; gap: clamp(.375rem, 1.25vw, 2rem); min-height: var(--menu-control-size); width: min(36rem, calc(100% - var(--menu-control-size) - 1rem)); margin: 0 auto var(--supply-gap); }
   .year-controls[hidden] { display: none; }
-  .year-controls button { display: grid; place-items: center; width: 44px; max-width: 100%; min-height: 44px; padding: .5rem; border: 1px solid var(--color-divider); border-radius: .8em; background: var(--color-surface); font-size: var(--supply-control-size); cursor: pointer; }
+  .year-controls button { display: grid; place-items: center; width: var(--year-button-size); max-width: 100%; height: var(--year-button-size); padding: .5rem; border: 1px solid var(--color-divider); border-radius: .8em; background: var(--color-surface); font-size: var(--supply-control-size); cursor: pointer; }
   .year-controls button:first-child { justify-self: end; }
   .year-controls button:last-child { justify-self: start; }
-  .year-arrow { display: block; }
+  .year-arrow { display: block; width: calc(var(--year-button-size) * .5); height: calc(var(--year-button-size) * .5); }
   .year-label { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
   .year-controls button:disabled { opacity: .45; cursor: default; }
   .year-controls button:hover:not(:disabled) { border-color: var(--color-ink-muted); }
-  .selected-year { min-width: 4rem; text-align: center; font-size: clamp(2rem, min(3.5vw, 5dvh), 4rem); line-height: 1.1; font-weight: 650; font-variant-numeric: tabular-nums; }
+  .selected-year { min-width: 4rem; text-align: center; font-size: clamp(2.5rem, min(5vw, 7dvh), 5.5rem); line-height: 1.1; font-weight: 650; font-variant-numeric: tabular-nums; }
   .asset-choice { position: relative; min-width: 0; max-width: 100%; }
   .asset-trigger { display: inline-flex; align-items: center; justify-content: flex-start; gap: .5em; min-height: 44px; padding: 0; color: var(--color-ink-muted); font-size: var(--supply-heading-size); font-weight: 650; white-space: nowrap; list-style: none; user-select: none; }
   .asset-trigger::-webkit-details-marker { display: none; }
@@ -213,7 +211,7 @@ const clientCopy = Object.fromEntries(['projected', 'recorded', 'paused', 'pause
   .currency-grid, .share-grid { display: grid; grid-template-columns: minmax(0, 1fr); }
   .currency-grid { height: 100%; }
   .supply-column:not([data-selected='true']), .share-grid > .share:not([data-selected='true']) { display: none; }
-  .supply-column { display: flex; flex-direction: column; min-width: 0; padding: var(--supply-padding); border: 1px solid color-mix(in srgb, var(--supply-fiat-text) 24%, var(--color-divider)); border-radius: var(--supply-radius); }
+  .supply-column { display: flex; flex-direction: column; min-width: 0; padding: var(--supply-padding); border: 1px solid var(--color-divider); border-radius: var(--supply-radius); }
   .fiat-column { background: radial-gradient(ellipse at 50% 65%, color-mix(in srgb, var(--supply-fiat) 18%, transparent), transparent 75%), var(--color-surface); }
   .column-heading { display: flex; align-items: center; gap: .6em; color: var(--color-ink-muted); font-size: var(--supply-heading-size); font-weight: 650; margin-bottom: .35rem; }
   .bitcoin-feature .column-heading, .supply-board .column-heading, .share-heading { min-height: 44px; }
@@ -222,8 +220,8 @@ const clientCopy = Object.fromEntries(['projected', 'recorded', 'paused', 'pause
   .btc-icon { background: var(--color-accent); color: #1F1B14; }
   .fiat-icon { background: var(--supply-fiat); color: var(--supply-fiat-ink); }
   .population-icon { background: var(--supply-population); color: var(--supply-population-ink); }
-  .value-label { font-size: var(--supply-label-size); color: var(--color-ink-muted); font-weight: 550; margin-top: .3em; }
   .total-number { color: var(--color-ink); font-size: var(--supply-total-size); font-variant-numeric: tabular-nums; letter-spacing: -.045em; line-height: 1.2; margin-top: .1em; font-weight: 600; min-height: 2.5rem; white-space: nowrap; }
+  .fiat-total { position: relative; z-index: 1; }
   .btc-total { display: flex; flex-wrap: wrap; align-items: baseline; column-gap: .25em; white-space: normal; }
   .bitcoin-amount { white-space: nowrap; }
   .bitcoin-unit { font-size: .75em; letter-spacing: 0; }
@@ -262,7 +260,6 @@ const clientCopy = Object.fromEntries(['projected', 'recorded', 'paused', 'pause
       --supply-icon-size: clamp(36px, min(3.5vw, 5dvh), 80px);
       --supply-total-size: clamp(1.5rem, min(2.55vw, 5dvh), 5.5rem);
       --supply-share-size: clamp(1.5rem, min(2.1vw, 4dvh), 4.5rem);
-      --supply-label-size: clamp(.875rem, min(1.1vw, 2dvh), 2rem);
       --supply-control-size: clamp(.875rem, min(1.05vw, 2dvh), 1.75rem);
       --supply-scene-width: clamp(240px, min(28vw, calc(52dvh - 13rem)), 900px);
       display: flex;

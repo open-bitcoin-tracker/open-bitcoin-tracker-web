@@ -14,9 +14,8 @@ const fiatNotes = Array.from({ length: 24 }, (_, index) => ({
 }));
 ---
 <div class:list={['container-scene', kind]} aria-hidden="true">
-  <svg viewBox="0 0 400 290" fill="none">
+  <svg viewBox="0 32 400 258" fill="none">
     {!bitcoin && <defs><clipPath id={notesClipId}><rect x="76" y="-48" width="204" height="308" /></clipPath></defs>}
-    <ellipse class="ground" cx="200" cy="269" rx="150" ry="13" />
     <path class="box-back" d="M64 108 114 84h222l-50 24Z" />
     <rect class="box-fill" x="64" y="108" width="222" height="156" rx="4" />
     {!bitcoin && <>
@@ -38,10 +37,10 @@ const fiatNotes = Array.from({ length: 24 }, (_, index) => ({
 </div>
 <style>
   .container-scene { width: min(100%, 350px); margin: 0 auto; }
-  svg { display: block; width: 100%; overflow: visible; }
+  svg { display: block; width: 100%; overflow: hidden; }
+  .fiat svg { overflow: visible; }
   .bitcoin { --token: var(--color-accent); --token-ink: #1F1B14; --box-color: var(--color-accent); }
   .fiat { --token: var(--supply-fiat); --token-ink: var(--supply-fiat-ink); --box-color: var(--supply-fiat-text); }
-  .ground { fill: var(--color-ink); opacity: .06; }
   .box-back { fill: var(--box-color); opacity: .07; }
   .box-side { fill: var(--box-color); fill-opacity: .06; stroke: var(--box-color); stroke-width: 1.5; stroke-opacity: .55; }
   .box-fill { fill: var(--box-color); opacity: .045; }
