@@ -47,6 +47,11 @@
     gap: 8px;
   }
 }
+@media (max-width: 480px) {
+  .earth-feature .brand {
+    font-size: 1.25rem;
+  }
+}
 @media (max-width: 360px) {
   .earth-feature .sidebar {
     padding: 12px 5px 12px 12px;

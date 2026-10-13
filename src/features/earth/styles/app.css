@@ -39,11 +39,8 @@
   }
 }
 @media (max-width: 480px) {
-  .earth-feature .floating-panels > .sidebar {
-    display: none;
-  }
   .earth-feature .floating-panels {
-    max-width: calc(100% - 80px);
+    max-width: calc(100% - 92px);
   }
 }
 

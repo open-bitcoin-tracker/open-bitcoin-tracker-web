@@ -6,7 +6,6 @@ import BrandPanel from './components/BrandPanel';
 import EarthMap from './components/EarthMap';
 import LocationSearch from './components/LocationSearch';
 import MeasurementSelect from './components/MeasurementSelect';
-import MobileMenu from './components/MobileMenu';
 import { useBitcoinAmount } from './hooks/useBitcoinAmount';
 import { useEarthMap } from './hooks/useEarthMap';
 import { useTheme } from './hooks/useTheme';
@@ -57,7 +56,6 @@ export default function App() {
           readoutRef={map.readoutRef}
         />
         <MeasurementSelect value={measurements} onChange={chooseMeasurements} />
-        <MobileMenu onAbout={() => setAboutOpen(true)} />
         <EarthMap
           km2={amount.km2}
           ready={map.ready}

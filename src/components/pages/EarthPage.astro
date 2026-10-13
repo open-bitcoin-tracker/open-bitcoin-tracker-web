@@ -22,4 +22,10 @@ const t = useTranslations(Astro.currentLocale);
   :global(html:has(.earth-page)) { overflow: hidden; scrollbar-gutter: auto; }
   .earth-page { position: fixed; inset: 0; }
   .earth-fallback { display: grid; place-content: center; height: 100dvh; padding: 2rem; text-align: center; }
+  @media (max-width: 800px) {
+    :global(html:has(.earth-page)) {
+      --menu-control-top: max(12px, env(safe-area-inset-top));
+      --menu-control-right: 16px;
+    }
+  }
 </style>
