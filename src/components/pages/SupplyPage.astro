@@ -21,6 +21,11 @@ const clientCopy = Object.fromEntries(['projected', 'recorded', 'paused', 'pause
   <main id="main-content" class="supply-page" lang="en" aria-labelledby="supply-page-title" data-supply data-motion="still">
     <h1 id="supply-page-title" class="page-title">{t.title}</h1>
 
+    <div class="year-controls" data-year-controls hidden role="group" aria-label={t.yearControls}>
+      <button type="button" data-year-previous disabled><svg class="year-arrow" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m15 18-6-6 6-6" /></svg><span class="year-label">{t.previousYear}</span></button>
+      <output class="selected-year" data-selected-year aria-live="polite" aria-atomic="true"></output>
+      <button type="button" data-year-next><span class="year-label">{t.nextYear}</span><svg class="year-arrow" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m9 18 6-6-6-6" /></svg></button>
+    </div>
     <div class="asset-comparison">
       <section class="population-heading" aria-labelledby="population-heading">
         <div class="population-readout">
@@ -58,7 +63,7 @@ const clientCopy = Object.fromEntries(['projected', 'recorded', 'paused', 'pause
                 {money.id === 'usd' && <h2 data-static-asset-heading class="column-heading"><span class="currency-icon fiat-icon" aria-hidden="true">{currency.symbol}</span>{currency.name}</h2>}
                 <p class="total-number fiat-total" aria-live="off"><span aria-hidden="true">{currency.symbol}</span><span data-money-total>{n(money.latest.amount)}</span><span class="currency-name"> {currency.plural}</span></p>
                 <p class="value-label">{t.fiatSupplyCap}</p>
-                <SupplyContainer kind="fiat" symbol={currency.symbol} />
+                <SupplyContainer kind="fiat" symbol={currency.symbol} assetId={money.id} />
               </article>;
             })}
           </div>
@@ -79,11 +84,6 @@ const clientCopy = Object.fromEntries(['projected', 'recorded', 'paused', 'pause
           })}
         </div>
       </div>
-    </div>
-    <div class="year-controls" data-year-controls hidden role="group" aria-label={t.yearControls}>
-      <button type="button" data-year-previous disabled>{t.previousYear}</button>
-      <output class="selected-year" data-selected-year aria-live="polite" aria-atomic="true"></output>
-      <button type="button" data-year-next>{t.nextYear}</button>
     </div>
     <section class="method" id="sources">
       <details>
@@ -143,13 +143,6 @@ const clientCopy = Object.fromEntries(['projected', 'recorded', 'paused', 'pause
         </div>
       </details>
     </section>
-    <footer class="supply-controls">
-      <button type="button" class="motion-control" data-pause hidden>
-        <svg class="pause-icon" width="12" height="12" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M3 2h3v12H3zm7 0h3v12h-3z" /></svg>
-        <svg class="play-icon" width="12" height="12" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="m4 2 10 6-10 6z" /></svg>
-        <span data-pause-label>{t.pause}</span>
-      </button>
-    </footer>
   </main>
   <script id="supply-data" type="application/json" set:html={JSON.stringify({ snapshot: { checkedAt: snapshot.checkedAt, population: snapshot.population, fiat: snapshot.fiat }, locale, copy: clientCopy }).replace(/</g, '\\u003c')} />
   <script>import '../../scripts/supply';</script>
@@ -172,35 +165,40 @@ const clientCopy = Object.fromEntries(['projected', 'recorded', 'paused', 'pause
     --supply-share-size: clamp(1.1rem, 2.3vw, 1.5rem);
     --supply-label-size: .8125rem;
     --supply-control-size: .875rem;
-    --supply-population-size: 2rem;
     --supply-scene-width: 240px;
+    --supply-page-padding-block: 2rem;
     width: 100%;
     max-width: 3840px;
     min-height: 100dvh;
     margin: 0 auto;
-    padding: 2rem clamp(1.25rem, 3vw, 7.5rem);
+    padding: var(--supply-page-padding-block) clamp(1.25rem, 3vw, 7.5rem);
+    /* Share the top row with the menu; the cards begin below both controls. */
+    padding-top: max(var(--supply-page-padding-block), var(--menu-control-top));
   }
+  .supply-page:has(> .year-controls[hidden]) { padding-top: max(var(--supply-page-padding-block), calc(var(--menu-control-top) + var(--menu-control-size) + 1rem)); }
   :global(html.dark) .supply-page { --supply-fiat: #93bfa8; --supply-fiat-text: #a2ceb5; --supply-fiat-ink: #214431; --supply-population: #8db8e8; --supply-population-ink: #183e69; --supply-population-land: #82aee1; --supply-population-text: #a5caf2; }
   .asset-comparison { display: grid; gap: var(--supply-gap); }
   .asset-totals, .share-comparison { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--supply-gap); min-width: 0; }
   .bitcoin-feature { display: flex; flex-direction: column; align-items: stretch; padding: var(--supply-padding); background: radial-gradient(ellipse at 50% 65%, var(--hero-glow), transparent 75%), var(--color-surface); border: 1px solid color-mix(in srgb, var(--color-accent) 24%, var(--color-divider)); border-radius: var(--supply-radius); }
   .asset-comparison :global(.container-scene) { width: min(100%, var(--supply-scene-width)); max-width: none; margin-block: auto 0; }
   .supply-board { min-width: 0; }
-  .population-heading { display: flex; align-items: center; justify-content: center; text-align: center; padding: var(--supply-padding); border: 1px solid color-mix(in srgb, var(--supply-population-text) 20%, var(--color-divider)); border-radius: var(--supply-radius); background: linear-gradient(115deg, color-mix(in srgb, var(--supply-population) 9%, transparent), transparent 65%), var(--color-surface); }
+  .population-heading { display: flex; align-items: center; justify-content: center; text-align: center; padding: var(--supply-padding); border: 1px solid transparent; }
   .population-readout { min-width: 0; }
   .population-readout .column-heading { justify-content: center; margin-bottom: .5rem; }
   .population-band { display: flex; flex-direction: column; align-items: center; gap: .5rem; font-size: .8125rem; color: var(--color-ink-muted); }
-  .population-band strong { font-size: var(--supply-population-size); font-weight: 650; line-height: 1.1; font-variant-numeric: tabular-nums; color: var(--color-ink); letter-spacing: -.04em; white-space: nowrap; }
-  .year-controls { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); align-items: center; gap: clamp(.5rem, 1.25vw, 2rem); margin: var(--supply-gap) 0 0; }
+  .population-band strong { font-size: var(--supply-total-size); font-weight: 600; line-height: 1.2; font-variant-numeric: tabular-nums; color: var(--color-ink); letter-spacing: -.045em; white-space: nowrap; }
+  .year-controls { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); align-items: center; gap: clamp(.5rem, 1.25vw, 2rem); min-height: var(--menu-control-size); width: min(36rem, calc(100% - var(--menu-control-size) - 1rem)); margin: 0 auto var(--supply-gap); }
   .year-controls[hidden] { display: none; }
-  .year-controls button { max-width: 100%; min-height: 44px; padding: .65em 1.2em; border: 1px solid var(--color-divider); border-radius: .8em; background: var(--color-surface); font-size: var(--supply-control-size); cursor: pointer; }
+  .year-controls button { display: grid; place-items: center; width: 44px; max-width: 100%; min-height: 44px; padding: .5rem; border: 1px solid var(--color-divider); border-radius: .8em; background: var(--color-surface); font-size: var(--supply-control-size); cursor: pointer; }
   .year-controls button:first-child { justify-self: end; }
   .year-controls button:last-child { justify-self: start; }
+  .year-arrow { display: block; }
+  .year-label { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
   .year-controls button:disabled { opacity: .45; cursor: default; }
   .year-controls button:hover:not(:disabled) { border-color: var(--color-ink-muted); }
-  .selected-year { min-width: 4rem; text-align: center; font-size: var(--supply-heading-size); font-weight: 650; font-variant-numeric: tabular-nums; }
+  .selected-year { min-width: 4rem; text-align: center; font-size: clamp(2rem, min(3.5vw, 5dvh), 4rem); line-height: 1.1; font-weight: 650; font-variant-numeric: tabular-nums; }
   .asset-choice { position: relative; min-width: 0; max-width: 100%; }
-  .asset-trigger { display: inline-flex; align-items: center; justify-content: flex-start; gap: .5em; min-height: 44px; padding: 0; color: var(--color-ink); font-size: var(--supply-heading-size); font-weight: 650; white-space: nowrap; list-style: none; user-select: none; }
+  .asset-trigger { display: inline-flex; align-items: center; justify-content: flex-start; gap: .5em; min-height: 44px; padding: 0; color: var(--color-ink-muted); font-size: var(--supply-heading-size); font-weight: 650; white-space: nowrap; list-style: none; user-select: none; }
   .asset-trigger::-webkit-details-marker { display: none; }
   .asset-chevron { width: .75em; height: .75em; flex-shrink: 0; opacity: .7; transition: transform .2s ease; }
   .asset-choice[open] .asset-chevron { transform: rotate(180deg); }
@@ -217,7 +215,7 @@ const clientCopy = Object.fromEntries(['projected', 'recorded', 'paused', 'pause
   .supply-column:not([data-selected='true']), .share-grid > .share:not([data-selected='true']) { display: none; }
   .supply-column { display: flex; flex-direction: column; min-width: 0; padding: var(--supply-padding); border: 1px solid color-mix(in srgb, var(--supply-fiat-text) 24%, var(--color-divider)); border-radius: var(--supply-radius); }
   .fiat-column { background: radial-gradient(ellipse at 50% 65%, color-mix(in srgb, var(--supply-fiat) 18%, transparent), transparent 75%), var(--color-surface); }
-  .column-heading { display: flex; align-items: center; gap: .6em; color: var(--color-ink); font-size: var(--supply-heading-size); font-weight: 650; margin-bottom: .35rem; }
+  .column-heading { display: flex; align-items: center; gap: .6em; color: var(--color-ink-muted); font-size: var(--supply-heading-size); font-weight: 650; margin-bottom: .35rem; }
   .bitcoin-feature .column-heading, .supply-board .column-heading, .share-heading { min-height: 44px; }
   .currency-icon { width: var(--supply-icon-size); height: var(--supply-icon-size); flex-shrink: 0; display: inline-grid; place-items: center; border-radius: 50%; font-size: calc(var(--supply-icon-size) * .68); font-weight: 600; }
   .population-icon svg { width: 72%; height: 72%; }
@@ -233,14 +231,6 @@ const clientCopy = Object.fromEntries(['projected', 'recorded', 'paused', 'pause
   .share { min-width: 0; padding: var(--supply-padding); border: 1px solid var(--color-divider); border-radius: var(--supply-radius); background: var(--color-surface); text-align: left; }
   .share-heading :global(.people-illustration) { width: var(--supply-icon-size); height: var(--supply-icon-size); }
   .share-number { color: var(--color-ink); font-size: var(--supply-share-size); font-weight: 600; letter-spacing: -.045em; line-height: 1.2; margin-top: .2em; font-variant-numeric: tabular-nums; white-space: nowrap; }
-  .supply-controls { display: flex; justify-content: center; margin-top: var(--supply-gap); }
-  .motion-control { display: inline-flex; flex-shrink: 0; align-items: center; gap: .5em; min-height: 44px; padding: .6em 1em; border: 1px solid var(--color-divider); border-radius: .8em; cursor: pointer; background: var(--color-surface); font-size: var(--supply-control-size); }
-  .motion-control svg { width: 1em; height: 1em; }
-  .motion-control .play-icon { display: none; }
-  .motion-control[aria-pressed="true"] .pause-icon { display: none; }
-  .motion-control[aria-pressed="true"] .play-icon { display: block; }
-  .motion-control[hidden] { display: none; }
-  .motion-control:hover { border-color: var(--color-ink-muted); }
   .method { width: 100%; max-width: 90rem; margin: var(--supply-gap) auto 0; border-bottom: 1px solid var(--color-divider); }
   summary { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: 1rem .125rem; cursor: pointer; list-style: none; font-size: .875rem; color: var(--color-ink-muted); }
   summary::-webkit-details-marker { display: none; }
@@ -274,15 +264,12 @@ const clientCopy = Object.fromEntries(['projected', 'recorded', 'paused', 'pause
       --supply-share-size: clamp(1.5rem, min(2.1vw, 4dvh), 4.5rem);
       --supply-label-size: clamp(.875rem, min(1.1vw, 2dvh), 2rem);
       --supply-control-size: clamp(.875rem, min(1.05vw, 2dvh), 1.75rem);
-      --supply-population-size: clamp(2rem, min(2.75vw, 5dvh), 5rem);
       --supply-scene-width: clamp(240px, min(28vw, calc(52dvh - 13rem)), 900px);
       display: flex;
       flex-direction: column;
-      justify-content: center;
-      padding-block: clamp(1.25rem, 2dvh, 4rem);
+      justify-content: flex-start;
+      --supply-page-padding-block: clamp(1.25rem, 2dvh, 4rem);
     }
-    .population-readout { display: flex; align-items: center; justify-content: center; gap: clamp(1.5rem, 3vw, 5rem); }
-    .population-readout .column-heading { margin-bottom: 0; }
     .population-heading { padding-block: clamp(1rem, 2dvh, 2.5rem); }
     .bitcoin-feature, .fiat-column { box-shadow: 0 12px 40px rgb(var(--color-ink-rgb) / .035); }
   }
@@ -292,20 +279,19 @@ const clientCopy = Object.fromEntries(['projected', 'recorded', 'paused', 'pause
       --supply-padding: 1rem;
       --supply-icon-size: 36px;
       --supply-heading-size: clamp(1.125rem, min(1.5vw, 2.7dvh), 1.5rem);
-      --supply-population-size: clamp(1.75rem, min(2.75vw, 4.4dvh), 2.5rem);
       --supply-scene-width: max(180px, min(28vw, 24dvh));
-      padding-block: 1rem;
+      --supply-page-padding-block: 1rem;
     }
     .population-heading { padding-block: 1rem; }
   }
   @media (max-width: 700px) {
-    .supply-page { padding-top: 1.625rem; }
+    .year-controls { margin-left: 0; margin-right: calc(var(--menu-control-size) + 1rem); }
     .asset-totals, .share-comparison { grid-template-columns: minmax(0, 1fr); }
     .population-heading { padding: 1rem; }
-    .total-number { font-size: clamp(1rem, 4.8vw, 1.6rem); min-height: 0; }
+    .supply-page { --supply-total-size: clamp(1rem, 4.8vw, 1.6rem); }
+    .total-number { min-height: 0; }
   }
   @media (max-width: 600px) {
-    .population-band strong { font-size: 1.8rem; }
     .observation-grid { grid-template-columns: 1fr; }
   }
 </style>
