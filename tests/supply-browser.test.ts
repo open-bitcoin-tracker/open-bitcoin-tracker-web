@@ -18,6 +18,17 @@ class Control extends EventTarget {
   disabled = false;
   dataset: Record<string, string> = {};
   attributes: Record<string, string> = {};
+  inert = false;
+  removeAttribute(name: string) { delete this.attributes[name]; }
+  getClientRects() { return this.hidden ? [] : [{}]; }
+  closest(selector: string): Control | null {
+    if (selector === '[inert]') {
+      let control: Control | null = this;
+      while (control) { if (control.inert) return control; control = control.parentElement; }
+    }
+    return null;
+  }
+  querySelectorAll(_selector: string): Control[] { return []; }
   parentElement: Control | null = null;
   private expanded = false;
   get open() { return this.expanded; }
@@ -43,7 +54,13 @@ class Control extends EventTarget {
 }
 function harness(reduced = false, when = Date.parse('2026-10-10T12:00:00Z'), data = snapshot) {
   let now = when;
-  const controls = Object.fromEntries(['motion-status', 'population', 'population-status', 'btc-share', 'btc-total', 'btc-basis', 'pause', 'pause-label', 'asset-trigger', 'asset-menu', 'asset-picker', 'picker-name', 'static-asset-heading', 'year-controls', 'year-previous', 'year-next', 'selected-year', 'scenario-note', 'method-trigger', 'method-dialog', 'method-close', 'method-body', 'method-content', 'method-fallback', 'method-comparison'].map(name => [name, new Control()]));
+  const controls = Object.fromEntries(['motion-status', 'population', 'population-status', 'btc-share', 'btc-total', 'pause', 'pause-label', 'asset-trigger', 'asset-menu', 'asset-picker', 'picker-name', 'static-asset-heading', 'year-controls', 'year-previous', 'year-next', 'selected-year', 'scenario-note', 'method-trigger', 'method-dialog', 'method-close', 'method-body', 'method-content', 'method-fallback', 'method-overview', 'method-overview-body', 'method-title', 'method-detail', 'method-detail-title', 'method-back'].map(name => [name, new Control()]));
+  const sectionTriggers = ['bitcoin', 'money', 'scenario', 'population'].map(id => Object.assign(new Control(), { dataset: { methodSectionTrigger: id }, textContent: id, parentElement: controls['method-overview'] }));
+  const sections = sectionTriggers.map(trigger => Object.assign(new Control(), { dataset: { methodSection: trigger.dataset.methodSectionTrigger } }));
+  controls['method-back'].parentElement = controls['method-detail'];
+  controls['method-close'].parentElement = controls['method-overview'];
+  const detailLink = Object.assign(new Control(), { parentElement: controls['method-detail'] });
+  controls['method-dialog'].querySelectorAll = () => [controls['method-close'], ...sectionTriggers, controls['method-back'], detailLink];
   const methodCurrencies = data.fiat.map(money => Object.assign(new Control(), { dataset: { methodCurrency: money.id } }));
   const options = data.fiat.map(money => money.id).map(id => Object.assign(new Control(), {
     textContent: currencies[id as keyof typeof currencies].name,
@@ -59,7 +76,7 @@ function harness(reduced = false, when = Date.parse('2026-10-10T12:00:00Z'), dat
     shares[index].parentElement = shareCards[index];
     return Object.assign(new Control(), { id: money.id, children, querySelector: (selector: string) => children[selector.slice(6, -1)] });
   });
-  const root = { dataset: { motion: 'still' } as Record<string, string>, querySelectorAll: (selector: string) => selector === '[data-method-currency]' ? methodCurrencies : selector === '[data-asset-option]' ? options : [], querySelector: (selector: string) => {
+  const root = { dataset: { motion: 'still' } as Record<string, string>, querySelectorAll: (selector: string) => selector === '[data-method-section-trigger]' ? sectionTriggers : selector === '[data-method-section]' ? sections : selector === '[data-method-close]' ? [controls['method-close']] : selector === '[data-method-currency]' ? methodCurrencies : selector === '[data-asset-option]' ? options : [], querySelector: (selector: string) => {
     if (selector.startsWith('[data-share-asset=')) return shareCards[data.fiat.findIndex(money => selector.includes(`"${money.id}"`))];
     if (selector.startsWith('[data-currency=')) return panels.find(p => selector.includes(`"${p.id}"`));
     if (selector.startsWith('[data-money-share=')) return shares[data.fiat.findIndex(money => selector.includes(`"${money.id}"`))];
@@ -67,6 +84,7 @@ function harness(reduced = false, when = Date.parse('2026-10-10T12:00:00Z'), dat
     if (selector.startsWith('[data-projection-status=')) return panels.find(p => selector.includes(`"${p.id}"`))!.children.status;
     return controls[selector.slice(6, -1)];
   } };
+  const narrow = Object.assign(new EventTarget(), { matches: false });
   const media = Object.assign(new EventTarget(), { matches: reduced });
   const document = Object.assign(new EventTarget(), { hidden: false, activeElement: null as Control | null, querySelector: () => root,
     getElementById: () => ({ textContent: JSON.stringify({ snapshot: { checkedAt: data.checkedAt, population: data.population, fiat: data.fiat }, locale: 'en-US', copy: supply }) }),
@@ -77,17 +95,20 @@ function harness(reduced = false, when = Date.parse('2026-10-10T12:00:00Z'), dat
       if (controls['asset-picker'].contains(document.activeElement)) document.activeElement = null;
     };
   }
-  for (const control of [...Object.values(controls), ...options]) control.focus = () => {
+  for (const control of [...Object.values(controls), ...options, ...sectionTriggers, detailLink]) control.focus = () => {
     document.activeElement = control;
     document.dispatchEvent(new Event('focusin'));
   };
   let callback: (() => void) | undefined;
-  const window = Object.assign(new EventTarget(), { matchMedia: () => media,
+  let closeCallback: (() => void) | undefined;
+  const window = Object.assign(new EventTarget(), { matchMedia: (query: string) => query.includes('max-width') ? narrow : media,
+    setTimeout: (fn: () => void) => { closeCallback = fn; return 2; }, clearTimeout: () => { closeCallback = undefined; },
     setInterval: (fn: () => void) => { callback = fn; return 1; }, clearInterval: () => { callback = undefined; },
   });
   class ClockDate extends Date { static now() { return now; } }
   runInNewContext(script, { require: () => model, exports: {}, document, window, Date: ClockDate });
-  return { controls, panels, shares, shareCards, options, methodCurrencies, root, document, media,
+  return { controls, panels, shares, shareCards, options, methodCurrencies, root, document, media, narrow, sectionTriggers, sections, detailLink,
+    finishClose: () => closeCallback?.(),
     key: (key: string) => controls['asset-menu'].dispatchEvent(Object.assign(new Event('keydown', { cancelable: true }), { key })),
     advance: (ms: number) => { now += ms; callback?.(); } };
 }
@@ -103,35 +124,86 @@ const returnToCurrentYear = (h: ReturnType<typeof harness>) => {
   while (!h.controls['year-previous'].disabled) yearClick(h, 'previous');
 };
 
-test('sources modal follows the selected fiat on every opening and restores focus after dismissal', () => {
+test('sources panel follows the selected fiat on every opening and restores focus after dismissal', () => {
   const h = harness();
   const { controls } = h;
-  const initialBasis = controls['btc-basis'].textContent;
   const initialTotals = values(h);
   assert.equal(controls['method-fallback'].hidden, true);
   assert.equal(controls['method-content'].parentElement, controls['method-body']);
   assert.equal(controls['method-trigger'].hidden, false);
   for (const money of snapshot.fiat) {
     selectAsset(h, money.id);
-    controls['method-body'].scrollTop = 500;
+    controls['method-overview-body'].scrollTop = 500;
     controls['method-trigger'].dispatchEvent(new Event('click'));
     assert.equal(controls['method-dialog'].open, true);
-    assert.equal(controls['method-body'].scrollTop, 0);
-    assert.equal(controls['method-comparison'].textContent, `Bitcoin vs ${currencies[money.id].name}`);
+    assert.equal(controls['method-overview-body'].scrollTop, 0);
     assert.deepEqual(h.methodCurrencies.filter(currency => !currency.hidden).map(currency => currency.dataset.methodCurrency), [money.id]);
     controls['method-close'].dispatchEvent(new Event('click'));
+    h.finishClose();
     assert.equal(controls['method-dialog'].open, false);
     assert.equal(h.document.activeElement, controls['method-trigger']);
   }
   assert.deepEqual(values(h), initialTotals);
-  assert.equal(controls['btc-basis'].textContent, initialBasis);
   yearClick(h, 'next');
   controls['method-trigger'].dispatchEvent(new Event('click'));
   assert.equal(h.root.dataset.mode, 'scenario');
   assert.equal(controls['scenario-note'].textContent.includes('Scenario:'), true);
   controls['method-dialog'].dispatchEvent(new Event('click'));
+  h.finishClose();
   assert.equal(controls['method-dialog'].open, false);
   assert.equal(h.document.activeElement, controls['method-trigger']);
+});
+
+test('section navigation opens only its content and Escape returns focus before closing', () => {
+  const h = harness();
+  const { controls } = h;
+  controls['method-trigger'].dispatchEvent(new Event('click'));
+  assert.equal(h.document.activeElement, controls['method-title']);
+  for (const trigger of h.sectionTriggers) {
+    controls['method-body'].scrollTop = 500;
+    trigger.dispatchEvent(new Event('click'));
+    assert.equal(controls['method-detail'].inert, false);
+    assert.equal(controls['method-overview'].inert, false);
+    assert.equal(controls['method-body'].scrollTop, 0);
+    assert.equal(h.document.activeElement, controls['method-detail-title']);
+    assert.equal(controls['method-detail-title'].textContent, trigger.textContent);
+    assert.deepEqual(h.sections.filter(section => !section.hidden).map(section => section.dataset.methodSection), [trigger.dataset.methodSectionTrigger]);
+    assert.equal(trigger.attributes['aria-expanded'], 'true');
+  }
+  const cancel = () => controls['method-dialog'].dispatchEvent(new Event('cancel', { cancelable: true }));
+  cancel();
+  assert.equal(controls['method-dialog'].open, true);
+  assert.equal(controls['method-detail'].inert, true);
+  assert.equal(h.document.activeElement, h.sectionTriggers.at(-1));
+  cancel();
+  assert.equal(controls['method-dialog'].attributes['data-closing'], '');
+  h.finishClose();
+  assert.equal(controls['method-dialog'].open, false);
+  assert.equal(h.document.activeElement, controls['method-trigger']);
+});
+
+test('mobile details exclude the overview from keyboard navigation and Back restores the entry', () => {
+  const h = harness(true);
+  const { controls } = h;
+  controls['method-trigger'].dispatchEvent(new Event('click'));
+  h.sectionTriggers[0].dispatchEvent(new Event('click'));
+  h.narrow.matches = true;
+  h.narrow.dispatchEvent(new Event('change'));
+  assert.equal(controls['method-overview'].inert, true);
+  const tab = (shiftKey = false) => controls['method-dialog'].dispatchEvent(Object.assign(new Event('keydown', { cancelable: true }), { key: 'Tab', shiftKey }));
+  tab();
+  assert.equal(h.document.activeElement, controls['method-back']);
+  tab(true);
+  assert.equal(h.document.activeElement, h.detailLink);
+  controls['method-back'].dispatchEvent(new Event('click'));
+  assert.equal(controls['method-overview'].inert, false);
+  assert.equal(controls['method-detail'].inert, true);
+  assert.equal(h.document.activeElement, h.sectionTriggers[0]);
+  controls['method-close'].dispatchEvent(new Event('click'));
+  assert.equal(controls['method-dialog'].open, false);
+  controls['method-trigger'].dispatchEvent(new Event('click'));
+  assert.equal(controls['method-detail'].inert, true);
+  assert.equal(controls['method-dialog'].attributes['data-detail-open'], undefined);
 });
 
 test('Bitcoin uses whole satoshis exclusively and rounds only after converting the unrounded share', () => {
@@ -202,7 +274,7 @@ test('year changes preserve satoshi shares, asset, pause and reduced motion; ste
     const h = harness(reduced), original = values(h), people = h.controls.population.textContent;
     selectAsset(h, 'eur');
     if (!reduced) h.controls.pause.dispatchEvent(new Event('click'));
-    const originalSats = h.controls['btc-share'].textContent, basis = h.controls['btc-basis'].textContent;
+    const originalSats = h.controls['btc-share'].textContent;
     yearClick(h, 'next');
     assert.equal(h.controls['picker-name'].textContent, currencies.eur.name);
     assert.notEqual(h.controls['btc-share'].textContent, originalSats);
@@ -220,7 +292,6 @@ test('year changes preserve satoshi shares, asset, pause and reduced motion; ste
     assert.deepEqual(values(h), original);
     assert.equal(h.controls.population.textContent, people);
     assert.equal(h.controls['btc-share'].textContent, originalSats);
-    assert.equal(h.controls['btc-basis'].textContent, basis);
   }
 });
 
@@ -459,7 +530,6 @@ test('fiat shares use their own amounts and population at the same shown time', 
   const when = Date.parse('2026-10-10T12:00:00Z'), h = harness(false, when);
   const population = model.projectPopulation(snapshot, when).persons!;
   assert.equal(h.controls['btc-share'].textContent, model.formatNumber(model.equalShare(model.BITCOIN_MAX, population) * model.SATOSHIS_PER_BTC, 'en-US'));
-  assert.ok(h.controls['btc-basis'].textContent.includes(model.formatNumber(population, 'en-US')));
   h.advance(10 * model.DAY_MS);
   const later = when + 10 * model.DAY_MS;
   h.panels.forEach((p, i) => {

@@ -7,13 +7,19 @@ import rawSnapshot from '../../features/supply/snapshot.json';
 import { BITCOIN_MAX, SATOSHIS_PER_BTC, MAX_PROJECTION_DAYS, DAY_MS, annualRate, projectionAnchor, equalShare, formatDate, formatNumber, interpolate, isValidSnapshot, type SupplySnapshot } from '../../features/supply/model';
 
 const t = supply;
+const methodSections = [
+  { id: 'bitcoin', title: t.bitcoinMethodTitle },
+  { id: 'money', title: t.moneyMethodTitle },
+  { id: 'scenario', title: t.scenarioMethodTitle },
+  { id: 'population', title: t.populationMethodTitle },
+];
 const locale = 'en-US';
 const snapshot = rawSnapshot as SupplySnapshot;
 if (!isValidSnapshot(snapshot)) throw new Error('Invalid supply snapshot. Verify the official data before building.');
 const n = (value: number, digits = 0) => formatNumber(value, locale, digits);
 const date = (value: string, monthOnly = false) => formatDate(value, locale, monthOnly);
 const bitcoinShare = equalShare(BITCOIN_MAX, snapshot.population.persons);
-const clientCopy = Object.fromEntries(['projected', 'recorded', 'paused', 'pause', 'resume', 'stale', 'reduced', 'unavailable', 'populationFallback', 'populationUnavailable', 'bitcoinShareBasis', 'todayNote', 'scenarioNote', 'scenarioUnavailable', 'scenarioProjected', 'bitcoinScenarioBasis'].map((key) => [key, t[key as keyof typeof t]]));
+const clientCopy = Object.fromEntries(['projected', 'recorded', 'paused', 'pause', 'resume', 'stale', 'reduced', 'unavailable', 'populationFallback', 'populationUnavailable', 'scenarioNote', 'scenarioUnavailable', 'scenarioProjected'].map((key) => [key, t[key as keyof typeof t]]));
 ---
 <Layout title={`${t.title} — Open Bitcoin Tracker`} description={t.intro}>
   <Nav />
@@ -82,70 +88,86 @@ const clientCopy = Object.fromEntries(['projected', 'recorded', 'paused', 'pause
       </div>
     </div>
     <section class="method" id="sources">
-      <button class="method-trigger" type="button" data-method-trigger aria-haspopup="dialog" aria-controls="supply-method-dialog" hidden><span>{t.methodTitle}</span><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="3" /><path d="M8 16 16 8M8 8h8v8" /></svg></button>
-      <dialog id="supply-method-dialog" class="method-dialog" data-method-dialog aria-labelledby="supply-method-title" aria-describedby="supply-method-comparison">
-        <div class="method-panel">
-          <header class="method-header">
-            <div><h2 id="supply-method-title">{t.methodTitle}</h2><p id="supply-method-comparison" data-method-comparison>Bitcoin vs {currencies.usd.name}</p></div>
-            <button type="button" class="method-close" data-method-close aria-label={t.closeMethod} autofocus><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18" /></svg></button>
-          </header>
-          <div class="method-body" data-method-body></div>
+      <button class="method-trigger" type="button" data-method-trigger aria-haspopup="dialog" aria-controls="supply-method-dialog" hidden><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10" /><path d="M12 16v-4M12 8h.01" /></svg><span>{t.methodTitle}</span></button>
+      <dialog id="supply-method-dialog" class="method-dialog" data-method-dialog aria-labelledby="supply-method-title">
+        <div class="method-panels">
+          <section class="method-panel" data-method-overview>
+            <header class="method-header">
+              <h2 id="supply-method-title" data-method-title tabindex="-1">{t.methodTitle}</h2>
+              <button type="button" class="method-close" data-method-close aria-label={t.closeMethod}><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18" /></svg></button>
+            </header>
+            <div class="method-overview-body" data-method-overview-body>
+              <nav class="method-sections" aria-label={t.methodSections}>
+                {methodSections.map((section) => <button type="button" class="method-section-trigger" data-method-section-trigger={section.id} aria-controls="supply-method-detail" aria-expanded="false"><span>{section.title}</span><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="m9 6 6 6-6 6" /></svg></button>)}
+              </nav>
+            </div>
+          </section>
+          <section id="supply-method-detail" class="method-detail" data-method-detail aria-labelledby="supply-method-detail-title" aria-hidden="true" inert>
+            <header class="method-header method-detail-header">
+              <button type="button" class="method-back" data-method-back aria-label={t.backToMethod}><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="m15 18-6-6 6-6M9 12h12" /></svg><span>{t.methodBack}</span></button>
+              <button type="button" class="method-close" data-method-close aria-label={t.closeMethod}><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18" /></svg></button>
+            </header>
+            <div class="method-body" data-method-body><h2 id="supply-method-detail-title" data-method-detail-title tabindex="-1"></h2></div>
+          </section>
         </div>
       </dialog>
       <details data-method-fallback>
         <summary><span>{t.methodTitle}</span><span class="details-plus" aria-hidden="true">+</span></summary>
         <div class="method-content" data-method-content>
-          <p data-scenario-note></p>
-          <h3>{t.bitcoin}</h3>
-          <p>{t.bitcoinMethod}</p>
-          <div class="source-links"><a href="https://bitcoin.org/en/faq#how-are-bitcoins-created">{t.bitcoinLink} ↗</a></div>
+          <section data-method-section="bitcoin">
+            <h3>{t.bitcoinMethodTitle}</h3>
+            <p>{t.bitcoinMethod}</p>
+            <div class="source-links"><a href="https://bitcoin.org/en/faq#how-are-bitcoins-created">{t.bitcoinLink} ↗</a></div>
 
-          <h3>{t.moneyMethodTitle}</h3>
-          <p>{t.moneyMethod}</p><p>{t.projectionNote}</p><p>{t.contractionMethod}</p>
-          <p>{interpolate(t.anchorMethod, { days: n(MAX_PROJECTION_DAYS) })}</p>
-          <p data-motion-status></p>
-          {snapshot.fiat.map((money) => {
-            const currency = currencies[money.id];
-            const rate = annualRate(money);
-            const expires = new Date(projectionAnchor(money.latest.month) + MAX_PROJECTION_DAYS * DAY_MS).toISOString();
-            return <div class="currency-method" data-method-currency={money.id} hidden={money.id !== 'usd'}>
-              <h4>{currency.name} · {money.aggregate}</h4>
-              <p data-total-label={money.id}>{interpolate(t.recorded, { aggregate: money.aggregate })}</p>
-              <p>{currency.definition} {money.adjustment}. {money.basis}. Source units: {money.sourceUnit} of {currency.plural}, multiplied by {n(money.sourceMultiplier)}.</p>
-              <dl class="observation-grid">
-                <div><dt>{date(money.latest.month, true)}</dt><dd>{currency.symbol}{n(money.latest.amount)}</dd></div>
-                <div><dt>{date(money.previousYear.month, true)}</dt><dd>{currency.symbol}{n(money.previousYear.amount)}</dd></div>
-                <div><dt>Historical average / second</dt><dd>{rate >= 0 ? '+' : '−'}{currency.symbol}{n(Math.abs(rate), 2)}</dd></div>
-                <div><dt>Released · checked</dt><dd>{date(money.releasedAt)} · {date(money.checkedAt)}</dd></div>
-                <div><dt>Projection expires after</dt><dd>{date(expires)} · 00:00 UTC</dd></div>
-              </dl>
-              <p class="series-name">Series: {money.series}</p>
-              {money.note && <p>{money.note}</p>}
-              <p data-projection-status={money.id}></p>
-              <div class="source-links">
-                <a href={money.source} aria-label={`${currency.name} release`}>{t.releaseLink} ↗</a><a href={money.dataSource} aria-label={`${currency.name} latest data`}>{t.dataLink} ↗</a>
-                {money.previousDataSource !== money.dataSource && <a href={money.previousDataSource} aria-label={`${currency.name} previous-year data`}>{t.previousLink} ↗</a>}
-                <a href={money.definitionSource} aria-label={`${currency.name} definition`}>{t.definitionLink} ↗</a>
-              </div>
-            </div>;
-          })}
-          <noscript><p>{t.nojs}</p></noscript>
+          </section>
+          <section data-method-section="money">
+            <h3>{t.moneyMethodTitle}</h3>
+            <p>{t.moneyMethod}</p><p>{t.projectionNote}</p><p>{t.contractionMethod}</p>
+            <p>{interpolate(t.anchorMethod, { days: n(MAX_PROJECTION_DAYS) })}</p>
+            <p data-motion-status></p>
+            {snapshot.fiat.map((money) => {
+              const currency = currencies[money.id];
+              const rate = annualRate(money);
+              const expires = new Date(projectionAnchor(money.latest.month) + MAX_PROJECTION_DAYS * DAY_MS).toISOString();
+              return <div class="currency-method" data-method-currency={money.id} hidden={money.id !== 'usd'}>
+                <h4>{currency.name} · {money.aggregate}</h4>
+                <p data-total-label={money.id}>{interpolate(t.recorded, { aggregate: money.aggregate })}</p>
+                <p>{currency.definition} {money.adjustment}. {money.basis}. Source units: {money.sourceUnit} of {currency.plural}, multiplied by {n(money.sourceMultiplier)}.</p>
+                <dl class="observation-grid">
+                  <div><dt>{date(money.latest.month, true)}</dt><dd>{currency.symbol}{n(money.latest.amount)}</dd></div>
+                  <div><dt>{date(money.previousYear.month, true)}</dt><dd>{currency.symbol}{n(money.previousYear.amount)}</dd></div>
+                  <div><dt>Historical average / second</dt><dd>{rate >= 0 ? '+' : '−'}{currency.symbol}{n(Math.abs(rate), 2)}</dd></div>
+                  <div><dt>Released · checked</dt><dd>{date(money.releasedAt)} · {date(money.checkedAt)}</dd></div>
+                  <div><dt>Projection expires after</dt><dd>{date(expires)} · 00:00 UTC</dd></div>
+                </dl>
+                <p class="series-name">Series: {money.series}</p>
+                {money.note && <p>{money.note}</p>}
+                <p data-projection-status={money.id}></p>
+                <div class="source-links">
+                  <a href={money.source} aria-label={`${currency.name} release`}>{t.releaseLink} ↗</a><a href={money.dataSource} aria-label={`${currency.name} latest data`}>{t.dataLink} ↗</a>
+                  {money.previousDataSource !== money.dataSource && <a href={money.previousDataSource} aria-label={`${currency.name} previous-year data`}>{t.previousLink} ↗</a>}
+                  <a href={money.definitionSource} aria-label={`${currency.name} definition`}>{t.definitionLink} ↗</a>
+                </div>
+              </div>;
+            })}
+            <noscript><p>{t.nojs}</p></noscript>
 
-          <h3>{t.scenarioMethodTitle}</h3>
-          <p>{t.scenarioMethod}</p>
+          </section>
+          <section data-method-section="scenario">
+            <h3>{t.scenarioMethodTitle}</h3>
+            <p data-scenario-note></p>
+            <p>{t.scenarioMethod}</p>
 
-          <h3>{t.populationMethodTitle}</h3>
-          <p>{interpolate(t.populationMethod, { points: snapshot.population.points.map((point) => `${date(point.date)}: ${n(point.persons)}`).join('; ') })}</p>
-          <p>{interpolate(t.populationInterpolation, { start: date(snapshot.population.points[0].date), end: date(snapshot.population.points.at(-1)!.date) })}</p>
-          <p>{interpolate(t.scenarioPopulationMethod, { start: date(snapshot.population.scenarioPoints[0].date), end: date(snapshot.population.scenarioPoints.at(-1)!.date), checked: date(snapshot.population.checkedAt) })}</p>
-          <p data-population-status></p>
-          <div class="source-links"><a href={snapshot.population.source}>{t.unLink} ↗</a><a href={snapshot.population.download}>{t.downloadLink} ↗</a></div>
+          </section>
+          <section data-method-section="population">
+            <h3>{t.populationMethodTitle}</h3>
+            <p>{interpolate(t.populationMethod, { points: snapshot.population.points.map((point) => `${date(point.date)}: ${n(point.persons)}`).join('; ') })}</p>
+            <p>{interpolate(t.populationInterpolation, { start: date(snapshot.population.points[0].date), end: date(snapshot.population.points.at(-1)!.date) })}</p>
+            <p>{interpolate(t.scenarioPopulationMethod, { start: date(snapshot.population.scenarioPoints[0].date), end: date(snapshot.population.scenarioPoints.at(-1)!.date), checked: date(snapshot.population.checkedAt) })}</p>
+            <p data-population-status></p>
+            <div class="source-links"><a href={snapshot.population.source}>{t.unLink} ↗</a><a href={snapshot.population.download}>{t.downloadLink} ↗</a></div>
 
-          <h3>{t.shareMethodTitle}</h3>
-          <p>{t.experimentNote}</p><p>{t.shareMethod}</p>
-          <p data-btc-basis>{interpolate(t.bitcoinShareBasis, { population: n(snapshot.population.persons) })}</p>
-          <p>{interpolate(t.dateMethod, { date: date(snapshot.population.date) })}</p><p>{t.purchasingPowerMethod}</p>
-          <p class="refresh-note">{interpolate(t.refreshMethod, { date: date(snapshot.checkedAt) })}</p>
+          </section>
         </div>
       </details>
     </section>
@@ -231,28 +253,65 @@ const clientCopy = Object.fromEntries(['projected', 'recorded', 'paused', 'pause
   .page-title, .currency-name, .control-label { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; border: 0; }
   .share { min-width: 0; padding: var(--supply-padding); border: 1px solid var(--color-divider); border-radius: var(--supply-radius); background: var(--color-surface); text-align: left; }
   .share-number { color: var(--color-ink); font-size: var(--supply-share-size); font-weight: 600; letter-spacing: -.045em; line-height: 1.2; margin-top: .2em; font-variant-numeric: tabular-nums; white-space: nowrap; }
-  .method { width: 100%; max-width: 90rem; margin: var(--supply-gap) auto 0; border-bottom: 1px solid var(--color-divider); }
-  .method-trigger { display: flex; align-items: center; justify-content: space-between; gap: 1rem; width: 100%; padding: .75em .125rem; color: var(--color-ink-muted); font-size: var(--supply-control-size); text-align: left; }
-  .method-trigger:hover { color: var(--color-ink); }
+  .method { width: 100%; max-width: 90rem; margin: var(--supply-gap) auto 0; }
+  .method-trigger { display: flex; align-items: center; justify-content: center; gap: .5rem; width: fit-content; max-width: 100%; min-height: 44px; margin-inline: auto; padding: .625rem 1rem; border: 1px solid var(--color-divider); border-radius: .75rem; background: var(--color-surface); color: var(--color-ink-muted); font-size: clamp(.875rem, .9vw, 1.125rem); line-height: 1.5; transition: border-color .15s ease, color .15s ease; }
+  .method-trigger svg { width: 1.125em; height: 1.125em; flex-shrink: 0; }
+  .method-trigger:hover, .method-trigger:focus-visible { border-color: var(--color-ink-muted); color: var(--color-ink); }
   .method-trigger[hidden], .currency-method[hidden] { display: none; }
   :global(html:has(.method-dialog[open])) { overflow: hidden; }
-  .method-dialog { position: fixed; inset: 0; width: 100%; height: 100dvh; max-width: none; max-height: none; margin: 0; padding: clamp(1rem, 4vw, 3rem); border: 0; background: transparent; color: var(--color-ink); }
-  .method-dialog[open] { display: flex; align-items: center; justify-content: center; }
-  .method-dialog::backdrop { background: rgb(0 0 0 / .45); backdrop-filter: blur(4px); }
-  .method-panel { display: flex; flex-direction: column; width: 100%; max-width: 54rem; max-height: 100%; min-height: 0; overflow: hidden; border: 1px solid var(--color-divider); border-radius: 1.5rem; background: var(--color-paper); box-shadow: 0 24px 80px rgb(0 0 0 / .25); }
-  .method-header { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: 1.25rem clamp(1.25rem, 3vw, 2rem); border-bottom: 1px solid var(--color-divider); flex-shrink: 0; }
-  .method-header h2 { font-size: clamp(1.125rem, 2vw, 1.5rem); font-weight: 600; }
-  .method-header p { margin-top: .25rem; color: var(--color-ink-muted); font-size: .875rem; }
-  .method-close { display: flex; align-items: center; justify-content: center; width: 44px; height: 44px; border-radius: 50%; flex-shrink: 0; background: var(--color-surface); }
-  .method-close:hover { background: var(--hover-tint); }
-  .method-body { min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: 1.5rem clamp(1.25rem, 3vw, 2rem); }
+  .method-dialog { --method-width: 400px; --detail-width: 440px; position: fixed; inset: 0; width: var(--method-width); max-width: 100%; height: 100dvh; max-height: 100dvh; margin: 0; padding: 0; overflow: hidden; border: 0; background: var(--color-paper); color: var(--color-ink); box-shadow: 12px 0 64px #0003; transition: width 300ms cubic-bezier(.64, 0, .78, 0); }
+  .method-dialog[open] { animation: method-slide-in 300ms cubic-bezier(.22, 1, .36, 1); }
+  .method-dialog[open][data-closing] { animation: method-slide-out 300ms cubic-bezier(.64, 0, .78, 0) forwards; }
+  .method-dialog[data-detail-open] { width: calc(var(--method-width) + var(--detail-width)); transition-timing-function: cubic-bezier(.22, 1, .36, 1); }
+  .method-dialog::backdrop { background: #10182060; }
+  .method-panels { position: relative; height: 100%; }
+  .method-panel, .method-detail { display: flex; flex-direction: column; height: 100%; background: var(--color-paper); }
+  .method-panel { position: relative; z-index: 1; width: var(--method-width); border-right: 1px solid var(--color-divider); }
+  .method-header { display: flex; align-items: center; justify-content: space-between; gap: 1rem; min-height: 88px; padding: max(20px, env(safe-area-inset-top)) 24px 20px 28px; flex-shrink: 0; }
+  .method-header h2 { color: var(--color-ink-muted); font-size: 1.5rem; line-height: 1.2; font-weight: 600; }
+  .method-close { display: grid; place-items: center; width: 40px; height: 40px; border-radius: 50%; flex-shrink: 0; background: var(--color-surface); color: var(--color-ink-muted); }
+  .method-close:hover, .method-back:hover, .method-section-trigger:hover { background: var(--hover-tint); color: var(--color-ink); }
+  .method-overview-body, .method-body { min-height: 0; flex: 1; overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; }
+  .method-sections { padding: 8px 28px max(28px, env(safe-area-inset-bottom)); }
+  .method-section-trigger { display: flex; align-items: center; justify-content: space-between; gap: 1rem; width: 100%; min-height: 60px; padding: 16px 8px; border-top: 1px solid var(--color-divider); font-size: 1rem; font-weight: 600; text-align: left; transition: background 150ms, color 150ms; }
+  .method-section-trigger:last-child { border-bottom: 1px solid var(--color-divider); }
+  .method-section-trigger svg { flex-shrink: 0; color: var(--color-ink-muted); }
+  .method-section-trigger[aria-expanded='true'] { background: var(--color-accent-soft); color: var(--color-emphasis-ink); }
+  .method-section-trigger[aria-expanded='true'] svg { color: var(--color-accent); }
+  .method-section-trigger:focus-visible { outline-offset: -3px; }
+  .method-detail { position: absolute; top: 0; left: var(--method-width); width: var(--detail-width); visibility: hidden; transform: translateX(-100%); transition: transform 300ms cubic-bezier(.64, 0, .78, 0), visibility 0s 300ms; }
+  .method-dialog[data-detail-open] .method-detail { visibility: visible; transform: translateX(0); transition-delay: 0s; transition-timing-function: cubic-bezier(.22, 1, .36, 1), linear; }
+  .method-back { display: inline-flex; align-items: center; gap: 8px; min-height: 40px; padding: 0 8px; margin-left: -8px; border-radius: 8px; color: var(--color-ink-muted); font-size: .875rem; }
+  .method-body { padding: 12px 28px max(28px, env(safe-area-inset-bottom)); }
+  .method-body > h2 { margin-bottom: 24px; font-size: 1.5rem; line-height: 1.2; font-weight: 600; }
+  .method-dialog h2:focus { outline: none; }
   .method-body .method-content { padding: 0; font-size: 1rem; line-height: 1.75; }
+  .method-body .method-content h3 { display: none; }
+  [data-method-section][hidden] { display: none; }
+  @keyframes method-slide-in { from { transform: translateX(-100%); } to { transform: translateX(0); } }
+  @keyframes method-slide-out { from { transform: translateX(0); } to { transform: translateX(-100%); } }
+  @media (min-width: 900px) { .method-detail-header { display: none; } .method-body { padding-top: max(36px, env(safe-area-inset-top)); } }
+  @media (max-width: 899px) {
+    .method-dialog, .method-dialog[data-detail-open] { --method-width: min(440px, 100vw); --detail-width: var(--method-width); width: var(--method-width); }
+    .method-detail { left: 0; z-index: 2; transform: translateX(100%); }
+  }
+  @media (max-width: 540px) {
+    .method-dialog, .method-dialog[data-detail-open] { --method-width: 100vw; }
+    .method-header { padding-inline: max(24px, env(safe-area-inset-left)) max(20px, env(safe-area-inset-right)); }
+    .method-panel { border-right: 0; }
+    .method-sections, .method-body { padding-inline: 24px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .method-dialog[open], .method-dialog[open][data-closing] { animation: none; }
+    .method-dialog, .method-detail, .method-section-trigger, .method-trigger { transition: none; }
+  }
   summary { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: 1rem .125rem; cursor: pointer; list-style: none; font-size: .875rem; color: var(--color-ink-muted); }
   summary::-webkit-details-marker { display: none; }
   .details-plus { font-size: 1.25rem; }
   .method summary { padding-block: .75em; font-size: var(--supply-control-size); }
   details[open] .details-plus { transform: rotate(45deg); }
   .method-content { max-width: 76ch; margin-inline: auto; padding: .5rem 0 1.75rem; font-size: clamp(.875rem, .9vw, 1.25rem); line-height: 1.8; color: var(--color-ink-muted); }
+  .method-content > section + section { margin-top: 2rem; }
   .method-content h3 { color: var(--color-ink); font-weight: 600; font-size: 1.1em; margin-bottom: .75rem; }
   .method-content h3:not(:first-child) { margin-top: 2rem; }
   .method-content p + p { margin-top: .75rem; }
@@ -265,7 +324,6 @@ const clientCopy = Object.fromEntries(['projected', 'recorded', 'paused', 'pause
   [data-population-status]:empty, [data-projection-status]:empty, [data-motion-status]:empty, [data-scenario-note]:empty { display: none; }
   .source-links { display: flex; flex-wrap: wrap; gap: .5rem 1.5rem; margin-top: .75rem; }
   .source-links a { color: var(--color-emphasis-ink); text-decoration: underline; text-decoration-color: var(--color-accent); text-underline-offset: .25rem; padding-block: .25rem; }
-  .refresh-note { margin-top: 2rem; border-top: 1px solid var(--color-divider); padding-top: 1rem; }
   a:focus-visible, summary:focus-visible, button:focus-visible, select:focus-visible, input:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 4px; }
   @media (min-width: 1000px) {
     /* Height limits keep wide, short displays and scaled 4K screens comfortable. */

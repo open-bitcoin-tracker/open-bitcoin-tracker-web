@@ -1,7 +1,7 @@
 import { BITCOIN_MAX, SATOSHIS_PER_BTC, equalShare, formatDate, formatNumber, interpolate, projectMoney, projectPopulation, annualRate, MAX_SCENARIO_YEARS, scenarioDate, projectScenarioPopulation, scenarioMoney, type SupplySnapshot } from '../features/supply/model';
 import type { SupplyCopy } from '../i18n/supply';
 
-type ClientCopy = Pick<SupplyCopy, 'projected' | 'recorded' | 'paused' | 'pause' | 'resume' | 'stale' | 'reduced' | 'unavailable' | 'populationFallback' | 'populationUnavailable' | 'bitcoinShareBasis' | 'todayNote' | 'scenarioNote' | 'scenarioUnavailable' | 'scenarioProjected' | 'bitcoinScenarioBasis'>;
+type ClientCopy = Pick<SupplyCopy, 'projected' | 'recorded' | 'paused' | 'pause' | 'resume' | 'stale' | 'reduced' | 'unavailable' | 'populationFallback' | 'populationUnavailable' | 'scenarioNote' | 'scenarioUnavailable' | 'scenarioProjected'>;
 const root = document.querySelector<HTMLElement>('[data-supply]');
 const json = document.getElementById('supply-data');
 if (root && json) {
@@ -20,7 +20,6 @@ if (root && json) {
   const populationStatus = root.querySelector<HTMLElement>('[data-population-status]');
   const bitcoinShare = root.querySelector<HTMLElement>('[data-btc-share]');
   const bitcoinTotal = root.querySelector<HTMLElement>('[data-btc-total]');
-  const bitcoinBasis = root.querySelector<HTMLElement>('[data-btc-basis]');
   const button = root.querySelector<HTMLButtonElement>('[data-pause]');
   const buttonLabel = root.querySelector<HTMLElement>('[data-pause-label]');
   const assetTrigger = root.querySelector<HTMLElement>('[data-asset-trigger]');
@@ -61,15 +60,12 @@ if (root && json) {
     document.addEventListener('scroll', position, { capture: true, passive: true });
   });
   const methodCurrencies = Array.from(root.querySelectorAll<HTMLElement>('[data-method-currency]'));
-  const methodComparison = root.querySelector<HTMLElement>('[data-method-comparison]');
   const comparisonAssets = panels.map(({ money, panel }) => ({
     id: money.id, panel, shareCard: root.querySelector<HTMLElement>(`[data-share-asset="${money.id}"]`),
   }));
   let selectedAsset = 'usd';
   const updateSelectedAsset = () => {
     for (const currency of methodCurrencies) currency.hidden = currency.dataset.methodCurrency !== selectedAsset;
-    const selectedName = assetOptions.find(option => option.dataset.assetOption === selectedAsset)?.textContent;
-    if (methodComparison && selectedName) methodComparison.textContent = `Bitcoin vs ${selectedName}`;
     for (const { id, panel, shareCard } of comparisonAssets) {
       const selected = String(id === selectedAsset);
       panel?.setAttribute('data-selected', selected);
@@ -141,32 +137,112 @@ if (root && json) {
   // The native disclosure remains usable when JavaScript or dialog support is absent.
   const methodTrigger = root.querySelector<HTMLButtonElement>('[data-method-trigger]');
   const methodDialog = root.querySelector<HTMLDialogElement>('[data-method-dialog]');
-  const methodClose = root.querySelector<HTMLButtonElement>('[data-method-close]');
+  const methodCloses = Array.from(root.querySelectorAll<HTMLButtonElement>('[data-method-close]'));
   const methodBody = root.querySelector<HTMLElement>('[data-method-body]');
   const methodContent = root.querySelector<HTMLElement>('[data-method-content]');
   const methodFallback = root.querySelector<HTMLDetailsElement>('[data-method-fallback]');
-  if (methodTrigger && methodDialog && methodClose && methodBody && methodContent && methodFallback && typeof methodDialog.showModal === 'function') {
+  const methodOverview = root.querySelector<HTMLElement>('[data-method-overview]');
+  const methodOverviewBody = root.querySelector<HTMLElement>('[data-method-overview-body]');
+  const methodTitle = root.querySelector<HTMLElement>('[data-method-title]');
+  const methodDetail = root.querySelector<HTMLElement>('[data-method-detail]');
+  const methodDetailTitle = root.querySelector<HTMLElement>('[data-method-detail-title]');
+  const methodBack = root.querySelector<HTMLButtonElement>('[data-method-back]');
+  const sectionTriggers = Array.from(root.querySelectorAll<HTMLButtonElement>('[data-method-section-trigger]'));
+  const sections = Array.from(root.querySelectorAll<HTMLElement>('[data-method-section]'));
+  if (methodTrigger && methodDialog && methodBody && methodContent && methodFallback && methodOverview && methodDetail && methodDetailTitle && typeof methodDialog.showModal === 'function') {
     methodBody.append(methodContent);
     methodFallback.hidden = true;
     methodTrigger.hidden = false;
+    const narrow = window.matchMedia('(max-width: 899px)');
+    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)');
+    let activeSection: HTMLButtonElement | null = null;
+    let closing = false;
+    let closeTimeout: number | undefined;
+    const updatePanels = () => {
+      methodOverview.inert = narrow.matches && activeSection !== null;
+      methodDetail.inert = activeSection === null;
+      methodDetail.setAttribute('aria-hidden', String(activeSection === null));
+      for (const trigger of sectionTriggers) trigger.setAttribute('aria-expanded', String(trigger === activeSection));
+    };
+    const closeDetail = () => {
+      const prior = activeSection;
+      activeSection = null;
+      methodDialog.removeAttribute('data-detail-open');
+      updatePanels();
+      prior?.focus({ preventScroll: true });
+    };
+    const finishClose = () => {
+      window.clearTimeout(closeTimeout);
+      methodDialog.close();
+    };
+    const closeMethod = () => {
+      if (closing) return;
+      closing = true;
+      if (reduced.matches) finishClose();
+      else {
+        methodDialog.setAttribute('data-closing', '');
+        // Also finish if an animation is interrupted or disabled mid-flight.
+        closeTimeout = window.setTimeout(finishClose, 350);
+      }
+    };
+    sectionTriggers.forEach(trigger => trigger.addEventListener('click', () => {
+      if (closing) return;
+      if (activeSection === trigger) { closeDetail(); return; }
+      activeSection = trigger;
+      for (const section of sections) section.hidden = section.dataset.methodSection !== trigger.dataset.methodSectionTrigger;
+      methodDetailTitle.textContent = trigger.textContent?.trim() ?? '';
+      methodDialog.setAttribute('data-detail-open', '');
+      updatePanels();
+      methodBody.scrollTop = 0;
+      methodDetailTitle.focus({ preventScroll: true });
+    }));
+    methodBack?.addEventListener('click', () => { if (!closing) closeDetail(); });
+    narrow.addEventListener('change', () => {
+      updatePanels();
+      if (methodDialog.open && activeSection) methodDetailTitle.focus({ preventScroll: true });
+    });
+    updatePanels();
     methodTrigger.addEventListener('click', () => {
       updateSelectedAsset();
       closeAssetMenu();
+      closing = false;
+      methodDialog.removeAttribute('data-closing');
+      closeDetail();
       if (!methodDialog.open) methodDialog.showModal();
-      methodBody.scrollTop = 0;
+      if (methodOverviewBody) methodOverviewBody.scrollTop = 0;
+      methodTitle?.focus({ preventScroll: true });
     });
-    methodClose.addEventListener('click', () => methodDialog.close());
-    methodDialog.addEventListener('click', (event) => {
-      if (event.target === methodDialog) methodDialog.close();
+    methodCloses.forEach(control => control.addEventListener('click', closeMethod));
+    methodDialog.addEventListener('cancel', event => {
+      event.preventDefault();
+      if (closing) return;
+      if (activeSection) closeDetail();
+      else closeMethod();
     });
-    methodDialog.addEventListener('close', () => methodTrigger.focus({ preventScroll: true }));
-    methodDialog.addEventListener('keydown', (event) => {
+    methodDialog.addEventListener('click', event => { if (event.target === methodDialog) closeMethod(); });
+    methodDialog.addEventListener('animationend', event => {
+      if (closing && event.target === methodDialog && event.animationName === 'method-slide-out') finishClose();
+    });
+    methodDialog.addEventListener('close', () => {
+      window.clearTimeout(closeTimeout);
+      closing = false;
+      methodDialog.removeAttribute('data-closing');
+      activeSection = null;
+      methodDialog.removeAttribute('data-detail-open');
+      updatePanels();
+      methodTrigger.focus({ preventScroll: true });
+    });
+    methodDialog.addEventListener('keydown', event => {
       if (event.key !== 'Tab') return;
-      const controls = Array.from(methodDialog.querySelectorAll<HTMLElement>('button:not([disabled]), a[href]')).filter(element => element.getClientRects().length > 0);
+      const controls = Array.from(methodDialog.querySelectorAll<HTMLElement>('button:not([disabled]), a[href]')).filter(element => !element.closest('[inert]') && element.getClientRects().length > 0);
       const first = controls[0], last = controls.at(-1);
-      if (event.shiftKey && document.activeElement === first) {
+      const focused = document.activeElement;
+      if (event.shiftKey && (focused === first || focused === methodTitle || focused === methodDetailTitle)) {
         event.preventDefault(); last?.focus();
-      } else if (!event.shiftKey && document.activeElement === last) {
+      } else if (!event.shiftKey && focused === methodDetailTitle) {
+        event.preventDefault();
+        (controls.find(control => methodDetail.contains(control)) ?? first)?.focus();
+      } else if (!event.shiftKey && (focused === last || focused === methodTitle)) {
         event.preventDefault(); first?.focus();
       }
     });
@@ -191,7 +267,6 @@ if (root && json) {
     setText(bitcoinShare, Number.isFinite(shownBitcoinShare) ? formatNumber(shownBitcoinShare * SATOSHIS_PER_BTC, locale) : '—');
   };
   renderBitcoin();
-  setText(bitcoinBasis, interpolate(copy.bitcoinShareBasis, { population: formatNumber(visitPopulation, locale) }));
   const renderScenario = (at: number) => {
     const population = projectScenarioPopulation(snapshot, at);
     const people = population.persons;
@@ -203,7 +278,6 @@ if (root && json) {
     setText(populationStatus, people === null ? copy.scenarioUnavailable : '');
     shownBitcoinShare = people === null ? NaN : equalShare(BITCOIN_MAX, people);
     renderBitcoin();
-    setText(bitcoinBasis, people === null ? copy.scenarioUnavailable : interpolate(copy.bitcoinScenarioBasis, { date, population: formatNumber(people, locale) }));
     for (const { money, panel, total, share, label, status } of panels) {
       const amount = scenarioMoney(money, at);
       setText(total, amount === null ? '—' : formatNumber(amount, locale));
@@ -233,10 +307,9 @@ if (root && json) {
       renderScenario(scenarioDate(shownAt, selectedYears));
       return;
     }
-    setText(scenarioNote, copy.todayNote);
+    setText(scenarioNote, '');
     shownBitcoinShare = visitBitcoinShare;
     renderBitcoin();
-    setText(bitcoinBasis, interpolate(copy.bitcoinShareBasis, { population: formatNumber(visitPopulation, locale) }));
     // Expiry checks use wall time even while the displayed model time is frozen.
     const currentPopulation = projectPopulation(snapshot, now);
     const shownPopulation = currentPopulation.state === 'estimated' ? projectPopulation(snapshot, shownAt) : currentPopulation;
