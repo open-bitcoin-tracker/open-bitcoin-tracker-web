@@ -57,8 +57,6 @@ const fiatNotes = Array.from({ length: 24 }, (_, index) => ({
   .falling-token { opacity: 0; }
   :global([data-money-motion='running']) .falling-token { animation: token-fall 4.6s linear infinite; animation-delay: var(--delay); }
   :global([data-direction='down']) .falling-token { animation-direction: reverse; }
-  :global([data-money-motion='paused']) .falling-token { animation: token-fall 4.6s linear infinite; animation-delay: var(--delay); animation-play-state: paused; }
-  :global([data-direction='down'][data-money-motion='paused']) .falling-token { animation-direction: reverse; }
   /* Fade only after the notes descend behind the stored pile. */
   @keyframes token-fall { 0% { transform: translateY(-30px); opacity: 0; } 12%, 68% { opacity: 1; } 84% { opacity: 0; } 100% { transform: translateY(235px); opacity: 0; } }
   @media (prefers-reduced-motion: reduce) { .falling-token { animation: none !important; opacity: 0; } }

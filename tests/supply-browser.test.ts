@@ -54,7 +54,7 @@ class Control extends EventTarget {
 }
 function harness(reduced = false, when = Date.parse('2026-10-10T12:00:00Z'), data = snapshot) {
   let now = when;
-  const controls = Object.fromEntries(['motion-status', 'population', 'population-status', 'btc-share', 'btc-total', 'pause', 'pause-label', 'asset-trigger', 'asset-menu', 'asset-picker', 'picker-name', 'static-asset-heading', 'year-controls', 'year-previous', 'year-next', 'selected-year', 'scenario-note', 'method-trigger', 'method-dialog', 'method-close', 'method-body', 'method-content', 'method-fallback', 'method-overview', 'method-overview-body', 'method-title', 'method-detail', 'method-detail-title', 'method-back'].map(name => [name, new Control()]));
+  const controls = Object.fromEntries(['motion-status', 'population', 'population-status', 'btc-share', 'btc-total', 'asset-trigger', 'asset-menu', 'asset-picker', 'picker-name', 'static-asset-heading', 'year-controls', 'year-previous', 'year-next', 'selected-year', 'scenario-note', 'method-trigger', 'method-dialog', 'method-close', 'method-body', 'method-content', 'method-fallback', 'method-overview', 'method-overview-body', 'method-title', 'method-detail', 'method-detail-title', 'method-back'].map(name => [name, new Control()]));
   const sectionTriggers = ['bitcoin', 'money', 'scenario', 'population'].map(id => Object.assign(new Control(), { dataset: { methodSectionTrigger: id }, textContent: id, parentElement: controls['method-overview'] }));
   const sections = sectionTriggers.map(trigger => Object.assign(new Control(), { dataset: { methodSection: trigger.dataset.methodSectionTrigger } }));
   controls['method-back'].parentElement = controls['method-detail'];
@@ -87,7 +87,7 @@ function harness(reduced = false, when = Date.parse('2026-10-10T12:00:00Z'), dat
   const narrow = Object.assign(new EventTarget(), { matches: false });
   const media = Object.assign(new EventTarget(), { matches: reduced });
   const document = Object.assign(new EventTarget(), { hidden: false, activeElement: null as Control | null, querySelector: () => root,
-    getElementById: () => ({ textContent: JSON.stringify({ snapshot: { checkedAt: data.checkedAt, population: data.population, fiat: data.fiat }, locale: 'en-US', copy: supply }) }),
+    getElementById: () => ({ textContent: JSON.stringify({ snapshot: data, locale: 'en-US', copy: supply }) }),
   });
   for (const panel of panels) {
     panel.prepend = (child: Control) => {
@@ -254,7 +254,6 @@ test('year controls cover today through fifteen years with synchronized totals a
     selectAsset(h, 'gbp');
     assert.equal(h.root.dataset.motion, 'running');
     assert.ok(h.panels.every(p => p.dataset.moneyMotion === 'running'));
-    assert.equal(h.controls.pause.hidden, false);
     assert.ok(h.controls['scenario-note'].textContent.includes(`October 12, ${2026 + years}`));
   }
   assert.equal(h.controls['year-next'].disabled, true);
@@ -269,35 +268,31 @@ test('year controls cover today through fifteen years with synchronized totals a
   assert.equal(h.controls['selected-year'].textContent, '2026');
 });
 
-test('year changes preserve satoshi shares, asset, pause and reduced motion; stepping back restores the visit basis', () => {
-  for (const reduced of [false, true]) {
-    const h = harness(reduced), original = values(h), people = h.controls.population.textContent;
-    selectAsset(h, 'eur');
-    if (!reduced) h.controls.pause.dispatchEvent(new Event('click'));
-    const originalSats = h.controls['btc-share'].textContent;
-    yearClick(h, 'next');
-    assert.equal(h.controls['picker-name'].textContent, currencies.eur.name);
-    assert.notEqual(h.controls['btc-share'].textContent, originalSats);
-    const future = values(h), futurePeople = h.controls.population.textContent;
-    h.advance(60_000);
-    assert.deepEqual(values(h), future);
-    assert.equal(h.controls.population.textContent, futurePeople);
-    h.document.hidden = true; h.document.dispatchEvent(new Event('visibilitychange'));
-    h.advance(60_000);
-    h.document.hidden = false; h.document.dispatchEvent(new Event('visibilitychange'));
-    assert.deepEqual(values(h), future);
-    yearClick(h, 'previous');
-    assert.equal(h.root.dataset.mode, 'today');
-    assert.equal(h.root.dataset.motion, reduced ? 'still' : 'paused');
-    assert.deepEqual(values(h), original);
-    assert.equal(h.controls.population.textContent, people);
-    assert.equal(h.controls['btc-share'].textContent, originalSats);
-  }
+test('year changes preserve satoshi shares, asset and reduced motion; stepping back restores the visit basis', () => {
+  const h = harness(true), original = values(h), people = h.controls.population.textContent;
+  selectAsset(h, 'eur');
+  const originalSats = h.controls['btc-share'].textContent;
+  yearClick(h, 'next');
+  assert.equal(h.controls['picker-name'].textContent, currencies.eur.name);
+  assert.notEqual(h.controls['btc-share'].textContent, originalSats);
+  const future = values(h), futurePeople = h.controls.population.textContent;
+  h.advance(60_000);
+  assert.deepEqual(values(h), future);
+  assert.equal(h.controls.population.textContent, futurePeople);
+  h.document.hidden = true; h.document.dispatchEvent(new Event('visibilitychange'));
+  h.advance(60_000);
+  h.document.hidden = false; h.document.dispatchEvent(new Event('visibilitychange'));
+  assert.deepEqual(values(h), future);
+  yearClick(h, 'previous');
+  assert.equal(h.root.dataset.mode, 'today');
+  assert.equal(h.root.dataset.motion, 'still');
+  assert.deepEqual(values(h), original);
+  assert.equal(h.controls.population.textContent, people);
+  assert.equal(h.controls['btc-share'].textContent, originalSats);
 });
 
-test('future mode remains separate from expiry and stepping back checks the real clock while paused', () => {
-  const h = harness(false, Date.parse('2026-11-15'));
-  h.controls.pause.dispatchEvent(new Event('click'));
+test('future mode remains separate from expiry and stepping back checks the real clock under reduced motion', () => {
+  const h = harness(true, Date.parse('2026-11-15'));
   yearClick(h, 'next');
   h.advance(20 * model.DAY_MS);
   returnToCurrentYear(h);
@@ -314,7 +309,6 @@ test('future counters and symbolic assets keep moving on the shared clock, inclu
   const people = h.controls.population.textContent, bitcoin = h.controls['btc-share'].textContent;
   assert.equal(h.root.dataset.motion, 'running');
   assert.ok(h.panels.every(p => p.dataset.moneyMotion === 'running'));
-  assert.equal(h.controls.pause.hidden, false);
   h.advance(10 * model.DAY_MS);
   assert.notDeepEqual(values(h), before);
   assert.notEqual(h.controls.population.textContent, people);
@@ -339,26 +333,24 @@ test('future counters and symbolic assets keep moving on the shared clock, inclu
   assert.equal(h.root.dataset.motion, 'running');
 });
 
-test('future pause and reduced motion freeze all estimates; resume and switching retain the year offset', () => {
-  const h = harness();
+test('future reduced motion freezes all estimates; motion and switching retain the year offset', () => {
+  const h = harness(true);
   yearClick(h, 'next');
-  h.controls.pause.dispatchEvent(new Event('click'));
   const frozen = values(h), people = h.controls.population.textContent, bitcoin = h.controls['btc-share'].textContent;
   h.advance(10 * model.DAY_MS);
   assert.deepEqual(values(h), frozen);
   assert.equal(h.controls.population.textContent, people);
   assert.equal(h.controls['btc-share'].textContent, bitcoin);
-  assert.equal(h.root.dataset.motion, 'paused');
-  assert.ok(h.panels.every(p => p.dataset.moneyMotion === 'paused'));
-  assert.equal(h.controls['pause-label'].textContent, supply.resume);
+  assert.equal(h.root.dataset.motion, 'still');
+  assert.ok(h.panels.every(p => p.dataset.moneyMotion === 'still'));
   selectAsset(h, 'jpy');
   yearClick(h, 'next');
   assert.equal(h.controls['selected-year'].textContent, '2028');
-  assert.equal(h.root.dataset.motion, 'paused');
+  assert.equal(h.root.dataset.motion, 'still');
   const shifted = values(h);
   h.advance(60_000);
   assert.deepEqual(values(h), shifted);
-  h.controls.pause.dispatchEvent(new Event('click'));
+  h.media.matches = false; h.media.dispatchEvent(new Event('change'));
   assert.equal(h.root.dataset.motion, 'running');
   assert.notDeepEqual(values(h), shifted);
   assert.equal(h.controls['picker-name'].textContent, currencies.jpy.name);
@@ -370,7 +362,6 @@ test('future pause and reduced motion freeze all estimates; resume and switching
   assert.equal(h.controls['btc-share'].textContent, reducedBitcoin);
   assert.equal(h.controls.population.textContent, reducedPeople);
   assert.equal(h.root.dataset.motion, 'still');
-  assert.equal(h.controls.pause.hidden, true);
   assert.equal(h.controls['motion-status'].textContent, supply.reduced);
   h.media.matches = false; h.media.dispatchEvent(new Event('change'));
   assert.equal(h.controls['selected-year'].textContent, '2028');
@@ -467,15 +458,14 @@ test('asset menu dismisses on outside click or focus without changing the select
   const h = harness(), menu = h.controls['asset-menu'];
   menu.open = true; h.document.dispatchEvent(new Event('click'));
   assert.equal(menu.open, false);
-  menu.open = true; h.controls.pause.focus();
+  menu.open = true; h.controls['year-next'].focus();
   assert.equal(menu.open, false);
-  assert.equal(h.document.activeElement, h.controls.pause);
+  assert.equal(h.document.activeElement, h.controls['year-next']);
   assert.equal(h.controls['picker-name'].textContent, currencies.usd.name);
 });
 
-test('switching selected assets preserves shared pause and fixed Bitcoin', () => {
-  const h = harness(), bitcoin = h.controls['btc-share'].textContent;
-  h.controls.pause.dispatchEvent(new Event('click'));
+test('switching selected assets preserves reduced motion and fixed Bitcoin', () => {
+  const h = harness(true), bitcoin = h.controls['btc-share'].textContent;
   const frozen = values(h), people = h.controls.population.textContent;
   selectAsset(h, 'gbp');
   assert.equal(h.controls['asset-picker'].hidden, false);
@@ -483,12 +473,12 @@ test('switching selected assets preserves shared pause and fixed Bitcoin', () =>
   assert.deepEqual(values(h), frozen);
   assert.equal(h.controls.population.textContent, people);
   assert.equal(h.controls['btc-share'].textContent, bitcoin);
-  assert.equal(h.root.dataset.motion, 'paused');
+  assert.equal(h.root.dataset.motion, 'still');
   selectAsset(h, 'eur');
   assert.equal(h.shareCards[1].attributes['data-selected'], 'true');
   selectAsset(h, 'gbp');
   assert.equal(h.controls['asset-picker'].hidden, false);
-  h.controls.pause.dispatchEvent(new Event('click'));
+  h.media.matches = false; h.media.dispatchEvent(new Event('change'));
   assert.notDeepEqual(values(h), frozen);
   assert.equal(h.controls['btc-share'].textContent, bitcoin);
 });
@@ -496,7 +486,6 @@ test('switching selected assets preserves shared pause and fixed Bitcoin', () =>
 test('asset changes preserve reduced motion and independently expired projections', () => {
   const h = harness(true, Date.parse('2026-11-29'));
   selectAsset(h, 'gbp');
-  assert.equal(h.controls.pause.hidden, true);
   assert.ok(h.panels.every(panel => panel.dataset.moneyMotion === 'still'));
   h.advance(2 * model.DAY_MS);
   assert.equal(h.panels[4].children.status.textContent, supply.stale);
@@ -505,22 +494,21 @@ test('asset changes preserve reduced motion and independently expired projection
   assert.equal(h.root.dataset.motion, 'still');
 });
 
-test('one pause freezes five fiats and population; Bitcoin remains fixed on resume', () => {
+test('enabling reduced motion freezes five fiats and population; Bitcoin remains fixed when motion resumes', () => {
   const h = harness();
   const initial = values(h), people = h.controls.population.textContent, bitcoin = h.controls['btc-share'].textContent;
   h.advance(10_000);
   h.panels.forEach((p, i) => { assert.notEqual(p.children['money-total'].textContent, initial[i][0]); assert.equal(p.dataset.moneyMotion, 'running'); });
   assert.notEqual(h.controls.population.textContent, people);
-  h.controls.pause.dispatchEvent(new Event('click'));
+  h.media.matches = true; h.media.dispatchEvent(new Event('change'));
   const frozen = values(h), frozenPeople = h.controls.population.textContent;
   h.advance(60_000);
   assert.deepEqual(values(h), frozen);
   assert.equal(h.controls.population.textContent, frozenPeople);
   assert.equal(h.controls['btc-share'].textContent, bitcoin);
-  assert.equal(h.root.dataset.motion, 'paused');
-  assert.ok(h.panels.every(p => p.dataset.moneyMotion === 'paused'));
-  assert.equal(h.controls.pause.attributes['aria-pressed'], 'true');
-  h.controls.pause.dispatchEvent(new Event('click'));
+  assert.equal(h.root.dataset.motion, 'still');
+  assert.ok(h.panels.every(p => p.dataset.moneyMotion === 'still'));
+  h.media.matches = false; h.media.dispatchEvent(new Event('change'));
   h.panels.forEach((p, i) => assert.notEqual(p.children['money-total'].textContent, frozen[i][0]));
   assert.notEqual(h.controls.population.textContent, frozenPeople);
   assert.equal(h.controls['btc-share'].textContent, bitcoin);
@@ -532,19 +520,18 @@ test('fiat shares use their own amounts and population at the same shown time', 
   assert.equal(h.controls['btc-share'].textContent, model.formatNumber(model.equalShare(model.BITCOIN_MAX, population) * model.SATOSHIS_PER_BTC, 'en-US'));
   h.advance(10 * model.DAY_MS);
   const later = when + 10 * model.DAY_MS;
-  h.panels.forEach((p, i) => {
+  h.panels.forEach((_, i) => {
     const amount = model.projectMoney(snapshot.fiat[i], later).amount!;
     assert.equal(h.shares[i].textContent, model.formatNumber(model.equalShare(amount, model.projectPopulation(snapshot, later).persons!), 'en-US'));
   });
 });
 
-test('reduced motion freezes all estimates, hides pause and responds to preference changes', () => {
+test('reduced motion freezes all estimates and responds to preference changes', () => {
   const h = harness(true), initial = values(h), people = h.controls.population.textContent;
   h.advance(10_000);
   assert.deepEqual(values(h), initial);
   assert.equal(h.controls.population.textContent, people);
   assert.ok(h.panels.every(p => p.dataset.moneyMotion === 'still'));
-  assert.equal(h.controls.pause.hidden, true);
   assert.equal(h.controls['motion-status'].textContent, supply.reduced);
   h.media.matches = false; h.media.dispatchEvent(new Event('change'));
   assert.ok(h.panels.every(p => p.dataset.moneyMotion === 'running'));
@@ -565,34 +552,30 @@ test('flat and unavailable series do not borrow motion from other currencies or 
   assert.equal(h.panels[1].dataset.moneyMotion, 'still');
   assert.equal(h.panels[2].dataset.moneyMotion, 'still');
   assert.equal(h.panels[2].children.status.textContent, supply.unavailable);
-  assert.equal(h.controls.pause.hidden, false);
 });
 
-test('each series expires independently and range checks continue while paused', () => {
+test('each series expires independently and range checks continue under reduced motion', () => {
   const data = structuredClone(snapshot);
   data.fiat[1].latest.month = '2026-09'; data.fiat[1].previousYear.month = '2025-09';
   data.fiat[1].releasedAt = '2026-10-09';
-  const h = harness(false, Date.parse('2026-11-29'), data);
-  h.controls.pause.dispatchEvent(new Event('click'));
+  const h = harness(true, Date.parse('2026-11-29'), data);
   h.advance(3 * model.DAY_MS);
   assert.equal(h.panels[0].dataset.moneyMotion, 'still');
   assert.equal(h.panels[0].children['money-total'].textContent, model.formatNumber(data.fiat[0].latest.amount, 'en-US'));
   assert.equal(h.panels[0].children.status.textContent, supply.stale);
-  assert.equal(h.panels[1].dataset.moneyMotion, 'paused');
+  assert.equal(h.panels[1].dataset.moneyMotion, 'still');
   assert.equal(h.panels[1].children.status.textContent, '');
-  assert.equal(h.root.dataset.motion, 'paused');
-  h.controls.pause.dispatchEvent(new Event('click'));
+  assert.equal(h.root.dataset.motion, 'still');
+  h.media.matches = false; h.media.dispatchEvent(new Event('change'));
   assert.equal(h.panels[1].dataset.moneyMotion, 'running');
   assert.equal(h.panels[0].dataset.moneyMotion, 'still');
 });
 
 test('outside both model ranges all motion stops and the nearest annual population is shown', () => {
   const h = harness();
-  h.controls.pause.dispatchEvent(new Event('click'));
   h.advance(3 * 366 * model.DAY_MS);
   assert.equal(h.root.dataset.motion, 'still');
   assert.ok(h.panels.every(p => p.dataset.moneyMotion === 'still'));
-  assert.equal(h.controls.pause.hidden, true);
   assert.equal(h.controls.population.textContent, model.formatNumber(snapshot.population.points.at(-1)!.persons, 'en-US'));
   assert.ok(h.controls['population-status'].textContent.includes('July 1, 2028'));
 });

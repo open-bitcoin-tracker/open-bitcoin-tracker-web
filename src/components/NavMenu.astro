@@ -178,7 +178,6 @@ const isHome = stripLocale(Astro.url.pathname) === '';
     --menu-panel-shadow: -12px 0 32px rgb(0 0 0 / .12);
     --menu-link-ink: var(--color-ink-muted);
     --menu-primary-ink: var(--color-ink);
-    --menu-divider: var(--color-divider);
     --menu-dropdown-bg: var(--color-surface);
     --menu-dropdown-border: var(--color-divider);
     --menu-dropdown-shadow: var(--shadow-card-hover);
@@ -190,7 +189,6 @@ const isHome = stripLocale(Astro.url.pathname) === '';
     --menu-panel-shadow: -12px 0 32px rgb(0 0 0 / .3);
     --menu-link-ink: #CBD3E6;
     --menu-primary-ink: #FFF3D9;
-    --menu-divider: rgb(203 211 230 / .2);
     --menu-dropdown-bg: #14213D;
     --menu-dropdown-border: rgb(255 255 255 / .12);
     --menu-dropdown-shadow: 0 12px 40px rgb(0 0 0 / .4);
@@ -253,15 +251,6 @@ const isHome = stripLocale(Astro.url.pathname) === '';
   .menu-links :global(a:hover) { color: var(--color-accent); }
   .menu-links :global(a:focus-visible) { color: var(--color-accent); }
   .menu-links :global(a[aria-current='page']) { color: var(--color-accent); }
-  .menu-links :global(.menu-secondary) {
-    display: grid; gap: .125rem; margin-top: 1rem; padding-top: 1.5rem;
-    border-top: 1px solid var(--menu-divider); list-style: none;
-  }
-  .menu-links :global(.menu-secondary a) {
-    display: flex; align-items: center; min-height: 44px; padding: .5rem 0;
-    font-family: 'Inter', sans-serif; font-size: 1.25rem; font-weight: 500;
-    line-height: 1.4; letter-spacing: normal; text-transform: none;
-  }
   .nav-menu-settings { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 1rem; margin-top: auto; }
   .nav-menu-settings :global(.lang-summary), .nav-menu-settings :global(.theme-toggle) {
     display: inline-flex; align-items: center; gap: .5rem; min-height: 44px;
@@ -285,7 +274,6 @@ const isHome = stripLocale(Astro.url.pathname) === '';
     .menu-brand { font-size: clamp(1.375rem, 6vw, 1.625rem); }
     .menu-links { gap: 1.125rem; }
     .menu-links :global(a) { font-size: clamp(2rem, 9vw, 3.25rem); }
-    .menu-links :global(.menu-secondary a) { font-size: 1.0625rem; }
   }
   @media (prefers-reduced-motion: reduce) {
     .nav-menu-dialog, .nav-menu-panel, .menu-bar { transition: none; }

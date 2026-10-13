@@ -19,7 +19,7 @@ if (!isValidSnapshot(snapshot)) throw new Error('Invalid supply snapshot. Verify
 const n = (value: number, digits = 0) => formatNumber(value, locale, digits);
 const date = (value: string, monthOnly = false) => formatDate(value, locale, monthOnly);
 const bitcoinShare = equalShare(BITCOIN_MAX, snapshot.population.persons);
-const clientCopy = Object.fromEntries(['projected', 'recorded', 'paused', 'pause', 'resume', 'stale', 'reduced', 'unavailable', 'populationFallback', 'populationUnavailable', 'scenarioNote', 'scenarioUnavailable', 'scenarioProjected'].map((key) => [key, t[key as keyof typeof t]]));
+const clientCopy = Object.fromEntries(['projected', 'recorded', 'stale', 'reduced', 'unavailable', 'populationFallback', 'populationUnavailable', 'scenarioNote', 'scenarioUnavailable', 'scenarioProjected'].map((key) => [key, t[key as keyof typeof t]]));
 ---
 <Layout title={`${t.title} — Open Bitcoin Tracker`} description={t.intro}>
   <Nav />
@@ -168,7 +168,7 @@ const clientCopy = Object.fromEntries(['projected', 'recorded', 'paused', 'pause
       </details>
     </section>
   </main>
-  <script id="supply-data" type="application/json" set:html={JSON.stringify({ snapshot: { checkedAt: snapshot.checkedAt, population: snapshot.population, fiat: snapshot.fiat }, locale, copy: clientCopy }).replace(/</g, '\\u003c')} />
+  <script id="supply-data" type="application/json" set:html={JSON.stringify({ snapshot, locale, copy: clientCopy }).replace(/</g, '\\u003c')} />
   <script>import '../../scripts/supply';</script>
 </Layout>
 <style>

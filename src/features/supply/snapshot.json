@@ -1,21 +1,5 @@
 {
   "checkedAt": "2026-10-12",
-  "gold": {
-    "stock": {
-      "tonnes": 222600,
-      "date": "2026-06-30",
-      "releasedAt": "2026-08-18",
-      "roundedToTonnes": 100,
-      "source": "https://www.gold.org/goldhub/data/how-much-gold"
-    },
-    "mineProduction": {
-      "tonnes": 3671.6,
-      "year": 2025,
-      "releasedAt": "2026-01-29",
-      "source": "https://www.gold.org/goldhub/research/gold-demand-trends/gold-demand-trends-full-year-2025/supply"
-    },
-    "checkedAt": "2026-10-11"
-  },
   "fiat": [
     {
       "id": "usd",

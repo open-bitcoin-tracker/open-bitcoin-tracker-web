@@ -108,7 +108,7 @@
  */
 html.dark {
   --color-paper: #0F1E3A;        /* app background */
-  --color-surface: #1A3055;      /* app surface (cards, dropdown, cta-secondary) */
+  --color-surface: #1A3055;      /* app surface (cards, dropdowns) */
   --color-ink: #E6E3DD;          /* text primary */
   --color-ink-muted: #A49E94;    /* warm gray, with readable contrast on both navy surfaces */
   --color-divider: rgb(255 255 255 / 0.14);
@@ -149,9 +149,6 @@ html.dark {
 }
 
 .site-container { width: 100%; max-width: 1360px; margin-inline: auto; padding-inline: clamp(1.5rem, 5vw, 5rem); }
-.font-display { font-family: var(--font-display); }
-.shadow-card { box-shadow: var(--shadow-card); }
-.shadow-card-hover { box-shadow: var(--shadow-card-hover); }
 .section-space { padding-block: clamp(5rem, 9vw, 8rem); }
 .section-index { display: block; margin-bottom: 1.8rem; color: var(--color-ink-muted); font-size: .75rem; font-weight: 500; letter-spacing: .16em; font-variant-numeric: tabular-nums; }
 .section-heading { font-size: clamp(2.6rem, 4.8vw, 4.25rem); font-weight: 600; line-height: 1.08; letter-spacing: -.06em; text-wrap: balance; }
@@ -166,11 +163,6 @@ html { scrollbar-gutter: stable; }
 .cta-primary { background: var(--color-accent); color: #1F1B14 !important; box-shadow: 0 5px 16px rgb(247 147 26 / .15); transition: transform .25s var(--ease-out), box-shadow .25s, background-color .25s; }
 .cta-primary:hover { transform: translateY(-3px); box-shadow: 0 9px 24px rgb(247 147 26 / .25); }
 .cta-primary:active { transform: translateY(0); }
-.cta-secondary { color: var(--color-ink); background: var(--color-surface); border: 1px solid var(--color-divider); transition: border-color .25s, transform .25s var(--ease-out); }
-.cta-secondary:hover { border-color: var(--color-accent); transform: translateY(-3px); }
-.cta-accent { color: var(--color-emphasis-ink) !important; border: 1px solid var(--color-divider); background: var(--color-accent-soft); transition: border-color .25s, transform .25s; }
-.cta-accent svg { color: var(--color-accent); }
-.cta-accent:hover { border-color: var(--color-accent); transform: translateY(-2px); }
 .nav-download { min-height: 42px; padding: .65rem 1.125rem; font-size: .875rem; border-radius: 11px; }
 
 /* The phone is a single shared component: real app screens, restrained hardware. */

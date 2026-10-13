@@ -1,18 +1,14 @@
-import type { Theme } from './theme';
 import type { MeasurementSystem } from './measurements';
 
 interface Preferences {
-  theme: Theme;
   measurements: MeasurementSystem;
 }
 
 const storageKeys = {
-  theme: 'bitcoin-land:theme:v1',
   measurements: 'bitcoin-land:measurements:v1',
 };
 
 const validValues = {
-  theme: ['light', 'dark'],
   measurements: ['metric', 'imperial'],
 };
 

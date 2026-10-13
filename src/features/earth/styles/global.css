@@ -12,13 +12,6 @@
   font-display: swap;
   src: url('/earth/fonts/TitilliumWeb-SemiBold.ttf') format('truetype');
 }
-@font-face {
-  font-family: 'Titillium Web';
-  font-style: normal;
-  font-weight: 700;
-  font-display: swap;
-  src: url('/earth/fonts/TitilliumWeb-Bold.ttf') format('truetype');
-}
 
 .earth-feature {
   font-family: var(--font-sans);

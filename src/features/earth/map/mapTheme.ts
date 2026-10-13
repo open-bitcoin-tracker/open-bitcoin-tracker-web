@@ -1,5 +1,5 @@
 import type { LayerSpecification, Map, StyleSpecification } from 'maplibre-gl';
-import type { Theme } from '../lib/theme';
+import type { Theme } from '../lib/siteTheme';
 
 type PaintProperty = Parameters<Map['setPaintProperty']>[1];
 type PaintValue = Parameters<Map['setPaintProperty']>[2];

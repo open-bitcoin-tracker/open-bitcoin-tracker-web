@@ -8,8 +8,6 @@ export const supply = {
   projected: '{aggregate} · projection',
   populationFallback: 'Outside the bundled population range. Showing the annual projection for {date}; no extrapolation.',
   populationUnavailable: 'Population estimate unavailable. Showing the bundled annual projection.',
-  experiment: 'Hypothetical equal share per person',
-  perPerson: 'per person',
   perPersonTitle: '{asset} per person',
   previousYear: 'Previous year',
   nextYear: 'Next year',
@@ -20,12 +18,7 @@ export const supply = {
   scenarioMethodTitle: 'Future-year scenario',
   scenarioMethod: 'Year controls move up to fifteen years ahead from today’s UTC date and time (February 29 becomes February 28 in non-leap years). Each money supply continues from its recorded amount at the same historical pace, without compounding or today’s expiry limit. Invalid or nonpositive amounts and dates outside the population data show unavailable estimates.',
   scenarioPopulationMethod: 'Future scenarios use July 1 totals from {start} through {end} in the same workbook (column M, rows 19–36), with the same interpolation. Population checked: {checked}.',
-  asset: 'Asset',
-  amountPerPerson: 'Amount per person',
   compareBitcoinWith: 'Compare Bitcoin with',
-  pause: 'Pause',
-  resume: 'Resume',
-  paused: 'Counters paused',
   reduced: 'Still view · reduced motion',
   stale: 'Projection expired. Showing the latest bundled observation until data is refreshed.',
   nojs: 'Without JavaScript, the default comparison shows recorded US M2 and per-person amounts. Asset selection, year controls and animated projections require JavaScript.',
@@ -53,7 +46,6 @@ export const supply = {
   dataLink: 'Latest data',
   previousLink: 'Previous-year data',
   definitionLink: 'Definition',
-  back: 'Open Bitcoin Tracker',
 };
 
 export const currencies = {

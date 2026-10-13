@@ -10,7 +10,7 @@ import type { StyleSpecification } from 'maplibre-gl';
 import workerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url';
 import mapStyle from '../map/style.json';
 import type { Location } from '../lib/locations';
-import type { Theme } from '../lib/theme';
+import type { Theme } from '../lib/siteTheme';
 import type { MeasurementSystem } from '../lib/measurements';
 import { DEFAULT_CENTER } from '../map/geo';
 import { followViewportCenter, viewportOverlay } from '../map/mapOverlay';

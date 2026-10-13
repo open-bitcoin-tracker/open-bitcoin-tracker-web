@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { readFileSync } from 'node:fs';
-import { annualRate, annualMiningRate, BITCOIN_MAX, DAY_MS, equalShare, goldAnchor, goldExpiry, goldShareGrams, isValidGold, isValidMoney, isValidSnapshot, MAX_PROJECTION_DAYS, projectGold, projectMoney, projectPopulation, projectionAnchor, scenarioDate, scenarioMoney, scenarioGold, scenarioPopulation, type SupplySnapshot } from '../src/features/supply/model.ts';
+import { annualRate, BITCOIN_MAX, DAY_MS, equalShare, isValidMoney, isValidSnapshot, MAX_PROJECTION_DAYS, projectMoney, projectPopulation, projectionAnchor, scenarioDate, scenarioMoney, scenarioPopulation, type SupplySnapshot } from '../src/features/supply/model.ts';
 import { importReviewedMoney, parseH6, refreshedSnapshot, scaleSource, type ReviewedMoneyImport } from '../src/features/supply/refresh.ts';
 
 const snapshot = JSON.parse(readFileSync(new URL('../src/features/supply/snapshot.json', import.meta.url), 'utf8')) as SupplySnapshot;
@@ -47,9 +47,6 @@ test('future scenarios continue absolute historical additions for all assets whi
     assert.equal(projectMoney(money, at).state, 'stale');
     assert.equal(scenarioMoney(money, Date.parse(money.releasedAt) - 1), null);
   }
-  assert.equal(scenarioGold(snapshot.gold, at), 222_600 + 3_671.6 * (at - Date.parse('2026-07-01')) / (365 * DAY_MS));
-  assert.equal(projectGold(snapshot.gold, at).state, 'stale');
-  assert.equal(scenarioGold(snapshot.gold, Date.parse(snapshot.gold.stock.releasedAt) - 1), null);
 });
 
 test('future models preserve flat and contracting rates and never replace impossible estimates with recorded totals', () => {
@@ -62,64 +59,7 @@ test('future models preserve flat and contracting rates and never replace imposs
   assert.equal(scenarioMoney(shrinking, at), null);
   const invalid = structuredClone(usd); invalid.currency = 'EUR';
   assert.equal(scenarioMoney(invalid, at), null);
-  const noMining = structuredClone(snapshot.gold); noMining.mineProduction.tonnes = 0;
-  assert.equal(scenarioGold(noMining, at), noMining.stock.tonnes);
-  noMining.mineProduction.tonnes = -1;
-  assert.equal(scenarioGold(noMining, at), null);
-  assert.equal(scenarioGold(snapshot.gold, NaN), null);
   assert.equal(scenarioMoney(usd, NaN), null);
-});
-
-test('gold adds full mine output in tonnes, excludes recycled market supply and converts shares to grams', () => {
-  const gold = snapshot.gold;
-  assert.ok(isValidGold(gold));
-  assert.equal(gold.stock.tonnes, 222_600);
-  assert.equal(goldAnchor(gold), Date.parse('2026-07-01T00:00:00Z'));
-  assert.equal(annualMiningRate(gold), 3_671.6 / (365 * 86_400));
-  const when = Date.parse('2026-10-11T12:00:00Z');
-  const expected = 222_600 + 3_671.6 * (when - goldAnchor(gold)) / (365 * DAY_MS);
-  assert.deepEqual(projectGold(gold, when), { tonnes: expected, state: 'projected' });
-  assert.equal(goldShareGrams(1, 100), 10_000);
-  assert.equal(goldShareGrams(expected, snapshot.population.persons), expected * 1_000_000 / snapshot.population.persons);
-  const lessMining = structuredClone(gold); lessMining.mineProduction.tonnes = 3_000;
-  assert.ok(projectGold(lessMining, when).tonnes! > lessMining.stock.tonnes);
-});
-
-test('gold uses actual calendar-year seconds, including a leap year', () => {
-  const leap = structuredClone(snapshot.gold);
-  leap.stock.date = '2025-06-30'; leap.stock.releasedAt = '2025-08-18'; leap.checkedAt = '2025-10-11';
-  leap.mineProduction.year = 2024; leap.mineProduction.releasedAt = '2025-01-29';
-  assert.ok(isValidGold(leap));
-  assert.equal(annualMiningRate(leap), leap.mineProduction.tonnes / (366 * 86_400));
-});
-
-test('gold respects release time and expires independently of fiat without inventing an unlimited stock', () => {
-  const gold = snapshot.gold;
-  const release = Date.parse(gold.stock.releasedAt), expiry = goldExpiry(gold);
-  assert.equal(expiry, Date.parse('2026-11-16T00:00:00Z'));
-  assert.deepEqual(projectGold(gold, release - 1), { tonnes: gold.stock.tonnes, state: 'recorded' });
-  assert.equal(projectGold(gold, expiry).state, 'projected');
-  assert.deepEqual(projectGold(gold, expiry + 1), { tonnes: gold.stock.tonnes, state: 'stale' });
-  assert.equal(projectMoney(usd, expiry + 1).state, 'projected');
-});
-
-test('invalid gold observations, units of time or source metadata fail conservatively', () => {
-  assert.equal(projectGold(undefined, Date.now()).state, 'unavailable');
-  assert.equal(projectGold(snapshot.gold, NaN).state, 'unavailable');
-  for (const mutate of [
-    (g: typeof snapshot.gold) => { g.stock.tonnes = Infinity; },
-    (g: typeof snapshot.gold) => { g.stock.date = '2026-06-31'; },
-    (g: typeof snapshot.gold) => { g.mineProduction.tonnes = -1; },
-    (g: typeof snapshot.gold) => { g.mineProduction.year = 2026; },
-    (g: typeof snapshot.gold) => { g.stock.releasedAt = '2026-06-01'; },
-    (g: typeof snapshot.gold) => { g.stock.source = 'https://example.com'; },
-  ]) {
-    const bad = structuredClone(snapshot); mutate(bad.gold);
-    assert.equal(isValidGold(bad.gold), false);
-    assert.equal(isValidSnapshot(bad), false);
-    assert.equal(projectGold(bad.gold, Date.parse('2026-10-11')).state, 'unavailable');
-    assert.equal(projectMoney(bad.fiat[0], Date.parse('2026-10-11')).state, 'projected');
-  }
 });
 
 test('all five official snapshots retain native units, their own windows and independent rates', () => {
@@ -266,7 +206,6 @@ test('Fed refresh selects seasonally adjusted M2, scales billions and preserves 
   assert.deepEqual(parseH6(fixture), { latest: usd.latest, previousYear: usd.previousYear, releasedAt: usd.releasedAt });
   const next = refreshedSnapshot(snapshot, fixture, '2026-10-11');
   assert.deepEqual(next.population, snapshot.population);
-  assert.deepEqual(next.gold, snapshot.gold);
   assert.deepEqual(next.fiat.slice(1), snapshot.fiat.slice(1));
   assert.throws(() => parseH6(fixture.replace('22,092.6', '.')));
   assert.throws(() => parseH6(fixture.replace('id="t1tg1b2"', 'id="other"')));
@@ -289,7 +228,6 @@ test('reviewed imports scale each source unit and keep unrelated snapshots intac
   assert.equal(next.fiat[1].latest.amount, snapshot.fiat[1].latest.amount + 1e6);
   assert.deepEqual(next.fiat[0], usd);
   assert.deepEqual(next.population, snapshot.population);
-  assert.deepEqual(next.gold, snapshot.gold);
 });
 
 test('failed imports, duplicates, wrong units and old releases leave valid snapshots untouched', () => {

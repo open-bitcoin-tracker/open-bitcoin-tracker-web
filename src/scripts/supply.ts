@@ -1,11 +1,11 @@
 import { BITCOIN_MAX, SATOSHIS_PER_BTC, equalShare, formatDate, formatNumber, interpolate, projectMoney, projectPopulation, annualRate, MAX_SCENARIO_YEARS, scenarioDate, projectScenarioPopulation, scenarioMoney, type SupplySnapshot } from '../features/supply/model';
 import type { SupplyCopy } from '../i18n/supply';
 
-type ClientCopy = Pick<SupplyCopy, 'projected' | 'recorded' | 'paused' | 'pause' | 'resume' | 'stale' | 'reduced' | 'unavailable' | 'populationFallback' | 'populationUnavailable' | 'scenarioNote' | 'scenarioUnavailable' | 'scenarioProjected'>;
+type ClientCopy = Pick<SupplyCopy, 'projected' | 'recorded' | 'stale' | 'reduced' | 'unavailable' | 'populationFallback' | 'populationUnavailable' | 'scenarioNote' | 'scenarioUnavailable' | 'scenarioProjected'>;
 const root = document.querySelector<HTMLElement>('[data-supply]');
 const json = document.getElementById('supply-data');
 if (root && json) {
-  const { snapshot, locale, copy } = JSON.parse(json.textContent ?? '{}') as { snapshot: Pick<SupplySnapshot, 'checkedAt' | 'population' | 'fiat'>; locale: string; copy: ClientCopy };
+  const { snapshot, locale, copy } = JSON.parse(json.textContent ?? '{}') as { snapshot: SupplySnapshot; locale: string; copy: ClientCopy };
   const panels = snapshot.fiat.map((money) => {
     const panel = root.querySelector<HTMLElement>(`[data-currency="${money.id}"]`);
     return { money, panel,
@@ -20,8 +20,6 @@ if (root && json) {
   const populationStatus = root.querySelector<HTMLElement>('[data-population-status]');
   const bitcoinShare = root.querySelector<HTMLElement>('[data-btc-share]');
   const bitcoinTotal = root.querySelector<HTMLElement>('[data-btc-total]');
-  const button = root.querySelector<HTMLButtonElement>('[data-pause]');
-  const buttonLabel = root.querySelector<HTMLElement>('[data-pause-label]');
   const assetTrigger = root.querySelector<HTMLElement>('[data-asset-trigger]');
   const assetMenu = root.querySelector<HTMLDetailsElement>('[data-asset-menu]');
   const assetOptions = Array.from(root.querySelectorAll<HTMLButtonElement>('[data-asset-option]'));
@@ -248,7 +246,6 @@ if (root && json) {
     });
   }
   const reduce = window.matchMedia('(prefers-reduced-motion: reduce)');
-  let paused = false;
   const visitAt = Date.now();
   let frozenAt = visitAt;
   let selectedYears = 0;
@@ -270,7 +267,7 @@ if (root && json) {
   const renderScenario = (at: number) => {
     const population = projectScenarioPopulation(snapshot, at);
     const people = population.persons;
-    const motion = !reduce.matches && !document.hidden ? paused ? 'paused' : 'running' : 'still';
+    const motion = !reduce.matches && !document.hidden ? 'running' : 'still';
     let canMove = population.state === 'estimated' && population.rate !== 0;
     const date = formatDate(new Date(at).toISOString(), locale);
     setText(scenarioNote, interpolate(copy.scenarioNote, { date }));
@@ -289,16 +286,11 @@ if (root && json) {
       if (panel) panel.dataset.moneyMotion = moneyCanMove ? motion : 'still';
     }
     root.dataset.motion = canMove ? motion : 'still';
-    setText(motionStatus, reduce.matches ? copy.reduced : paused ? copy.paused : '');
-    if (button) {
-      button.hidden = !canMove || reduce.matches;
-      button.setAttribute('aria-pressed', String(paused));
-    }
-    setText(buttonLabel, paused ? copy.resume : copy.pause);
+    setText(motionStatus, reduce.matches ? copy.reduced : '');
   };
   const render = () => {
     const now = Date.now();
-    const shownAt = paused || reduce.matches ? frozenAt : now;
+    const shownAt = reduce.matches ? frozenAt : now;
     root.dataset.mode = selectedYears > 0 ? 'scenario' : 'today';
     if (previousYear) previousYear.disabled = selectedYears === 0;
     if (nextYear) nextYear.disabled = selectedYears === MAX_SCENARIO_YEARS;
@@ -318,8 +310,8 @@ if (root && json) {
     setText(populationStatus, shownPopulation.state === 'snapshot'
       ? interpolate(copy.populationFallback, { date: formatDate(shownPopulation.date!, locale) })
       : shownPopulation.state === 'unavailable' ? copy.populationUnavailable : '');
-    setText(motionStatus, reduce.matches ? copy.reduced : paused ? copy.paused : '');
-    const motion = !reduce.matches && !document.hidden ? paused ? 'paused' : 'running' : 'still';
+    setText(motionStatus, reduce.matches ? copy.reduced : '');
+    const motion = !reduce.matches && !document.hidden ? 'running' : 'still';
     let canMove = currentPopulation.state === 'estimated' && currentPopulation.rate !== 0;
     for (const { money, panel, total, share, label, status } of panels) {
       const current = projectMoney(money, now);
@@ -337,17 +329,12 @@ if (root && json) {
       if (panel) panel.dataset.moneyMotion = moneyCanMove ? motion : 'still';
     }
     root.dataset.motion = canMove ? motion : 'still';
-    if (button) {
-      button.hidden = !canMove || reduce.matches;
-      button.setAttribute('aria-pressed', String(paused));
-    }
-    setText(buttonLabel, paused ? copy.resume : copy.pause);
   };
   const schedule = () => {
     window.clearInterval(timer);
     render();
     // Quiet counters, no animation frame loop; continue bounded-range checks.
-    if (!document.hidden) timer = window.setInterval(render, paused || reduce.matches || button?.hidden ? 30_000 : 100);
+    if (!document.hidden) timer = window.setInterval(render, reduce.matches ? 30_000 : 100);
   };
   const changeYear = (years: number) => {
     if (years < 0 || years > MAX_SCENARIO_YEARS) return;
@@ -357,11 +344,6 @@ if (root && json) {
   if (yearControls) yearControls.hidden = false;
   previousYear?.addEventListener('click', () => changeYear(selectedYears - 1));
   nextYear?.addEventListener('click', () => changeYear(selectedYears + 1));
-  button?.addEventListener('click', () => {
-    paused = !paused;
-    if (paused) frozenAt = Date.now();
-    schedule();
-  });
   reduce.addEventListener('change', () => { frozenAt = Date.now(); schedule(); });
   document.addEventListener('visibilitychange', schedule);
   window.addEventListener('pagehide', () => { window.clearInterval(timer); });
