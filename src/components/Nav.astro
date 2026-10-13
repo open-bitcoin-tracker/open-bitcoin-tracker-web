@@ -1,19 +1,11 @@
 ---
-import { getRelativeLocaleUrl } from 'astro:i18n';
-import { useTranslations, resolveLang, stripLocale } from '../i18n/utils';
+import { useTranslations } from '../i18n/utils';
 import NavMenu from './NavMenu.astro';
 import PageTabs from './PageTabs.astro';
-import { tracker } from '../i18n/tracker';
 const t = useTranslations(Astro.currentLocale);
-const lang = resolveLang(Astro.currentLocale);
-const links = tracker[lang];
-const currentPage = stripLocale(Astro.url.pathname);
 ---
 <nav class="site-nav" aria-label={t.nav.mainAria}>
   <NavMenu>
     <PageTabs />
-    <ul class="menu-secondary" role="list">
-      <li><a href={getRelativeLocaleUrl(lang, 'about')} aria-current={currentPage === 'about' ? 'page' : undefined}>{links.about}</a></li>
-    </ul>
   </NavMenu>
 </nav>
