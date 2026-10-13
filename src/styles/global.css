@@ -36,9 +36,8 @@
   --menu-panel-gap: 3.5rem;
   --menu-brand-size: clamp(1.5rem, 2.2vw, 2rem);
   --menu-brand-height: max(36px, calc(var(--menu-brand-size) * 1.15));
-  --menu-settings-space: 0px;
   /* Both states share the center of the menu's brand row. */
-  --menu-control-top: calc(var(--menu-panel-top) + var(--menu-settings-space) + var(--menu-brand-height) / 2 - var(--menu-control-size) / 2);
+  --menu-control-top: calc(var(--menu-panel-top) + var(--menu-brand-height) / 2 - var(--menu-control-size) / 2);
 }
 .site-nav { position: fixed; top: var(--menu-control-top); left: calc(var(--menu-viewport-width) - var(--menu-control-right) - var(--menu-control-size) + var(--menu-control-offset)); z-index: 50; }
 @media (max-width: 700px) {
@@ -47,7 +46,6 @@
     --menu-panel-top: max(1.25rem, env(safe-area-inset-top));
     --menu-panel-gap: 2rem;
     --menu-brand-size: clamp(1.375rem, 6vw, 1.625rem);
-    --menu-settings-space: calc(48px + var(--menu-panel-gap));
   }
 }
 @media (max-width: 340px) {

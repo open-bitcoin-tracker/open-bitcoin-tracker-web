@@ -281,10 +281,7 @@ const isHome = stripLocale(Astro.url.pathname) === '';
     .nav-menu-trigger svg, .nav-menu-close svg { width: 24px; height: 24px; }
     .nav-menu-dialog { width: 100vw; }
     .nav-menu-panel { padding: var(--menu-panel-top) 1.5rem max(1.5rem, env(safe-area-inset-bottom)); }
-    .nav-menu-settings { order: -1; justify-content: flex-start; gap: .25rem .75rem; margin: 0; min-height: 48px; }
-    .nav-menu-settings :global(.lang-switcher--up .lang-menu) { top: calc(100% + .5rem); bottom: auto; }
-    .nav-menu-settings :global(.lang-switcher--up .lang-caret) { transform: none; }
-    .nav-menu-settings :global(.lang-switcher--up[open] .lang-caret) { transform: rotate(180deg); }
+    .nav-menu-settings { flex-direction: column; align-items: flex-start; gap: .25rem; }
     .menu-brand { gap: .75rem; }
     .menu-links { gap: 1.125rem; }
     .menu-links :global(a) { font-size: clamp(2rem, 9vw, 3.25rem); }
