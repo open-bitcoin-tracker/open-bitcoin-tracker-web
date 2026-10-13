@@ -34,15 +34,20 @@ class Control extends EventTarget {
     return false;
   }
   prepend(child: Control) { child.parentElement = this; }
+  append(child: Control) { child.parentElement = this; }
+  scrollTop = 0;
+  showModal() { this.open = true; }
+  close() { this.open = false; this.dispatchEvent(new Event('close')); }
   focus(_options?: FocusOptions) {}
   setAttribute(name: string, value: string) { this.attributes[name] = value; }
 }
 function harness(reduced = false, when = Date.parse('2026-10-10T12:00:00Z'), data = snapshot) {
   let now = when;
-  const controls = Object.fromEntries(['motion-status', 'population', 'population-status', 'btc-share', 'btc-total', 'btc-basis', 'pause', 'pause-label', 'asset-trigger', 'asset-menu', 'asset-picker', 'picker-symbol', 'picker-name', 'static-asset-heading', 'year-controls', 'year-previous', 'year-next', 'selected-year', 'scenario-note'].map(name => [name, new Control()]));
+  const controls = Object.fromEntries(['motion-status', 'population', 'population-status', 'btc-share', 'btc-total', 'btc-basis', 'pause', 'pause-label', 'asset-trigger', 'asset-menu', 'asset-picker', 'picker-name', 'static-asset-heading', 'year-controls', 'year-previous', 'year-next', 'selected-year', 'scenario-note', 'method-trigger', 'method-dialog', 'method-close', 'method-body', 'method-content', 'method-fallback', 'method-comparison'].map(name => [name, new Control()]));
+  const methodCurrencies = data.fiat.map(money => Object.assign(new Control(), { dataset: { methodCurrency: money.id } }));
   const options = data.fiat.map(money => money.id).map(id => Object.assign(new Control(), {
     textContent: currencies[id as keyof typeof currencies].name,
-    dataset: { assetOption: String(id), symbol: currencies[id as keyof typeof currencies].symbol },
+    dataset: { assetOption: String(id) },
     parentElement: controls['asset-menu'],
   }));
   controls['asset-menu'].parentElement = controls['asset-picker'];
@@ -54,7 +59,7 @@ function harness(reduced = false, when = Date.parse('2026-10-10T12:00:00Z'), dat
     shares[index].parentElement = shareCards[index];
     return Object.assign(new Control(), { id: money.id, children, querySelector: (selector: string) => children[selector.slice(6, -1)] });
   });
-  const root = { dataset: { motion: 'still' } as Record<string, string>, querySelectorAll: () => options, querySelector: (selector: string) => {
+  const root = { dataset: { motion: 'still' } as Record<string, string>, querySelectorAll: (selector: string) => selector === '[data-method-currency]' ? methodCurrencies : selector === '[data-asset-option]' ? options : [], querySelector: (selector: string) => {
     if (selector.startsWith('[data-share-asset=')) return shareCards[data.fiat.findIndex(money => selector.includes(`"${money.id}"`))];
     if (selector.startsWith('[data-currency=')) return panels.find(p => selector.includes(`"${p.id}"`));
     if (selector.startsWith('[data-money-share=')) return shares[data.fiat.findIndex(money => selector.includes(`"${money.id}"`))];
@@ -82,7 +87,7 @@ function harness(reduced = false, when = Date.parse('2026-10-10T12:00:00Z'), dat
   });
   class ClockDate extends Date { static now() { return now; } }
   runInNewContext(script, { require: () => model, exports: {}, document, window, Date: ClockDate });
-  return { controls, panels, shares, shareCards, options, root, document, media,
+  return { controls, panels, shares, shareCards, options, methodCurrencies, root, document, media,
     key: (key: string) => controls['asset-menu'].dispatchEvent(Object.assign(new Event('keydown', { cancelable: true }), { key })),
     advance: (ms: number) => { now += ms; callback?.(); } };
 }
@@ -97,6 +102,37 @@ const yearClick = (h: ReturnType<typeof harness>, action: 'next' | 'previous') =
 const returnToCurrentYear = (h: ReturnType<typeof harness>) => {
   while (!h.controls['year-previous'].disabled) yearClick(h, 'previous');
 };
+
+test('sources modal follows the selected fiat on every opening and restores focus after dismissal', () => {
+  const h = harness();
+  const { controls } = h;
+  const initialBasis = controls['btc-basis'].textContent;
+  const initialTotals = values(h);
+  assert.equal(controls['method-fallback'].hidden, true);
+  assert.equal(controls['method-content'].parentElement, controls['method-body']);
+  assert.equal(controls['method-trigger'].hidden, false);
+  for (const money of snapshot.fiat) {
+    selectAsset(h, money.id);
+    controls['method-body'].scrollTop = 500;
+    controls['method-trigger'].dispatchEvent(new Event('click'));
+    assert.equal(controls['method-dialog'].open, true);
+    assert.equal(controls['method-body'].scrollTop, 0);
+    assert.equal(controls['method-comparison'].textContent, `Bitcoin vs ${currencies[money.id].name}`);
+    assert.deepEqual(h.methodCurrencies.filter(currency => !currency.hidden).map(currency => currency.dataset.methodCurrency), [money.id]);
+    controls['method-close'].dispatchEvent(new Event('click'));
+    assert.equal(controls['method-dialog'].open, false);
+    assert.equal(h.document.activeElement, controls['method-trigger']);
+  }
+  assert.deepEqual(values(h), initialTotals);
+  assert.equal(controls['btc-basis'].textContent, initialBasis);
+  yearClick(h, 'next');
+  controls['method-trigger'].dispatchEvent(new Event('click'));
+  assert.equal(h.root.dataset.mode, 'scenario');
+  assert.equal(controls['scenario-note'].textContent.includes('Scenario:'), true);
+  controls['method-dialog'].dispatchEvent(new Event('click'));
+  assert.equal(controls['method-dialog'].open, false);
+  assert.equal(h.document.activeElement, controls['method-trigger']);
+});
 
 test('Bitcoin uses whole satoshis exclusively and rounds only after converting the unrounded share', () => {
   const when = Date.parse('2026-10-12T16:00:00Z'), h = harness(false, when);
@@ -328,7 +364,6 @@ test('default pair is USD; all five fiats switch both panel and per-person selec
     assert.equal(h.controls['asset-menu'].open, false);
     h.options.forEach(option => assert.equal(option.attributes['aria-pressed'], String(option.dataset.assetOption === id)));
     assert.equal(h.controls['picker-name'].textContent, currencies[id as keyof typeof currencies].name);
-    assert.equal(h.controls['picker-symbol'].textContent, currencies[id as keyof typeof currencies].symbol);
     assert.equal(h.controls['btc-share'].textContent, bitcoin);
   }
   h.options[0].dataset.assetOption = 'chf';

@@ -27,18 +27,49 @@ if (root && json) {
   const assetMenu = root.querySelector<HTMLDetailsElement>('[data-asset-menu]');
   const assetOptions = Array.from(root.querySelectorAll<HTMLButtonElement>('[data-asset-option]'));
   const assetPicker = root.querySelector<HTMLElement>('[data-asset-picker]');
-  const pickerSymbol = root.querySelector<HTMLElement>('[data-picker-symbol]');
   const pickerName = root.querySelector<HTMLElement>('[data-picker-name]');
   const yearControls = root.querySelector<HTMLElement>('[data-year-controls]');
   const previousYear = root.querySelector<HTMLButtonElement>('[data-year-previous]');
   const nextYear = root.querySelector<HTMLButtonElement>('[data-year-next]');
   const selectedYear = root.querySelector<HTMLElement>('[data-selected-year]');
   const scenarioNote = root.querySelector<HTMLElement>('[data-scenario-note]');
+  root.querySelectorAll<HTMLElement>('[data-sats-help]').forEach(help => {
+    const label = help.querySelector<HTMLButtonElement>('.sats-label');
+    const tooltip = help.querySelector<HTMLElement>('.sats-tooltip');
+    const position = () => {
+      if (!label || !tooltip) return;
+      const bounds = label.getBoundingClientRect();
+      const viewportWidth = document.documentElement.clientWidth;
+      const desiredWidth = Math.min(15 * parseFloat(getComputedStyle(document.documentElement).fontSize), viewportWidth - 32);
+      const rightRoom = viewportWidth - bounds.right - 24;
+      const leftRoom = bounds.left - 24;
+      const onRight = rightRoom >= desiredWidth || rightRoom >= leftRoom;
+      const width = Math.max(1, Math.min(desiredWidth, onRight ? rightRoom : leftRoom));
+      tooltip.dataset.positioned = '';
+      tooltip.style.width = `${width}px`;
+      tooltip.style.left = `${onRight ? bounds.right + 8 : bounds.left - 8 - width}px`;
+      const height = tooltip.getBoundingClientRect().height;
+      tooltip.style.top = `${Math.max(16, Math.min(bounds.top + (bounds.height - height) / 2, window.innerHeight - height - 16))}px`;
+    };
+    const reset = () => { help.removeAttribute('data-tooltip-dismissed'); position(); };
+    help.addEventListener('pointerenter', reset);
+    help.addEventListener('focusin', reset);
+    help.addEventListener('keydown', event => {
+      if (event.key === 'Escape') help.setAttribute('data-tooltip-dismissed', '');
+    });
+    window.addEventListener('resize', position);
+    document.addEventListener('scroll', position, { capture: true, passive: true });
+  });
+  const methodCurrencies = Array.from(root.querySelectorAll<HTMLElement>('[data-method-currency]'));
+  const methodComparison = root.querySelector<HTMLElement>('[data-method-comparison]');
   const comparisonAssets = panels.map(({ money, panel }) => ({
     id: money.id, panel, shareCard: root.querySelector<HTMLElement>(`[data-share-asset="${money.id}"]`),
   }));
   let selectedAsset = 'usd';
   const updateSelectedAsset = () => {
+    for (const currency of methodCurrencies) currency.hidden = currency.dataset.methodCurrency !== selectedAsset;
+    const selectedName = assetOptions.find(option => option.dataset.assetOption === selectedAsset)?.textContent;
+    if (methodComparison && selectedName) methodComparison.textContent = `Bitcoin vs ${selectedName}`;
     for (const { id, panel, shareCard } of comparisonAssets) {
       const selected = String(id === selectedAsset);
       panel?.setAttribute('data-selected', selected);
@@ -51,9 +82,6 @@ if (root && json) {
       if (option?.textContent) {
         assetPicker.setAttribute('aria-label', option.textContent);
         if (pickerName) pickerName.textContent = option.textContent;
-      }
-      if (pickerSymbol) {
-        pickerSymbol.textContent = option?.dataset.symbol ?? '';
       }
       if (selectedPanel && assetPicker.parentElement !== selectedPanel) {
         const focused = document.activeElement === assetTrigger;
@@ -109,6 +137,40 @@ if (root && json) {
   });
   document.addEventListener('click', (event) => { if (assetMenu?.open && !assetMenu.contains(event.target as Node)) closeAssetMenu(); });
   document.addEventListener('focusin', () => { if (assetMenu?.open && !assetMenu.contains(document.activeElement)) closeAssetMenu(); });
+  // Move the existing content instead of duplicating its live status elements.
+  // The native disclosure remains usable when JavaScript or dialog support is absent.
+  const methodTrigger = root.querySelector<HTMLButtonElement>('[data-method-trigger]');
+  const methodDialog = root.querySelector<HTMLDialogElement>('[data-method-dialog]');
+  const methodClose = root.querySelector<HTMLButtonElement>('[data-method-close]');
+  const methodBody = root.querySelector<HTMLElement>('[data-method-body]');
+  const methodContent = root.querySelector<HTMLElement>('[data-method-content]');
+  const methodFallback = root.querySelector<HTMLDetailsElement>('[data-method-fallback]');
+  if (methodTrigger && methodDialog && methodClose && methodBody && methodContent && methodFallback && typeof methodDialog.showModal === 'function') {
+    methodBody.append(methodContent);
+    methodFallback.hidden = true;
+    methodTrigger.hidden = false;
+    methodTrigger.addEventListener('click', () => {
+      updateSelectedAsset();
+      closeAssetMenu();
+      if (!methodDialog.open) methodDialog.showModal();
+      methodBody.scrollTop = 0;
+    });
+    methodClose.addEventListener('click', () => methodDialog.close());
+    methodDialog.addEventListener('click', (event) => {
+      if (event.target === methodDialog) methodDialog.close();
+    });
+    methodDialog.addEventListener('close', () => methodTrigger.focus({ preventScroll: true }));
+    methodDialog.addEventListener('keydown', (event) => {
+      if (event.key !== 'Tab') return;
+      const controls = Array.from(methodDialog.querySelectorAll<HTMLElement>('button:not([disabled]), a[href]')).filter(element => element.getClientRects().length > 0);
+      const first = controls[0], last = controls.at(-1);
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault(); last?.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault(); first?.focus();
+      }
+    });
+  }
   const reduce = window.matchMedia('(prefers-reduced-motion: reduce)');
   let paused = false;
   const visitAt = Date.now();
