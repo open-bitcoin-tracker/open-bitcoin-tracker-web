@@ -9,16 +9,17 @@ import { fr } from './locales/fr';
 import { de } from './locales/de';
 import { it } from './locales/it';
 
-// Strip `readonly` recursively so a locale file can be authored as a plain
-// object literal and still satisfy the English-derived shape. This is the
-// contract every translation is checked against — see locales/en.ts.
-type DeepMutable<T> = T extends readonly (infer U)[]
-  ? DeepMutable<U>[]
-  : T extends object
-    ? { -readonly [K in keyof T]: DeepMutable<T[K]> }
-    : T;
+// Preserve the English keys while allowing translated strings and either
+// mutable locale arrays or the canonical dictionary's readonly arrays.
+type DictionaryShape<T> = T extends string
+  ? string
+  : T extends readonly (infer U)[]
+    ? readonly DictionaryShape<U>[]
+    : T extends object
+      ? { readonly [K in keyof T]: DictionaryShape<T[K]> }
+      : T;
 
-export type Dict = DeepMutable<typeof en>;
+export type Dict = DictionaryShape<typeof en>;
 
 export const defaultLang = 'en';
 

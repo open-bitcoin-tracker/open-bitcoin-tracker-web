@@ -1,8 +1,9 @@
 ---
 import Phone from './Phone.astro';
+import type { ScreenshotName } from '../lib/screenshots';
 import { useTranslations } from '../i18n/utils';
 const t = useTranslations(Astro.currentLocale);
-const srcs = ['/screenshots/paper-cream.png', '/screenshots/salmon-press.png', '/screenshots/deepsea-blue.png', '/screenshots/oled-black.png'];
+const srcs: ScreenshotName[] = ['paper', 'salmon', 'deepsea', 'oled'];
 const swatches = ['#F8F7F3', '#F3C7B6', '#0F1E3A', '#080808'];
 ---
 <section id="themes" class="themes-section section-space" data-scene>

@@ -129,14 +129,6 @@ export const es: Dict = {
     followAria: 'Max Hodler en X',
     primalAria: 'Max Hodler en Primal',
     dataSourceLabels: ['Precios actuales', 'Precios históricos', 'Tipos de cambio históricos', 'Mempool y hashrate'],
-    currenciesHeader: 'Monedas disponibles',
-    currencyNote: 'Mira tus stacks en cualquiera de estas monedas fiat.',
-    // Nombres completos de las monedas; los códigos ISO (USD, EUR, …) quedan
-    // literales en la página, emparejados con este array por índice. Orden:
-    // USD, EUR, GBP, AUD, CAD, CHF, JPY.
-    currencyNames: ['Dólar estadounidense', 'Euro', 'Libra esterlina', 'Dólar australiano', 'Dólar canadiense', 'Franco suizo', 'Yen japonés'],
-    languagesHeader: 'Idiomas disponibles',
-    languageNote: 'La app y este sitio están disponibles en estos idiomas.',
   },
 
   policy: {

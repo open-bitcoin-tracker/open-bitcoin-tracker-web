@@ -129,11 +129,6 @@ export const tr: Dict = {
     followAria: "X'te Max Hodler",
     primalAria: "Primal'da Max Hodler",
     dataSourceLabels: ['Güncel fiyatlar', 'Geçmiş fiyatlar', 'Geçmiş döviz kurları', 'Mempool ve hashrate'],
-    currenciesHeader: 'Desteklenen para birimleri',
-    currencyNote: "Stack'lerini bu fiat para birimlerinin herhangi biriyle gör.",
-    currencyNames: ['ABD doları', 'Euro', 'İngiliz sterlini', 'Avustralya doları', 'Kanada doları', 'İsviçre frangı', 'Japon yeni'],
-    languagesHeader: 'Desteklenen diller',
-    languageNote: 'Uygulama ve bu site bu dillerde mevcut.',
   },
 
   policy: {

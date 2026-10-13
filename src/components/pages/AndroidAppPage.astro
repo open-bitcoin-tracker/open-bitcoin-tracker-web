@@ -8,6 +8,7 @@ import Prices from '../Prices.astro';
 import Privacy from '../Privacy.astro';
 import KeepAndroidOpen from '../KeepAndroidOpen.astro';
 import Footer from '../Footer.astro';
+import '../../styles/android-app.css';
 ---
 
 <Layout page="home">
@@ -20,6 +21,10 @@ import Footer from '../Footer.astro';
   </main>
   <Footer />
 </Layout>
+
+<script>
+  import '../../scripts/motion';
+</script>
 
 <style>
   :global(body:has(.android-app-page)) {

@@ -11,14 +11,12 @@ import react from '@astrojs/react';
 // array makes Astro.currentLocale resolve to 'pt-BR' on the /pt/ route while
 // the URL stays short. The locale list here is the single source of truth that
 // the translation layer (src/i18n) and the language switcher build on.
-const locales = ['en', 'es', { path: 'pt', codes: ['pt-BR', 'pt'] }, 'ru', 'tr', 'vi', 'ja', 'fr', 'de', 'it'];
-
 // https://astro.build/config
 export default defineConfig({
   site: 'https://openbitcointracker.com',
   i18n: {
     defaultLocale: 'en',
-    locales,
+    locales: ['en', 'es', { path: 'pt', codes: ['pt-BR', 'pt'] }, 'ru', 'tr', 'vi', 'ja', 'fr', 'de', 'it'],
     routing: {
       prefixDefaultLocale: false,
       redirectToDefaultLocale: false,

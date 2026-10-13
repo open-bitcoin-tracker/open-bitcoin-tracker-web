@@ -1,19 +1,23 @@
 ---
+import AppScreenshot from './AppScreenshot.astro';
+import type { ScreenshotName } from '../lib/screenshots';
 interface Props {
-  src: string;
+  src: ScreenshotName;
   alt: string;
+  darkSrc?: ScreenshotName;
+  darkAlt?: string;
   id?: string;
   class?: string;
   tilt?: boolean;
   eager?: boolean;
 }
-const { src, alt, id, class: className, tilt = false, eager = false } = Astro.props;
+const { src, alt, darkSrc, darkAlt, id, class: className, tilt = false, eager = false } = Astro.props;
 ---
 <div class:list={['device', className]} id={id} data-tilt={tilt || undefined}>
   <div class="device-tilt">
     <div class="device-frame">
       <div class="device-screen">
-        <img src={src} alt={alt} width="1280" height="2856" loading={eager ? 'eager' : 'lazy'} fetchpriority={eager ? 'high' : 'auto'} decoding="async" />
+        <AppScreenshot name={src} alt={alt} darkName={darkSrc} darkAlt={darkAlt} eager={eager} />
       </div>
     </div>
   </div>

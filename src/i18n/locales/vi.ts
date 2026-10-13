@@ -129,11 +129,6 @@ export const vi: Dict = {
     followAria: 'Max Hodler trên X',
     primalAria: 'Max Hodler trên Primal',
     dataSourceLabels: ['Giá hiện tại', 'Giá lịch sử', 'Tỷ giá ngoại tệ lịch sử', 'Mempool và hashrate'],
-    currenciesHeader: 'Các loại tiền tệ được hỗ trợ',
-    currencyNote: 'Xem stack của bạn theo bất kỳ loại tiền pháp định nào dưới đây.',
-    currencyNames: ['Đô la Mỹ', 'Euro', 'Bảng Anh', 'Đô la Úc', 'Đô la Canada', 'Franc Thụy Sĩ', 'Yên Nhật'],
-    languagesHeader: 'Các ngôn ngữ được hỗ trợ',
-    languageNote: 'Ứng dụng và trang web này có sẵn bằng những ngôn ngữ dưới đây.',
   },
 
   policy: {

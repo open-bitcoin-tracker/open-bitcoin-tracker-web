@@ -1,0 +1,36 @@
+---
+import { getScreenshot, type ScreenshotName } from '../lib/screenshots';
+
+interface Props {
+  name: ScreenshotName;
+  alt: string;
+  darkName?: ScreenshotName;
+  darkAlt?: string;
+  eager?: boolean;
+  preview?: boolean;
+}
+const { name, alt, darkName, darkAlt = alt, eager = false, preview = false } = Astro.props;
+const light = await getScreenshot(name, preview);
+const dark = darkName ? await getScreenshot(darkName, preview) : undefined;
+const sizes = preview ? '180px' : '(max-width: 480px) 238px, (max-width: 1100px) 264px, 300px';
+const attributes = { width: light.width, height: light.height, sizes, alt, loading: eager ? 'eager' as const : 'lazy' as const, fetchpriority: eager ? 'high' as const : 'auto' as const, decoding: 'async' as const };
+---
+<!-- Select a theme before assigning a URL, so the preload scanner cannot
+     download the light screenshot before an explicit dark preference applies. -->
+<img {...attributes} src={dark ? undefined : light.src} srcset={dark ? undefined : light.srcset} hidden={dark ? true : undefined} />
+{dark && <script is:inline define:vars={{ light, dark, alt, darkAlt }}>
+  (() => {
+    const image = document.currentScript.previousElementSibling;
+    const syncTheme = () => {
+      const isDark = document.documentElement.classList.contains('dark');
+      const screen = isDark ? dark : light;
+      image.srcset = screen.srcset;
+      image.src = screen.src;
+      image.alt = isDark ? darkAlt : alt;
+      image.hidden = false;
+    };
+    syncTheme();
+    document.addEventListener('themechange', syncTheme);
+  })();
+</script>}
+{dark && <noscript><img {...light} {...attributes} /></noscript>}

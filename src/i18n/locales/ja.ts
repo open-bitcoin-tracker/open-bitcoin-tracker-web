@@ -129,11 +129,6 @@ export const ja: Dict = {
     followAria: 'X で Max Hodler をフォロー',
     primalAria: 'Primal で Max Hodler をフォロー',
     dataSourceLabels: ['現在価格', '過去価格', '過去の為替レート', 'メモリプールとハッシュレート'],
-    currenciesHeader: '対応通貨',
-    currencyNote: 'スタックの価値を、以下のいずれの法定通貨でも表示できます。',
-    currencyNames: ['米ドル', 'ユーロ', '英ポンド', '豪ドル', 'カナダドル', 'スイスフラン', '日本円'],
-    languagesHeader: '対応言語',
-    languageNote: 'アプリとこのサイトは、以下の言語でご利用いただけます。',
   },
 
   policy: {

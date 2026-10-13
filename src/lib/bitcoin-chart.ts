@@ -37,24 +37,62 @@ export function mergeHistory(base: HistoryPoint[], recent: HistoryPoint[]): Hist
 // The app defaults to log10, a straight 1.5px line, and 5% vertical padding.
 // SVG keeps those details sharp at every viewport size without a chart library.
 export function chartViewport(points: HistoryPoint[], scale: ChartScale): ChartViewport {
-  const values = points.map((point) => scale === 'logarithmic' ? Math.log10(point.price) : point.price);
-  const low = Math.min(...values);
-  const range = Math.max(Math.max(...values) - low, 1e-6);
+  let low = Infinity;
+  let high = -Infinity;
+  for (const point of points) {
+    const value = scale === 'logarithmic' ? Math.log10(point.price) : point.price;
+    low = Math.min(low, value);
+    high = Math.max(high, value);
+  }
+  const range = Math.max(high - low, 1e-6);
   return { start: points[0].time, end: points.at(-1)!.time, bottom: low - range * 0.05, top: low + range * 1.05 };
 }
 
-export function chartPaths(points: HistoryPoint[], width: number, height: number, scale: ChartScale = 'logarithmic', viewport?: ChartViewport) {
-  if (points.length < 2) return { line: '', area: '', positions: [] };
+export function chartPositions(points: HistoryPoint[], width: number, height: number, scale: ChartScale = 'logarithmic', viewport?: ChartViewport) {
+  if (points.length < 2) return [];
   const { start, end, bottom, top } = viewport ?? chartViewport(points, scale);
   const span = Math.max(end - start, 1);
   const extent = top - bottom;
-  const positions = points.map((point) => {
+  return points.map((point) => {
     const x = (point.time - start) / span * width;
     const value = scale === 'logarithmic' ? Math.log10(point.price) : point.price;
     const y = height - (value - bottom) / extent * height;
     return { x, y };
   });
-  const coords = positions.map(({ x, y }) => `${x.toFixed(2)},${y.toFixed(2)}`);
+}
+
+// Keep the low and high samples in each CSS-pixel column, in time order,
+// plus both endpoints. Inspection keeps every sample from the original data.
+export function compactPositions(positions: { x: number; y: number }[]) {
+  const compact: typeof positions = [];
+  let start = 0;
+  while (start < positions.length) {
+    const column = Math.floor(positions[start].x);
+    let end = start + 1;
+    let low = start;
+    let high = start;
+    while (end < positions.length && Math.floor(positions[end].x) === column) {
+      if (positions[end].y < positions[low].y) low = end;
+      if (positions[end].y > positions[high].y) high = end;
+      end++;
+    }
+    const indices = [low, high];
+    if (start === 0) indices.push(0);
+    if (end === positions.length) indices.push(end - 1);
+    indices.sort((a, b) => a - b);
+    for (let i = 0; i < indices.length; i++) {
+      if (i === 0 || indices[i] !== indices[i - 1]) compact.push(positions[indices[i]]);
+    }
+    start = end;
+  }
+  return compact;
+}
+
+export function chartPaths(points: HistoryPoint[], width: number, height: number, scale: ChartScale = 'logarithmic', viewport?: ChartViewport) {
+  const positions = chartPositions(points, width, height, scale, viewport);
+  if (!positions.length) return { line: '', area: '', positions };
+  const painted = points.length > width * 2 ? compactPositions(positions) : positions;
+  const coords = painted.map(({ x, y }) => `${x.toFixed(2)},${y.toFixed(2)}`);
   const line = `M${coords.join(' L')}`;
   return { line, area: `${line} L${positions.at(-1)!.x.toFixed(2)},${height} L${positions[0].x.toFixed(2)},${height} Z`, positions };
 }

@@ -5,9 +5,7 @@ import {
   useRef,
   useState,
 } from 'react';
-import { AttributionControl, LngLat, Map, setWorkerUrl } from 'maplibre-gl';
-import type { StyleSpecification } from 'maplibre-gl';
-import workerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url';
+import type { Map, StyleSpecification } from 'maplibre-gl';
 import mapStyle from '../map/style.json';
 import type { Location } from '../lib/locations';
 import type { Theme } from '../lib/siteTheme';
@@ -16,8 +14,6 @@ import { DEFAULT_CENTER } from '../map/geo';
 import { followViewportCenter, viewportOverlay } from '../map/mapOverlay';
 import { applyMapTheme } from '../map/mapTheme';
 import { renderOverlay } from '../map/renderOverlay';
-
-setWorkerUrl(workerUrl);
 
 const DEFAULT_ZOOM = 14;
 
@@ -67,6 +63,7 @@ export function useEarthMap({
     let timer: ReturnType<typeof setTimeout> | undefined;
     let observer: ResizeObserver | undefined;
     let stopFollowing: (() => void) | undefined;
+    let disposed = false;
 
     function cleanup() {
       clearTimeout(timer);
@@ -83,79 +80,85 @@ export function useEarthMap({
     baseStyleRef.current = null;
     setReady(false);
     setError(null);
-    try {
-      const instance = new Map({
-        container,
-        style: mapStyle as StyleSpecification,
-        center: centerRef.current,
-        zoom: DEFAULT_ZOOM,
-        maxZoom: 22,
-        minZoom: 0,
-        // Bound the camera center rather than the viewport to preserve the
-        // selected location as the globe flattens at close-up zooms.
-        transformConstrain: (point, zoom) => ({
-          center: new LngLat(point.lng, Math.max(-85, Math.min(85, point.lat))),
-          zoom: Math.max(0, Math.min(22, zoom)),
-        }),
-        attributionControl: false,
-        renderWorldCopies: true,
-        dragRotate: false,
-        pitchWithRotate: false,
-        touchPitch: false,
-      });
-      map = instance;
-      mapRef.current = instance;
-      instance.touchZoomRotate.disableRotation();
-      instance.keyboard.disableRotation();
-      instance.addControl(
-        new AttributionControl({
-          compact: false,
-        }),
-        'bottom-right',
-      );
-
-      timer = setTimeout(() => {
-        setError(
-          'The map is taking longer than expected. Check your connection and try again. Your area calculation still works.',
-        );
-      }, 20_000);
-
-      instance.on('style.load', () => {
-        const base = instance.getStyle();
-        baseStyleRef.current = base;
-        applyMapTheme(instance, base, optionsRef.current.theme);
-        // MapLibre's globe preset uses a local flat projection for close-ups.
-        instance.setProjection({ type: 'globe' });
-      });
-      instance.on('load', () => {
-        clearTimeout(timer);
-        setReady(true);
-        setError(null);
-        syncOverlay();
-        stopFollowing = followViewportCenter(instance, (center) => {
-          centerRef.current = center;
+    async function initialize(container: HTMLDivElement) {
+      try {
+        const { AttributionControl, LngLat, Map } = await import('../map/engine');
+        if (disposed) return;
+        const instance = new Map({
+          container,
+          style: mapStyle as StyleSpecification,
+          center: centerRef.current,
+          zoom: DEFAULT_ZOOM,
+          maxZoom: 22,
+          minZoom: 0,
+          // Bound the camera center rather than the viewport to preserve the
+          // selected location as the globe flattens at close-up zooms.
+          transformConstrain: (point, zoom) => ({
+            center: new LngLat(point.lng, Math.max(-85, Math.min(85, point.lat))),
+            zoom: Math.max(0, Math.min(22, zoom)),
+          }),
+          attributionControl: false,
+          renderWorldCopies: true,
+          dragRotate: false,
+          pitchWithRotate: false,
+          touchPitch: false,
         });
-        // Use the transform that drew this map frame, including projection transitions.
-        instance.on('render', syncOverlay);
-      });
-      instance.on('error', () => {
-        setError(
-          'Some map data could not load. Check your connection, then retry. Your area calculation still works.',
+        map = instance;
+        mapRef.current = instance;
+        instance.touchZoomRotate.disableRotation();
+        instance.keyboard.disableRotation();
+        instance.addControl(
+          new AttributionControl({
+            compact: false,
+          }),
+          'bottom-right',
         );
-      });
-      instance.on('movestart', (event) => {
-        if (event.originalEvent) optionsRef.current.onInteraction();
-      });
 
-      observer = new ResizeObserver(() => instance.resize());
-      observer.observe(container);
-    } catch {
-      cleanup();
-      setError(
-        'The map could not start. Your browser needs WebGL enabled. Try another browser; your area calculation still works.',
-      );
+        timer = setTimeout(() => {
+          setError(
+            'The map is taking longer than expected. Check your connection and try again. Your area calculation still works.',
+          );
+        }, 20_000);
+
+        instance.on('style.load', () => {
+          const base = instance.getStyle();
+          baseStyleRef.current = base;
+          applyMapTheme(instance, base, optionsRef.current.theme);
+          // MapLibre's globe preset uses a local flat projection for close-ups.
+          instance.setProjection({ type: 'globe' });
+        });
+        instance.on('load', () => {
+          clearTimeout(timer);
+          setReady(true);
+          setError(null);
+          syncOverlay();
+          stopFollowing = followViewportCenter(instance, (center) => {
+            centerRef.current = center;
+          });
+          // Use the transform that drew this map frame, including projection transitions.
+          instance.on('render', syncOverlay);
+        });
+        instance.on('error', () => {
+          setError(
+            'Some map data could not load. Check your connection, then retry. Your area calculation still works.',
+          );
+        });
+        instance.on('movestart', (event) => {
+          if (event.originalEvent) optionsRef.current.onInteraction();
+        });
+
+        observer = new ResizeObserver(() => instance.resize());
+        observer.observe(container);
+      } catch {
+        if (disposed) return;
+        cleanup();
+        setError(
+          'The map could not start. Your browser needs WebGL enabled. Try another browser; your area calculation still works.',
+        );
+      }
     }
-    return cleanup;
+    void initialize(container);
+    return () => { disposed = true; cleanup(); };
   }, [retryCount, syncOverlay]);
 
   useEffect(() => {

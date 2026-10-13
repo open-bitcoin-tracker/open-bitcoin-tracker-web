@@ -3,14 +3,14 @@
   font-style: normal;
   font-weight: 400;
   font-display: swap;
-  src: url('/earth/fonts/TitilliumWeb-Regular.ttf') format('truetype');
+  src: url('/earth/fonts/TitilliumWeb-Regular.woff2') format('woff2');
 }
 @font-face {
   font-family: 'Titillium Web';
   font-style: normal;
   font-weight: 600;
   font-display: swap;
-  src: url('/earth/fonts/TitilliumWeb-SemiBold.ttf') format('truetype');
+  src: url('/earth/fonts/TitilliumWeb-SemiBold.woff2') format('woff2');
 }
 
 .earth-feature {

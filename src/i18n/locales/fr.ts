@@ -129,11 +129,6 @@ export const fr: Dict = {
     followAria: 'Max Hodler sur X',
     primalAria: 'Max Hodler sur Primal',
     dataSourceLabels: ['Prix actuels', 'Prix historiques', 'Taux de change historiques', 'Mempool et hashrate'],
-    currenciesHeader: 'Devises prises en charge',
-    currencyNote: 'Affiche tes stacks dans l’une de ces devises fiat.',
-    currencyNames: ['Dollar américain', 'Euro', 'Livre sterling', 'Dollar australien', 'Dollar canadien', 'Franc suisse', 'Yen japonais'],
-    languagesHeader: 'Langues prises en charge',
-    languageNote: 'L’application et ce site sont disponibles dans ces langues.',
   },
 
   policy: {

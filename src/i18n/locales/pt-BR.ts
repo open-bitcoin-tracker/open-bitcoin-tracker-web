@@ -129,16 +129,6 @@ export const ptBR: Dict = {
     followAria: 'Max Hodler no X',
     primalAria: 'Max Hodler no Primal',
     dataSourceLabels: ['Preços atuais', 'Preços históricos', 'Câmbio histórico', 'Mempool e hashrate'],
-    currenciesHeader: 'Moedas suportadas',
-    currencyNote: 'Veja seus stacks em qualquer uma dessas moedas fiduciárias.',
-    // Full currency names; the ISO codes (USD, EUR, …) stay literal in the
-    // page, zipped against this array by index. Order: USD, EUR, GBP, AUD, CAD,
-    // CHF, JPY.
-    currencyNames: ['Dólar americano', 'Euro', 'Libra esterlina', 'Dólar australiano', 'Dólar canadense', 'Franco suíço', 'Iene japonês'],
-    languagesHeader: 'Idiomas suportados',
-    languageNote: 'O app e este site estão disponíveis nestes idiomas.',
-    // The language autonyms themselves (English, Español, …) are never
-    // translated — they live literally in the page markup.
   },
 
   policy: {

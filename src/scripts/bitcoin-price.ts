@@ -1,4 +1,4 @@
-import { DAY_MS, chartPaths, chartViewport, mergeHistory, nearestHistoryIndex, parseHistory, visibleHistory, type ChartScale, type HistoryPoint } from '../lib/bitcoin-chart';
+import { DAY_MS, chartPaths, chartPositions, chartViewport, mergeHistory, nearestHistoryIndex, parseHistory, visibleHistory, type ChartScale, type HistoryPoint } from '../lib/bitcoin-chart';
 import { ChartMotion } from '../lib/bitcoin-chart-motion';
 import { createPriceChangeFormatter } from '../lib/bitcoin-price-change';
 import type { TrackerCopy } from '../i18n/tracker';
@@ -103,7 +103,7 @@ function startTracker(root: HTMLElement) {
     markerLine.setAttribute('y2', String(height));
     markerGradient.setAttribute('y2', String(height));
     if (!motion.animating) {
-      plottedPositions = chartPaths(plottedPoints, width, height, scene.scale, scene.viewport).positions;
+      plottedPositions = chartPositions(plottedPoints, width, height, scene.scale, scene.viewport);
       updatePriceDisplay();
     }
     if (motion.animating && !motionFrame && !document.hidden && !stopped) {
@@ -113,6 +113,10 @@ function startTracker(root: HTMLElement) {
 
   function setStatus(state: 'connecting' | 'live' | 'delayed' | 'offline') {
     feedState = state;
+  }
+
+  function streamIsLive() {
+    return feedState === 'live';
   }
 
   function draw() {
@@ -381,7 +385,7 @@ function startTracker(root: HTMLElement) {
   }
 
   function scheduleDraw() {
-    if (!paintFrame && !stopped) paintFrame = requestAnimationFrame(draw);
+    if (!paintFrame && !stopped && !document.hidden) paintFrame = requestAnimationFrame(draw);
   }
 
   function onMotionPreferenceChange() {
@@ -397,8 +401,10 @@ function startTracker(root: HTMLElement) {
   function applyPrice(value: number) {
     if (!Number.isFinite(value) || value <= 0) return;
     livePoint = { time: Date.now(), price: value };
-    updatePriceDisplay();
-    scheduleDraw();
+    if (!document.hidden && !stopped) {
+      updatePriceDisplay();
+      scheduleDraw();
+    }
   }
 
   async function getJson(url: string) {
@@ -453,8 +459,8 @@ function startTracker(root: HTMLElement) {
   }
 
   async function pollPrice() {
-    if (polling || stopped || !navigator.onLine) return;
-    if (feedState === 'live') return;
+    if (polling || stopped || document.hidden || !navigator.onLine) return;
+    if (streamIsLive()) return;
     polling = true;
     try {
       const result = await getJson('https://api.kraken.com/0/public/Ticker?pair=XBTUSD');
@@ -462,7 +468,7 @@ function startTracker(root: HTMLElement) {
       const price = Number(ticker?.c?.[0]);
       if (!Number.isFinite(price) || price <= 0) throw new Error('Missing ticker price');
       // A late REST response must never replace a newer stream update.
-      if (feedState !== 'live') {
+      if (!streamIsLive() && !stopped && !document.hidden) {
         applyPrice(price);
         setStatus('delayed');
       }
@@ -474,7 +480,7 @@ function startTracker(root: HTMLElement) {
   }
 
   function connect() {
-    if (stopped || !navigator.onLine) return;
+    if (stopped || document.hidden || !navigator.onLine) return;
     clearTimeout(reconnectTimer);
     if (socket && socket.readyState < WebSocket.CLOSING) return;
     setStatus(livePoint ? 'delayed' : 'connecting');
@@ -503,14 +509,15 @@ function startTracker(root: HTMLElement) {
     connection.addEventListener('close', () => {
       if (socket !== connection) return;
       socket = undefined;
-      if (stopped) return;
+      if (stopped || document.hidden) return;
       setStatus(navigator.onLine ? 'delayed' : 'offline');
       void pollPrice();
       reconnectTimer = setTimeout(connect, Math.min(1000 * 2 ** attempts++, 30_000));
     });
   }
 
-  new ResizeObserver(scheduleDraw).observe(chart);
+  const resizeObserver = new ResizeObserver(scheduleDraw);
+  resizeObserver.observe(chart);
   // Bundled data is also rendered at build time, so the chart works before JS.
   void (async () => {
     try {
@@ -525,38 +532,52 @@ function startTracker(root: HTMLElement) {
   connect();
   void pollPrice();
   void refreshCurrency();
-  const watchdog = setInterval(() => {
-    if (stopped) return;
+  function checkStream() {
     if (socket && (Date.now() - lastMessage > 30_000 || (feedState === 'live' && Date.now() - lastStreamTick > 60_000))) {
       setStatus('delayed');
       socket.close();
     }
-  }, 5000);
-  const pollTimer = setInterval(() => { void pollPrice(); }, 30_000);
-  const historyTimer = setInterval(() => { if (history.length) void refreshHistory(); }, 900_000);
-  const candleTimer = setInterval(() => { void refreshCandles(); void refreshCurrency(); }, 60_000);
+  }
+  let timers: ReturnType<typeof setInterval>[] = [];
+  function stopTimers() {
+    timers.forEach(clearInterval);
+    timers = [];
+  }
+  function startTimers() {
+    if (timers.length || stopped || document.hidden) return;
+    timers = [
+      setInterval(checkStream, 5000),
+      setInterval(() => { void pollPrice(); }, 30_000),
+      setInterval(() => { if (history.length) void refreshHistory(); }, 900_000),
+      setInterval(() => { void refreshCandles(); void refreshCurrency(); }, 60_000),
+    ];
+  }
+  startTimers();
 
   window.addEventListener('offline', () => { setStatus('offline'); socket?.close(); });
   window.addEventListener('online', () => { connect(); void pollPrice(); if (history.length) void refreshHistory(); void refreshCandles(); void refreshCurrency(); });
   document.addEventListener('visibilitychange', () => {
     if (document.hidden) {
+      stopTimers();
+      clearTimeout(reconnectTimer);
+      socket?.close();
+      cancelAnimationFrame(paintFrame);
+      paintFrame = 0;
       markerWaves.hidden = true;
       motion.finish();
       cancelAnimationFrame(motionFrame);
       motionFrame = 0;
-    } else if (!stopped) { scheduleDraw(); connect(); void pollPrice(); if (history.length) void refreshHistory(); void refreshCandles(true); void refreshCurrency(); }
+    } else if (!stopped) { startTimers(); scheduleDraw(); connect(); void pollPrice(); if (history.length) void refreshHistory(); void refreshCandles(true); void refreshCurrency(); }
   });
   window.addEventListener('pagehide', () => {
     stopped = true;
+    resizeObserver.disconnect();
     cancelAnimationFrame(paintFrame);
     cancelAnimationFrame(motionFrame);
     reduceMotion.removeEventListener('change', onMotionPreferenceChange);
     rangePill.destroy();
     clearTimeout(reconnectTimer);
-    clearInterval(watchdog);
-    clearInterval(pollTimer);
-    clearInterval(historyTimer);
-    clearInterval(candleTimer);
+    stopTimers();
     socket?.close();
   });
   window.addEventListener('pageshow', (event) => { if (event.persisted) window.location.reload(); });

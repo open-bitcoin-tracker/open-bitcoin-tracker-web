@@ -25,6 +25,8 @@ npm run dev
 
 The build does not run a full TypeScript check. Local development and preview do not run the Pages Function.
 
+App screenshots live in `src/assets/screenshots/`. The shared screenshot component generates responsive WebP files at build time, reuses those transforms across locales, and serves only the selected theme. No runtime image server is needed. Android presentation styles and motion scripts load only on the Android page. Display fonts use self-hosted WOFF2 files; the original fonts and licenses remain available in `public/`.
+
 ## Pages and languages
 
 - `/`: Open Bitcoin Tracker landing page with access to the price tracker, Android app, A Bit of Earth, and the monetary supply comparison.
@@ -40,7 +42,7 @@ On Cloudflare Pages, `functions/_middleware.js` honors a valid `lang` cookie on 
 
 ## A Bit of Earth
 
-The map is a browser-rendered React feature inside Astro, adapted from [A Bit of Earth](https://github.com/Max-Hodler/bitcoin-land). It uses MapLibre GL and a bundled worker, with scoped styles, the shared site palette and UI typography, and Titillium Web for the map readout (the font license is included in `public/earth/fonts/OFL.txt`). The calculator, location search, measurements, and guide currently use English on every localized route; the surrounding navigation and landing descriptions are translated.
+The map is a browser-rendered React feature inside Astro, adapted from [A Bit of Earth](https://github.com/Max-Hodler/bitcoin-land). It uses MapLibre GL and a bundled worker, with scoped styles, the shared site palette and UI typography, and Titillium Web for the map readout (the font license is included in `public/earth/fonts/OFL.txt`). The calculator mounts before the map engine and its styles load, so its controls can be used while the map starts. The calculator, location search, measurements, and guide currently use English on every localized route; the surrounding navigation and landing descriptions are translated.
 
 Bitcoin amounts are calculated locally. Location search sends only the submitted place query to Photon at `https://photon.komoot.io/api/`. Set `PUBLIC_EARTH_GEOCODER_URL` at build time to use another compatible endpoint. Map tiles and glyphs are fetched directly from the providers specified in `src/features/earth/map/style.json`; attribution remains visible on desktop and mobile. The page suppresses referrer headers.
 
@@ -127,7 +129,7 @@ Prices come directly from Kraken in the browser:
 
 When the selected history or exchange rates are loading, a large orange spinner appears at the center of the viewport instead of visible loading messages. Loading remains announced to screen readers, errors stay visible, and reduced motion keeps the spinner still. On narrow screens the burger menu aligns with the price readout and keeps the same position when opening the navigation.
 
-History polling pauses while the tab is hidden. Returning to the tab refreshes daily history and the selected intraday candles immediately. The live ticker continues to update the chart endpoint between history refreshes.
+The ticker connection, polling timers, and chart rendering stop while the tab is hidden. Returning to the tab reconnects the ticker and refreshes daily history and the selected intraday candles immediately. While visible, the live ticker updates the chart endpoint between history refreshes. Dense SVG paths retain the minimum and maximum samples in each pixel column and both endpoints; keyboard and pointer inspection still use every original sample.
 
 Non-USD prices convert Kraken's USD series using daily **European Central Bank reference exchange rates** through [Frankfurter's v2 ECB provider endpoint](https://frankfurter.dev/). These are reference conversions, not live BTC/fiat exchange quotes. The live BTC/USD endpoint uses the latest available reference rate; every historical point uses the most recent rate on or before that point's UTC date. Weekend and holiday observations carry forward for at most seven days; rates are never interpolated, clamped before the first observation, or replaced with 1:1 conversions. Missing or expired rates display an unavailable state rather than prices in the wrong currency.
 

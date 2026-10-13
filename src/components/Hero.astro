@@ -4,10 +4,8 @@ import Phone from './Phone.astro';
 import DownloadButton from './DownloadButton.astro';
 import { useTranslations } from '../i18n/utils';
 const t = useTranslations(Astro.currentLocale);
-const screens = [
-  { src: '/screenshots/paper-cream.png', alt: `${t.hero.altPrefix}${t.themes.labels[0]}${t.hero.altSuffix}` },
-  { src: '/screenshots/deepsea-blue.png', alt: `${t.hero.altPrefix}${t.themes.labels[2]}${t.hero.altSuffix}` },
-];
+const lightAlt = `${t.hero.altPrefix}${t.themes.labels[0]}${t.hero.altSuffix}`;
+const darkAlt = `${t.hero.altPrefix}${t.themes.labels[2]}${t.hero.altSuffix}`;
 ---
 <section class="hero-section" id="hero" data-scene>
   <div class="site-container hero-grid">
@@ -28,7 +26,7 @@ const screens = [
       <div class="orbit" aria-hidden="true"></div>
       <div class="orbit orbit-two" aria-hidden="true"></div>
       <div class="hero-device-position">
-        <Phone src={screens[0].src} alt={screens[0].alt} id="hero-phone" class="hero-device" tilt eager />
+        <Phone src="paper" alt={lightAlt} darkSrc="deepsea" darkAlt={darkAlt} id="hero-phone" class="hero-device" tilt eager />
       </div>
     </div>
   </div>
@@ -37,16 +35,3 @@ const screens = [
     <div data-reveal><FeatureCard title={t.hero.reasons[2].title} body={t.hero.reasons[2].body} icon="bolt" headingLevel="h2" /></div>
   </div>
 </section>
-<script is:inline define:vars={{ screens }}>
-  (() => {
-    const screen = document.querySelector('#hero-phone img');
-    if (!screen) return;
-    const syncTheme = () => {
-      const { src, alt } = screens[document.documentElement.classList.contains('dark') ? 1 : 0];
-      screen.src = src;
-      screen.alt = alt;
-    };
-    syncTheme();
-    document.addEventListener('themechange', syncTheme);
-  })();
-</script>

@@ -2,6 +2,7 @@
 import { getRelativeLocaleUrl } from 'astro:i18n';
 import Layout from '../../layouts/Layout.astro';
 import Nav from '../Nav.astro';
+import AppScreenshot from '../AppScreenshot.astro';
 import { resolveLang, useTranslations } from '../../i18n/utils';
 import { tracker } from '../../i18n/tracker';
 import { aBitOfEarth, bitcoinAndDollar } from '../../lib/projects';
@@ -40,8 +41,7 @@ const t = useTranslations(Astro.currentLocale);
         <a class="landing-option" href={getRelativeLocaleUrl(lang, 'android-app')}>
           <div class="option-preview preview-app" aria-hidden="true">
             <div class="preview-phone">
-              <img class="phone-light" src="/screenshots/paper-cream.png" width="1280" height="2856" alt="" />
-              <img class="phone-dark" src="/screenshots/deepsea-blue.png" width="1280" height="2856" alt="" />
+              <AppScreenshot name="paper" darkName="deepsea" alt="" preview />
             </div>
           </div>
           <div class="option-copy">
@@ -129,10 +129,7 @@ const t = useTranslations(Astro.currentLocale);
   .chart-glyph { fill: #1F1B14; font-size: 30px; font-weight: 600; }
   .preview-app { background: radial-gradient(ellipse at 50% 95%, var(--hero-glow), transparent 70%), var(--color-paper); }
   .preview-phone { position: absolute; top: 12%; left: 50%; width: 52%; max-width: 180px; padding: 4px; border: 1px solid rgb(255 255 255 / .15); border-radius: 24px; background: #1F1B14; box-shadow: 12px 16px 32px var(--phone-shadow); transform: translateX(-50%) rotate(-8deg); }
-  .preview-phone img { display: block; width: 100%; border-radius: 20px; }
-  .preview-phone .phone-dark { display: none; }
-  :global(html.dark) .phone-light { display: none; }
-  :global(html.dark) .preview-phone .phone-dark { display: block; }
+  .preview-phone :global(img) { display: block; width: 100%; border-radius: 20px; }
   .preview-earth { background: linear-gradient(155deg, var(--color-paper), var(--color-accent-soft)); }
   .earth-water { fill: var(--color-surface); }
   .earth-land { fill: var(--color-ink); fill-opacity: .24; }

@@ -11,7 +11,6 @@ import { useEarthMap } from './hooks/useEarthMap';
 import { useTheme } from './hooks/useTheme';
 import { useMeasurements } from './hooks/useMeasurements';
 import type { Location } from './lib/locations';
-import 'maplibre-gl/dist/maplibre-gl.css';
 import './styles/global.css';
 import './styles/app.css';
 

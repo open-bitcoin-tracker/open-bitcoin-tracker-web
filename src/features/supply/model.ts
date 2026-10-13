@@ -190,14 +190,33 @@ export function equalShare(total: number, population: number): number {
   return total / population;
 }
 
+// The live counters share these formatters rather than constructing them on
+// every tick. Bound the cache as this module also runs during localized builds.
+const numberFormatters = new Map<string, Intl.NumberFormat>();
+const dateFormatters = new Map<string, Intl.DateTimeFormat>();
+
 export function formatNumber(value: number, locale: string, digits = 0): string {
-  return new Intl.NumberFormat(locale, { minimumFractionDigits: digits, maximumFractionDigits: digits }).format(value);
+  const key = `${locale}:${digits}`;
+  let formatter = numberFormatters.get(key);
+  if (!formatter) {
+    formatter = new Intl.NumberFormat(locale, { minimumFractionDigits: digits, maximumFractionDigits: digits });
+    if (numberFormatters.size >= 32) numberFormatters.clear();
+    numberFormatters.set(key, formatter);
+  }
+  return formatter.format(value);
 }
 
 export function formatDate(value: string, locale: string, monthOnly = false): string {
-  return new Intl.DateTimeFormat(locale, {
-    year: 'numeric', month: 'long', ...(monthOnly ? {} : { day: 'numeric' as const }), timeZone: 'UTC',
-  }).format(new Date(monthOnly ? `${value}-01T00:00:00Z` : value));
+  const key = `${locale}:${monthOnly}`;
+  let formatter = dateFormatters.get(key);
+  if (!formatter) {
+    formatter = new Intl.DateTimeFormat(locale, {
+      year: 'numeric', month: 'long', ...(monthOnly ? {} : { day: 'numeric' as const }), timeZone: 'UTC',
+    });
+    if (dateFormatters.size >= 32) dateFormatters.clear();
+    dateFormatters.set(key, formatter);
+  }
+  return formatter.format(new Date(monthOnly ? `${value}-01T00:00:00Z` : value));
 }
 
 export function interpolate(template: string, values: Record<string, string>): string {
