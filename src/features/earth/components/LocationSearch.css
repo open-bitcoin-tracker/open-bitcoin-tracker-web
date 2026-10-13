@@ -10,9 +10,6 @@
   background: var(--panel);
   box-shadow: var(--panel-shadow);
 }
-.earth-feature .place-search:focus-within {
-  border-color: var(--muted);
-}
 .earth-feature .place-search input {
   width: 100%;
   height: 100%;
