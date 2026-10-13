@@ -27,7 +27,7 @@ const isHome = stripLocale(Astro.url.pathname) === '';
       </svg>
     </button>
     <div class="nav-menu-panel">
-      <a class="menu-brand" href={homeHref} aria-current={isHome ? 'page' : undefined}><img src="/app-icon.png" width="36" height="36" alt="" /><span lang="en" class="brand-name">Open Bitcoin Tracker</span></a>
+      <a class="menu-brand" href={homeHref} aria-current={isHome ? 'page' : undefined}><span lang="en" class="brand-name">Open Bitcoin Tracker</span></a>
       <div class="menu-links"><slot /></div>
       <div class="nav-menu-settings">
         <LanguageSwitcher placement="up" />
@@ -236,11 +236,11 @@ const isHome = stripLocale(Astro.url.pathname) === '';
     transition: transform 420ms cubic-bezier(.22, 1, .36, 1), opacity 300ms ease;
   }
   .nav-menu-close {
-    position: fixed; z-index: 1; top: var(--menu-control-top); right: calc(var(--menu-control-right) - var(--menu-control-offset));
+    position: fixed; z-index: 1; top: var(--menu-control-top); right: var(--menu-control-right);
     cursor: pointer;
   }
-  .menu-brand { display: flex; align-items: center; gap: 1rem; min-height: var(--menu-brand-height); padding-right: 3.5rem; font-size: var(--menu-brand-size); line-height: 1.15; color: var(--menu-ink); }
-  .menu-brand img { width: 36px; height: 36px; flex-shrink: 0; border-radius: .375rem; }
+  .menu-brand { display: flex; align-items: center; min-height: var(--menu-control-size); padding-right: 3.5rem; font-size: clamp(1.5rem, 2.2vw, 2rem); line-height: 1.15; color: var(--color-ink-muted); text-decoration: none; }
+  .menu-brand:hover, .menu-brand:focus-visible { text-decoration: underline; }
   .menu-links { display: grid; align-content: start; gap: 1.25rem; }
   .menu-links :global(.menu-page-links) { display: contents; }
   .menu-links :global(a) {
@@ -282,7 +282,7 @@ const isHome = stripLocale(Astro.url.pathname) === '';
     .nav-menu-dialog { width: 100vw; }
     .nav-menu-panel { padding: var(--menu-panel-top) 1.5rem max(1.5rem, env(safe-area-inset-bottom)); }
     .nav-menu-settings { flex-direction: column; align-items: flex-start; gap: .25rem; }
-    .menu-brand { gap: .75rem; }
+    .menu-brand { font-size: clamp(1.375rem, 6vw, 1.625rem); }
     .menu-links { gap: 1.125rem; }
     .menu-links :global(a) { font-size: clamp(2rem, 9vw, 3.25rem); }
     .menu-links :global(.menu-secondary a) { font-size: 1.0625rem; }

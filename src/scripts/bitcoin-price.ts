@@ -511,9 +511,6 @@ function startTracker(root: HTMLElement) {
   }
 
   new ResizeObserver(scheduleDraw).observe(chart);
-  new ResizeObserver(() => {
-    document.documentElement.style.setProperty('--tracker-price-height', `${priceEl.getBoundingClientRect().height}px`);
-  }).observe(priceEl);
   // Bundled data is also rendered at build time, so the chart works before JS.
   void (async () => {
     try {

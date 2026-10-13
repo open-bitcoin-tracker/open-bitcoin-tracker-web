@@ -12,11 +12,11 @@ const t = useTranslations(Astro.currentLocale);
 ---
 
 <Layout page="landing">
+  <Nav />
   <main id="main-content" class="landing-main">
     <div class="landing-content">
       <header class="landing-brand">
         <h1 lang="en" class="brand-name">Open Bitcoin Tracker</h1>
-        <Nav />
       </header>
       <div class="landing-options">
         <a class="landing-option" href={getRelativeLocaleUrl(lang, 'price-tracker')}>
@@ -155,14 +155,10 @@ const t = useTranslations(Astro.currentLocale);
   @media (max-width: 700px) {
     :global(body:has(.landing-main)) {
       --landing-gutter: 1.25rem;
-      --menu-control-top: max(1rem, env(safe-area-inset-top, 0px));
-      --menu-control-right: var(--landing-gutter);
-      --menu-control-offset: 0px;
     }
     .landing-main { align-items: start; padding: var(--menu-control-top) var(--landing-gutter) max(2rem, env(safe-area-inset-bottom, 0px)); }
-    .landing-brand { display: grid; grid-template-columns: minmax(0, 1fr) var(--menu-control-size); align-items: center; gap: .75rem; margin-bottom: 1.5rem; text-align: left; }
-    .landing-brand :global(.site-nav) { position: static; }
-    h1 { font-size: clamp(1rem, calc((100cqi - var(--menu-control-size) - .75rem) / 9.3), 3.25rem); white-space: nowrap; }
+    .landing-brand { display: flex; align-items: center; min-height: var(--menu-control-size); padding-right: calc(var(--menu-control-size) + .75rem); margin-bottom: 1.5rem; text-align: left; }
+    h1 { font-size: clamp(1rem, calc(100cqi / 9.3), 3.25rem); white-space: nowrap; }
     .landing-options { gap: 1.25rem; }
     .landing-option { border-radius: 20px; box-shadow: var(--shadow-card); }
     /* Keep the whole illustration visible instead of cropping it into a strip. */

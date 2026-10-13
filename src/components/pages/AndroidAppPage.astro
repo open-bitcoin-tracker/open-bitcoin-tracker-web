@@ -22,12 +22,9 @@ import Footer from '../Footer.astro';
 </Layout>
 
 <style>
-  /* Share the title's line center with both menu states, including the
-     dialog's close button after it is moved into body. */
   :global(body:has(.android-app-page)) {
     --android-title-size: clamp(2rem, 3.6vw, 4.25rem);
     --android-header-top: max(1.5rem, env(safe-area-inset-top, 0px));
-    --menu-control-top: calc(var(--android-header-top) + var(--android-title-size) * 1.08 / 2 - var(--menu-control-size) / 2);
   }
   @media (max-width: 767px) {
     :global(body:has(.android-app-page)) { --android-title-size: clamp(1.125rem, calc((100vw - 8rem) / 8.5), 3.5rem); }
