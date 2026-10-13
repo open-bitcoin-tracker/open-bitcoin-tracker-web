@@ -1,6 +1,6 @@
 // This feature intentionally uses English on every localized route.
 export const supply = {
-  title: 'Bitcoin vs fiat',
+  title: 'Money per Person',
   cardDescription: 'Compare Bitcoin’s maximum with five money supplies and an equal share per person.',
   intro: 'Bitcoin’s maximum supply, five monetary aggregates, and a hypothetical equal share per person.',
   bitcoin: 'Bitcoin',

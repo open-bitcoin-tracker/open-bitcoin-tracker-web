@@ -171,13 +171,13 @@ const clientCopy = Object.fromEntries(['projected', 'recorded', 'paused', 'pause
     max-width: 3840px;
     min-height: 100dvh;
     margin: 0 auto;
-    padding: var(--supply-page-padding-block) clamp(1.25rem, 3vw, 7.5rem);
+    padding: var(--supply-page-padding-block) clamp(1.5rem, 6vw, 15rem);
     /* Share the top row with the menu; the cards begin below both controls. */
     padding-top: max(var(--supply-page-padding-block), var(--menu-control-top));
   }
   .supply-page:has(> .year-controls[hidden]) { padding-top: max(var(--supply-page-padding-block), calc(var(--menu-control-top) + var(--menu-control-size) + 1rem)); }
   :global(html.dark) .supply-page { --supply-fiat: #93bfa8; --supply-fiat-text: #a2ceb5; --supply-fiat-ink: #214431; }
-  .asset-comparison { display: grid; gap: var(--supply-gap); }
+  .asset-comparison { display: grid; gap: var(--supply-gap); width: fit-content; max-width: 100%; margin-inline: auto; }
   .asset-totals, .share-comparison { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--supply-gap); min-width: 0; }
   .bitcoin-feature { display: flex; flex-direction: column; align-items: stretch; padding: var(--supply-padding); background: radial-gradient(ellipse at 50% 65%, var(--hero-glow), transparent 75%), var(--color-surface); border: 1px solid var(--color-divider); border-radius: var(--supply-radius); }
   .asset-comparison :global(.container-scene) { width: min(100%, var(--supply-scene-width)); max-width: none; margin-block: 0; }

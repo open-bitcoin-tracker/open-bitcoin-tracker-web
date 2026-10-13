@@ -36,7 +36,7 @@ The build does not run a full TypeScript check. Local development and preview do
 
 All pages support English, Spanish, Brazilian Portuguese, Russian, Turkish, Vietnamese, Japanese, French, German, and Italian. English has no URL prefix; Portuguese uses `/pt/` with code `pt-BR`; others use their language code.
 
-On Cloudflare Pages, `functions/_middleware.js` honors a valid `lang` cookie on root visits; otherwise it detects `Accept-Language` and stores the result for 180 days. The switcher links to the same page in another language. The Bitcoin vs fiat feature currently uses English content on every localized route; its surrounding navigation remains localized.
+On Cloudflare Pages, `functions/_middleware.js` honors a valid `lang` cookie on root visits; otherwise it detects `Accept-Language` and stores the result for 180 days. The switcher links to the same page in another language. The Money per Person feature currently uses English content on every localized route; its surrounding navigation remains localized.
 
 ## A Bit of Earth
 
@@ -46,7 +46,7 @@ Bitcoin amounts are calculated locally. Location search sends only the submitted
 
 The map follows the existing `theme` preference controlled by the shared site menu. Measurements are always available at the map's bottom-left corner; the separate mobile map menu opens the guide. The source project remains independently maintained; its standalone build and exports are not part of this website.
 
-## Bitcoin vs fiat
+## Money per Person
 
 The comparison shows **Bitcoin’s 21 million maximum under current consensus rules** alongside one selected asset, defaulting to US M2. Year controls come first, followed by one centered worldwide population readout spanning the layout, above the main total/illustration cards, then two separate per-person cards. Total and per-person columns align at wider widths; mobile retains this section order and uses headings such as “Bitcoin per person” and “US Dollar per person” for every asset. The Bitcoin box contains exactly 21 visible coins in three rows of seven. Fiat notes pass in front of the rear rim through the opening, descend within the box, and disappear into the stored pile behind the front wall. A keyboard-accessible selector replaces the selected asset’s heading, offering five fiat currencies (USD, EUR, JPY, CNY and GBP). Its native disclosure and option panel share the language dropdown’s style; arrows, Home/End, first letters, Tab, Enter/Space, Escape and outside dismissal work without resetting the clock. Asset changes reuse the same nodes and clock, keeping reduced motion, expiry handling and Bitcoin’s active share basis intact. Without JavaScript, the default Bitcoin/US M2 comparison shows recorded observations and per-person amounts, with interactive controls hidden.
 
