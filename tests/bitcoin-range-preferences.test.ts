@@ -168,7 +168,7 @@ function page(stored: Map<string, string>, locale = 'en', blocked: 'read' | 'wri
     select: (unit: string) => event('click', slots[units.indexOf(unit)].querySelector('[data-range-select]')),
     step: (unit: string) => event('click', slots[units.indexOf(unit)].querySelectorAll('')[0]),
     key: (unit: string, key: string) => event('keydown', slots[units.indexOf(unit)].querySelector('[data-range-select]'), { key }),
-    pointer: (type: string, x: number) => event(type, bar, { pointerId: 1, isPrimary: true, button: 0, clientX: x, clientY: 18 }),
+    pointer: (type: string, x: number, y = 18) => event(type, bar, { pointerId: 1, isPrimary: true, button: 0, clientX: x, clientY: y }),
     async ready() {
       await new Promise(resolve => setImmediate(resolve));
       for (const [id, callback] of frames) { frames.delete(id); callback(0); }
@@ -215,6 +215,31 @@ test('keyboard count changes and committed pill drags persist; cancelled preview
   p.pointer('pointerup', 250);
   assert.equal(JSON.parse(storage.get(key)!).selected, 'month');
   p.close();
+});
+
+test('vertical pill swipes wrap, persist immediately, refresh candles, and restore localized labels', async () => {
+  const storage = new Map<string, string>();
+  const p = page(storage);
+  p.select('week');
+  p.pointer('pointerdown', 150);
+  p.pointer('pointermove', 150, 42);
+  assert.equal(p.slots[1].querySelector('[data-range-label]').textContent, '4W');
+  assert.equal(JSON.parse(storage.get(key)!).counts.week, 4);
+  p.pointer('pointermove', 150, 18);
+  assert.equal(JSON.parse(storage.get(key)!).counts.week, 1);
+  p.pointer('pointermove', 150, -6);
+  assert.equal(JSON.parse(storage.get(key)!).counts.week, 2);
+  p.pointer('pointercancel', 150, -6);
+  assert.equal(JSON.parse(storage.get(key)!).counts.week, 2, 'steps already shown on the chart stay committed');
+  assert.ok(p.requests.some(url => url.includes('interval=60')), 'swiped weeks use the hourly candle source');
+  await p.ready();
+  assert.match(p.root.querySelector('[data-chart-description]').textContent, /^2 weeks:/);
+  p.close();
+  const restored = page(storage, 'es');
+  assert.equal(restored.slots[1].dataset.selected, 'true');
+  assert.equal(restored.slots[1].querySelector('[data-range-label]').textContent, '2S');
+  assert.equal(restored.slots[1].querySelector('[data-range-select]').attributes['aria-label'], '2 semanas');
+  restored.close();
 });
 
 test('invalid stored data falls back safely and valid counts are kept independently', () => {

@@ -5,17 +5,23 @@ import { createRangePill } from '../src/scripts/bitcoin-range-pill.ts';
 // Exercise gesture coordination with deterministic geometry; actual layout and
 // pointer capture are also checked in the browser.
 function fixture(t: TestContext, reduced = false) {
+  const animations: { frames: Keyframe[]; options: KeyframeAnimationOptions; cancelled: boolean }[] = [];
+  function animate(frames: Keyframe[], options: KeyframeAnimationOptions) {
+    const animation = { frames, options, cancelled: false };
+    animations.push(animation);
+    return { cancel() { animation.cancelled = true; } };
+  }
   const units = ['day', 'week', 'month', 'year', 'all'] as const;
   const rect = (left: number, width = 100) => ({ left, right: left + width, top: 0, bottom: 36, width, height: 36 });
-  const pill = { hidden: true, style: { transform: '', width: '', height: '', transition: '' }, getBoundingClientRect() {
+  const pill = { animate, hidden: true, style: { transform: '', width: '', height: '', transition: '' }, getBoundingClientRect() {
     return rect(Number(this.style.transform.match(/\(([^p]+)/)?.[1] ?? 400));
   } };
   const slots = units.map((unit, index) => ({
     dataset: { rangeSlot: unit, selected: String(index === 4), highlighted: '' },
     getBoundingClientRect: () => rect(index * 100),
     querySelector: (selector: string) => selector === '[data-range-label]'
-      ? { getBoundingClientRect: () => rect(index * 100 + 40, 20) }
-      : { focus: () => {} },
+      ? { animate, getBoundingClientRect: () => rect(index * 100 + 40, 20) }
+      : { animate, focus: () => {} },
   }));
   const bar = Object.assign(new EventTarget(), {
     dataset: {} as Record<string, string>,
@@ -40,7 +46,11 @@ function fixture(t: TestContext, reduced = false) {
     disconnect() {}
   } });
   const drops: string[] = [];
-  const control = createRangePill(bar as unknown as HTMLElement, (unit) => { drops.push(unit); control.select(unit); });
+  const steps: { unit: string; step: number }[] = [];
+  const control = createRangePill(bar as unknown as HTMLElement,
+    (unit) => { drops.push(unit); control.select(unit); },
+    (unit, step) => { steps.push({ unit, step }); control.select(unit); },
+  );
   control.select('all');
   t.after(() => {
     control.destroy();
@@ -56,8 +66,68 @@ function fixture(t: TestContext, reduced = false) {
     bar.dispatchEvent(event);
     return event;
   }
-  return { bar, pill, slots, control, drops, event, resize: () => resize(), preference };
+  return { bar, pill, slots, control, drops, steps, animations, event, resize: () => resize(), preference };
 }
+
+test('vertical swipes step every 24 px, reverse direction, and survive tracker updates', (t) => {
+  const f = fixture(t);
+  f.control.select('day');
+  f.event('pointerdown', 50);
+  f.event('pointermove', 51, { clientY: -5 });
+  assert.deepEqual(f.steps, []);
+  f.event('pointermove', 51, { clientY: -6 });
+  assert.deepEqual(f.steps, [{ unit: 'day', step: 1 }]);
+  assert.equal(f.slots[0].dataset.highlighted, 'true', 'a swipe during a tap glide highlights the current slot');
+  assert.equal(f.bar.captured, 1);
+  f.event('pointermove', 51, { clientY: 18 });
+  f.event('pointermove', 51, { clientY: 42 });
+  assert.deepEqual(f.steps, [{ unit: 'day', step: 1 }, { unit: 'day', step: -1 }, { unit: 'day', step: -1 }]);
+  assert.deepEqual(f.drops, []);
+  f.event('pointerup', 51, { clientY: 42 });
+  assert.equal(f.bar.captured, -1);
+  assert.equal(f.event('click', 51, { detail: 1 }).defaultPrevented, true);
+  assert.equal(f.animations[0].options.duration, 220);
+  assert.equal(f.animations[0].frames[1].translate, '0 -6px');
+  assert.equal(f.animations[0].cancelled, true, 'another step replaces the previous nudge');
+});
+
+test('vertical swipes lock the axis and stop permanently outside the app’s 16 px allowance', (t) => {
+  const f = fixture(t, true);
+  f.control.select('day');
+  f.event('pointerdown', 50);
+  f.event('pointermove', 50, { clientY: -6 });
+  f.event('pointermove', 150, { clientY: 18 });
+  f.event('pointermove', 50, { clientY: 42 });
+  f.event('pointerup', 50, { clientY: 42 });
+  assert.deepEqual(f.steps, [{ unit: 'day', step: 1 }]);
+  assert.deepEqual(f.drops, []);
+  assert.deepEqual(f.animations, [], 'reduced motion skips the nudge and label roll');
+});
+
+test('taps, short vertical drags, cancellation, and non-selected slots do not step', (t) => {
+  const f = fixture(t, true);
+  f.control.select('day');
+  f.event('pointerdown', 50);
+  f.event('pointerup', 50);
+  f.event('pointerdown', 50);
+  f.event('pointermove', 50, { clientY: 30 });
+  f.event('pointercancel', 50);
+  f.event('pointerdown', 150);
+  f.event('pointermove', 150, { clientY: -6 });
+  f.event('pointerup', 150);
+  assert.deepEqual(f.steps, []);
+});
+
+test('horizontal drags ignore vertical movement after choosing their axis', (t) => {
+  const f = fixture(t, true);
+  f.control.select('day');
+  f.event('pointerdown', 50);
+  f.event('pointermove', 150);
+  f.event('pointermove', 250, { clientY: -6 });
+  f.event('pointerup', 250, { clientY: -6 });
+  assert.deepEqual(f.steps, []);
+  assert.deepEqual(f.drops, ['month']);
+});
 
 test('drag previews label crossings, retains the highlight in gaps, and commits only on release', (t) => {
   const f = fixture(t);

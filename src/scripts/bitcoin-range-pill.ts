@@ -4,7 +4,11 @@ type RangeUnit = BitcoinRange['unit'];
 
 // A single pill shares the app's tap timing and finger-driven drag behavior.
 // Range data stays with the tracker; hovering never requests or redraws a chart.
-export function createRangePill(bar: HTMLElement, onDrop: (unit: RangeUnit) => void) {
+export function createRangePill(
+  bar: HTMLElement,
+  onDrop: (unit: RangeUnit) => void,
+  onStep: (unit: Exclude<RangeUnit, 'all'>, step: number) => void,
+) {
   const pill = bar.querySelector<HTMLElement>('[data-range-pill]')!;
   const slots = [...bar.querySelectorAll<HTMLElement>('[data-range-slot]')];
   const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
@@ -13,11 +17,33 @@ export function createRangePill(bar: HTMLElement, onDrop: (unit: RangeUnit) => v
   let highlightTimer: ReturnType<typeof setTimeout> | undefined;
   let clickTimer: ReturnType<typeof setTimeout> | undefined;
   let suppressClick = false;
+  let nudgeAnimations: Animation[] = [];
   let drag: {
-    pointerId: number; startX: number; startY: number; lastX: number;
+    pointerId: number; startX: number; startY: number; lastX: number; lastY: number;
     left: number; top: number; width: number; height: number;
-    hover: number; active: boolean; bounds: DOMRect[]; labels: DOMRect[];
+    hover: number; axis?: 'horizontal' | 'vertical'; bounds: DOMRect[]; labels: DOMRect[];
+    accumulatedY: number; outside: boolean;
   } | undefined;
+
+  function stopNudge() {
+    nudgeAnimations.forEach((animation) => animation.cancel());
+    nudgeAnimations = [];
+  }
+
+  function nudge(direction: number) {
+    stopNudge();
+    if (reducedMotion.matches) return;
+    const button = slots[selectedIndex].querySelector<HTMLElement>('[data-range-select]')!;
+    const label = slots[selectedIndex].querySelector<HTMLElement>('[data-range-label]')!;
+    // Separate translate from the pill's horizontal positioning transform.
+    nudgeAnimations = [pill, button].map((element) => element.animate([
+      { translate: '0 0' }, { translate: `0 ${direction * 6}px` }, { translate: '0 0' },
+    ], { duration: 220, easing: 'ease-in-out' }));
+    nudgeAnimations.push(label.animate([
+      { transform: `translateY(${direction * 60}%)`, opacity: 0 },
+      { transform: 'translateY(0)', opacity: 1 },
+    ], { duration: 200, easing: 'cubic-bezier(.215, .61, .355, 1)' }));
+  }
 
   function highlight(index: number) {
     clearTimeout(highlightTimer);
@@ -46,16 +72,16 @@ export function createRangePill(bar: HTMLElement, onDrop: (unit: RangeUnit) => v
 
   function finishDrag(commit: boolean) {
     if (!drag) return;
-    const { pointerId, active, hover } = drag;
+    const { pointerId, axis, hover } = drag;
     drag = undefined;
     delete bar.dataset.dragging;
     if (bar.hasPointerCapture(pointerId)) bar.releasePointerCapture(pointerId);
-    if (!active) return;
+    if (!axis) return;
     // Pointer capture can generate a click after release. Keep keyboard clicks.
     suppressClick = true;
     clearTimeout(clickTimer);
     clickTimer = setTimeout(() => { suppressClick = false; }, 0);
-    if (commit && hover !== selectedIndex) {
+    if (commit && axis === 'horizontal' && hover !== selectedIndex) {
       selectedIndex = hover;
       highlight(selectedIndex);
       onDrop(slots[selectedIndex].dataset.rangeSlot as RangeUnit);
@@ -66,9 +92,12 @@ export function createRangePill(bar: HTMLElement, onDrop: (unit: RangeUnit) => v
   }
 
   function select(unit: RangeUnit) {
-    finishDrag(false);
     const next = slots.findIndex((slot) => slot.dataset.rangeSlot === unit);
     if (next < 0) return;
+    // A vertical step updates chart data immediately without ending the swipe.
+    if (drag?.axis === 'vertical' && next === selectedIndex) return;
+    finishDrag(false);
+    stopNudge();
     const changed = next !== selectedIndex;
     selectedIndex = next;
     placeSelected(!pill.hidden);
@@ -88,9 +117,9 @@ export function createRangePill(bar: HTMLElement, onDrop: (unit: RangeUnit) => v
     if (event.clientX < bounds.left || event.clientX > bounds.right || event.clientY < bounds.top || event.clientY > bounds.bottom) return;
     const track = bar.getBoundingClientRect();
     drag = {
-      pointerId: event.pointerId, startX: event.clientX, startY: event.clientY, lastX: event.clientX,
+      pointerId: event.pointerId, startX: event.clientX, startY: event.clientY, lastX: event.clientX, lastY: event.clientY,
       left: bounds.left - track.left, top: bounds.top - track.top, width: bounds.width, height: bounds.height,
-      hover: selectedIndex, active: false,
+      hover: selectedIndex, accumulatedY: 0, outside: false,
       bounds: slots.map((slot) => slot.getBoundingClientRect()),
       labels: slots.map((slot) => slot.querySelector<HTMLElement>('[data-range-label]')!.getBoundingClientRect()),
     };
@@ -98,22 +127,44 @@ export function createRangePill(bar: HTMLElement, onDrop: (unit: RangeUnit) => v
 
   bar.addEventListener('pointermove', (event) => {
     if (!drag || drag.pointerId !== event.pointerId) return;
-    if (!drag.active) {
+    if (!drag.axis) {
       const dx = Math.abs(event.clientX - drag.startX);
       const dy = Math.abs(event.clientY - drag.startY);
-      if (dy > dx && dy > 6) { drag = undefined; return; }
-      if (dx < 6 || dx <= dy) return;
+      if (Math.max(dx, dy) < 6 || dx === dy) return;
+      if (dy > dx && slots[selectedIndex].dataset.rangeSlot === 'all') { drag = undefined; return; }
       // Sample again in case the tap animation moved since pointer-down.
       const bounds = pill.getBoundingClientRect();
       const track = bar.getBoundingClientRect();
       drag.left = bounds.left - track.left;
       drag.top = bounds.top - track.top;
-      drag.active = true;
+      drag.axis = dy > dx ? 'vertical' : 'horizontal';
+      stopNudge();
       clearTimeout(highlightTimer);
+      if (drag.axis === 'vertical') highlight(selectedIndex);
       bar.dataset.dragging = 'true';
       bar.setPointerCapture(event.pointerId);
     }
     event.preventDefault();
+    if (drag.axis === 'vertical') {
+      if (drag.outside) return;
+      const bounds = drag.bounds[selectedIndex];
+      // Like the app, stop firing after leaving the chip's 16 px allowance.
+      if (event.clientX < bounds.left - 16 || event.clientX > bounds.right + 16
+        || event.clientY < bounds.top - 16 || event.clientY > bounds.bottom + 16) {
+        drag.outside = true;
+        return;
+      }
+      drag.accumulatedY += event.clientY - drag.lastY;
+      drag.lastY = event.clientY;
+      const step = drag.accumulatedY < 0 ? 1 : -1;
+      const steps = Math.floor(Math.abs(drag.accumulatedY) / 24);
+      if (steps) {
+        drag.accumulatedY += step * steps * 24;
+        onStep(slots[selectedIndex].dataset.rangeSlot as Exclude<RangeUnit, 'all'>, step * steps);
+        nudge(-step);
+      }
+      return;
+    }
     const track = bar.getBoundingClientRect();
     const min = drag.bounds[0].left - track.left;
     const max = drag.bounds.at(-1)!.right - track.left - drag.width;
@@ -137,10 +188,10 @@ export function createRangePill(bar: HTMLElement, onDrop: (unit: RangeUnit) => v
     if (drag?.pointerId === event.pointerId) finishDrag(false);
   }, { signal: events.signal });
   bar.addEventListener('pointerleave', () => {
-    if (drag && !drag.active) drag = undefined;
+    if (drag && !drag.axis) drag = undefined;
   }, { signal: events.signal });
   bar.addEventListener('keydown', (event) => {
-    if (event.key === 'Escape' && drag?.active) {
+    if (event.key === 'Escape' && drag?.axis) {
       event.preventDefault();
       finishDrag(false);
     }
@@ -155,6 +206,7 @@ export function createRangePill(bar: HTMLElement, onDrop: (unit: RangeUnit) => v
 
   function syncLayout() {
     finishDrag(false);
+    stopNudge();
     highlight(selectedIndex);
     placeSelected(false);
   }
@@ -169,6 +221,7 @@ export function createRangePill(bar: HTMLElement, onDrop: (unit: RangeUnit) => v
     select,
     destroy() {
       finishDrag(false);
+      stopNudge();
       observer.disconnect();
       events.abort();
       clearTimeout(highlightTimer);

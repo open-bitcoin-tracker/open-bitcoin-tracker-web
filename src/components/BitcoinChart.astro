@@ -163,10 +163,13 @@ const lastDate = new Intl.DateTimeFormat(lang, { year: 'numeric', month: 'short'
   .range-bar[data-dragging="true"] .range-pill { box-shadow: var(--shadow-card-hover); transition: none; }
   .range-slot { position: relative; flex: 1; min-width: 0; display: flex; align-items: center; border-radius: 999px; }
   .range-select { width: 100%; min-height: 36px; padding-inline: .25rem; font-size: .875rem; font-variant-numeric: tabular-nums; color: var(--color-ink-muted); border-radius: 999px; transition: color 200ms ease-out, font-weight 200ms ease-out; touch-action: pan-y; user-select: none; -webkit-user-select: none; }
+  /* Reserve both gesture axes only on the selected, adjustable pill. */
+  .range-slot[data-selected="true"]:not([data-range-slot="all"]) { touch-action: none; }
   /* Equal side columns center each chevron between the label and pill edge. */
   .range-slot:has(.range-step) { display: grid; grid-template-columns: minmax(0, 1fr) max-content minmax(0, 1fr); }
   .range-slot:has(.range-step) .range-select { grid-area: 1 / 1 / 2 / -1; display: grid; grid-template-columns: subgrid; align-items: center; padding-inline: 0; }
   .range-slot:has(.range-step) [data-range-label] { grid-column: 2; }
+  [data-range-label] { display: inline-block; }
   .range-slot[data-highlighted="true"] .range-select { color: var(--color-emphasis-ink); font-weight: 700; cursor: grab; }
   .range-bar[data-dragging="true"] .range-select { cursor: grabbing; }
   .range-step { grid-row: 1; justify-self: center; z-index: 1; display: flex; justify-content: center; align-items: center; width: 100%; max-width: 20px; height: 100%; border-radius: 999px; visibility: hidden; color: var(--color-accent); }

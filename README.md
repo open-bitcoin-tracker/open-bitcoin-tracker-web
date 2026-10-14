@@ -46,7 +46,7 @@ Kraken supplies live BTC/USD via WebSocket, with REST polling every 30 seconds w
 
 USD is the default; EUR, GBP, AUD, CAD, CHF, and JPY convert the USD series using daily ECB reference rates through Frankfurter's v2 ECB endpoint. These are reference conversions, not live exchange quotes. Historical points use the latest rate on or before their UTC date, carried forward at most seven days. Missing rates show unavailable data.
 
-Range, logarithmic/linear scale, and currency preferences persist in local storage. Drag to inspect prices, or focus the chart and use Left/Right, Home/End, and Escape; range counts use chevrons or Up/Down. Motion respects reduced-motion preferences. A bundled chart renders without JavaScript; live prices and controls require it.
+Range, logarithmic/linear scale, and currency preferences persist in local storage. Drag to inspect prices, or focus the chart and use Left/Right, Home/End, and Escape. Drag the selected range pill horizontally to switch units; swipe it up/down to increase/decrease its count, wrapping at either end like the Android app. Range counts also use chevrons or Up/Down keys. Motion respects reduced-motion preferences. A bundled chart renders without JavaScript; live prices and controls require it.
 
 ### A Bit of Earth
 

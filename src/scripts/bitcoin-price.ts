@@ -287,7 +287,10 @@ function startTracker(root: HTMLElement) {
     scheduleDraw();
   }
 
-  const rangePill = createRangePill(rangeBar, selectRange);
+  const rangePill = createRangePill(rangeBar, selectRange, (unit, step) => {
+    counts[unit] = stepRange(unit, counts[unit], step);
+    selectRange(unit);
+  });
   rangeBar.addEventListener('click', (event) => {
     const button = (event.target as Element).closest<HTMLButtonElement>('button');
     if (!button) return;
