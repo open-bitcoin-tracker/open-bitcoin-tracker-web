@@ -145,7 +145,6 @@ const t = useTranslations(Astro.currentLocale);
   .supply-person { fill: var(--color-ink-muted); stroke: var(--color-ink-muted); }
   .option-copy { padding: 1.5rem; flex: 1; min-width: 0; border-top: 1px solid var(--color-divider); }
   .option-title { display: flex; align-items: center; justify-content: space-between; gap: .75rem; }
-  .option-title::after { content: ''; flex: 0 0 1rem; width: 1rem; height: 1rem; background: var(--color-accent); mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M7 17 17 7M7 7h10v10'/%3E%3C/svg%3E") center / contain no-repeat; }
   h2 { font-size: 1.125rem; font-weight: 600; letter-spacing: -.025em; line-height: 1.3; }
   p { margin-top: .75rem; color: var(--color-ink-muted); font-size: .875rem; line-height: 1.65; text-wrap: pretty; }
   @media (min-width: 540px) and (max-width: 1100px) { .landing-options { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
