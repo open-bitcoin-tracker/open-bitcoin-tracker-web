@@ -60,14 +60,49 @@ function fixture(t: TestContext, reduced = false) {
     else Reflect.deleteProperty(globalThis, 'ResizeObserver');
   });
   function event(type: string, x = 450, extra: Record<string, unknown> = {}) {
+    const { target, ...properties } = extra;
     const event = Object.assign(new Event(type, { cancelable: true }), {
-      pointerId: 1, isPrimary: true, button: 0, clientX: x, clientY: 18, ...extra,
+      pointerId: 1, isPrimary: true, button: 0, clientX: x, clientY: 18, ...properties,
     });
+    if (target) Object.defineProperty(event, 'target', { value: target });
     bar.dispatchEvent(event);
     return event;
   }
   return { bar, pill, slots, control, drops, steps, animations, event, resize: () => resize(), preference };
 }
+
+test('touch capture transfers from the pressed label to the bar without cancelling a vertical swipe', (t) => {
+  const f = fixture(t, true);
+  f.control.select('day');
+  f.event('pointerdown', 50, { pointerType: 'touch' });
+  f.event('pointermove', 50, { pointerType: 'touch', clientY: 12 });
+  assert.equal(f.bar.captured, 1);
+  // Touch implicitly captures the pressed descendant. On the next move,
+  // transferring capture to the bar fires this bubbling event on that child.
+  f.event('lostpointercapture', 50, { target: f.slots[0].querySelector('[data-range-label]'), pointerType: 'touch' });
+  f.event('gotpointercapture', 50, { pointerType: 'touch' });
+  f.event('pointermove', 50, { pointerType: 'touch', clientY: -6 });
+  f.event('pointermove', 50, { pointerType: 'touch', clientY: 18 });
+  f.event('pointerup', 50, { pointerType: 'touch' });
+  assert.deepEqual(f.steps, [{ unit: 'day', step: 1 }, { unit: 'day', step: -1 }]);
+  assert.equal(f.bar.captured, -1);
+});
+
+test('touch capture transfers preserve horizontal dragging while actual bar capture loss still cancels', (t) => {
+  const f = fixture(t, true);
+  f.event('pointerdown', 450, { pointerType: 'touch' });
+  f.event('pointermove', 440, { pointerType: 'touch' });
+  f.event('lostpointercapture', 440, { target: f.slots[4].querySelector('[data-range-select]'), pointerType: 'touch' });
+  f.event('pointermove', 250, { pointerType: 'touch' });
+  f.event('pointerup', 250, { pointerType: 'touch' });
+  assert.deepEqual(f.drops, ['month']);
+  f.event('pointerdown', 250, { pointerType: 'touch' });
+  f.event('pointermove', 150, { pointerType: 'touch' });
+  f.event('lostpointercapture', 150, { pointerType: 'touch' });
+  f.event('pointerup', 150, { pointerType: 'touch' });
+  assert.deepEqual(f.drops, ['month']);
+  assert.equal(f.bar.dataset.dragging, undefined);
+});
 
 test('vertical swipes step every 24 px, reverse direction, and survive tracker updates', (t) => {
   const f = fixture(t);

@@ -185,7 +185,9 @@ export function createRangePill(
     if (drag?.pointerId === event.pointerId) finishDrag(false);
   }, { signal: events.signal });
   bar.addEventListener('lostpointercapture', (event) => {
-    if (drag?.pointerId === event.pointerId) finishDrag(false);
+    // Touch implicitly captures the pressed child. Its capture-loss event
+    // bubbles here when we take capture; only loss by the bar ends the drag.
+    if (event.target === bar && drag?.pointerId === event.pointerId) finishDrag(false);
   }, { signal: events.signal });
   bar.addEventListener('pointerleave', () => {
     if (drag && !drag.axis) drag = undefined;
