@@ -45,7 +45,7 @@ export const vi: Dict = {
   },
 
   hero: {
-    subtitle: 'Dành cho Android',
+    subtitle: 'Trình theo dõi danh mục bitcoin mã nguồn mở cho Android',
     tagline: 'Trình theo dõi danh mục bitcoin mã nguồn mở cho Android.',
     downloadApk: 'Tải APK',
     viewGithub: 'Xem trên GitHub',
@@ -54,12 +54,8 @@ export const vi: Dict = {
     altSuffix: '',
     reasons: [
       {
-        title: 'Theo dõi giá trị bitcoin bạn tích lũy.',
-        body: 'Được tạo ra cho những ai không cần gửi hay nhận, chỉ muốn để mắt đến giá trị các stack của mình.',
-      },
-      {
         title: 'Riêng tư tuyệt đối',
-        body: 'Số lượng trong mỗi stack do bạn tự tay nhập, và nó không bao giờ rời khỏi điện thoại. OBT không cần seed hay key.',
+        body: 'OBT không cần seed hay key. Số lượng trong mỗi stack do bạn tự tay nhập, và nó không bao giờ rời khỏi điện thoại.',
       },
       {
         title: 'Nhanh và nhẹ',

@@ -45,7 +45,7 @@ export const fr: Dict = {
   },
 
   hero: {
-    subtitle: 'Pour Android',
+    subtitle: 'Tracker de portfolio bitcoin open source pour Android',
     tagline: 'Tracker de portfolio bitcoin open source pour Android.',
     downloadApk: 'Télécharger l’APK',
     viewGithub: 'Voir sur GitHub',
@@ -54,12 +54,8 @@ export const fr: Dict = {
     altSuffix: '',
     reasons: [
       {
-        title: 'Garde un œil sur la valeur de tes stacks de bitcoin.',
-        body: 'Pensé pour celles et ceux qui n’ont pas besoin d’envoyer ni de recevoir, juste de garder un œil sur la valeur de leurs stacks.',
-      },
-      {
         title: 'Confidentialité totale',
-        body: 'Le montant de chaque stack se saisit à la main, et il ne quitte jamais ton téléphone. OBT n’a besoin ni de seed ni de clés.',
+        body: 'OBT n’a besoin ni de seed ni de clés. Le montant de chaque stack se saisit à la main, et il ne quitte jamais ton téléphone.',
       },
       {
         title: 'Rapide et léger',

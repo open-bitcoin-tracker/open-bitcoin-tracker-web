@@ -45,7 +45,7 @@ export const ja: Dict = {
   },
 
   hero: {
-    subtitle: 'Android向け',
+    subtitle: 'Android向けオープンソースのビットコイン・ポートフォリオ追跡アプリ',
     tagline: 'Android向けオープンソースのビットコイン・ポートフォリオ追跡アプリ。',
     downloadApk: 'APK をダウンロード',
     viewGithub: 'GitHub で見る',
@@ -54,12 +54,8 @@ export const ja: Dict = {
     altSuffix: ' の画面',
     reasons: [
       {
-        title: '貯めたビットコインの価値をチェック。',
-        body: '送受信は必要ないけれど、スタックの価値はしっかり見守りたい——そんな人のために作りました。',
-      },
-      {
         title: '完全なプライバシー',
-        body: '各スタックの数量は手動で入力し、端末の外に出ることはありません。OBT はシードや鍵を必要としません。',
+        body: 'OBT はシードや鍵を必要としません。各スタックの数量は手動で入力し、端末の外に出ることはありません。',
       },
       {
         title: '高速で軽量',

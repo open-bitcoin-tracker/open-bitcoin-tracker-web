@@ -45,7 +45,7 @@ export const tr: Dict = {
   },
 
   hero: {
-    subtitle: 'Android için',
+    subtitle: 'Android için açık kaynaklı bitcoin portföy takipçisi',
     tagline: 'Android için açık kaynaklı bitcoin portföy takipçisi.',
     downloadApk: 'APK indir',
     viewGithub: "GitHub'da görüntüle",
@@ -54,12 +54,8 @@ export const tr: Dict = {
     altSuffix: '',
     reasons: [
       {
-        title: 'Bitcoin birikiminin değerini takip et.',
-        body: "Gönderip almaya gerek duymayan, yalnızca stack'lerinin değerini takip etmek isteyenler için yapıldı.",
-      },
-      {
         title: 'Tam gizlilik',
-        body: "Her stack'teki miktarı elle girersin ve asla telefonundan çıkmaz. OBT'nin ne seed'e ne de key'lere ihtiyacı var.",
+        body: "OBT'nin ne seed'e ne de key'lere ihtiyacı var. Her stack'teki miktarı elle girersin ve asla telefonundan çıkmaz.",
       },
       {
         title: 'Hızlı ve hafif',

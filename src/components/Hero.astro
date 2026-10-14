@@ -1,5 +1,4 @@
 ---
-import FeatureCard from './FeatureCard.astro';
 import Phone from './Phone.astro';
 import DownloadButton from './DownloadButton.astro';
 import { useTranslations } from '../i18n/utils';
@@ -10,28 +9,28 @@ const darkAlt = `${t.hero.altPrefix}${t.themes.labels[2]}${t.hero.altSuffix}`;
 <section class="hero-section" id="hero" data-scene>
   <div class="site-container hero-grid">
     <div class="hero-copy">
-      <h1 data-reveal><span lang="en" class="brand-name">Open <span class="hero-bitcoin">Bitcoin</span> Tracker</span>{' '}<span class="hero-subtitle">{t.hero.subtitle}</span></h1>
-      <p class="hero-description" data-reveal>{t.hero.reasons[0].body}</p>
+      <h1 data-reveal><img class="hero-app-icon" src="/app-icon.png" width="96" height="96" alt="" /><span lang="en" class="brand-name">OBT</span></h1>
+      <p class="hero-subtitle" data-reveal>{t.hero.subtitle}</p>
+      <div class="hero-privacy" data-reveal>
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+        <div>
+          <h2>{t.hero.reasons[0].title}</h2>
+          <p>{t.hero.reasons[0].body}</p>
+        </div>
+      </div>
       <div class="hero-actions" data-reveal>
         <DownloadButton />
-      </div>
-      <div class="hero-trust" data-reveal>
-        <span><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="m5 12 4 4 10-10" /></svg>{t.privacy.cards[0].title}</span>
-        <span><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="m5 12 4 4 10-10" /></svg>{t.privacy.cards[1].title}</span>
-        <a href="https://github.com/Max-Hodler/open-bitcoin-tracker" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="m5 12 4 4 10-10" /></svg>{t.privacy.cards[3].title}</a>
+        <div class="hero-trust">
+          <span><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="m5 12 4 4 10-10" /></svg>{t.privacy.cards[0].title}</span>
+          <span><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="m5 12 4 4 10-10" /></svg>{t.privacy.cards[1].title}</span>
+          <a href="https://github.com/Max-Hodler/open-bitcoin-tracker" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="m5 12 4 4 10-10" /></svg>{t.privacy.cards[3].title}</a>
+        </div>
       </div>
     </div>
     <div class="hero-stage" data-reveal="scale">
-      <div class="stage-grid" aria-hidden="true"></div>
-      <div class="orbit" aria-hidden="true"></div>
-      <div class="orbit orbit-two" aria-hidden="true"></div>
       <div class="hero-device-position">
         <Phone src="paper" alt={lightAlt} darkSrc="deepsea" darkAlt={darkAlt} id="hero-phone" class="hero-device" tilt eager />
       </div>
     </div>
-  </div>
-  <div class="site-container hero-benefits" data-reveal-stagger="120">
-    <div data-reveal><FeatureCard title={t.hero.reasons[1].title} body={t.hero.reasons[1].body} icon="lock" headingLevel="h2" /></div>
-    <div data-reveal><FeatureCard title={t.hero.reasons[2].title} body={t.hero.reasons[2].body} icon="bolt" headingLevel="h2" /></div>
   </div>
 </section>

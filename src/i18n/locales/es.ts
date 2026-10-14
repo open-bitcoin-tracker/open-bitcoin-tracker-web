@@ -45,7 +45,7 @@ export const es: Dict = {
   },
 
   hero: {
-    subtitle: 'Para Android',
+    subtitle: 'Trackeador de portfolio de bitcoin de código abierto para Android',
     tagline: 'Trackeador de portfolio de bitcoin de código abierto para Android.',
     downloadApk: 'Descargar APK',
     viewGithub: 'Ver en GitHub',
@@ -54,12 +54,8 @@ export const es: Dict = {
     altSuffix: '',
     reasons: [
       {
-        title: 'Mira cuánto valen tus stacks de bitcoin.',
-        body: 'Hecho para quienes no necesitan generar transacciones pero quieren seguir de cerca lo que valen sus stacks.',
-      },
-      {
         title: 'Privacidad total',
-        body: 'La cantidad en cada stack se mete a mano y nunca sale de tu teléfono. OBT no necesita semillas ni llaves.',
+        body: 'OBT no necesita semillas ni llaves. La cantidad en cada stack se mete a mano y nunca sale de tu teléfono.',
       },
       {
         title: 'Rápido y ligero',

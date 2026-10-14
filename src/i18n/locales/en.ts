@@ -57,7 +57,7 @@ export const en = {
   },
 
   hero: {
-    subtitle: 'For Android',
+    subtitle: 'Open source bitcoin portfolio tracker for Android',
     tagline: 'Open source bitcoin portfolio tracker for Android.',
     downloadApk: 'Download APK',
     viewGithub: 'View on GitHub',
@@ -69,12 +69,8 @@ export const en = {
     altSuffix: ' screen',
     reasons: [
       {
-        title: 'Track the value of your bitcoin stacks.',
-        body: "Made for those who don't need to transact but want to keep an eye on the value of their stacks.",
-      },
-      {
-        title: 'Total privacy',
-        body: "The amount in each stack is entered by hand and never leaves your phone. OBT doesn't need seeds or keys.",
+        title: 'Total Privacy',
+        body: "OBT doesn't need seeds or keys. The amount in each stack is entered by hand and never leaves your phone.",
       },
       {
         title: 'Fast and lightweight',
@@ -106,7 +102,7 @@ export const en = {
   },
 
   privacy: {
-    heading: 'Total privacy',
+    heading: 'Total Privacy',
     sub: 'Your data stays on your phone.',
     cards: [
       { title: 'No accounts', body: 'No sign-up. Install the app and start tracking.' },

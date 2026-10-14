@@ -45,7 +45,7 @@ export const ptBR: Dict = {
   },
 
   hero: {
-    subtitle: 'Para Android',
+    subtitle: 'Trackeador de portfólio de bitcoin de código aberto para Android',
     tagline: 'Trackeador de portfólio de bitcoin de código aberto para Android.',
     downloadApk: 'Baixar APK',
     viewGithub: 'Ver no GitHub',
@@ -54,12 +54,8 @@ export const ptBR: Dict = {
     altSuffix: '',
     reasons: [
       {
-        title: 'Veja quanto valem seus stacks de bitcoin.',
-        body: 'Feito pra quem não precisa enviar nem receber, só quer ficar de olho no valor dos seus stacks.',
-      },
-      {
         title: 'Privacidade total',
-        body: 'O valor de cada stack você digita na mão, e ele nunca sai do seu celular. O OBT não precisa de seeds nem de chaves.',
+        body: 'O OBT não precisa de seeds nem de chaves. O valor de cada stack você digita na mão, e ele nunca sai do seu celular.',
       },
       {
         title: 'Rápido e leve',

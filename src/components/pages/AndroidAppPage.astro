@@ -28,10 +28,16 @@ import '../../styles/android-app.css';
 
 <style>
   :global(body:has(.android-app-page)) {
-    --android-title-size: clamp(2rem, 3.6vw, 4.25rem);
-    --android-header-top: max(1.5rem, env(safe-area-inset-top, 0px));
+    --android-title-size: clamp(4rem, 6.5vw, 6.5rem);
+    --android-header-top: max(clamp(4rem, 6vw, 6rem), env(safe-area-inset-top, 0px));
+  }
+  @media (min-width: 1200px) {
+    :global(body:has(.android-app-page)) { --android-title-size: clamp(7rem, 9vw, 9rem); }
   }
   @media (max-width: 767px) {
-    :global(body:has(.android-app-page)) { --android-title-size: clamp(1.125rem, calc((100vw - 8rem) / 8.5), 3.5rem); }
+    :global(body:has(.android-app-page)) {
+      --android-title-size: clamp(2.75rem, 14vw, 4.5rem);
+      --android-header-top: calc(var(--menu-control-top) + var(--menu-control-size) + 1.5rem);
+    }
   }
 </style>
