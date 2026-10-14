@@ -1,20 +1,9 @@
 /**
- * Cloudflare Pages Function — Accept-Language auto-redirect.
- *
- * The site is a static Astro build. English lives at the root (/), the other
- * nine languages live under a path prefix (/es/, /pt/, /ru/, /tr/, /vi/, /ja/,
- * /fr/, /de/, /it/). When a first-time visitor lands on the bare root we read
- * the Accept-Language header the browser already sends and 302 them to the
- * locale that best matches. English speakers and unmatched languages stay on /.
- *
- * Privacy properties (see the bottom of this file for the full statement):
- *   - No new data is collected. We read one header the browser already sends,
- *     match it in memory, and discard it. Nothing is stored, transmitted, or
- *     logged. No IP geolocation, no fingerprinting, no analytics, no third
- *     party calls.
- *   - The only state is an optional strictly-functional preference cookie
- *     (`lang`) holding a locale code so we don't fight a manual switch and so
- *     auto-redirect runs only once. It is consent-exempt under GDPR/ePrivacy.
+ * Cloudflare Pages language negotiation for known English page routes.
+ * Explicit localized URLs are preserved. A valid language cookie takes priority
+ * over Accept-Language; unsupported languages fall back to English.
+ * Only the locale code is persisted, for 180 days. No request data is logged or
+ * forwarded and no external services are called.
  */
 
 // URL path segment -> the BCP-47 prefixes that should resolve to it. English is
@@ -32,13 +21,13 @@ const LOCALE_MATCHERS = [
   { path: 'it', prefixes: ['it'] },
 ];
 
-// Every path segment we manage, including the implicit root locale, so we can
-// recognise an already-localized URL and a valid cookie value.
-const LOCALE_PATHS = new Set(LOCALE_MATCHERS.map((m) => m.path));
-const COOKIE_LOCALES = new Set([...LOCALE_PATHS, 'en']);
-
+const COOKIE_LOCALES = new Set(['en', ...LOCALE_MATCHERS.map((m) => m.path)]);
+const PAGE_PATHS = new Set([
+  '', 'price-tracker', 'android-app', 'a-bit-of-earth',
+  'bitcoin-and-the-dollar', 'about', 'privacy',
+]);
 const COOKIE_NAME = 'lang';
-const COOKIE_MAX_AGE = 60 * 60 * 24 * 180; // 180 days, in seconds.
+const COOKIE_MAX_AGE = 60 * 60 * 24 * 180;
 
 /**
  * Parse Accept-Language into a quality-ordered list of lowercase tags.
@@ -53,11 +42,11 @@ function parseAcceptLanguage(header) {
       let q = 1;
       for (const p of params) {
         const m = p.trim().match(/^q=([0-9.]+)$/);
-        if (m) q = parseFloat(m[1]);
+        if (m) q = Number(m[1]);
       }
       return { tag: tag.trim().toLowerCase(), q: Number.isNaN(q) ? 0 : q };
     })
-    .filter((e) => e.tag && e.tag !== '*' && e.q > 0)
+    .filter((e) => e.tag && e.tag !== '*' && e.q > 0 && e.q <= 1)
     .sort((a, b) => b.q - a.q)
     .map((e) => e.tag);
 }
@@ -92,85 +81,37 @@ function readCookie(request, name) {
 export async function onRequest(context) {
   const { request, next } = context;
   const url = new URL(request.url);
-  const { pathname } = url;
+  const page = url.pathname.replace(/\/index\.html$/, '/').replace(/^\/|\/$/g, '');
 
-  // Only ever consider redirecting a GET/HEAD for the bare root. Everything
-  // else — prefixed locale URLs, /about, /privacy, assets, robots.txt, the
-  // sitemap, anything with a file extension — passes straight through. This is
-  // also what makes redirect loops impossible: a redirect target like /de/ is
-  // not the bare root, so it is never re-evaluated.
-  const isRootRequest =
-    (request.method === 'GET' || request.method === 'HEAD') &&
-    (pathname === '/' || pathname === '/index.html');
-
-  if (!isRootRequest) {
+  // Only negotiate real English pages. Localized URLs, assets, unknown paths,
+  // and non-navigation methods pass through, so redirect targets cannot loop.
+  if (!['GET', 'HEAD'].includes(request.method) || !PAGE_PATHS.has(page)) {
     return next();
   }
 
-  // Respect a remembered manual choice. If the visitor previously picked a
-  // language (cookie set to a known locale), honour it and never auto-redirect
-  // against it. 'en' means "they want the root" -> serve root as-is.
   const cookie = readCookie(request, COOKIE_NAME);
-  if (cookie && COOKIE_LOCALES.has(cookie)) {
-    if (cookie === 'en' || !LOCALE_PATHS.has(cookie)) {
-      return next();
-    }
-    return Response.redirect(`${url.origin}/${cookie}/`, 302);
+  const saved = COOKIE_LOCALES.has(cookie) ? cookie : null;
+  const target = saved ?? matchLocalePath(request.headers.get('Accept-Language')) ?? 'en';
+  let response;
+  if (target === 'en') {
+    response = await next();
+  } else {
+    url.pathname = `/${target}/${page ? `${page}/` : ''}`;
+    response = new Response(null, { status: 302, headers: { Location: url.toString() } });
   }
 
-  // First-time visitor on the root: detect from the header.
-  const target = matchLocalePath(request.headers.get('Accept-Language'));
-
-  if (!target) {
-    // English or unmatched -> stay on the root. Remember that so we don't
-    // re-parse on every subsequent root visit. (Stateless fallback is also
-    // fine; the cookie is purely an optimisation here.)
-    const response = await next();
-    return withLangCookie(response, 'en', url);
-  }
-
-  // 302 (temporary) so the root stays canonical for crawlers and so a later
-  // header/preference change is honoured. The Set-Cookie remembers the choice
-  // so this detection runs only once per visitor.
-  const redirect = new Response(null, {
-    status: 302,
-    headers: {
-      Location: `${url.origin}/${target}/`,
-      // Vary so shared caches don't serve one visitor's redirect to another.
-      Vary: 'Accept-Language, Cookie',
-    },
-  });
-  return withLangCookie(redirect, target, url);
-}
-
-function withLangCookie(response, value, url) {
-  // Clone into a mutable response so we can attach Set-Cookie even on the
-  // static asset response returned by next().
+  // Negotiated pages and redirects are personal responses. Preserve any other
+  // Vary fields and prevent caches from reusing one visitor's language choice.
   const res = new Response(response.body, response);
-  const secure = url.protocol === 'https:' ? '; Secure' : '';
-  res.headers.append(
-    'Set-Cookie',
-    `${COOKIE_NAME}=${value}; Path=/; Max-Age=${COOKIE_MAX_AGE}; SameSite=Lax${secure}`
-  );
+  const vary = new Set((res.headers.get('Vary') ?? '').split(',').map((v) => v.trim()).filter(Boolean));
+  vary.add('Accept-Language');
+  vary.add('Cookie');
+  res.headers.set('Vary', [...vary].join(', '));
+  res.headers.set('Cache-Control', 'private, no-store');
+  if (!saved) {
+    const secure = url.protocol === 'https:' ? '; Secure' : '';
+    res.headers.append('Set-Cookie',
+      `${COOKIE_NAME}=${target}; Path=/; Max-Age=${COOKIE_MAX_AGE}; SameSite=Lax${secure}`);
+  }
   return res;
 }
-
-/*
- * ─── Privacy statement ──────────────────────────────────────────────────────
- * This function collects and stores nothing about the visitor and adds no
- * consent obligation:
- *
- *   • Input is the Accept-Language header the browser already sends on every
- *     request. It is read into memory, matched against a static list, and
- *     discarded. It is never stored, forwarded, or logged. There is no
- *     console.log of any request data anywhere in this file.
- *   • No IP address is read, no geolocation, no User-Agent fingerprinting, no
- *     navigator.languages, no analytics, no third-party network calls.
- *   • The only persisted state is the `lang` cookie: a single locale code, no
- *     identifier, Path=/, SameSite=Lax, Secure on HTTPS, Max-Age 180 days. It
- *     exists solely to remember the visitor's language so auto-redirect doesn't
- *     override a manual switch and runs only once. That makes it a
- *     "strictly necessary"/strictly-functional preference cookie, which is
- *     consent-exempt under GDPR / the ePrivacy Directive — no banner required.
- * ────────────────────────────────────────────────────────────────────────────
- */

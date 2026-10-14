@@ -36,7 +36,9 @@ The build does **not** perform a full TypeScript check. Development and preview 
 
 Every route exists in English, Spanish, Brazilian Portuguese, Russian, Turkish, Vietnamese, Japanese, French, German, and Italian. English has no prefix; Portuguese uses `/pt/` with dictionary code `pt-BR`; others use their language code. Earth and Money per Person feature content remains English; their navigation and landing descriptions are localized.
 
-On Cloudflare Pages, root visits honor a valid `lang` cookie or detect `Accept-Language`, remembering the result for 180 days. The language switcher links to the same route in another language.
+On Cloudflare Pages, visits to any unprefixed page honor a valid `lang` cookie or detect the browser’s `Accept-Language`, remembering the result for 180 days. Unsupported languages fall back to English. Explicit localized URLs keep their language; the language switcher links to the same page and saves manual choices (including English) when JavaScript and cookies are available. Redirects preserve query strings. Language negotiation requires the Pages Function; Astro development and preview serve the URL’s language directly.
+
+The site selects light or dark mode before the first paint from the browser/device preference and follows system changes while no manual choice is saved. The theme toggle overrides the system and persists in local storage when available. Blocked storage still allows system detection and a manual choice for the current page; changes in other tabs synchronize the theme.
 
 ## Data and behavior
 

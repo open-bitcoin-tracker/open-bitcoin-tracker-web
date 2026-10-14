@@ -47,7 +47,7 @@ const t = useTranslations(Astro.currentLocale);
     meta.name = 'theme-color';
     meta.content = dark ? '#0F1E3A' : '#F8F7F3';
     document.head.appendChild(meta);
-    document.dispatchEvent(new CustomEvent('themechange', { detail: { dark } }));
+    document.dispatchEvent(new CustomEvent('themechange', { detail: { dark, source: 'user' } }));
   };
   toggles.forEach((toggle) => toggle.addEventListener('click', () => {
     transition?.skipTransition();

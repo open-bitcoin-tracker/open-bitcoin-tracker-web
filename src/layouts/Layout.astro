@@ -87,24 +87,34 @@ const jsonLd = {
          saved choice if present, otherwise the OS preference. -->
     <script is:inline>
       (function () {
-        try {
-          var stored = localStorage.getItem('theme');
-          var dark = stored
-            ? stored === 'dark'
-            : window.matchMedia('(prefers-color-scheme: dark)').matches;
-          if (dark) document.documentElement.classList.add('dark');
-          // When an explicit choice overrides the OS default, collapse the
-          // media-scoped theme-color tags into one definitive value.
-          if (stored) {
-            document.querySelectorAll('meta[name="theme-color"]').forEach(function (m) {
-              m.remove();
-            });
-            var meta = document.createElement('meta');
-            meta.name = 'theme-color';
-            meta.content = dark ? '#0F1E3A' : '#F8F7F3';
-            document.head.appendChild(meta);
+        var stored;
+        try { stored = localStorage.getItem('theme'); } catch (e) {}
+        var preference = stored === 'dark' || stored === 'light' ? stored : null;
+        var system = window.matchMedia('(prefers-color-scheme: dark)');
+        function apply(dark, notify) {
+          document.documentElement.classList.toggle('dark', dark);
+          document.querySelectorAll('meta[name="theme-color"]').forEach(function (m) { m.remove(); });
+          var meta = document.createElement('meta');
+          meta.name = 'theme-color';
+          meta.content = dark ? '#0F1E3A' : '#F8F7F3';
+          document.head.appendChild(meta);
+          if (notify) document.dispatchEvent(new CustomEvent('themechange', { detail: { dark: dark } }));
+        }
+        apply(preference ? preference === 'dark' : system.matches, false);
+        system.addEventListener('change', function () {
+          if (!preference) apply(system.matches, true);
+        });
+        // Keep a manual choice in memory even when storage writes are blocked.
+        document.addEventListener('themechange', function (event) {
+          if (event.detail && event.detail.source === 'user') {
+            preference = event.detail.dark ? 'dark' : 'light';
           }
-        } catch (e) {}
+        });
+        window.addEventListener('storage', function (event) {
+          if (event.key !== 'theme' && event.key !== null) return;
+          preference = event.newValue === 'dark' || event.newValue === 'light' ? event.newValue : null;
+          apply(preference ? preference === 'dark' : system.matches, true);
+        });
       })();
     </script>
 

@@ -52,6 +52,7 @@ const currentLabel = LANGS.find((l) => l.code === current)?.label ?? 'English';
       <li>
         <a
           href={getRelativeLocaleUrl(l.loc, localePath)}
+          data-language={l.loc}
           hreflang={l.code}
           lang={l.code}
           class:list={['lang-option', { 'is-current': l.code === current }]}
@@ -65,6 +66,16 @@ const currentLabel = LANGS.find((l) => l.code === current)?.label ?? 'English';
 </details>
 
 <script>
+  // Remember explicit choices before navigating, including English at the root.
+  document.querySelectorAll<HTMLAnchorElement>('.lang-option').forEach((link) => {
+    link.addEventListener('click', () => {
+      const secure = location.protocol === 'https:' ? '; Secure' : '';
+      try {
+        document.cookie = `lang=${link.dataset.language}; Path=/; Max-Age=15552000; SameSite=Lax${secure}`;
+      } catch {}
+    });
+  });
+
   // Close the dropdown on outside-click or Escape. The control still works with
   // JS disabled (native <details> toggle); this only adds dismissal niceties.
   document.querySelectorAll<HTMLDetailsElement>('.lang-switcher').forEach((el) => {
