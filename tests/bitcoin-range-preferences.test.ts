@@ -366,6 +366,34 @@ test('currency radio controls keep one selection and ignore unchecked changes', 
   p.close();
 });
 
+test('settings close and return focus after scale or currency selection, including the current option', async () => {
+  const storage = new Map<string, string>();
+  const p = page(storage, 'en', undefined, false, 'fx');
+  await p.ready();
+  const menu = p.root.querySelector('[data-chart-settings]');
+  const trigger = p.root.querySelector('[data-settings-trigger]');
+  let focused = false;
+  trigger.focus = () => { focused = true; };
+  for (const select of [() => p.scale('linear'), () => p.currency('EUR')]) {
+    menu.open = true;
+    focused = false;
+    select();
+    assert.equal(menu.open, false);
+    assert.equal(focused, true);
+  }
+  assert.deepEqual(JSON.parse(storage.get('bitcoin-tracker-display')!), { scale: 'linear', currency: 'EUR' });
+  await p.ready();
+  assert.equal(p.root.querySelector('[data-chart-loading]').hidden, false);
+  menu.open = true;
+  focused = false;
+  p.currencyOptions.find(option => option.value === 'EUR')!.dispatchEvent(new Event('click'));
+  assert.equal(menu.open, false);
+  assert.equal(focused, true);
+  p.releaseRequests();
+  await p.ready();
+  p.close();
+});
+
 test('FX loading uses one spinner instead of visible loading messages and stops on success or failure', async () => {
   for (const failed of [false, true]) {
     const p = page(new Map(), 'en', undefined, failed, 'fx');

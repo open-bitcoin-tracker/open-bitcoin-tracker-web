@@ -312,6 +312,16 @@ function startTracker(root: HTMLElement) {
   chartControls.hidden = false;
   void refreshCandles();
 
+  function closeSettings() {
+    settingsMenu.open = false;
+    settingsTrigger.focus({ preventScroll: true });
+  }
+  for (const option of [...scaleOptions, ...currencyOptions]) {
+    // A click on the current selection does not fire a change event.
+    option.addEventListener('click', () => {
+      if (option.checked) closeSettings();
+    });
+  }
   for (const option of scaleOptions) {
     option.checked = option.value === scale;
     option.addEventListener('change', () => {
@@ -320,6 +330,7 @@ function startTracker(root: HTMLElement) {
       scale = option.value;
       saveDisplayPreferences({ scale, currency });
       scheduleDraw();
+      closeSettings();
     });
   }
   for (const option of currencyOptions) {
@@ -343,13 +354,13 @@ function startTracker(root: HTMLElement) {
       updatePriceDisplay();
       updateCurrencyStatus();
       scheduleDraw();
+      closeSettings();
     });
   }
   settingsMenu.addEventListener('keydown', (event) => {
     if (event.key === 'Escape' && settingsMenu.open) {
       event.preventDefault();
-      settingsMenu.open = false;
-      settingsTrigger.focus({ preventScroll: true });
+      closeSettings();
     }
   });
   document.addEventListener('click', (event) => {
