@@ -32,6 +32,7 @@ export const tr: Dict = {
   },
 
   nav: {
+    partyMode: 'Party Mode',
     menuLabel: 'Menü',
     closeMenu: 'Menüyü kapat',
     skipToContent: 'İçeriğe geç',

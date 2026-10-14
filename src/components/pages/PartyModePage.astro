@@ -1,0 +1,111 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import Nav from '../Nav.astro';
+import { resolveLang, htmlLang } from '../../i18n/utils';
+import { party } from '../../i18n/party';
+import { currencies } from '../../lib/bitcoin-currency';
+
+const t = party[resolveLang(Astro.currentLocale)];
+const locale = htmlLang(Astro.currentLocale);
+---
+
+<Layout title={`${t.title} — Open Bitcoin Tracker`} description={t.description}>
+  <div class="party-page" data-party-mode data-copy={JSON.stringify(t)} data-locale={locale}>
+    <canvas class="party-visualizer" data-visualizer aria-hidden="true"></canvas>
+    <div class="party-shade" aria-hidden="true"></div>
+    <Nav />
+    <header>
+      <h1 class="party-sr-only">{t.title}</h1>
+      <div class="party-appearance" role="group" aria-label={t.controlsLabel}>
+        <label class="party-currency-label" for="party-currency">{t.currency}</label>
+        <select id="party-currency" data-currency aria-label={t.currency} disabled>{currencies.map(code => <option value={code}>{code}</option>)}</select>
+        <button type="button" class="party-icon-button" data-fullscreen aria-label={t.fullscreen} title={t.fullscreen} disabled>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M8 3H3v5m13-5h5v5M3 16v5h5m13-5v5h-5" /></svg>
+        </button>
+      </div>
+    </header>
+    <main id="main-content" class="party-main">
+      <section class="party-price-stage" aria-label={t.priceLabel}>
+        <p class="party-price" data-price aria-label={t.unavailable}>—</p>
+        <span class="party-sr-only" data-price-status role="status">{t.loadingPrice}</span>
+        <p class="party-currency-note" data-currency-note hidden>{t.currencyNote}</p>
+      </section>
+      <section class="party-music" aria-label={t.musicLabel}>
+        <div data-music-chooser>
+          <input data-music-files class="party-file-input" type="file" accept="audio/*,.mp3,.wav,.wave,.ogg,.oga,.m4a,.aac,.flac,.opus,.weba,.webm" multiple aria-hidden="true" tabindex="-1" disabled />
+          <button type="button" class="party-choose" data-choose-files disabled>{t.chooseFiles}<span aria-hidden="true"> ♫</span></button>
+        </div>
+        <div class="party-playback-controls" data-playback-controls role="group" aria-label={t.musicLabel} hidden>
+          <button class="party-track-button" type="button" data-previous-track aria-label={t.previousTrack} title={t.previousTrack} disabled>
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M5 5h2v14H5zm14 0v14L8 12z" /></svg>
+          </button>
+          <button class="party-play-button" type="button" data-play-pause aria-label={t.play} title={t.play} disabled>
+            <svg data-audio-play-icon width="28" height="28" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="m8 4 13 8-13 8z" /></svg>
+            <svg data-audio-pause-icon hidden width="28" height="28" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M6 4h4v16H6zm8 0h4v16h-4z" /></svg>
+          </button>
+          <button class="party-track-button" type="button" data-next-track aria-label={t.nextTrack} title={t.nextTrack} disabled>
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M17 5h2v14h-2zM5 5l11 7-11 7z" /></svg>
+          </button>
+        </div>
+        <audio data-audio preload="metadata" aria-hidden="true"></audio>
+        <p class="party-sr-only" data-music-status role="status"></p>
+        <p class="party-error" data-music-error role="alert" hidden></p>
+        <p class="party-error" data-control-status role="status" hidden></p>
+      </section>
+      <noscript><p class="party-noscript">{t.noScript}</p></noscript>
+    </main>
+  </div>
+</Layout>
+
+<script>
+  import '../../scripts/party-mode';
+</script>
+
+<style>
+  :global(html:has(.party-page)) { scrollbar-gutter: auto; background: #100905; scrollbar-color: #704422 #100905; }
+  :global(body:has(.party-page)) { background: #100905; color: #fff4e8; }
+  :global(body:has(.party-page) .nav-menu-trigger) { color: #fff4e8; background: #29170c; box-shadow: 0 0 0 1px rgb(255 185 100 / .15); }
+  .party-page { min-height: 100svh; position: relative; isolation: isolate; color-scheme: dark; }
+  .party-visualizer, .party-shade { position: fixed; inset: 0; width: 100%; height: 100%; z-index: -2; pointer-events: none; }
+  .party-shade { z-index: -1; background: linear-gradient(#10090570, transparent 25%, transparent 50%, #10090580); }
+  .party-appearance { position: fixed; top: var(--menu-control-top); right: calc(var(--menu-control-right) + var(--menu-control-size) + .75rem); height: var(--menu-control-size); display: flex; align-items: center; gap: .65rem; z-index: 1; }
+  button, select { cursor: pointer; }
+  button:disabled, select:disabled { cursor: default; opacity: .35; }
+  button, input, select { -webkit-tap-highlight-color: transparent; }
+  button:focus-visible, input:focus-visible, select:focus-visible { outline: 2px solid #ffc477; outline-offset: 5px; }
+  .party-icon-button { width: var(--menu-control-size); height: var(--menu-control-size); display: grid; place-items: center; border: 1px solid rgb(255 187 109 / .18); background: rgb(37 21 12 / .75); border-radius: 50%; color: #fff4e8; }
+  .party-icon-button:hover { background: #42270f; }
+  .party-main { min-height: 100svh; }
+  .party-price-stage { position: absolute; inset: 0; width: 100%; text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 5.5rem 1.5rem 6.5rem; pointer-events: none; }
+  .party-currency-label, .party-sr-only, .party-file-input { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+  select { padding: .5rem 1.2rem .5rem .5rem; border: none; background: transparent; color: #ffc477; letter-spacing: .08em; font-size: .85rem; font-weight: 600; }
+  select option { background: #29170c; color: #fff4e8; }
+  .party-price { --price-chars: 8; font-size: clamp(2rem, min(17vw, 24vh, 138vw / var(--price-chars)), 15rem); font-weight: 750; letter-spacing: -.065em; line-height: 1.2; font-variant-numeric: tabular-nums; white-space: nowrap; text-shadow: 0 3px 30px #100905, 0 0 80px #100905; max-width: 100%; }
+  .party-currency-note { font-size: .7rem; color: #d8ad87; margin-top: .6rem; }
+  .party-music { position: absolute; bottom: max(clamp(3rem, 10svh, 6rem), env(safe-area-inset-bottom)); left: 50%; transform: translateX(-50%); width: min(500px, calc(100% - 3rem)); min-height: 4.5rem; display: flex; flex-direction: column; justify-content: center; z-index: 1; text-align: center; }
+  .party-choose { background: #ff981e; color: #211000; border: 1px solid #ffac46; border-radius: 9px; padding: .75rem 1rem; font-size: .85rem; font-weight: 650; }
+  .party-choose:hover { background: #ffb047; }
+  .party-error { font-size: .7rem; line-height: 1.55; margin-top: .6rem; color: #ffbc9d; background: #211208; padding: .5rem; border-radius: 8px; }
+  .party-playback-controls { display: flex; align-items: center; justify-content: center; gap: 1.25rem; }
+  .party-track-button, .party-play-button { display: grid; place-items: center; border-radius: 50%; border: 1px solid rgb(255 187 109 / .25); box-shadow: 0 6px 30px #0004; }
+  .party-track-button { width: 3.25rem; height: 3.25rem; background: rgb(34 18 8 / .85); color: #ffd09a; }
+  .party-track-button:hover:enabled { background: #42270f; }
+  .party-play-button { width: 4.5rem; height: 4.5rem; background: #ff981e; color: #211000; transition: opacity .35s ease; }
+  .party-play-button[data-idle] { opacity: 0; }
+  .party-play-button:focus-visible { opacity: 1; }
+  .party-play-button:hover:enabled { background: #ffb047; }
+  .party-noscript { position: relative; z-index: 2; text-align: center; padding: 1rem; }
+  [hidden] { display: none !important; }
+  @media (max-width: 700px) {
+    .party-price-stage { padding: 5rem 1rem 6rem; }
+    .party-price { font-size: clamp(2rem, min(18vw, 24vh, 140vw / var(--price-chars)), 8rem); }
+    .party-music { width: calc(100% - 2rem); }
+  }
+  @media (max-height: 480px) {
+    .party-price-stage { padding-top: 3.5rem; padding-bottom: 5rem; }
+    .party-price { line-height: 1.1; }
+    .party-play-button { width: 3.25rem; height: 3.25rem; }
+    .party-track-button { width: 2.75rem; height: 2.75rem; }
+  }
+  @media (prefers-reduced-motion: reduce) { .party-play-button { transition: none; } }
+</style>

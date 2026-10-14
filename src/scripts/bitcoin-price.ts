@@ -9,6 +9,7 @@ import { readRangePreferences, saveRangePreferences } from '../lib/bitcoin-range
 import { CurrencyRates, isCurrency, type Currency } from '../lib/bitcoin-currency';
 import { readDisplayPreferences, saveDisplayPreferences } from '../lib/bitcoin-display-preferences';
 import type { ChartSettingsCopy } from '../i18n/chart-settings';
+import { subscribeBitcoinPrice } from '../lib/bitcoin-live-price';
 
 const root = document.querySelector<HTMLElement>('[data-bitcoin-tracker]');
 if (root) startTracker(root);
@@ -66,20 +67,13 @@ function startTracker(root: HTMLElement) {
   let plottedPositions: { x: number; y: number }[] = [];
   let selectionRatio: number | undefined;
   let activePointer: number | undefined;
-  let socket: WebSocket | undefined;
-  let reconnectTimer: ReturnType<typeof setTimeout> | undefined;
-  let attempts = 0;
-  let lastMessage = 0;
-  let lastStreamTick = 0;
   let stopped = false;
-  let polling = false;
   let historyLoading = false;
   let paintFrame = 0;
   let motionFrame = 0;
   let plottedRangeKey = '';
   const motion = new ChartMotion();
   const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
-  let feedState: 'connecting' | 'live' | 'delayed' | 'offline' = 'connecting';
   if (currency !== 'USD') {
     line.setAttribute('d', '');
     area.setAttribute('d', '');
@@ -109,14 +103,6 @@ function startTracker(root: HTMLElement) {
     if (motion.animating && !motionFrame && !document.hidden && !stopped) {
       motionFrame = requestAnimationFrame((time) => { motionFrame = 0; paintMotion(time); });
     }
-  }
-
-  function setStatus(state: 'connecting' | 'live' | 'delayed' | 'offline') {
-    feedState = state;
-  }
-
-  function streamIsLive() {
-    return feedState === 'live';
   }
 
   function draw() {
@@ -412,15 +398,6 @@ function startTracker(root: HTMLElement) {
   }
   reduceMotion.addEventListener('change', onMotionPreferenceChange);
 
-  function applyPrice(value: number) {
-    if (!Number.isFinite(value) || value <= 0) return;
-    livePoint = { time: Date.now(), price: value };
-    if (!document.hidden && !stopped) {
-      updatePriceDisplay();
-      scheduleDraw();
-    }
-  }
-
   async function getJson(url: string) {
     const response = await fetch(url, { signal: AbortSignal.timeout(12_000), cache: 'no-store' });
     if (!response.ok) throw new Error(`Price API: ${response.status}`);
@@ -472,64 +449,6 @@ function startTracker(root: HTMLElement) {
     }
   }
 
-  async function pollPrice() {
-    if (polling || stopped || document.hidden || !navigator.onLine) return;
-    if (streamIsLive()) return;
-    polling = true;
-    try {
-      const result = await getJson('https://api.kraken.com/0/public/Ticker?pair=XBTUSD');
-      const ticker = Object.values(result)[0] as { c?: string[] } | undefined;
-      const price = Number(ticker?.c?.[0]);
-      if (!Number.isFinite(price) || price <= 0) throw new Error('Missing ticker price');
-      // A late REST response must never replace a newer stream update.
-      if (!streamIsLive() && !stopped && !document.hidden) {
-        applyPrice(price);
-        setStatus('delayed');
-      }
-    } catch {
-      if (!livePoint && selectionIndex() < 0) priceEl.setAttribute('aria-label', t.unavailable);
-    } finally {
-      polling = false;
-    }
-  }
-
-  function connect() {
-    if (stopped || document.hidden || !navigator.onLine) return;
-    clearTimeout(reconnectTimer);
-    if (socket && socket.readyState < WebSocket.CLOSING) return;
-    setStatus(livePoint ? 'delayed' : 'connecting');
-    const connection = new WebSocket('wss://ws.kraken.com/v2');
-    socket = connection;
-    lastMessage = Date.now();
-    connection.addEventListener('open', () => {
-      connection.send(JSON.stringify({ method: 'subscribe', params: { channel: 'ticker', symbol: ['BTC/USD'], snapshot: true } }));
-    });
-    connection.addEventListener('message', (event) => {
-      if (socket !== connection || stopped) return;
-      lastMessage = Date.now();
-      try {
-        const message = JSON.parse(event.data);
-        if (message.method === 'subscribe' && message.success === false) { connection.close(); return; }
-        if (message.channel !== 'ticker' || !['snapshot', 'update'].includes(message.type)) return;
-        const ticker = message.data?.find((entry: { symbol?: string }) => entry.symbol === 'BTC/USD');
-        if (typeof ticker?.last !== 'number' || !Number.isFinite(ticker.last) || ticker.last <= 0) return;
-        attempts = 0;
-        lastStreamTick = Date.now();
-        applyPrice(ticker.last);
-        setStatus('live');
-      } catch { /* Ignore unrelated or malformed stream messages. */ }
-    });
-    connection.addEventListener('error', () => connection.close());
-    connection.addEventListener('close', () => {
-      if (socket !== connection) return;
-      socket = undefined;
-      if (stopped || document.hidden) return;
-      setStatus(navigator.onLine ? 'delayed' : 'offline');
-      void pollPrice();
-      reconnectTimer = setTimeout(connect, Math.min(1000 * 2 ** attempts++, 30_000));
-    });
-  }
-
   const resizeObserver = new ResizeObserver(scheduleDraw);
   resizeObserver.observe(chart);
   // Bundled data is also rendered at build time, so the chart works before JS.
@@ -543,15 +462,11 @@ function startTracker(root: HTMLElement) {
     } catch { historyError = true; scheduleDraw(); }
   })();
 
-  connect();
-  void pollPrice();
+  const stopPriceFeed = subscribeBitcoinPrice({
+    onPrice(point) { livePoint = point; updatePriceDisplay(); scheduleDraw(); },
+    onState() {},
+  });
   void refreshCurrency();
-  function checkStream() {
-    if (socket && (Date.now() - lastMessage > 30_000 || (feedState === 'live' && Date.now() - lastStreamTick > 60_000))) {
-      setStatus('delayed');
-      socket.close();
-    }
-  }
   let timers: ReturnType<typeof setInterval>[] = [];
   function stopTimers() {
     timers.forEach(clearInterval);
@@ -560,28 +475,23 @@ function startTracker(root: HTMLElement) {
   function startTimers() {
     if (timers.length || stopped || document.hidden) return;
     timers = [
-      setInterval(checkStream, 5000),
-      setInterval(() => { void pollPrice(); }, 30_000),
       setInterval(() => { if (history.length) void refreshHistory(); }, 900_000),
       setInterval(() => { void refreshCandles(); void refreshCurrency(); }, 60_000),
     ];
   }
   startTimers();
 
-  window.addEventListener('offline', () => { setStatus('offline'); socket?.close(); });
-  window.addEventListener('online', () => { connect(); void pollPrice(); if (history.length) void refreshHistory(); void refreshCandles(); void refreshCurrency(); });
+  window.addEventListener('online', () => { if (history.length) void refreshHistory(); void refreshCandles(); void refreshCurrency(); });
   document.addEventListener('visibilitychange', () => {
     if (document.hidden) {
       stopTimers();
-      clearTimeout(reconnectTimer);
-      socket?.close();
       cancelAnimationFrame(paintFrame);
       paintFrame = 0;
       markerWaves.hidden = true;
       motion.finish();
       cancelAnimationFrame(motionFrame);
       motionFrame = 0;
-    } else if (!stopped) { startTimers(); scheduleDraw(); connect(); void pollPrice(); if (history.length) void refreshHistory(); void refreshCandles(true); void refreshCurrency(); }
+    } else if (!stopped) { startTimers(); scheduleDraw(); if (history.length) void refreshHistory(); void refreshCandles(true); void refreshCurrency(); }
   });
   window.addEventListener('pagehide', () => {
     stopped = true;
@@ -590,9 +500,8 @@ function startTracker(root: HTMLElement) {
     cancelAnimationFrame(motionFrame);
     reduceMotion.removeEventListener('change', onMotionPreferenceChange);
     rangePill.destroy();
-    clearTimeout(reconnectTimer);
     stopTimers();
-    socket?.close();
+    stopPriceFeed();
   });
   window.addEventListener('pageshow', (event) => { if (event.persisted) window.location.reload(); });
 }

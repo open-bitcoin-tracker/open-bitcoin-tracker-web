@@ -1,6 +1,6 @@
 # Open Bitcoin Tracker — Website
 
-[openbitcointracker.com](https://openbitcointracker.com) hosts a Bitcoin price tracker, the [Android app](https://github.com/Max-Hodler/open-bitcoin-tracker) overview, and two supply visualizations. Built with Astro 6, TypeScript, Tailwind CSS 4, and React for the Earth map; deployed as static pages with a Cloudflare Pages Function for language redirects.
+[openbitcointracker.com](https://openbitcointracker.com) hosts a Bitcoin price tracker, Party Mode, the [Android app](https://github.com/Max-Hodler/open-bitcoin-tracker) overview, and two supply visualizations. Built with Astro 6, TypeScript, Tailwind CSS 4, and React for the Earth map; deployed as static pages with a Cloudflare Pages Function for language redirects.
 
 ## Development
 
@@ -29,6 +29,7 @@ The build does **not** perform a full TypeScript check. Development and preview 
 | --- | --- |
 | `/` | Project landing page |
 | `/price-tracker/` | Live price and interactive history since July 2010 |
+| `/party-mode/` | Full-screen live price, local music playlist, and reactive orange visualizer |
 | `/android-app/` | Android app overview and downloads |
 | `/a-bit-of-earth/` | Bitcoin amounts expressed as shares of Earth's land |
 | `/bitcoin-and-the-dollar/` | Money per Person: Bitcoin and five fiat money supplies |
@@ -49,6 +50,16 @@ Kraken supplies live BTC/USD via WebSocket, with REST polling every 30 seconds w
 USD is the default; EUR, GBP, AUD, CAD, CHF, and JPY convert the USD series using daily ECB reference rates through Frankfurter's v2 ECB endpoint. These are reference conversions, not live exchange quotes. Historical points use the latest rate on or before their UTC date, carried forward at most seven days. Missing rates show unavailable data.
 
 Range, logarithmic/linear scale, and currency preferences persist in local storage. Drag to inspect prices, or focus the chart and use Left/Right, Home/End, and Escape. Drag the selected range pill horizontally to switch units; swipe it up/down to increase/decrease its count, wrapping at either end like the Android app. Range counts also use chevrons or Up/Down keys. Motion respects reduced-motion preferences. A bundled chart renders without JavaScript; live prices and controls require it.
+
+### Party Mode
+
+Party Mode shares the price tracker's Kraken live feed and ECB currency conversion, with a large centered price over an orange canvas visualizer that fills the screen. Currency preferences are shared with the price tracker.
+
+Select one or more local audio files to create a playlist in the order supplied by the browser's `FileList`. The file picker is replaced by play/pause and previous/next buttons; track navigation appears only for a playlist. During playback on devices with a mouse, play/pause fades after 2.5 seconds of pointer inactivity and returns on movement or interaction. Keyboard focus keeps it visible; touch controls stay visible. Playback advances automatically to the next track and stops after the final track. Supported formats and codecs vary by browser.
+
+Audio stays on the device: files and filenames are not uploaded, logged, or saved in storage. A Web Audio analyser provides frequency and volume data; bass hits and sudden changes in audio energy drive the orange pulses. The visualizer stays still before playback, when music is paused or stopped, and when reduced-motion preferences are enabled. Hidden tabs pause the canvas and live feed while audio can continue. Leaving the page stops playback, revokes file object URLs, and releases audio resources.
+
+Fullscreen is available where the browser supports it; live prices, local music playback, and the visualizer require JavaScript.
 
 ### A Bit of Earth
 
@@ -98,10 +109,10 @@ Review population annually or after a new WPP revision. Use the linked compact w
 | `src/lib/`, `src/scripts/`, `tests/` | Chart logic, browser interactions, and Node tests |
 | `src/features/earth/`, `public/earth/` | Earth feature, tests, and assets |
 | `src/features/supply/`, `scripts/refresh-supply.ts` | Supply snapshot, model, and refresh/import logic |
-| `src/i18n/` | Page dictionaries, chart copy, and English supply copy |
+| `src/i18n/` | Page dictionaries, chart and Party Mode copy, and English supply copy |
 | `src/assets/screenshots/` | App screenshots, converted to responsive WebP at build time |
 
-To add a language, update the dictionary and registration in `src/i18n/ui.ts`; `tracker.ts`, `ranges.ts`, and `chart-settings.ts`; every `src/pages/[lang]/` route's `getStaticPaths()`; Astro locales and sitemap configuration; layout alternates; switcher entries; and middleware matchers. Build and review the generated routes. Earth and supply need separate feature translation work.
+To add a language, update the dictionary and registration in `src/i18n/ui.ts`; `tracker.ts`, `ranges.ts`, `chart-settings.ts`, and `party.ts`; every `src/pages/[lang]/` route's `getStaticPaths()`; Astro locales and sitemap configuration; layout alternates; switcher entries; and middleware matchers. Build and review the generated routes. Earth and supply need separate feature translation work.
 
 ## Deployment
 

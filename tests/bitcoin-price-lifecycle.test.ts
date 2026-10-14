@@ -8,6 +8,9 @@ import ts from 'typescript';
 const script = ts.transpileModule(readFileSync(new URL('../src/scripts/bitcoin-price.ts', import.meta.url), 'utf8'), {
   compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 },
 }).outputText;
+const feedScript = ts.transpileModule(readFileSync(new URL('../src/lib/bitcoin-live-price.ts', import.meta.url), 'utf8'), {
+  compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 },
+}).outputText;
 
 function harness(hidden = false) {
   class Control extends EventTarget {
@@ -58,9 +61,9 @@ function harness(hidden = false) {
     CurrencyRates: Rates,
     ChartMotion: class { finish() {} },
   };
-  runInNewContext(script, {
-    require: () => modules, exports: {}, document, window, navigator: { onLine: true },
-    WebSocket: Socket, AbortSignal,
+  const globals = {
+    document, window, navigator: { onLine: true },
+    WebSocket: Socket, AbortController, AbortSignal,
     ResizeObserver: class { observe() {} disconnect() { disconnected = true; } },
     fetch: (url: string) => new Promise(resolve => requests.push({ url, resolve })),
     setTimeout: () => nextId++, clearTimeout() {},
@@ -68,6 +71,11 @@ function harness(hidden = false) {
     clearInterval: (id: number) => timers.delete(id),
     requestAnimationFrame: (fn: () => void) => { const id = nextId++; frames.set(id, fn); return id; },
     cancelAnimationFrame: (id: number) => frames.delete(id),
+  };
+  const feedModule = {};
+  runInNewContext(feedScript, { ...globals, exports: feedModule });
+  runInNewContext(script, {
+    ...globals, require: (name: string) => name.includes('bitcoin-live-price') ? feedModule : modules, exports: {},
   });
   const visibility = (hidden: boolean) => { document.hidden = hidden; document.dispatchEvent(new Event('visibilitychange')); };
   const respondToTicker = async () => {
