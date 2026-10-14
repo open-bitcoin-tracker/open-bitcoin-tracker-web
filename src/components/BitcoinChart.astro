@@ -123,7 +123,9 @@ const lastDate = new Intl.DateTimeFormat(lang, { year: 'numeric', month: 'short'
   /* Fill all remaining viewport space; keep a usable plot on short screens. */
   .chart-plot { position: relative; flex: 1; min-height: 180px; }
   /* Let zooming curves rise behind the price; the tracker clips at the page edges. */
-  .price-chart { position: absolute; inset: 0; display: block; width: 100%; height: 100%; overflow: visible; cursor: crosshair; touch-action: none; user-select: none; }
+  .price-chart { position: absolute; inset: 0; display: block; width: 100%; height: 100%; overflow: visible; cursor: crosshair; touch-action: none; user-select: none; -webkit-user-select: none; -webkit-tap-highlight-color: transparent; outline: none; }
+  /* Keep the plot frameless on touch; indicate keyboard focus with a short line. */
+  .chart-plot:has(.price-chart:focus-visible)::after { content: ''; position: absolute; top: .75rem; left: var(--tracker-gutter, 1rem); width: 2.5rem; height: 3px; border-radius: 999px; background: var(--color-emphasis-ink); pointer-events: none; }
   /* Animate small composited layers independently of the full history SVG. */
   .chart-marker-waves { position: absolute; top: 0; left: 0; width: 0; height: 0; pointer-events: none; }
   .chart-marker-waves[hidden] { display: none; }
