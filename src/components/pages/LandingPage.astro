@@ -74,7 +74,7 @@ const t = useTranslations(Astro.currentLocale);
             <p>{t.landing.earthDescription}</p>
           </div>
         </a>
-        <a class="landing-option" href={getRelativeLocaleUrl(lang, bitcoinAndDollar.path)} lang="en">
+        <a class="landing-option" href={getRelativeLocaleUrl(lang, bitcoinAndDollar.path)}>
           <div class="option-preview preview-supply" aria-hidden="true">
             <svg viewBox="0 0 360 240" fill="none">
               <path class="supply-box btc-box" d="M42 91v90h111V91" /><path class="supply-lid" d="M37 81h121v13H37z" />
@@ -84,7 +84,7 @@ const t = useTranslations(Astro.currentLocale);
               <path class="supply-connect" d="M98 187v18m165-18v18" /><g class="supply-person"><circle cx="98" cy="210" r="6" /><path d="M87 234v-7a11 11 0 0 1 22 0v7" /><circle cx="263" cy="210" r="6" /><path d="M252 234v-7a11 11 0 0 1 22 0v7" /></g>
             </svg>
           </div>
-          <div class="option-copy"><div class="option-title"><h2>{supply.title}</h2></div><p>{supply.cardDescription}</p></div>
+          <div class="option-copy"><div class="option-title"><h2 lang="en">{supply.title}</h2></div><p>{t.landing.supplyDescription}</p></div>
         </a>
       </div>
     </div>

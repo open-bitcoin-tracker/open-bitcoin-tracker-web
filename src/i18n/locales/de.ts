@@ -28,6 +28,7 @@ export const de: Dict = {
     priceTracker: 'Preis-Tracker',
     priceDescription: 'Bitcoin-Livekurs und Kurshistorie seit 2010.',
     earthDescription: 'Entdecke Bitcoin als Anteil an der Landfläche der Erde.',
+    supplyDescription: 'Sieh, wie die Fiat-Geldmenge jedes Jahr steigt und die von Bitcoin nicht.',
   },
 
   nav: {

@@ -28,6 +28,7 @@ export const es: Dict = {
     priceTracker: 'Trackeador de precio',
     priceDescription: 'Precio de Bitcoin en directo e historial desde 2010.',
     earthDescription: 'Explora Bitcoin como una parte de la superficie terrestre.',
+    supplyDescription: 'Descubre cómo la oferta de dinero fiat aumenta cada año y la de bitcoin no.',
   },
 
   nav: {

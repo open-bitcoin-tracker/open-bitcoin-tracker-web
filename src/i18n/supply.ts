@@ -1,7 +1,6 @@
 // This feature intentionally uses English on every localized route.
 export const supply = {
   title: 'Money per Person',
-  cardDescription: "See how fiat money supply increases every year and bitcoin doesn't.",
   intro: 'Bitcoin’s maximum supply, five monetary aggregates, and a hypothetical equal share per person.',
   bitcoin: 'Bitcoin',
   recorded: '{aggregate} · recorded',

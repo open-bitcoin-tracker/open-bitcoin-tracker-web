@@ -35,6 +35,7 @@ export const en = {
     priceTracker: 'Price Tracker',
     priceDescription: 'Live Bitcoin price and history since 2010.',
     earthDescription: 'Explore Bitcoin as a share of Earth’s land.',
+    supplyDescription: "See how fiat money supply increases every year and bitcoin doesn't.",
   },
 
   nav: {
