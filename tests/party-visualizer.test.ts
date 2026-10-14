@@ -265,6 +265,63 @@ test('RMS transients can trigger a punch before a slowly changing FFT catches up
   h.visualizer.destroy();
 });
 
+test('a rounded bass attack moves the ribbons even when its rise is spread across several frames', () => {
+  const h = harness();
+  h.bins.fill(130);
+  h.setRms(.15);
+  h.start();
+  h.advance(0);
+  for (let now = 40; now <= 1_000; now += 40) h.advance(now);
+  const restingPaths = h.paths();
+  let strongestPulse = 0;
+  let largestMovement = 0;
+
+  // A 50% amplitude rise over 160 ms resembles a rounded, mastered bass
+  // attack. No individual 40 ms step is a large jump, and RMS stays steady.
+  for (const [index, gain] of [1.125, 1.25, 1.375, 1.5].entries()) {
+    const byte = Math.round(130 + 255 / 80 * 20 * Math.log10(gain));
+    h.bins.fill(byte, 2, 8);
+    h.advance(1_040 + index * 40);
+    strongestPulse = Math.max(strongestPulse, h.pulse());
+    largestMovement = Math.max(largestMovement,
+      ...h.paths().map((point, i) => Math.abs(point[1] - restingPaths[i][1])));
+  }
+  assert.ok(strongestPulse > 0, 'the complete attack triggers a response despite its small per-frame steps');
+  assert.ok(largestMovement > h.bounds.height * .02, 'the attack produces visible ribbon movement');
+
+  // Holding the new level must not turn the attack into a repeating beat.
+  for (let now = 1_200; now <= 3_000; now += 40) {
+    h.advance(now);
+    if (now >= 1_400) assert.equal(h.pulse(), 0, 'a held bass level cannot restart the attack');
+  }
+  h.visualizer.destroy();
+});
+
+test('small RMS changes above the recent level keep moving the ribbons without a new onset', () => {
+  const h = harness();
+  h.bins.fill(130);
+  h.setRms(.15);
+  h.start();
+  h.advance(0);
+  for (let now = 40; now <= 1_000; now += 40) h.advance(now);
+  const restingPaths = h.paths();
+  const restingColumns = h.columns();
+  let previousMovement = 0;
+
+  // Keep the spectrum unchanged to isolate time-domain RMS. These small
+  // changes should shape the ribbons continuously, without a beat punch.
+  for (const [index, gain] of [1.02, 1.04, 1.06].entries()) {
+    h.setRms(.15 * gain);
+    h.advance(1_040 + index * 40);
+    assert.equal(h.pulse(), 0);
+    assert.deepEqual(h.columns(), restingColumns);
+    const movement = Math.max(...h.paths().map((point, i) => Math.abs(point[1] - restingPaths[i][1])));
+    assert.ok(movement > previousMovement, 'each above-baseline RMS increase changes the ribbon shape');
+    previousMovement = movement;
+  }
+  h.visualizer.destroy();
+});
+
 test('onset detection normalizes to recent track levels so quiet and loud tracks both punch', () => {
   const loud = harness();
   const quiet = harness();

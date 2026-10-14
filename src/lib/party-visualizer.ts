@@ -28,6 +28,9 @@ export function createPartyVisualizer(canvas: HTMLCanvasElement) {
   let rms = 0;
   let previousBass = 0;
   let previousRms = 0;
+  const recentLevels: { at: number; bass: number; rms: number }[] = [];
+  let bassArmed = true;
+  let rmsArmed = true;
   let bassBaseline = 0;
   let rmsBaseline = 0;
   let energyBaseline = 0;
@@ -44,6 +47,8 @@ export function createPartyVisualizer(canvas: HTMLCanvasElement) {
     levels.fill(0);
     previousMagnitudes.fill(0);
     bass = rms = previousBass = previousRms = 0;
+    recentLevels.length = 0;
+    bassArmed = rmsArmed = true;
     bassBaseline = rmsBaseline = energyBaseline = 0;
     pulse = 0;
     sampled = false;
@@ -92,16 +97,33 @@ export function createPartyVisualizer(canvas: HTMLCanvasElement) {
     }
 
     pulse = Math.max(0, pulse - delta / 180);
-    const bassRise = Math.max(0, bass - previousBass) / Math.max(.00005, bassBaseline);
-    const rmsRise = Math.max(0, rms - previousRms) / Math.max(.001, rmsBaseline);
+    // A musical attack can span several FFT/render frames. Compare with the
+    // recent trough so rounded kicks still register at thirty draws a second.
+    while (recentLevels.length && elapsed - recentLevels[0].at > 140) recentLevels.shift();
+    let bassTrough = previousBass;
+    let rmsTrough = previousRms;
+    for (const level of recentLevels) {
+      bassTrough = Math.min(bassTrough, level.bass);
+      rmsTrough = Math.min(rmsTrough, level.rms);
+    }
+    const bassRise = Math.max(0, bass - bassTrough) / Math.max(.00005, bassBaseline);
+    const rmsRise = Math.max(0, rms - rmsTrough) / Math.max(.001, rmsBaseline);
     const fluxRise = positiveFlux / Math.max(.00005, energyBaseline);
-    const strength = Math.max((bassRise - .12) / .5, (rmsRise - .16) / .6, (fluxRise - .10) / .4);
+    if (bassRise < .07) bassArmed = true;
+    if (rmsRise < .10) rmsArmed = true;
+    const bassStrength = bassArmed ? (bassRise - .12) / .5 : 0;
+    const rmsStrength = rmsArmed ? (rmsRise - .16) / .6 : 0;
+    const strength = Math.max(bassStrength, rmsStrength, (fluxRise - .10) / .4);
     const audible = rms > .0008 || bass > .00003 || measuredEnergy > .00002;
     if (audible && strength > .18 && elapsed - lastOnset >= 110) {
       // Immediate attack follows a real transient. There is no tempo clock:
       // a held tone cannot retrigger without a new positive rise or FFT flux.
       pulse = Math.min(1, .55 + strength * .45);
       lastOnset = elapsed;
+      // Consume each attack until it settles; a held louder level must not
+      // retrigger just because the short refractory window has elapsed.
+      if (bassStrength > .18) bassArmed = false;
+      if (rmsStrength > .18) rmsArmed = false;
     }
     const adaptation = sampled ? 1 - Math.exp(-delta / 400) : 1;
     bassBaseline += (bass - bassBaseline) * adaptation;
@@ -109,6 +131,7 @@ export function createPartyVisualizer(canvas: HTMLCanvasElement) {
     energyBaseline += (measuredEnergy - energyBaseline) * adaptation;
     previousBass = bass;
     previousRms = rms;
+    recentLevels.push({ at: elapsed, bass, rms });
     sampled = true;
   }
 
@@ -119,8 +142,10 @@ export function createPartyVisualizer(canvas: HTMLCanvasElement) {
     for (let i = 0; i < levels.length; i++) {
       energy += levels[i] / levels.length;
     }
-    const bassEnvelope = Math.min(1, bass / Math.max(.00005, bassBaseline));
-    const rmsEnvelope = Math.min(1, rms / Math.max(.001, rmsBaseline));
+    // Keep headroom above the recent average instead of clipping every louder
+    // sample to the same shape. This bounded response also follows quiet tracks.
+    const bassEnvelope = 2 * bass / (bass + Math.max(.00005, bassBaseline));
+    const rmsEnvelope = 2 * rms / (rms + Math.max(.001, rmsBaseline));
     context.fillStyle = '#100905';
     context.fillRect(0, 0, width, height);
     const glow = context.createRadialGradient(width * .5, height * .65, 0, width * .5, height * .65, Math.max(width, height) * (.65 + pulse * .15));
