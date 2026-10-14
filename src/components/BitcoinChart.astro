@@ -143,7 +143,7 @@ const lastDate = new Intl.DateTimeFormat(lang, { year: 'numeric', month: 'short'
   .loading-description { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
   @keyframes chart-loading-spin { to { transform: rotate(360deg); } }
   /* Overlay the plot without reserving space beneath the price line. */
-  .chart-controls { position: absolute; z-index: 1; left: 50%; bottom: calc(2.5rem + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); display: flex; align-items: stretch; gap: .5rem; width: calc(100% - 2 * var(--tracker-gutter, 1rem)); max-width: 48rem; }
+  .chart-controls { position: absolute; z-index: 1; left: 50%; bottom: calc(1rem + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); display: flex; align-items: stretch; gap: .5rem; width: calc(100% - 2 * var(--tracker-gutter, 1rem)); max-width: 48rem; }
   .chart-controls[hidden] { display: none; }
   .range-bar, .chart-settings-trigger { padding: .25rem; border-radius: 999px; background: rgb(var(--color-ink-rgb) / .055); }
   .range-bar { position: relative; display: flex; flex: 1; min-width: 0; align-items: stretch; gap: .25rem; margin: 0; }
