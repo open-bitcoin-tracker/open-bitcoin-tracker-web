@@ -56,10 +56,19 @@ export function createRangePill(
     pill.style.height = `${height}px`;
   }
 
+  function isAtSelected() {
+    const target = slots[selectedIndex].getBoundingClientRect();
+    const current = pill.getBoundingClientRect();
+    return Math.abs(current.left - target.left) < .5 && Math.abs(current.top - target.top) < .5
+      && Math.abs(current.width - target.width) < .5 && Math.abs(current.height - target.height) < .5;
+  }
+
   function placeSelected(animate: boolean) {
     const bounds = slots[selectedIndex]?.getBoundingClientRect();
     if (!bounds?.width) return;
     const track = bar.getBoundingClientRect();
+    if (animate && !reducedMotion.matches && !isAtSelected()) bar.dataset.moving = 'true';
+    else delete bar.dataset.moving;
     // Layout changes and first paint should never glide from stale geometry.
     if (!animate) pill.style.transition = 'none';
     position(bounds.left - track.left, bounds.top - track.top, bounds.width, bounds.height);
@@ -69,6 +78,14 @@ export function createRangePill(
       pill.style.transition = '';
     }
   }
+
+  function finishMovement(event: TransitionEvent) {
+    if (event.target === pill && ['transform', 'width', 'height'].includes(event.propertyName) && isAtSelected()) {
+      delete bar.dataset.moving;
+    }
+  }
+  bar.addEventListener('transitionend', finishMovement, { signal: events.signal });
+  bar.addEventListener('transitioncancel', finishMovement, { signal: events.signal });
 
   function finishDrag(commit: boolean) {
     if (!drag) return;
@@ -141,6 +158,7 @@ export function createRangePill(
       stopNudge();
       clearTimeout(highlightTimer);
       if (drag.axis === 'vertical') highlight(selectedIndex);
+      delete bar.dataset.moving;
       bar.dataset.dragging = 'true';
       bar.setPointerCapture(event.pointerId);
     }

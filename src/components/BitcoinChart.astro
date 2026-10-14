@@ -180,7 +180,8 @@ const lastDate = new Intl.DateTimeFormat(lang, { year: 'numeric', month: 'short'
   .range-step[data-range-step="-1"] { grid-column: 3; }
   .range-bar:hover .range-slot[data-selected="true"] .range-step,
   .range-bar:has(:focus-visible) .range-slot[data-selected="true"] .range-step { visibility: visible; }
-  .range-bar[data-dragging="true"] .range-step { visibility: hidden !important; }
+  .range-bar[data-dragging="true"] .range-step,
+  .range-bar[data-moving="true"] .range-step { visibility: hidden !important; }
   @media (hover: none) {
     .range-bar:focus-within .range-slot[data-selected="true"] .range-step { visibility: visible; }
   }

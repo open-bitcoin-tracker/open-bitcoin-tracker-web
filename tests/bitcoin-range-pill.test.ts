@@ -233,14 +233,58 @@ test('rapid taps highlight only the latest target after the app’s 90 ms lead',
   assert.equal(f.slots[0].dataset.highlighted, 'false');
 });
 
+test('pill movement ends only when a position transition reaches the selected slot', (t) => {
+  const f = fixture(t);
+  let left = 400;
+  f.pill.getBoundingClientRect = () => ({ left, right: left + 100, top: 0, bottom: 36, width: 100, height: 36 });
+  f.control.select('day');
+  assert.equal(f.bar.dataset.moving, 'true');
+  left = 200;
+  f.event('transitionend', 0, { target: f.pill, propertyName: 'transform' });
+  assert.equal(f.bar.dataset.moving, 'true', 'an earlier transition cannot reveal the chevrons during a glide');
+  left = 0;
+  f.event('transitionend', 0, { target: f.pill, propertyName: 'color' });
+  assert.equal(f.bar.dataset.moving, 'true');
+  f.event('transitionend', 0, { target: f.pill, propertyName: 'transform' });
+  assert.equal(f.bar.dataset.moving, undefined);
+});
+
+test('rapid selections and drag snapping keep movement pending until the latest target is reached', (t) => {
+  const f = fixture(t);
+  let left = 400;
+  f.pill.getBoundingClientRect = () => ({ left, right: left + 100, top: 0, bottom: 36, width: 100, height: 36 });
+  f.control.select('day');
+  left = 300;
+  f.control.select('month');
+  f.control.select('month');
+  f.event('transitioncancel', 0, { target: f.pill, propertyName: 'transform' });
+  assert.equal(f.bar.dataset.moving, 'true');
+  left = 200;
+  f.event('transitionend', 0, { target: f.pill, propertyName: 'transform' });
+  assert.equal(f.bar.dataset.moving, undefined);
+  f.event('pointerdown', 250);
+  f.event('pointermove', 160);
+  left = 110;
+  assert.equal(f.bar.dataset.dragging, 'true');
+  f.event('pointerup', 160);
+  assert.deepEqual(f.drops, ['week']);
+  assert.equal(f.bar.dataset.moving, 'true');
+  left = 100;
+  f.event('transitionend', 0, { target: f.pill, propertyName: 'transform' });
+  assert.equal(f.bar.dataset.moving, undefined);
+});
+
 test('reduced motion highlights immediately and preference changes end pending motion', (t) => {
   const f = fixture(t, true);
   f.control.select('day');
   assert.equal(f.slots[0].dataset.highlighted, 'true');
+  assert.equal(f.bar.dataset.moving, undefined);
   f.preference.matches = false;
   f.control.select('month');
   assert.equal(f.slots[0].dataset.highlighted, 'true');
+  assert.equal(f.bar.dataset.moving, 'true');
   f.preference.matches = true;
   f.preference.dispatchEvent(new Event('change'));
   assert.equal(f.slots[2].dataset.highlighted, 'true');
+  assert.equal(f.bar.dataset.moving, undefined);
 });
