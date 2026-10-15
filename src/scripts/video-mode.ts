@@ -127,12 +127,16 @@ function startVideoMode(root: HTMLElement) {
       subtitlesWanted = saved.subtitlesWanted === true;
     }
   } catch { /* Keep playback usable when saved settings are malformed or storage is blocked. */ }
+  const mobileAudio = window.matchMedia('(hover: none) and (pointer: coarse)');
+  let phoneAudio = mobileAudio.matches;
+  let desktopAudio = { volume, muted, lastAudibleVolume };
+  if (phoneAudio) { volume = lastAudibleVolume = 100; muted = false; }
 
   function savePlaybackPreferences() {
     if (destroyed) return;
     try {
       window.localStorage.setItem(VIDEO_PLAYBACK_KEY, JSON.stringify({
-        version: 1, volume, muted, lastAudibleVolume, looping, subtitlesWanted,
+        version: 1, ...(phoneAudio ? desktopAudio : { volume, muted, lastAudibleVolume }), looping, subtitlesWanted,
       }));
     } catch { /* Settings remain usable when storage is blocked or full. */ }
   }
@@ -281,6 +285,24 @@ function startVideoMode(root: HTMLElement) {
   player.setMuted(muted);
   player.setLoop(looping);
   player.setCaptions(subtitlesWanted);
+  function updateAudioMode() {
+    if (destroyed || phoneAudio === mobileAudio.matches) return;
+    phoneAudio = mobileAudio.matches;
+    if (phoneAudio) {
+      desktopAudio = { volume, muted, lastAudibleVolume };
+      volume = lastAudibleVolume = 100;
+      muted = false;
+    } else {
+      ({ volume, muted, lastAudibleVolume } = desktopAudio);
+    }
+    adjustingVolume = false;
+    muteButton.disabled = volumeInput.disabled = phoneAudio || !hasVideo;
+    player.setVolume(volume);
+    player.setMuted(muted);
+    paintAudio();
+    updateIdle();
+  }
+  mobileAudio.addEventListener('change', updateAudioMode);
 
   function loadSelectedVideo(video: YouTubeVideo, { focus = true, persist = true } = {}) {
     if (destroyed) return;
@@ -303,7 +325,8 @@ function startVideoMode(root: HTMLElement) {
     seek.disabled = true;
     renderPosition(0);
     updateCaptions(false, false);
-    playButton.disabled = muteButton.disabled = volumeInput.disabled = loopButton.disabled = false;
+    playButton.disabled = loopButton.disabled = false;
+    muteButton.disabled = volumeInput.disabled = phoneAudio;
     setPlaying(false);
     videoStatus.textContent = t.loadingVideo;
     videoStatus.hidden = false;
@@ -363,6 +386,7 @@ function startVideoMode(root: HTMLElement) {
     else player.play();
   });
   muteButton.addEventListener('click', () => {
+    if (phoneAudio) return;
     if (muted && volume === 0) { changeVolume(lastAudibleVolume); return; }
     muted = !muted;
     player.setMuted(muted);
@@ -483,6 +507,7 @@ function startVideoMode(root: HTMLElement) {
     document.removeEventListener('visibilitychange', onVisibility);
     document.removeEventListener('fullscreenchange', updateFullscreen);
     window.removeEventListener('online', onOnline);
+    mobileAudio.removeEventListener('change', updateAudioMode);
     window.removeEventListener('pointerup', releaseSeek);
     window.removeEventListener('pointercancel', cancelSeek);
   }, { once: true });

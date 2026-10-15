@@ -67,6 +67,7 @@ export function createVideoPriceLayout(root: HTMLElement) {
     const x = `${left}px`, y = `${top}px`;
     if (position.style.left !== x) position.style.left = x;
     if (position.style.top !== y) position.style.top = y;
+    root.toggleAttribute('data-video-dock-top', state.y > 50);
   }
   function refresh() {
     if (destroyed) return;
@@ -288,6 +289,7 @@ export function createVideoPriceLayout(root: HTMLElement) {
       for (const remove of removeListeners) remove();
       root.removeAttribute('data-price-layout-ready');
       root.removeAttribute('data-price-default');
+      root.removeAttribute('data-video-dock-top');
       for (const [name, value] of [['--video-price-scale', original.scale], ['--video-price-fit', original.fit]]) {
         if (value) root.style.setProperty(name, value); else root.style.removeProperty(name);
       }

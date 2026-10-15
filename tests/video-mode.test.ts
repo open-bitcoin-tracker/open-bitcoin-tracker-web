@@ -74,6 +74,8 @@ interface Options {
   storedSelection?: string;
   storedPlayback?: string;
   blockedStorage?: boolean;
+  mobile?: boolean;
+  viewportWidth?: number;
 }
 
 function harness(options: Options = {}) {
@@ -122,7 +124,14 @@ function harness(options: Options = {}) {
   if (options.storedSelection !== undefined) storage.set(videoSelectionKey, options.storedSelection);
   if (options.storedPlayback !== undefined) storage.set(videoPlaybackKey, options.storedPlayback);
   const storageWrites: { key: string; value: string }[] = [];
+  const mobileAudio = Object.assign(new EventTarget(), { matches: options.mobile ?? false });
   const window = Object.assign(new EventTarget(), {
+    matchMedia: (query: string) => {
+      const maxWidth = query.match(/max-width:\s*(\d+)px/);
+      return maxWidth
+        ? Object.assign(new EventTarget(), { matches: (options.viewportWidth ?? 1280) <= Number(maxWidth[1]) })
+        : mobileAudio;
+    },
     location: { reload() { reloads++; } },
     localStorage: {
       getItem(key: string) { if (options.blockedStorage) throw Error('Storage blocked'); return storage.get(key) ?? null; },
@@ -248,6 +257,7 @@ function harness(options: Options = {}) {
   const control = (selector: string) => root.querySelector(selector);
   return {
     root, window, requests, intervals, loaded, muted, volumes, sought, loopStates, captionStates, playbackAtLoad, control, storage, storageWrites,
+    mobile(matches: boolean) { mobileAudio.matches = matches; mobileAudio.dispatchEvent(new Event('change')); },
     initializations, layoutRoots, layoutRefreshes, priceLayoutDestroys: () => priceLayoutDestroys,
     intervalCount: (duration: number) => [...intervalDurations.values()].filter(value => value === duration).length,
     intervalCallback: (duration: number) => [...intervals].find(([id]) => intervalDurations.get(id) === duration)?.[1],
@@ -363,6 +373,61 @@ test('play and pause labels follow player state while mute updates its action an
   assert.equal(h.control('[data-muted-icon]').attributes.has('hidden'), true);
   assert.equal(h.control('[data-sound-icon]').attributes.has('hidden'), false);
   h.close();
+});
+
+test('a narrow desktop window retains volume and mute controls', () => {
+  const h = harness({ viewportWidth: 390, storedPlayback: JSON.stringify({ version: 1, volume: 37, muted: false, lastAudibleVolume: 37 }) });
+  h.submit(firstUrl);
+  assert.equal(h.volumes.at(-1), 37);
+  assert.equal(h.control('[data-video-volume]').disabled, false);
+  assert.equal(h.control('[data-mute]').disabled, false);
+  h.click('[data-mute]');
+  assert.equal(h.muted.at(-1), true);
+  h.close();
+});
+
+test('mobile playback uses full unmuted sound without overwriting saved desktop audio settings', () => {
+  const h = harness({ mobile: true, storedPlayback: JSON.stringify({ version: 1, volume: 37, muted: true, lastAudibleVolume: 37 }) });
+  h.submit(firstUrl);
+  assert.equal(h.volumes.at(-1), 100);
+  assert.equal(h.muted.at(-1), false);
+  assert.equal(h.control('[data-video-volume]').disabled, true);
+  assert.equal(h.control('[data-mute]').disabled, true);
+  h.click('[data-mute]');
+  assert.equal(h.muted.at(-1), false);
+  h.click('[data-loop]');
+  assert.deepEqual(JSON.parse(h.storage.get(videoPlaybackKey)!), {
+    version: 1, volume: 37, muted: true, lastAudibleVolume: 37, looping: true, subtitlesWanted: false,
+  });
+  h.mobile(false);
+  assert.equal(h.volumes.at(-1), 37);
+  assert.equal(h.muted.at(-1), true);
+  assert.equal(h.control('[data-video-volume]').disabled, false);
+  h.close();
+});
+
+test('switching to touch input restores full sound and switching back restores desktop audio', () => {
+  const h = harness();
+  h.submit(firstUrl);
+  const volume = h.control('[data-video-volume]');
+  volume.value = '24';
+  volume.dispatchEvent(new Event('input'));
+  h.click('[data-mute]');
+  h.mobile(true);
+  assert.equal(h.volumes.at(-1), 100);
+  assert.equal(h.muted.at(-1), false);
+  assert.equal(volume.disabled, true);
+  h.submit(secondUrl);
+  assert.equal(volume.disabled, true);
+  assert.equal(h.playbackAtLoad.at(-1)?.volume, 100);
+  h.mobile(false);
+  assert.equal(h.volumes.at(-1), 24);
+  assert.equal(h.muted.at(-1), true);
+  assert.equal(volume.disabled, false);
+  h.close();
+  const calls = h.volumes.length;
+  h.mobile(true);
+  assert.equal(h.volumes.length, calls, 'page cleanup releases the responsive audio listener');
 });
 
 test('volume starts at full sound, zero mutes, and unmute restores the last audible level', () => {
