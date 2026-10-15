@@ -11,6 +11,7 @@ const script = ts.transpileModule(readFileSync(new URL('../src/lib/chart-control
 function harness() {
   const settings = { open: false };
   const button = { focusVisible: true, matches: () => button.focusVisible };
+  const navigationTrigger = { focusVisible: true, matches: () => navigationTrigger.focusVisible };
   const root = Object.assign(new EventTarget(), {
     attributes: new Set<string>(),
     querySelector: () => settings,
@@ -23,7 +24,7 @@ function harness() {
   const document = Object.assign(new EventTarget(), {
     hidden: false,
     activeElement: null as typeof button | null,
-    querySelector: () => navigationOpen ? {} : null,
+    querySelector: (selector: string) => selector === '.nav-menu-trigger' ? navigationTrigger : navigationOpen ? {} : null,
   });
   let time = 0;
   let nextTimer = 0;
@@ -51,7 +52,7 @@ function harness() {
     }
   };
   return {
-    root, document, window, settings, controls, timers, button, pointer, tick,
+    root, document, window, settings, controls, timers, button, navigationTrigger, pointer, tick,
     idle: () => root.hasAttribute('data-chart-ui-idle'),
     tap() { pointer('pointerdown', 'touch'); pointer('pointerup', 'touch'); },
     key() { window.dispatchEvent(new Event('keydown')); },
@@ -122,15 +123,33 @@ test('keyboard focus keeps controls visible without making pointer-focused butto
   const h = harness();
   h.key();
   h.document.activeElement = h.button;
-  h.root.dispatchEvent(new Event('focusin'));
+  h.document.dispatchEvent(new Event('focusin'));
   h.pointer('pointermove');
   h.tick(10000);
   assert.equal(h.idle(), false);
   h.document.activeElement = null;
-  h.root.dispatchEvent(new Event('focusout'));
+  h.document.dispatchEvent(new Event('focusout'));
   h.tick(1500);
   assert.equal(h.idle(), true);
   h.document.activeElement = h.button;
+  h.tap();
+  h.tick(1500);
+  assert.equal(h.idle(), true);
+  h.controls.destroy();
+});
+
+test('keyboard focus on the burger keeps all controls visible until focus leaves navigation', () => {
+  const h = harness();
+  h.key();
+  h.document.activeElement = h.navigationTrigger;
+  h.document.dispatchEvent(new Event('focusin'));
+  h.tick(10000);
+  assert.equal(h.idle(), false);
+  h.document.activeElement = null;
+  h.document.dispatchEvent(new Event('focusin'));
+  h.tick(1500);
+  assert.equal(h.idle(), true);
+  h.document.activeElement = h.navigationTrigger;
   h.tap();
   h.tick(1500);
   assert.equal(h.idle(), true);

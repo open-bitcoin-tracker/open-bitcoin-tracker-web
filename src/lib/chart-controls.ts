@@ -3,6 +3,7 @@ const IDLE_DELAY = 1500;
 /** Reveal chart controls on activity, on both touch and pointer devices. */
 export function createChartControls(root: HTMLElement) {
   const settings = root.querySelector<HTMLDetailsElement>('[data-chart-settings]');
+  const navigationTrigger = document.querySelector<HTMLElement>('.nav-menu-trigger');
   const pointers = new Set<number>();
   const removeListeners: (() => void)[] = [];
   let timer: number | undefined;
@@ -24,7 +25,7 @@ export function createChartControls(root: HTMLElement) {
     if (document.hidden || pointers.size || settings?.open || root.hasAttribute('data-currency-open')) return false;
     if (document.querySelector('#site-navigation-dialog[open]')) return false;
     const active = document.activeElement;
-    return !keyboard || !active || !root.contains(active) || !active.matches(':focus-visible');
+    return !keyboard || !active || (!root.contains(active) && active !== navigationTrigger) || !active.matches(':focus-visible');
   }
 
   function reveal() {
@@ -67,8 +68,8 @@ export function createChartControls(root: HTMLElement) {
   listen(window, 'pointercancel', pointerUp as EventListener);
   listen(window, 'keydown', keyDown);
   listen(window, 'blur', visibility);
-  listen(root, 'focusin', reveal);
-  listen(root, 'focusout', reveal);
+  listen(document, 'focusin', reveal);
+  listen(document, 'focusout', reveal);
   listen(root, 'currencytoggle', reveal);
   listen(document, 'toggle', reveal, true);
   listen(document, 'close', reveal, true);
