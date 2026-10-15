@@ -14,11 +14,13 @@ type Operation = { pointerId: number; capture: HTMLElement; clientX: number; cli
 export function createVideoPriceLayout(root: HTMLElement) {
   const stage = root.querySelector<HTMLElement>('[data-price-stage]')!;
   const position = root.querySelector<HTMLElement>('[data-price-position]')!;
+  const resetButton = root.querySelector<HTMLButtonElement>('[data-reset-price]')!;
   const handles = [...position.querySelectorAll<HTMLButtonElement>('[data-price-resize]')];
   const original = {
     scale: root.style.getPropertyValue('--video-price-scale'), fit: root.style.getPropertyValue('--video-price-fit'),
     left: position.style.left, top: position.style.top, tabIndex: position.tabIndex,
     handleTabIndexes: handles.map(handle => handle.tabIndex),
+    resetDisabled: resetButton.disabled,
   };
   const removeListeners: (() => void)[] = [];
   let state = { ...DEFAULTS };
@@ -46,6 +48,11 @@ export function createVideoPriceLayout(root: HTMLElement) {
   function save() {
     try { window.localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
     catch { /* A blocked preference store must not prevent positioning. */ }
+  }
+  function updateDefault() {
+    const isDefault = Math.abs(state.x - 50) <= .01 && Math.abs(state.y - 50) <= .01 && Math.abs(state.size - 100) <= .01;
+    root.toggleAttribute('data-price-default', isDefault);
+    resetButton.disabled = isDefault;
   }
   function geometry() {
     const viewport = stage.getBoundingClientRect();
@@ -80,12 +87,14 @@ export function createVideoPriceLayout(root: HTMLElement) {
     }
     const { startX, startY, travelX, travelY } = geometry();
     writePosition(startX + travelX * state.x / 100, startY + travelY * state.y / 100);
+    updateDefault();
   }
   function place(left: number, top: number) {
     const { startX, startY, travelX, travelY } = geometry();
     state.x = travelX > 0 ? clamp((left - startX) / travelX * 100, 0, 100) : 50;
     state.y = travelY > 0 ? clamp((top - startY) / travelY * 100, 0, 100) : 50;
     writePosition(startX + travelX * state.x / 100, startY + travelY * state.y / 100);
+    updateDefault();
   }
   function clearFrameTimer() {
     if (frameTimer !== undefined) window.clearTimeout(frameTimer);
@@ -166,7 +175,18 @@ export function createVideoPriceLayout(root: HTMLElement) {
     clearFrameTimer();
     setFrame(false);
   }
+  function reset() {
+    const restoreFocus = document.activeElement === resetButton;
+    finish(false);
+    state = { ...DEFAULTS };
+    refresh();
+    save();
+    dismissed = false;
+    revealFrame();
+    if (restoreFocus) position.focus({ preventScroll: true });
+  }
 
+  listen(resetButton, 'click', reset);
   listen(position, 'pointerdown', ((event: PointerEvent) => {
     if (operation || !event.isPrimary || event.button !== 0) return;
     lastInput = 'pointer';
@@ -240,7 +260,7 @@ export function createVideoPriceLayout(root: HTMLElement) {
         case 'ArrowDown': state.y = clamp(state.y + step, 0, 100); break;
         case '+': case '=': state.size = clamp(state.size * fit + 5, 25, 200); break;
         case '-': state.size = clamp(state.size * fit - 5, 25, 200); break;
-        case 'Home': state = { ...DEFAULTS }; break;
+        case 'Home': event.preventDefault(); reset(); return;
         default: return;
       }
       refresh();
@@ -272,12 +292,14 @@ export function createVideoPriceLayout(root: HTMLElement) {
       observer?.disconnect();
       for (const remove of removeListeners) remove();
       root.removeAttribute('data-price-layout-ready');
+      root.removeAttribute('data-price-default');
       for (const [name, value] of [['--video-price-scale', original.scale], ['--video-price-fit', original.fit]]) {
         if (value) root.style.setProperty(name, value); else root.style.removeProperty(name);
       }
       position.style.left = original.left;
       position.style.top = original.top;
       position.tabIndex = original.tabIndex;
+      resetButton.disabled = original.resetDisabled;
       handles.forEach((handle, index) => { handle.tabIndex = original.handleTabIndexes[index]; });
     },
   };

@@ -2,12 +2,14 @@ import { CurrencyRates, isCurrency, type Currency } from '../lib/bitcoin-currenc
 import { readDisplayPreferences, saveDisplayPreferences } from '../lib/bitcoin-display-preferences';
 import { subscribeBitcoinPrice, type PriceFeedState } from '../lib/bitcoin-live-price';
 import type { HistoryPoint } from '../lib/bitcoin-chart';
-import { createYouTubePlayer, parseYouTubeVideo } from '../lib/youtube-player';
+import { createYouTubePlayer, parseYouTubeVideo, type YouTubeVideo } from '../lib/youtube-player';
 import { createVideoControls } from '../lib/video-controls';
 import { createVideoCurrencyPicker } from '../lib/video-currency-picker';
 import { createVideoPriceLayout } from '../lib/video-price-layout';
 import type { PartyCopy } from '../i18n/party';
 import type { VideoCopy } from '../i18n/video';
+
+const VIDEO_SELECTION_KEY = 'obt-video-selection';
 
 const root = document.querySelector<HTMLElement>('[data-video-mode]');
 if (root) startVideoMode(root);
@@ -94,6 +96,7 @@ function startVideoMode(root: HTMLElement) {
   const videoStatus = root.querySelector<HTMLElement>('[data-video-status]')!;
   const uiVisibility = createVideoControls(root);
   let hasVideo = false;
+  let focusRecovery = true;
   let playing = false;
   let muted = false;
   let volume = 100;
@@ -109,11 +112,12 @@ function startVideoMode(root: HTMLElement) {
     uiVisibility.setEnabled(hasVideo && form.hidden && !scrubbing && !adjustingVolume);
   }
 
-  function showForm(show: boolean) {
+  function showForm(show: boolean, focus = true) {
     form.hidden = !show;
     controls.hidden = show;
     cancelButton.hidden = !hasVideo;
     updateIdle();
+    if (!focus) return;
     if (show) { input.focus(); input.select(); }
     else changeButton.focus();
   }
@@ -229,7 +233,7 @@ function startVideoMode(root: HTMLElement) {
       else error.removeAttribute('data-youtube-error');
       error.hidden = false;
       videoStatus.hidden = true;
-      showForm(true);
+      showForm(true, focusRecovery);
     },
     onBlocked() {
       if (destroyed) return;
@@ -242,17 +246,16 @@ function startVideoMode(root: HTMLElement) {
     },
   });
 
-  input.disabled = loadButton.disabled = changeButton.disabled = false;
-  form.addEventListener('submit', event => {
-    event.preventDefault();
-    const video = parseYouTubeVideo(input.value);
-    if (!video) {
-      input.setAttribute('aria-invalid', 'true');
-      error.textContent = t.invalidUrl;
-      error.hidden = false;
-      input.focus();
-      return;
+  function loadSelectedVideo(video: YouTubeVideo, { focus = true, persist = true } = {}) {
+    if (destroyed) return;
+    // Store only the validated ID and requested start time, without share tracking.
+    const url = `https://www.youtube.com/watch?v=${video.id}${video.startSeconds > 0 ? `&t=${video.startSeconds}s` : ''}`;
+    if (persist) {
+      try { window.localStorage.setItem(VIDEO_SELECTION_KEY, JSON.stringify({ version: 1, url })); }
+      catch { /* Playback remains available when browser storage is blocked. */ }
     }
+    input.value = url;
+    focusRecovery = focus;
     input.removeAttribute('aria-invalid');
     error.removeAttribute('data-youtube-error');
     error.hidden = true;
@@ -268,9 +271,33 @@ function startVideoMode(root: HTMLElement) {
     setPlaying(false);
     videoStatus.textContent = t.loadingVideo;
     videoStatus.hidden = false;
-    showForm(false);
+    showForm(false, focus);
     player.load(video);
     startProgressRefresh();
+  }
+
+  function restoreSelectedVideo() {
+    try {
+      const saved = JSON.parse(window.localStorage.getItem(VIDEO_SELECTION_KEY) ?? 'null');
+      if (saved?.version !== 1 || typeof saved.url !== 'string') return;
+      const video = parseYouTubeVideo(saved.url);
+      if (video) loadSelectedVideo(video, { focus: false, persist: false });
+    } catch { /* Missing, malformed, or blocked storage leaves the URL picker ready. */ }
+  }
+
+  input.disabled = loadButton.disabled = changeButton.disabled = false;
+  form.addEventListener('submit', event => {
+    event.preventDefault();
+    if (destroyed) return;
+    const video = parseYouTubeVideo(input.value);
+    if (!video) {
+      input.setAttribute('aria-invalid', 'true');
+      error.textContent = t.invalidUrl;
+      error.hidden = false;
+      input.focus();
+      return;
+    }
+    loadSelectedVideo(video);
   });
   input.addEventListener('input', () => {
     input.removeAttribute('aria-invalid');
@@ -397,6 +424,7 @@ function startVideoMode(root: HTMLElement) {
   const onOnline = () => { void refreshRates(); };
   document.addEventListener('visibilitychange', onVisibility);
   window.addEventListener('online', onOnline);
+  restoreSelectedVideo();
   onVisibility();
   window.addEventListener('pagehide', () => {
     if (destroyed) return;

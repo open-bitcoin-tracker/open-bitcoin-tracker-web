@@ -19,6 +19,10 @@ const locale = htmlLang(Astro.currentLocale);
     <header>
       <h1 class="video-sr-only">{t.title}</h1>
       <div class="video-appearance" role="group" aria-label={t.controlsLabel}>
+        <button type="button" class="video-reset-price" data-reset-price aria-label={t.resetPrice} title={t.resetPrice} disabled>
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 10a9 9 0 1 1 2 8M3 4v6h6" /></svg>
+          <span>{t.resetPrice}</span>
+        </button>
         <label class="video-sr-only" for="video-currency">{t.currency}</label>
         <div class="video-currency" data-currency-picker>
           <select id="video-currency" data-currency hidden disabled>{currencies.map(code => <option value={code}>{code}</option>)}</select>
@@ -50,6 +54,7 @@ const locale = htmlLang(Astro.currentLocale);
           {['nw', 'ne', 'sw', 'se'].map(corner => (
             <button type="button" class:list={['video-price-resize', `video-price-resize-${corner}`]} data-price-resize={corner} aria-label={t.resizePrice} title={t.resizePrice} tabindex="-1"></button>
           ))}
+          <p class="video-price-hint">{t.priceLayoutHint}</p>
         </div>
         <p id="video-price-keyboard-hint" class="video-sr-only">{t.priceLayoutHint} {t.priceKeyboardHint}</p>
       </section>
@@ -192,6 +197,11 @@ const locale = htmlLang(Astro.currentLocale);
   .video-volume-slider { --video-progress: 100%; }
   .video-change { display: inline-flex; align-items: center; justify-content: center; min-height: 2.75rem; margin-top: .65rem; padding: .5rem 1rem; border: 1px solid rgb(255 255 255 / .25); border-radius: 999px; background: rgb(16 16 16 / .8); color: #fff; font-size: .8rem; font-weight: 600; }
   .video-change:hover { background: rgb(50 50 50 / .9); border-color: rgb(255 255 255 / .45); }
+  .video-price-hint { position: absolute; top: calc(100% + .75rem); left: 50%; transform: translateX(-50%); width: max-content; max-width: min(30rem, calc(100vw - 2rem)); margin: 0; padding: .35rem .6rem; border-radius: 6px; background: rgb(8 8 8 / .65); color: #ccc; font-size: .75rem; line-height: 1.5; text-align: center; text-shadow: 0 1px 4px #000; pointer-events: none; opacity: 0; visibility: hidden; transition: opacity .25s ease, visibility .25s; }
+  .video-page[data-price-default] .video-price-hint { opacity: 1; visibility: visible; }
+  .video-reset-price { display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; gap: .4rem; height: var(--menu-control-size); padding: .5rem 1rem; border: 1px solid rgb(255 255 255 / .16); border-radius: 999px; background: rgb(16 16 16 / .65); backdrop-filter: blur(12px); color: #fff; font-size: .75rem; transition: opacity .25s ease, visibility .25s; }
+  .video-reset-price:hover { background: rgb(50 50 50 / .9); border-color: rgb(255 255 255 / .4); }
+  .video-page[data-price-default] .video-reset-price, .video-page:not([data-price-layout-ready]) .video-reset-price { opacity: 0; visibility: hidden; pointer-events: none; }
   .video-message { margin-top: .75rem; padding: .4rem .7rem; font-size: .75rem; line-height: 1.5; color: #ddd; background: rgb(8 8 8 / .85); border-radius: 8px; }
   .video-error { color: #ffc2b2; }
   .video-appearance, .video-dock, .video-currency-note, .video-page :global(.site-nav) { transition: opacity .25s ease; }
@@ -200,12 +210,22 @@ const locale = htmlLang(Astro.currentLocale);
   .video-page[data-ui-idle] .video-appearance,
   .video-page[data-ui-idle] .video-dock,
   .video-page[data-ui-idle] .video-currency-note,
+  .video-page[data-ui-idle] .video-price-hint,
   .video-page[data-ui-idle] :global(.site-nav) { opacity: 0; pointer-events: none; }
   [hidden] { display: none !important; }
   @media (max-width: 700px) {
     .video-price-stage { padding: 5rem 1rem 6rem; }
     .video-price { --video-price-base-size: clamp(2rem, min(18vw, 24vh, 140vw / var(--price-chars)), 8rem); }
     .video-dock { width: calc(100% - 2rem); }
+  }
+  @media (max-width: 600px) {
+    .video-appearance { flex-wrap: wrap; justify-content: flex-end; width: 10rem; height: auto; }
+    .video-reset-price { order: 1; width: 100%; height: auto; min-height: 2.75rem; }
+    .video-dock { bottom: max(1rem, env(safe-area-inset-bottom)); }
+  }
+  @media (max-width: 600px) and (max-height: 640px) {
+    .video-price-hint { top: calc(100% + .25rem); }
+    .video-playback:not([hidden]) ~ [data-video-status] { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
   }
   @media (max-height: 480px) {
     .video-price-stage { padding-top: 3.5rem; padding-bottom: 11rem; }
@@ -226,6 +246,6 @@ const locale = htmlLang(Astro.currentLocale);
     .video-currency-note { margin-top: .25rem; font-size: .6rem; line-height: 1.25; }
   }
   @media (prefers-reduced-motion: reduce) {
-    .video-appearance, .video-dock, .video-currency-note, .video-currency-chevron, .video-price-position::after, .video-price-resize, .video-page :global(.site-nav) { transition: none; }
+    .video-appearance, .video-dock, .video-currency-note, .video-currency-chevron, .video-price-position::after, .video-price-resize, .video-price-hint, .video-reset-price, .video-page :global(.site-nav) { transition: none; }
   }
 </style>

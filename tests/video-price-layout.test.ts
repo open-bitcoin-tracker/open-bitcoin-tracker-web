@@ -35,6 +35,7 @@ function harness(options: Options = {}) {
     parent: Element | null = null;
     style = new Style();
     tabIndex = -1;
+    disabled = true;
     captures = new Set<number>();
     captureFails = false;
     focusVisible = false;
@@ -66,7 +67,7 @@ function harness(options: Options = {}) {
       document.activeElement = this;
       if (position.contains(this)) position.dispatchEvent(targetEvent('focusin', this));
     }
-    click() { position.dispatchEvent(targetEvent('click', this)); }
+    click() { if (position.contains(this)) position.dispatchEvent(targetEvent('click', this)); else this.dispatchEvent(new Event('click')); }
     append(child: Element) { child.parent = this; this.children.push(child); return child; }
     setPointerCapture(id: number) { if (this.captureFails) throw Error('Capture unavailable'); this.captures.add(id); }
     hasPointerCapture(id: number) { return this.captures.has(id); }
@@ -80,6 +81,7 @@ function harness(options: Options = {}) {
   const root = new Element();
   const stage = root.append(new Element());
   const position = stage.append(new Element());
+  const reset = root.append(new Element());
   position.tabIndex = 0;
   const handles = Object.fromEntries((['nw', 'ne', 'sw', 'se'] as const).map(corner => {
     const handle = position.append(new Element());
@@ -99,6 +101,7 @@ function harness(options: Options = {}) {
   };
   root.selectors.set('[data-price-stage]', stage);
   root.selectors.set('[data-price-position]', position);
+  root.selectors.set('[data-reset-price]', reset);
   const saved: { version: number; x: number; y: number; size: number }[] = [];
   let now = 0;
   let nextTimer = 0;
@@ -125,7 +128,7 @@ function harness(options: Options = {}) {
   runInNewContext(script, { exports: module, window, document, Event, ResizeObserver: options.observer === false ? undefined : Observer });
   const layout = module.createVideoPriceLayout!(root as unknown as HTMLElement);
   return {
-    root, stage, position, handles, document, window, outside, saved, layout, viewport, observed, timers,
+    root, stage, position, reset, handles, document, window, outside, saved, layout, viewport, observed, timers,
     notifications: () => notifications,
     disconnects: () => disconnects,
     left: () => Number.parseFloat(position.style.left), top: () => Number.parseFloat(position.style.top),
@@ -168,6 +171,8 @@ test('price layout stays centered and restores validated bounded preferences ind
   assert.equal(h.top(), 250);
   assert.equal(h.scale(), 1);
   assert.equal(h.position.tabIndex, 0);
+  assert.equal(h.reset.disabled, true);
+  assert.equal(h.root.attributes.has('data-price-default'), true);
   assert.equal(Object.values(h.handles).every(handle => handle.tabIndex === -1), true);
   assert.equal(h.frame(), false);
   h.layout.destroy();
@@ -175,6 +180,8 @@ test('price layout stays centered and restores validated bounded preferences ind
   assert.equal(restored.left(), 16);
   assert.equal(restored.top(), 384);
   assert.equal(restored.scale(), 2);
+  assert.equal(restored.root.attributes.has('data-price-default'), false);
+  assert.equal(restored.reset.disabled, false);
   restored.layout.destroy();
   for (const saved of ['broken JSON', '{}', 'null', '{"version":2,"x":0,"y":0,"size":25}', '{"version":1,"x":"0","y":0,"size":25}', '{"version":1,"x":1e400,"y":0,"size":25}']) {
     const invalid = harness({ saved });
@@ -309,10 +316,14 @@ test('resizing out and returning to the starting corner restores the original si
   h.pointer('pointerdown', h.handles.se, { clientX: x, clientY: y });
   h.pointer('pointermove', h.window, { clientX: x + 100, clientY: y + 50 });
   close(h.scale(), 1.5);
+  assert.equal(h.root.attributes.has('data-price-default'), false);
+  assert.equal(h.reset.disabled, false);
   h.pointer('pointermove', h.window, { clientX: x, clientY: y });
   close(h.scale(), 1);
   close(h.left(), 400);
   close(h.top(), 250);
+  assert.equal(h.root.attributes.has('data-price-default'), true);
+  assert.equal(h.reset.disabled, true);
   h.pointer('pointerup', h.window, { clientX: x, clientY: y });
   close(h.saved.at(-1)!.size, 100);
   h.layout.destroy();
@@ -384,6 +395,8 @@ test('resizing a fitted price responds immediately to inward movement without a 
 test('keyboard position and handle controls move, resize, reset, and preserve native shortcuts', () => {
   const h = harness();
   assert.equal(h.key(h.position, 'ArrowRight'), true);
+  assert.equal(h.root.attributes.has('data-price-default'), false);
+  assert.equal(h.reset.disabled, false);
   close(h.left(), 415.36);
   h.key(h.position, 'ArrowUp', { shiftKey: true });
   close(h.top(), 203.2);
@@ -402,10 +415,104 @@ test('keyboard position and handle controls move, resize, reset, and preserve na
   close(h.scale(), 1.05);
   assert.equal(h.key(h.position, 'ArrowDown', { ctrlKey: true }), false);
   assert.equal(h.key(h.position, 'PageDown'), false);
+  const previousSaves = h.saved.length;
   h.key(h.position, 'Home');
+  assert.equal(h.saved.length, previousSaves + 1, 'Home resets with a single preference write');
   assert.deepEqual(h.saved.at(-1), { version: 1, x: 50, y: 50, size: 100 });
+  assert.equal(h.root.attributes.has('data-price-default'), true);
+  assert.equal(h.reset.disabled, true);
   close(h.left(), 400);
   close(h.top(), 250);
+  h.layout.destroy();
+});
+
+test('Reset price restores centered default size from saved placement and persists it independently', () => {
+  const h = harness({ saved: JSON.stringify({ version: 1, x: 0, y: 100, size: 150 }) });
+  assert.equal(h.left(), 16);
+  close(h.scale(), 1.5);
+  h.position.click();
+  h.key(h.position, 'Escape');
+  assert.equal(h.frame(), false);
+  h.reset.click();
+  close(h.left(), 400);
+  close(h.top(), 250);
+  close(h.scale(), 1);
+  assert.deepEqual(h.saved, [{ version: 1, x: 50, y: 50, size: 100 }]);
+  assert.equal(h.root.attributes.has('data-price-default'), true);
+  assert.equal(h.reset.disabled, true);
+  assert.equal(h.frame(), true, 'reset reveals the frame even after Escape dismissal');
+  h.advance(1500);
+  assert.equal(h.frame(), false);
+  h.layout.destroy();
+  assert.equal(h.reset.disabled, true);
+});
+
+test('Reset price ends a resize without saving it and ignores its later pointer release', () => {
+  const h = harness();
+  const box = h.position.getBoundingClientRect();
+  const x = box.left + box.width, y = box.top + box.height;
+  h.pointer('pointerdown', h.handles.se, { clientX: x, clientY: y });
+  h.pointer('pointermove', h.window, { clientX: x + 100, clientY: y + 50 });
+  close(h.scale(), 1.5);
+  h.reset.click();
+  assert.equal(h.position.captures.size, 0);
+  assert.equal(h.root.attributes.has('data-price-dragging'), false);
+  assert.equal(h.root.attributes.has('data-price-resizing'), false);
+  assert.deepEqual(h.saved, [{ version: 1, x: 50, y: 50, size: 100 }]);
+  h.pointer('pointerup', h.window, { clientX: 10000, clientY: 10000 });
+  close(h.left(), 400);
+  close(h.top(), 250);
+  close(h.scale(), 1);
+  assert.equal(h.saved.length, 1);
+  h.layout.destroy();
+});
+
+test('default layout detection includes size and tolerates insignificant saved floating-point differences', () => {
+  for (const [state, isDefault] of [
+    [{ version: 1, x: 50, y: 50, size: 100 }, true],
+    [{ version: 1, x: 50.005, y: 49.995, size: 100.005 }, true],
+    [{ version: 1, x: 50, y: 50, size: 125 }, false],
+    [{ version: 1, x: 50.02, y: 50, size: 100 }, false],
+  ] as const) {
+    const h = harness({ saved: JSON.stringify(state) });
+    assert.equal(h.root.attributes.has('data-price-default'), isDefault);
+    assert.equal(h.reset.disabled, isDefault);
+    h.layout.destroy();
+  }
+});
+
+test('default state follows size and drag changes and persists through saved round trips', () => {
+  const h = harness();
+  h.key(h.position, '+');
+  assert.equal(h.root.attributes.has('data-price-default'), false);
+  assert.equal(h.reset.disabled, false);
+  h.key(h.position, '-');
+  assert.equal(h.root.attributes.has('data-price-default'), true);
+  const box = h.position.getBoundingClientRect();
+  h.pointer('pointerdown', h.position, { clientX: box.left + 10, clientY: box.top + 10 });
+  h.pointer('pointermove', h.window, { clientX: box.left + 60, clientY: box.top + 10 });
+  assert.equal(h.root.attributes.has('data-price-default'), false, 'drag placement updates the flag before a preference write');
+  h.pointer('pointerup', h.window, { clientX: box.left + 60, clientY: box.top + 10 });
+  const restored = harness({ saved: JSON.stringify(h.saved.at(-1)) });
+  close(restored.left(), h.left());
+  close(restored.top(), h.top());
+  assert.equal(restored.root.attributes.has('data-price-default'), false);
+  assert.equal(restored.reset.disabled, false);
+  restored.reset.click();
+  const reset = harness({ saved: JSON.stringify(restored.saved.at(-1)) });
+  assert.equal(reset.root.attributes.has('data-price-default'), true);
+  assert.equal(reset.reset.disabled, true);
+  h.layout.destroy(); restored.layout.destroy(); reset.layout.destroy();
+});
+
+test('reset returns focus to the price when the reset control becomes disabled', () => {
+  const h = harness({ saved: JSON.stringify({ version: 1, x: 25, y: 75, size: 150 }) });
+  h.focus(h.reset);
+  h.reset.click();
+  assert.equal(h.reset.disabled, true);
+  assert.equal(h.document.activeElement, h.position);
+  assert.equal(h.root.attributes.has('data-price-default'), true);
+  assert.equal(h.saved.length, 1);
   h.layout.destroy();
 });
 
@@ -459,6 +566,7 @@ test('destroy releases observers, captures, timers, and listeners and ignores st
   h.pointer('pointerdown', h.handles.nw, { clientX: box.left, clientY: box.top });
   h.layout.destroy(); h.layout.destroy();
   assert.equal(h.root.attributes.has('data-price-layout-ready'), false);
+  assert.equal(h.root.attributes.has('data-price-default'), false);
   assert.equal(h.root.attributes.has('data-price-layout-open'), false);
   assert.equal(h.root.attributes.has('data-price-dragging'), false);
   assert.equal(h.root.attributes.has('data-price-resizing'), false);
@@ -468,11 +576,11 @@ test('destroy releases observers, captures, timers, and listeners and ignores st
   assert.equal(h.position.style.left, '');
   assert.equal(h.position.style.top, '');
   assert.equal(h.root.style.getPropertyValue('--video-price-scale'), '');
-  for (const element of [h.position, h.document, h.window, ...Object.values(h.handles)]) assert.equal(element.listenerCount(), 0);
+  for (const element of [h.position, h.reset, h.document, h.window, ...Object.values(h.handles)]) assert.equal(element.listenerCount(), 0);
   const writes = h.root.style.writes + h.position.style.writes;
   const notifications = h.notifications();
   h.layout.refresh(); h.notifyObserver(); staleTimer(); h.advance(10000);
-  h.resize({ width: 600 }); h.pointer('pointermove', h.window, { clientX: 1000 }); h.position.click();
+  h.resize({ width: 600 }); h.pointer('pointermove', h.window, { clientX: 1000 }); h.position.click(); h.reset.click();
   assert.equal(h.root.style.writes + h.position.style.writes, writes);
   assert.equal(h.notifications(), notifications);
   assert.equal(h.saved.length, 0);

@@ -8,6 +8,7 @@ import type { HistoryPoint } from '../src/lib/bitcoin-chart.ts';
 import type { Currency } from '../src/lib/bitcoin-currency.ts';
 import type { DisplayPreferences } from '../src/lib/bitcoin-display-preferences.ts';
 import type { PriceFeedState } from '../src/lib/bitcoin-live-price.ts';
+import { parseYouTubeVideo } from '../src/lib/youtube-player.ts';
 
 const script = ts.transpileModule(readFileSync(new URL('../src/scripts/video-mode.ts', import.meta.url), 'utf8'), {
   compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 },
@@ -26,6 +27,8 @@ const copy = {
 };
 const firstUrl = 'https://www.youtube.com/watch?v=abcdefghijk';
 const secondUrl = 'https://youtu.be/ZYXWVUTSRQP?t=30';
+const canonicalSecondUrl = 'https://www.youtube.com/watch?v=ZYXWVUTSRQP&t=30s';
+const videoSelectionKey = 'obt-video-selection';
 type Video = { id: string; startSeconds: number };
 type Progress = { currentTime: number; duration: number };
 type Captions = { enabled: boolean; available: boolean };
@@ -67,6 +70,8 @@ interface Options {
   rates?: Partial<Record<Currency, number>>;
   hidden?: boolean;
   fullscreen?: boolean;
+  storedSelection?: string;
+  blockedStorage?: boolean;
 }
 
 function harness(options: Options = {}) {
@@ -111,7 +116,20 @@ function harness(options: Options = {}) {
     },
   });
   let reloads = 0;
-  const window = Object.assign(new EventTarget(), { location: { reload() { reloads++; } } });
+  const storage = new Map<string, string>();
+  if (options.storedSelection !== undefined) storage.set(videoSelectionKey, options.storedSelection);
+  const storageWrites: { key: string; value: string }[] = [];
+  const window = Object.assign(new EventTarget(), {
+    location: { reload() { reloads++; } },
+    localStorage: {
+      getItem(key: string) { if (options.blockedStorage) throw Error('Storage blocked'); return storage.get(key) ?? null; },
+      setItem(key: string, value: string) {
+        if (options.blockedStorage) throw Error('Storage blocked');
+        storage.set(key, value);
+        storageWrites.push({ key, value });
+      },
+    },
+  });
   const navigator = { onLine: true };
   let preferences: DisplayPreferences = { ...options.preferences ?? { currency: 'USD', scale: 'logarithmic' } };
   const saved: DisplayPreferences[] = [];
@@ -191,10 +209,8 @@ function harness(options: Options = {}) {
         destroy() { priceLayoutDestroys++; },
       };
     },
-    // URL validation has separate parser tests. Here selection exercises the page's
-    // accepted/rejected submission behavior without loading the real iframe API.
-    parseYouTubeVideo: (value: string) => value === firstUrl ? { id: 'abcdefghijk', startSeconds: 0 }
-      : value === secondUrl ? { id: 'ZYXWVUTSRQP', startSeconds: 30 } : undefined,
+    // Exercise the real URL boundary without loading the external iframe API.
+    parseYouTubeVideo,
     createYouTubePlayer: (_container: unknown, input: typeof callbacks) => {
       callbacks = input;
       callbacks.onState(false);
@@ -220,7 +236,7 @@ function harness(options: Options = {}) {
   });
   const control = (selector: string) => root.querySelector(selector);
   return {
-    root, window, requests, intervals, loaded, muted, volumes, sought, loopStates, captionStates, control,
+    root, window, requests, intervals, loaded, muted, volumes, sought, loopStates, captionStates, control, storage, storageWrites,
     initializations, layoutRoots, layoutRefreshes, priceLayoutDestroys: () => priceLayoutDestroys,
     intervalCount: (duration: number) => [...intervalDurations.values()].filter(value => value === duration).length,
     intervalCallback: (duration: number) => [...intervals].find(([id]) => intervalDurations.get(id) === duration)?.[1],
@@ -941,4 +957,159 @@ test('price layout skips hidden paints, refreshes on return, and is destroyed be
   await h.resolveRates(1, { EUR: .7 });
   h.visibility(false);
   assert.equal(h.layoutRefreshes.length, closeRefreshes, 'destroyed pages must not refresh price layout');
+});
+
+test('accepted selections save only the canonical video URL and invalid replacements preserve it', () => {
+  const h = harness();
+  assert.equal(h.storageWrites.length, 0);
+  h.submit(`${secondUrl}&si=private-share-token&list=ignored`);
+  const stored = h.storage.get(videoSelectionKey)!;
+  assert.deepEqual(JSON.parse(stored), { version: 1, url: canonicalSecondUrl });
+  assert.equal(h.control('[data-video-url]').value, canonicalSecondUrl);
+  assert.equal(h.control('[data-change-video]').focusCount, 1, 'explicit submission retains its normal focus behavior');
+  h.emitPlaying(true);
+  h.submit('https://youtube.com.evil.example/watch?v=abcdefghijk');
+  assert.equal(h.storage.get(videoSelectionKey), stored);
+  assert.equal(h.storageWrites.length, 1);
+  assert.equal(h.loaded.length, 1);
+  assert.equal(h.pauseCalls(), 0);
+  h.click('[data-change-video]');
+  assert.equal(h.control('[data-video-url]').value, '', 'remembering a video must not prefill an explicitly opened replacement field');
+  assert.equal(h.storage.get(videoSelectionKey), stored);
+  h.submit(firstUrl);
+  assert.deepEqual(JSON.parse(h.storage.get(videoSelectionKey)!), { version: 1, url: firstUrl });
+  assert.equal(h.storageWrites.length, 2);
+  assert.equal(h.storageWrites.every(write => write.key === videoSelectionKey), true);
+  h.close();
+});
+
+test('a saved selection restores playback controls and its requested start without stealing focus or changing currency preferences', () => {
+  const storedSelection = JSON.stringify({ version: 1, url: canonicalSecondUrl });
+  const h = harness({ storedSelection, preferences: { currency: 'EUR', scale: 'linear' }, rates: { EUR: .9 } });
+  assert.deepEqual(h.loaded, [{ id: 'ZYXWVUTSRQP', startSeconds: 30 }]);
+  assert.equal(h.control('[data-video-url]').value, canonicalSecondUrl);
+  assert.equal(h.control('[data-video-form]').hidden, true);
+  assert.equal(h.control('[data-video-controls]').hidden, false);
+  assert.equal(h.control('[data-play-pause]').disabled, false);
+  assert.equal(h.control('[data-video-volume]').disabled, false);
+  assert.equal(h.control('[data-video-volume]').value, '100');
+  assert.equal(h.control('[data-mute]').attributes.get('aria-label'), copy.mute);
+  assert.equal(h.control('[data-video-url]').focusCount, 0);
+  assert.equal(h.control('[data-video-url]').selectCount, 0);
+  assert.equal(h.control('[data-change-video]').focusCount, 0);
+  assert.equal(h.idleEnabled(), true);
+  assert.equal(h.intervalCount(500), 1);
+  assert.equal(h.storageWrites.length, 0, 'restoring must not write a new selection or playback progress');
+  assert.equal(h.control('[data-currency]').value, 'EUR');
+  assert.deepEqual(h.preferences(), { currency: 'EUR', scale: 'linear' });
+  assert.deepEqual(h.saved(), []);
+  assert.deepEqual(h.initializations, ['currencyPicker', 'priceLayout']);
+  h.price(100_000);
+  assert.equal(h.control('[data-price]').textContent, '€90,000');
+  h.close();
+});
+
+test('restored videos preserve autoplay recovery and retain the canonical URL if embedding fails', () => {
+  const h = harness({ storedSelection: JSON.stringify({ version: 1, url: secondUrl }) });
+  h.emitBlocked();
+  assert.equal(h.control('[data-video-status]').textContent, copy.autoplayBlocked);
+  assert.equal(h.control('[data-video-status]').hidden, false);
+  assert.equal(h.control('[data-play-pause]').attributes.get('aria-label'), copy.play);
+  h.click('[data-play-pause]');
+  assert.equal(h.playCalls(), 1);
+  assert.equal(h.control('[data-play-pause]').attributes.get('aria-label'), copy.pause);
+  h.emitError(150);
+  assert.equal(h.control('[data-video-form]').hidden, false);
+  assert.equal(h.control('[data-video-url]').value, canonicalSecondUrl);
+  assert.equal(h.control('[data-video-error]').textContent, copy.embeddingDisabled);
+  assert.equal(h.control('[data-video-url]').focusCount, 0, 'automatic restoration and its failure must not steal focus');
+  assert.equal(h.control('[data-video-url]').selectCount, 0);
+  h.submit(firstUrl);
+  assert.equal(h.control('[data-change-video]').focusCount, 1);
+  h.emitError(150);
+  assert.equal(h.control('[data-video-url]').focusCount, 1, 'explicit selection keeps the existing error recovery focus');
+  h.close();
+});
+
+test('malformed, unsupported, and non-YouTube saved values leave an empty usable picker', () => {
+  for (const storedSelection of [
+    'broken JSON', 'null', '{}', JSON.stringify({ version: 2, url: firstUrl }),
+    JSON.stringify({ version: 1, url: null }), JSON.stringify({ version: 1, url: 5 }),
+    JSON.stringify({ version: 1, url: 'javascript:alert(1)' }),
+    JSON.stringify({ version: 1, url: 'https://example.com/watch?v=abcdefghijk' }),
+    JSON.stringify({ version: 1, url: 'https://youtube.com.evil.example/watch?v=abcdefghijk' }),
+    JSON.stringify({ version: 1, url: 'https://www.youtube.com/watch?v=invalid' }),
+    JSON.stringify({ version: 1, url: 'https://www.youtube.com/playlist?list=abcdefghijk' }),
+  ]) {
+    const h = harness({ storedSelection });
+    assert.equal(h.loaded.length, 0, storedSelection);
+    assert.equal(h.control('[data-video-form]').hidden, false);
+    assert.equal(h.control('[data-video-url]').value, '');
+    assert.equal(h.control('[data-video-url]').disabled, false);
+    assert.equal(h.control('[data-load-video]').disabled, false);
+    assert.equal(h.control('[data-video-url]').focusCount, 0);
+    assert.equal(h.storageWrites.length, 0);
+    h.close();
+  }
+});
+
+test('blocked local storage does not prevent entering and playing a video', () => {
+  const h = harness({ storedSelection: JSON.stringify({ version: 1, url: firstUrl }), blockedStorage: true });
+  assert.equal(h.loaded.length, 0, 'an unreadable preference must leave normal selection available');
+  h.submit(secondUrl);
+  assert.deepEqual(h.loaded, [{ id: 'ZYXWVUTSRQP', startSeconds: 30 }]);
+  assert.equal(h.control('[data-video-form]').hidden, true);
+  assert.equal(h.control('[data-video-error]').hidden, true);
+  assert.equal(h.storageWrites.length, 0);
+  h.click('[data-play-pause]');
+  assert.equal(h.playCalls(), 1);
+  h.close();
+});
+
+test('a selection restored in a hidden tab stays paused until an explicit visible play action', () => {
+  const h = harness({ hidden: true, storedSelection: JSON.stringify({ version: 1, url: canonicalSecondUrl }) });
+  assert.deepEqual(h.loaded, [{ id: 'ZYXWVUTSRQP', startSeconds: 30 }]);
+  assert.equal(h.pauseCalls(), 1);
+  assert.equal(h.intervals.size, 0);
+  assert.equal(h.control('[data-change-video]').focusCount, 0);
+  h.emitPlaying(true);
+  assert.equal(h.pauseCalls(), 2);
+  assert.equal(h.control('[data-play-pause]').attributes.get('aria-label'), copy.play);
+  h.visibility(false);
+  assert.equal(h.playCalls(), 0);
+  assert.equal(h.intervalCount(500), 1);
+  assert.equal(h.control('[data-video-url]').focusCount, 0);
+  h.click('[data-play-pause]');
+  assert.equal(h.playCalls(), 1);
+  h.close();
+});
+
+test('playback progress is not saved, and a fresh page returns to the submitted URL start', () => {
+  const h = harness();
+  h.submit(secondUrl);
+  h.setProgress({ currentTime: 90, duration: 300 });
+  h.tick(500);
+  const seek = h.control('[data-video-seek]');
+  seek.value = '120';
+  seek.dispatchEvent(new Event('input'));
+  seek.dispatchEvent(new Event('change'));
+  assert.deepEqual(h.sought, [120]);
+  assert.equal(h.storageWrites.length, 1);
+  const restored = harness({ storedSelection: h.storage.get(videoSelectionKey) });
+  assert.deepEqual(restored.loaded, [{ id: 'ZYXWVUTSRQP', startSeconds: 30 }]);
+  assert.equal(restored.storageWrites.length, 0);
+  h.close(); restored.close();
+});
+
+test('destroyed bfcache pages neither restore again nor save stale form submissions', () => {
+  const storedSelection = JSON.stringify({ version: 1, url: firstUrl });
+  const h = harness({ storedSelection });
+  assert.equal(h.loaded.length, 1);
+  h.close();
+  h.submit(secondUrl);
+  h.window.dispatchEvent(Object.assign(new Event('pageshow'), { persisted: true }));
+  assert.equal(h.loaded.length, 1);
+  assert.equal(h.storage.get(videoSelectionKey), storedSelection);
+  assert.equal(h.storageWrites.length, 0);
+  assert.equal(h.reloads(), 1);
 });
