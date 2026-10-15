@@ -79,23 +79,18 @@ export function createVideoPriceStyle(root: HTMLElement, refreshLayout: () => vo
     const clamp = (value: number, maximum: number) => Math.max(padding, Math.min(value, maximum));
     const centre = box.left + box.width / 2;
     const left = clamp(centre - width / 2, window.innerWidth - width - padding);
-    const below = box.bottom + gap;
-    const dock = root.querySelector<HTMLElement>('.video-dock')?.getBoundingClientRect();
-    const overlapsDock = dock && left < dock.right && left + width > dock.left && below < dock.bottom && below + height > dock.top;
-    const above = below + height > window.innerHeight - padding || !!overlapsDock;
+    const above = box.top - gap - height >= padding;
     const top = clamp(above ? box.top - gap - height : box.bottom + gap, window.innerHeight - height - padding);
     wrapper.style.setProperty('left', `${left}px`);
     wrapper.style.setProperty('top', `${top}px`);
     root.toggleAttribute('data-price-style-above', above);
     if (!open) return;
-    const belowRoom = window.innerHeight - top - height - gap - padding;
-    const aboveRoom = top - gap - padding;
-    const panelAbove = above ? aboveRoom >= belowRoom : belowRoom < panel.scrollHeight && aboveRoom > belowRoom;
-    panel.style.setProperty('max-height', `${Math.max(80, panelAbove ? aboveRoom : belowRoom)}px`);
+    panel.style.setProperty('max-height', `${Math.max(0, window.innerHeight - padding * 2)}px`);
     const panelHeight = panel.offsetHeight, panelWidth = panel.offsetWidth;
-    const panelTop = panelAbove ? top - panelHeight - gap : top + height + gap;
-    panel.style.setProperty('top', `${clamp(panelTop, window.innerHeight - panelHeight - padding)}px`);
-    panel.style.setProperty('left', `${clamp(centre - panelWidth / 2, window.innerWidth - panelWidth - padding)}px`);
+    const panelOnLeft = centre > window.innerWidth / 2 || box.right + gap + panelWidth > window.innerWidth - padding;
+    const panelLeft = panelOnLeft ? box.left - gap - panelWidth : box.right + gap;
+    panel.style.setProperty('top', `${clamp(box.top, window.innerHeight - panelHeight - padding)}px`);
+    panel.style.setProperty('left', `${clamp(panelLeft, window.innerWidth - panelWidth - padding)}px`);
   }
 
   function save() {

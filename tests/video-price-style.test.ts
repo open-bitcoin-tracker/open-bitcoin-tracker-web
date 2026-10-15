@@ -240,32 +240,60 @@ test('Reset style works with the panel closed and returns focus to Edit style', 
   h.style.destroy();
 });
 
-test('Style follows the price and flips above it near the viewport bottom, keeping its panel on screen', () => {
+test('style buttons stay above the price and switch below only when there is no room at the top', () => {
   const h = harness();
-  assert.equal(h.root.hasAttribute('data-price-style-above'), false);
-  assert.equal(h.wrapper.style.values.get('top'), '310px');
+  assert.equal(h.root.hasAttribute('data-price-style-above'), true);
+  assert.equal(h.wrapper.style.values.get('top'), '146px');
+  for (const top of [0, 30, 69]) {
+    h.position.box = { left: 300, top, width: 400, height: 100, bottom: top + 100 };
+    h.root.dispatchEvent(new Event('pricelayoutchange'));
+    assert.equal(h.root.hasAttribute('data-price-style-above'), false);
+    assert.equal(h.wrapper.style.values.get('top'), `${top + 110}px`);
+  }
+  for (const top of [70, 200, 450]) {
+    h.position.box = { left: 300, top, width: 400, height: 100, bottom: top + 100 };
+    h.root.dispatchEvent(new Event('pricelayoutchange'));
+    assert.equal(h.root.hasAttribute('data-price-style-above'), true);
+    assert.equal(h.wrapper.style.values.get('top'), `${top - 54}px`);
+  }
+  h.style.destroy();
+});
+
+test('the style panel opens beside the price, switching left for right-side placement or insufficient space', () => {
+  const h = harness();
+  h.trigger.click();
+  assert.equal(h.panel.style.values.get('left'), '710px');
+  assert.equal(h.panel.style.values.get('top'), '200px');
+  h.window.innerWidth = 1200;
+  h.position.box = { left: 650, top: 80, width: 100, height: 100, bottom: 180 };
+  h.root.dispatchEvent(new Event('pricelayoutchange'));
+  assert.equal(h.panel.style.values.get('left'), '380px', 'a price on the right opens the panel on its left');
+  h.window.innerWidth = 1000;
+  h.position.box = { left: 100, top: 200, width: 700, height: 100, bottom: 300 };
+  h.root.dispatchEvent(new Event('pricelayoutchange'));
+  assert.equal(h.panel.style.values.get('left'), '16px', 'an oversized price keeps the panel within the viewport');
   h.position.box = { left: 900, top: 450, width: 80, height: 120, bottom: 570 };
   h.root.dispatchEvent(new Event('pricelayoutchange'));
-  assert.equal(h.root.hasAttribute('data-price-style-above'), true);
-  assert.equal(h.wrapper.style.values.get('top'), '396px');
-  h.trigger.click();
-  assert.ok(Number.parseFloat(h.panel.style.values.get('left')!) + h.panel.offsetWidth <= h.window.innerWidth - 16);
-  assert.ok(Number.parseFloat(h.panel.style.values.get('top')!) >= 16);
+  assert.equal(h.panel.style.values.get('left'), '630px');
+  assert.equal(h.panel.style.values.get('top'), '264px', 'bottom placement clamps the panel vertically');
   h.root.dispatchEvent(new Event('videouidismiss'));
   assert.equal(h.panel.hidden, true);
   h.style.destroy();
 });
 
-test('Style moves above the price when its usual position would cover playback or URL controls', () => {
+test('the style panel remains reachable in narrow and short viewports after resize', () => {
   const h = harness();
-  h.dock.box = { left: 250, top: 310, width: 500, height: 160, bottom: 470 };
-  h.root.selectors.set('.video-dock', h.dock);
-  h.root.dispatchEvent(new Event('pricelayoutchange'));
-  assert.equal(h.root.hasAttribute('data-price-style-above'), true);
-  assert.equal(h.wrapper.style.values.get('top'), '146px');
-  h.position.box = { left: 40, top: 200, width: 100, height: 100, bottom: 300 };
-  h.root.dispatchEvent(new Event('pricelayoutchange'));
-  assert.equal(h.root.hasAttribute('data-price-style-above'), false, 'controls beside the price do not force the button above it');
+  h.trigger.click();
+  h.window.innerWidth = 390;
+  h.window.innerHeight = 240;
+  h.panel.offsetHeight = 208;
+  h.position.box = { left: 40, top: 20, width: 310, height: 150, bottom: 170 };
+  h.window.dispatchEvent(new Event('resize'));
+  assert.equal(h.panel.style.values.get('max-height'), '208px');
+  assert.equal(h.panel.style.values.get('top'), '16px');
+  assert.ok(Number.parseFloat(h.panel.style.values.get('left')!) >= 16);
+  assert.ok(Number.parseFloat(h.panel.style.values.get('left')!) + h.panel.offsetWidth <= 374);
+  assert.equal(h.root.hasAttribute('data-price-style-above'), false);
   h.style.destroy();
 });
 
@@ -285,7 +313,7 @@ test('side reset controls do not shift the Edit style anchor, including above th
   h.dock.box = { left: 600, top: 310, width: 300, height: 160, bottom: 470 };
   h.root.selectors.set('.video-dock', h.dock);
   h.root.dispatchEvent(new Event('pricelayoutchange'));
-  assert.equal(h.root.hasAttribute('data-price-style-above'), true, 'reset beside Edit style must also avoid the dock');
+  assert.equal(h.root.hasAttribute('data-price-style-above'), true);
   assert.equal(h.wrapper.style.values.get('top'), '146px');
   h.style.destroy();
 });
