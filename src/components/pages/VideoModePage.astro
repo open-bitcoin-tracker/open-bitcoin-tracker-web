@@ -57,9 +57,7 @@ const locale = htmlLang(Astro.currentLocale);
           <button type="button" class="video-style-trigger" data-price-style-trigger title={t.style} aria-expanded="false" aria-controls="video-price-style-panel" disabled>
             <span>{t.style}</span>
           </button>
-          <button type="button" class="video-reset-price" data-reset-price title={t.resetPrice} hidden disabled>
-            <span>{t.resetPrice}</span>
-          </button>
+          <button type="button" class="video-reset-price" data-reset-price data-reset-position-label={t.resetPrice} data-reset-size-label={t.resetPriceSize} title={t.resetPrice} hidden disabled>{t.resetPrice}</button>
           <div id="video-price-style-panel" class="video-style-panel" data-price-style-panel role="group" aria-label={t.priceStyle} hidden>
             <div class="video-style-row">
               <label for="video-price-colour">{t.priceColour}</label>

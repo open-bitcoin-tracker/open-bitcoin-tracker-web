@@ -36,6 +36,8 @@ function harness(options: Options = {}) {
     style = new Style();
     tabIndex = -1;
     disabled = true;
+    textContent = '';
+    title = '';
     hidden = false;
     captures = new Set<number>();
     captureFails = false;
@@ -87,6 +89,9 @@ function harness(options: Options = {}) {
   style.dataset.priceStyle = '';
   const reset = style.append(new Element());
   reset.hidden = true;
+  reset.dataset.resetPositionLabel = 'Reset position';
+  reset.dataset.resetSizeLabel = 'Reset size';
+  reset.textContent = reset.title = 'Reset position';
   position.tabIndex = 0;
   const handles = Object.fromEntries((['nw', 'ne', 'sw', 'se'] as const).map(corner => {
     const handle = position.append(new Element());
@@ -755,7 +760,7 @@ test('default layout detection includes size and tolerates insignificant saved f
   ] as const) {
     const h = harness({ saved: JSON.stringify(state) });
     assert.equal(h.root.attributes.has('data-price-default'), isDefault);
-    assert.equal(h.reset.disabled, Math.abs(state.x - 50) <= .01 && Math.abs(state.y - 50) <= .01);
+    assert.equal(h.reset.disabled, isDefault);
     assert.equal(h.reset.hidden, h.reset.disabled);
     h.layout.destroy();
   }
@@ -765,8 +770,9 @@ test('default state follows size and drag changes and persists through saved rou
   const h = harness();
   h.key(h.position, '+');
   assert.equal(h.root.attributes.has('data-price-default'), false);
-  assert.equal(h.reset.disabled, true);
-  assert.equal(h.reset.hidden, true);
+  assert.equal(h.reset.disabled, false);
+  assert.equal(h.reset.hidden, false);
+  assert.equal(h.reset.textContent, 'Reset size');
   h.key(h.position, '-');
   assert.equal(h.root.attributes.has('data-price-default'), true);
   const box = h.position.getBoundingClientRect();
@@ -866,14 +872,20 @@ test('destroy releases observers, captures, and listeners and ignores stale call
   assert.equal(h.saved.length, 0);
 });
 
-test('Reset position is visible only off-center, including restored sizes and keyboard movement', () => {
+test('reset shows the size label for centered custom sizes and position label after moving', () => {
   const h = harness({ saved: JSON.stringify({ version: 1, x: 50, y: 50, size: 150 }) });
-  assert.equal(h.reset.hidden, true, 'resizing alone does not show reset');
+  assert.equal(h.reset.hidden, false, 'resizing alone shows Reset size');
+  assert.equal(h.reset.textContent, 'Reset size');
+  assert.equal(h.reset.title, 'Reset size');
   h.key(h.position, 'ArrowRight');
   assert.equal(h.reset.hidden, false);
   assert.equal(h.reset.disabled, false);
+  assert.equal(h.reset.textContent, 'Reset position');
+  assert.equal(h.reset.title, 'Reset position');
   h.key(h.position, 'ArrowLeft');
-  assert.equal(h.reset.hidden, true, 'returning to the center hides reset at a custom size');
+  assert.equal(h.reset.hidden, false, 'returning to the center restores Reset size');
+  assert.equal(h.reset.textContent, 'Reset size');
+  assert.equal(h.reset.title, 'Reset size');
   h.key(h.position, 'ArrowDown');
   assert.equal(h.reset.hidden, false);
   h.focus(h.reset);
@@ -897,4 +909,21 @@ test('Reset position appears during dragging and disappears when snapped back to
   h.pointer('pointerup', h.window, { clientX: box.left + 10, clientY: box.top + 10 });
   assert.equal(h.reset.hidden, true);
   h.layout.destroy();
+});
+
+test('Reset size restores default size and hides once the whole layout is back at default', () => {
+  const h = harness({ saved: JSON.stringify({ version: 1, x: 50, y: 50, size: 150 }) });
+  assert.equal(h.reset.textContent, 'Reset size');
+  assert.equal(h.reset.hidden, false);
+  assert.equal(h.reset.disabled, false);
+  h.reset.click();
+  close(h.scale(), 1);
+  close(h.left(), 400);
+  close(h.top(), 250);
+  assert.equal(h.reset.hidden, true);
+  assert.equal(h.reset.disabled, true);
+  assert.deepEqual(h.saved.at(-1), { version: 1, x: 50, y: 50, size: 100 });
+  h.layout.destroy();
+  assert.equal(h.reset.textContent, 'Reset position');
+  assert.equal(h.reset.title, 'Reset position');
 });

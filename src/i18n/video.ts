@@ -23,6 +23,7 @@ export interface VideoCopy {
   movePrice: string;
   resizePrice: string;
   resetPrice: string;
+  resetPriceSize: string;
   priceStyle: string;
   style: string;
   fontDigital: string;
@@ -65,6 +66,7 @@ const en: VideoCopy = {
   movePrice: 'Move price',
   resizePrice: 'Resize price (hold Shift to keep its center fixed)',
   resetPrice: 'Reset position',
+  resetPriceSize: 'Reset size',
   priceStyle: 'Price style',
   style: 'Edit style',
   fontDigital: 'Digital',
@@ -109,6 +111,7 @@ export const video: Record<Lang, VideoCopy> = {
     movePrice: 'Mover precio',
     resizePrice: 'Cambiar tamaño del precio (mantén Shift para fijar el centro)',
     resetPrice: 'Restablecer posición',
+    resetPriceSize: 'Restablecer tamaño',
     priceStyle: 'Estilo del precio',
     style: 'Editar estilo',
     fontDigital: 'Digital',
@@ -150,6 +153,7 @@ export const video: Record<Lang, VideoCopy> = {
     movePrice: 'Mover preço',
     resizePrice: 'Redimensionar preço (segure Shift para manter o centro fixo)',
     resetPrice: 'Redefinir posição',
+    resetPriceSize: 'Redefinir tamanho',
     priceStyle: 'Estilo do preço',
     style: 'Editar estilo',
     fontDigital: 'Digital',
@@ -191,6 +195,7 @@ export const video: Record<Lang, VideoCopy> = {
     movePrice: 'Déplacer le cours',
     resizePrice: 'Redimensionner le cours (maintiens Shift pour garder le centre en place)',
     resetPrice: 'Réinitialiser la position',
+    resetPriceSize: 'Réinitialiser la taille',
     priceStyle: 'Style du cours',
     style: 'Modifier le style',
     fontDigital: 'Numérique',
@@ -232,6 +237,7 @@ export const video: Record<Lang, VideoCopy> = {
     movePrice: 'Kurs verschieben',
     resizePrice: 'Größe der Kursanzeige ändern (Shift gedrückt halten, um den Mittelpunkt zu fixieren)',
     resetPrice: 'Position zurücksetzen',
+    resetPriceSize: 'Größe zurücksetzen',
     priceStyle: 'Kursdarstellung',
     style: 'Stil bearbeiten',
     fontDigital: 'Digital',
@@ -273,6 +279,7 @@ export const video: Record<Lang, VideoCopy> = {
     movePrice: 'Sposta il prezzo',
     resizePrice: 'Ridimensiona il prezzo (tieni premuto Shift per mantenere fisso il centro)',
     resetPrice: 'Ripristina posizione',
+    resetPriceSize: 'Ripristina dimensione',
     priceStyle: 'Stile del prezzo',
     style: 'Modifica stile',
     fontDigital: 'Digitale',
@@ -314,6 +321,7 @@ export const video: Record<Lang, VideoCopy> = {
     movePrice: 'Переместить курс',
     resizePrice: 'Изменить размер курса (удерживай Shift, чтобы центр оставался на месте)',
     resetPrice: 'Сбросить положение',
+    resetPriceSize: 'Сбросить размер',
     priceStyle: 'Стиль курса',
     style: 'Изменить стиль',
     fontDigital: 'Цифровой',
@@ -355,6 +363,7 @@ export const video: Record<Lang, VideoCopy> = {
     movePrice: 'Fiyatı taşı',
     resizePrice: 'Fiyat boyutunu değiştir (merkezini sabit tutmak için Shift tuşunu basılı tut)',
     resetPrice: 'Konumu sıfırla',
+    resetPriceSize: 'Boyutu sıfırla',
     priceStyle: 'Fiyat stili',
     style: 'Stili düzenle',
     fontDigital: 'Dijital',
@@ -396,6 +405,7 @@ export const video: Record<Lang, VideoCopy> = {
     movePrice: 'Di chuyển giá',
     resizePrice: 'Thay đổi kích thước giá (giữ Shift để cố định tâm)',
     resetPrice: 'Đặt lại vị trí',
+    resetPriceSize: 'Đặt lại kích thước',
     priceStyle: 'Kiểu hiển thị giá',
     style: 'Chỉnh sửa kiểu',
     fontDigital: 'Kỹ thuật số',
@@ -437,6 +447,7 @@ export const video: Record<Lang, VideoCopy> = {
     movePrice: '価格を移動',
     resizePrice: '価格のサイズを変更（Shiftキーを押しながら操作すると中心位置を固定）',
     resetPrice: '位置をリセット',
+    resetPriceSize: 'サイズをリセット',
     priceStyle: '価格のスタイル',
     style: 'スタイルを編集',
     fontDigital: 'デジタル',
