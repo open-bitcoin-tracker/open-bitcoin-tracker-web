@@ -5,6 +5,7 @@ import type { HistoryPoint } from '../lib/bitcoin-chart';
 import { createYouTubePlayer, parseYouTubeVideo } from '../lib/youtube-player';
 import { createVideoControls } from '../lib/video-controls';
 import { createVideoCurrencyPicker } from '../lib/video-currency-picker';
+import { createVideoPriceLayout } from '../lib/video-price-layout';
 import type { PartyCopy } from '../i18n/party';
 import type { VideoCopy } from '../i18n/video';
 
@@ -28,6 +29,7 @@ function startVideoMode(root: HTMLElement) {
   let destroyed = false;
   let rateRefresh: ReturnType<typeof setInterval> | undefined;
   let rateRequest: Promise<void> | undefined;
+  let priceLayout: ReturnType<typeof createVideoPriceLayout> | undefined;
 
   function paintPrice() {
     if (destroyed || document.hidden) return;
@@ -42,6 +44,7 @@ function startVideoMode(root: HTMLElement) {
       : !livePoint ? (state === 'connecting' ? t.loadingPrice : t.unavailable)
       : t[state];
     currencyNote.hidden = currency === 'USD';
+    priceLayout?.refresh();
   }
 
   async function refreshRates() {
@@ -67,6 +70,7 @@ function startVideoMode(root: HTMLElement) {
     void refreshRates();
   });
   const currencyPicker = createVideoCurrencyPicker(root, currencySelect);
+  priceLayout = createVideoPriceLayout(root);
   const stopPrice = subscribeBitcoinPrice({
     onPrice(point) { livePoint = point; paintPrice(); },
     onState(value) { state = value; paintPrice(); },
@@ -399,6 +403,7 @@ function startVideoMode(root: HTMLElement) {
     destroyed = true;
     stopPrice();
     currencyPicker.destroy();
+    priceLayout?.destroy();
     uiVisibility.destroy();
     stopProgressRefresh();
     player.destroy();

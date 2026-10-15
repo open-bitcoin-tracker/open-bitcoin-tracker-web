@@ -263,6 +263,34 @@ test('the custom currency dropdown stays visible while open and restarts idle wh
   h.controls.destroy();
 });
 
+test('dragging or resizing the price keeps controls visible until the interaction ends', () => {
+  const h = harness();
+  h.controls.setEnabled(true);
+  h.tick(2500);
+  assert.equal(h.idle(), true);
+  h.root.setAttribute('data-price-dragging', '');
+  h.root.dispatchEvent(new Event('pricelayoutchange'));
+  h.tick(10000);
+  assert.equal(h.idle(), false);
+  assert.equal(h.timers.size, 0);
+  h.root.removeAttribute('data-price-dragging');
+  h.root.dispatchEvent(new Event('pricelayoutchange'));
+  h.tick(2499);
+  assert.equal(h.idle(), false);
+  h.tick(1);
+  assert.equal(h.idle(), true);
+  h.controls.destroy();
+});
+
+test('a fading price frame does not delay the normal idle timeout', () => {
+  const h = harness();
+  h.root.setAttribute('data-price-layout-open', '');
+  h.controls.setEnabled(true);
+  h.tick(2500);
+  assert.equal(h.idle(), true);
+  h.controls.destroy();
+});
+
 test('touch devices and touch interaction keep controls visible until a cursor is used', () => {
   const h = harness({ finePointer: false });
   h.controls.setEnabled(true);

@@ -137,6 +137,10 @@ function harness(options: Options = {}) {
   let idleEnabled = false;
   let controlsDestroys = 0;
   let currencyPickerDestroys = 0;
+  const initializations: string[] = [];
+  const layoutRoots: unknown[] = [];
+  const layoutRefreshes: { price: string; currency: string }[] = [];
+  let priceLayoutDestroys = 0;
   let revealCalls = 0;
   const idleStates: boolean[] = [];
   let callbacks: { title: string; onState(playing: boolean): void; onError(code?: number): void; onBlocked(): void; onCaptions?(state: Captions): void };
@@ -170,7 +174,23 @@ function harness(options: Options = {}) {
       reveal() { revealCalls++; },
       destroy() { controlsDestroys++; },
     }),
-    createVideoCurrencyPicker: () => ({ destroy() { currencyPickerDestroys++; } }),
+    createVideoCurrencyPicker: () => {
+      initializations.push('currencyPicker');
+      return { destroy() { currencyPickerDestroys++; } };
+    },
+    createVideoPriceLayout: (input: unknown) => {
+      initializations.push('priceLayout');
+      layoutRoots.push(input);
+      return {
+        refresh() {
+          layoutRefreshes.push({
+            price: root.querySelector('[data-price]').textContent,
+            currency: root.querySelector('[data-currency]').value,
+          });
+        },
+        destroy() { priceLayoutDestroys++; },
+      };
+    },
     // URL validation has separate parser tests. Here selection exercises the page's
     // accepted/rejected submission behavior without loading the real iframe API.
     parseYouTubeVideo: (value: string) => value === firstUrl ? { id: 'abcdefghijk', startSeconds: 0 }
@@ -201,6 +221,7 @@ function harness(options: Options = {}) {
   const control = (selector: string) => root.querySelector(selector);
   return {
     root, window, requests, intervals, loaded, muted, volumes, sought, loopStates, captionStates, control,
+    initializations, layoutRoots, layoutRefreshes, priceLayoutDestroys: () => priceLayoutDestroys,
     intervalCount: (duration: number) => [...intervalDurations.values()].filter(value => value === duration).length,
     intervalCallback: (duration: number) => [...intervals].find(([id]) => intervalDurations.get(id) === duration)?.[1],
     tick(duration: number) { for (const [id, callback] of [...intervals]) if (intervalDurations.get(id) === duration) callback(); },
@@ -832,6 +853,7 @@ test('pagehide releases the player, feed, listeners, and timers and ignores late
   assert.equal(h.playerDestroys(), 1);
   assert.equal(h.controlsDestroys(), 1);
   assert.equal(h.currencyPickerDestroys(), 1);
+  assert.equal(h.priceLayoutDestroys(), 1);
   assert.equal(h.intervals.size, 0);
   const pauseCalls = h.pauseCalls();
   const label = h.control('[data-play-pause]').attributes.get('aria-label');
@@ -871,4 +893,52 @@ test('fullscreen controls are hidden when unsupported and reflect entry, exit, a
   assert.equal(h.control('[data-control-status]').hidden, false);
   assert.equal(h.control('[data-control-status]').textContent, copy.fullscreenUnavailable);
   h.close();
+});
+
+
+test('price layout initializes once after the currency picker and refreshes with rendered prices without changing playback', async () => {
+  const h = harness({ rates: { EUR: .9 } });
+  assert.deepEqual(h.initializations, ['currencyPicker', 'priceLayout']);
+  assert.deepEqual(h.layoutRoots, [h.root]);
+  assert.deepEqual(h.layoutRefreshes.at(-1), { price: '—', currency: 'USD' });
+  h.submit(firstUrl);
+  h.emitPlaying(true);
+  h.price(100_000);
+  assert.deepEqual(h.layoutRefreshes.at(-1), { price: '$100,000', currency: 'USD' });
+  const beforeCurrency = h.layoutRefreshes.length;
+  h.currency('EUR');
+  assert.ok(h.layoutRefreshes.length > beforeCurrency);
+  assert.deepEqual(h.layoutRefreshes.at(-1), { price: '€90,000', currency: 'EUR' });
+  await h.resolveRates(0, { EUR: .8 });
+  assert.deepEqual(h.layoutRefreshes.at(-1), { price: '€80,000', currency: 'EUR' });
+  h.price(250_000);
+  assert.deepEqual(h.layoutRefreshes.at(-1), { price: '€200,000', currency: 'EUR' });
+  assert.equal(h.layoutRoots.length, 1, 'price and currency updates reuse the existing layout helper');
+  assert.equal(h.loaded.length, 1, 'price layout changes must not reload the background video');
+  assert.equal(h.playCalls(), 0);
+  assert.equal(h.pauseCalls(), 0);
+  assert.equal(h.control('[data-play-pause]').attributes.get('aria-label'), copy.pause);
+  h.close();
+});
+
+test('price layout skips hidden paints, refreshes on return, and is destroyed before late feed and rate updates', async () => {
+  const h = harness({ preferences: { currency: 'EUR', scale: 'linear' }, rates: { EUR: .9 } });
+  h.price(100_000);
+  assert.deepEqual(h.layoutRefreshes.at(-1), { price: '€90,000', currency: 'EUR' });
+  h.visibility(true);
+  const hiddenRefreshes = h.layoutRefreshes.length;
+  h.price(120_000);
+  await h.resolveRates(0, { EUR: .8 });
+  assert.equal(h.layoutRefreshes.length, hiddenRefreshes, 'hidden price updates must not remeasure layout');
+  h.visibility(false);
+  assert.deepEqual(h.layoutRefreshes.at(-1), { price: '€96,000', currency: 'EUR' });
+  const closeRefreshes = h.layoutRefreshes.length;
+  h.close();
+  h.close();
+  assert.equal(h.priceLayoutDestroys(), 1);
+  h.price(300_000);
+  h.state('offline');
+  await h.resolveRates(1, { EUR: .7 });
+  h.visibility(false);
+  assert.equal(h.layoutRefreshes.length, closeRefreshes, 'destroyed pages must not refresh price layout');
 });

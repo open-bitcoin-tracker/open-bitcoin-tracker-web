@@ -20,6 +20,7 @@ export function createVideoControls(root: HTMLElement) {
   function canFade() {
     if (!enabled || !cursor.matches || touch || document.hidden) return false;
     if (root.hasAttribute('data-currency-open')) return false;
+    if (root.hasAttribute('data-price-dragging')) return false;
     if (document.documentElement.classList.contains('nav-menu-open') || document.querySelector('#site-navigation-dialog[open]')) return false;
     const active = document.activeElement;
     if (!active || !root.contains(active)) return true;
@@ -71,6 +72,7 @@ export function createVideoControls(root: HTMLElement) {
   root.addEventListener('focusout', handleChangeOrBlur);
   root.addEventListener('change', handleChangeOrBlur);
   root.addEventListener('currencytoggle', reveal);
+  root.addEventListener('pricelayoutchange', reveal);
   document.addEventListener('visibilitychange', reveal);
   document.addEventListener('fullscreenchange', reveal);
   // Navigation moves its dialog outside the page root. These events do not bubble.
@@ -95,6 +97,7 @@ export function createVideoControls(root: HTMLElement) {
       root.removeEventListener('focusout', handleChangeOrBlur);
       root.removeEventListener('change', handleChangeOrBlur);
       root.removeEventListener('currencytoggle', reveal);
+      root.removeEventListener('pricelayoutchange', reveal);
       document.removeEventListener('visibilitychange', reveal);
       document.removeEventListener('fullscreenchange', reveal);
       document.removeEventListener('toggle', reveal, true);
