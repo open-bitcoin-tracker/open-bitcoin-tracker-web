@@ -56,6 +56,7 @@ type YouTubePlayer = {
   getDuration(): number;
   getOptions?(module?: string): unknown;
   getOption?(module: string, option: string): unknown;
+  setOption?(module: string, option: string, value: unknown): void;
   loadModule?(module: string): void;
   unloadModule?(module: string): void;
   setVolume(volume: number): void;
@@ -92,6 +93,8 @@ type YouTubeCallbacks = {
 let apiPromise: Promise<YouTubeApi> | undefined;
 const API_URL = 'https://www.youtube.com/iframe_api';
 const LOAD_TIMEOUT = 20_000;
+// Let YouTube's brief play/pause animation finish before showing the background.
+const BACKGROUND_REVEAL_DELAY = 1000;
 
 function loadYouTubeApi(): Promise<YouTubeApi> {
   const scope = window as YouTubeWindow;
@@ -156,7 +159,21 @@ export function createYouTubePlayer(container: HTMLElement, callbacks: YouTubeCa
   let captionCommand: 'load' | 'unload' | undefined;
   let lastCaptions: YouTubeCaptions | undefined;
   let readyTimeout: ReturnType<typeof setTimeout> | undefined;
+  let revealTimeout: ReturnType<typeof setTimeout> | undefined;
   let generation = 0;
+
+  function hideBackground() {
+    clearTimeout(revealTimeout);
+    revealTimeout = undefined;
+    container.removeAttribute('data-video-visible');
+  }
+  function revealBackground() {
+    if (revealTimeout !== undefined || container.hasAttribute('data-video-visible')) return;
+    revealTimeout = setTimeout(() => {
+      revealTimeout = undefined;
+      if (!destroyed && wantsPlayback) container.setAttribute('data-video-visible', '');
+    }, BACKGROUND_REVEAL_DELAY);
+  }
 
   function readProgress(): YouTubeProgress {
     if (!ready || !player || !selected || destroyed) return { currentTime: 0, duration: 0 };
@@ -215,6 +232,9 @@ export function createYouTubePlayer(container: HTMLElement, callbacks: YouTubeCa
         if (!Array.isArray(tracks) || tracks.length > 0) captionsAvailable = true;
         if (!captionsWanted && captionsAvailable && captionCommand !== 'unload') {
           captionCommand = 'unload';
+          // Clear YouTube's selected track as well as unloading the module:
+          // some players retain captions enabled by their own preferences.
+          try { player!.setOption?.('captions', 'track', {}); } catch { /* Module unload remains the fallback. */ }
           player!.unloadModule!('captions');
         }
       } else {
@@ -225,7 +245,10 @@ export function createYouTubePlayer(container: HTMLElement, callbacks: YouTubeCa
     } catch { emitCaptions(false, false); }
   }
 
-  function stopState() { if (!destroyed) callbacks.onState(false); }
+  function stopState() {
+    hideBackground();
+    if (!destroyed) callbacks.onState(false);
+  }
   function fail(code?: number) {
     if (destroyed) return;
     wantsPlayback = false;
@@ -279,7 +302,7 @@ export function createYouTubePlayer(container: HTMLElement, callbacks: YouTubeCa
       }, LOAD_TIMEOUT);
       player = new api.Player(mount, {
         width: '100%', height: '100%', host: 'https://www.youtube-nocookie.com',
-        playerVars: { controls: 0, disablekb: 1, playsinline: 1, fs: 0, rel: 0, origin: window.location.origin },
+        playerVars: { controls: 0, disablekb: 1, playsinline: 1, fs: 0, rel: 0, cc_load_policy: 0, origin: window.location.origin },
         events: {
           onReady(event) {
             if (destroyed || token !== generation) return;
@@ -301,7 +324,10 @@ export function createYouTubePlayer(container: HTMLElement, callbacks: YouTubeCa
               if (!wantsPlayback) { player?.pauseVideo(); return; }
               applyPendingSeek();
               refreshCaptions();
-              if (wantsPlayback) callbacks.onState(true);
+              if (wantsPlayback) {
+                revealBackground();
+                callbacks.onState(true);
+              }
             } else if (event.data === 0) {
               awaitingSelection = false;
               stopState();
@@ -316,6 +342,10 @@ export function createYouTubePlayer(container: HTMLElement, callbacks: YouTubeCa
               // new selection starts. Only explicit pause() can cancel that intent.
               if (!awaitingSelection) wantsPlayback = false;
               stopState();
+            } else if (event.data === 3) {
+              // Buffering can expose YouTube's spinner and playback overlays.
+              // Keep playback intent and our Pause control intact while waiting.
+              hideBackground();
             } else if (event.data === -1 || event.data === 5) {
               if (event.data === 5) {
                 if (!wantsPlayback) awaitingSelection = false;
@@ -412,6 +442,7 @@ export function createYouTubePlayer(container: HTMLElement, callbacks: YouTubeCa
       if (destroyed) return;
       destroyed = true;
       generation++;
+      hideBackground();
       clearTimeout(readyTimeout);
       try { player?.destroy(); } catch { /* Cleanup remains safe after a failed embed. */ }
       player = undefined;

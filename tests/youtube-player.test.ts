@@ -51,6 +51,7 @@ function harness({ apiAvailable = false, constructorFails = false } = {}) {
   const timers = new Map<number, () => void>();
   let timerId = 0;
   class Element extends EventTarget {
+    attributes = new Map<string, string>();
     children: Element[] = [];
     parent?: Element;
     src = '';
@@ -58,6 +59,9 @@ function harness({ apiAvailable = false, constructorFails = false } = {}) {
     title = '';
     referrerPolicy = '';
     tabIndex = 0;
+    setAttribute(name: string, value: string) { this.attributes.set(name, value); }
+    removeAttribute(name: string) { this.attributes.delete(name); }
+    hasAttribute(name: string) { return this.attributes.has(name); }
     append(child: Element) { child.parent = this; this.children.push(child); }
     replaceChildren(...children: Element[]) { this.children = children; for (const child of children) child.parent = this; }
     remove() {
@@ -83,6 +87,7 @@ function harness({ apiAvailable = false, constructorFails = false } = {}) {
     duration = 300;
     seekCalls: { seconds: number; allowSeekAhead: boolean }[] = [];
     captionCalls: string[] = [];
+    captionOptions: { module: string; option: string; value: unknown }[] = [];
     modules: string[] = [];
     tracks: unknown = [{ languageCode: 'en' }];
     options: PlayerOptions;
@@ -103,6 +108,7 @@ function harness({ apiAvailable = false, constructorFails = false } = {}) {
     }
     getOptions() { return this.modules; }
     getOption() { return this.tracks; }
+    setOption(module: string, option: string, value: unknown) { this.captionOptions.push({ module, option, value }); }
     loadModule(module: string) { this.captionCalls.push(`load:${module}`); }
     unloadModule(module: string) { this.captionCalls.push(`unload:${module}`); }
     setVolume(volume: number) { this.calls.push({ name: 'volume', volume }); }
@@ -180,6 +186,7 @@ test('player waits for explicit selection, shares one API request, and applies t
   assert.equal(player.options.playerVars.controls, 0);
   assert.equal(player.options.playerVars.disablekb, 1);
   assert.equal(player.options.playerVars.playsinline, 1);
+  assert.equal(player.options.playerVars.cc_load_policy, 0);
   assert.equal(h.timers.size, 1); // The second player has not become ready yet.
   h.controller.destroy(); other.destroy();
   assert.equal(h.timers.size, 0);
@@ -205,6 +212,56 @@ test('pause before API readiness cues the selection and playback state follows a
   assert.equal(player.calls.at(-1)?.name, 'pause');
   assert.equal(h.states.at(-1), false);
   h.controller.destroy();
+});
+
+test('background appears only after sustained playback and hides during buffering, pause, and end', async () => {
+  const h = harness();
+  const visible = () => h.container.hasAttribute('data-video-visible');
+  const player = await readyPlayer(h);
+  assert.equal(visible(), false);
+  player.event('onStateChange', 1);
+  assert.equal(h.states.at(-1), true); // Our controls respond without the visual delay.
+  assert.equal(visible(), false);
+  h.expireTimers();
+  assert.equal(visible(), true);
+
+  player.event('onStateChange', 3);
+  assert.equal(visible(), false);
+  assert.equal(h.states.at(-1), true); // Buffering retains the Pause action.
+  player.event('onStateChange', 1);
+  h.expireTimers();
+  assert.equal(visible(), true);
+
+  h.controller.pause();
+  assert.equal(visible(), false); // Hide before YouTube sends its paused event.
+  player.event('onStateChange', 2);
+  h.controller.play();
+  assert.equal(visible(), false);
+  player.event('onStateChange', 1);
+  h.expireTimers();
+  assert.equal(visible(), true);
+  player.event('onStateChange', 0);
+  assert.equal(visible(), false);
+  h.controller.destroy();
+});
+
+test('interrupted playback cancels the background reveal, including replacement, failure, and cleanup', async () => {
+  for (const interrupt of ['pause', 'buffer', 'load', 'blocked', 'error', 'destroy'] as const) {
+    const h = harness();
+    const player = await readyPlayer(h);
+    player.event('onStateChange', 1);
+    assert.equal(h.timers.size, 1);
+    if (interrupt === 'pause') h.controller.pause();
+    if (interrupt === 'buffer') player.event('onStateChange', 3);
+    if (interrupt === 'load') h.controller.load(second);
+    if (interrupt === 'blocked') player.event('onAutoplayBlocked');
+    if (interrupt === 'error') player.event('onError', 150);
+    if (interrupt === 'destroy') h.controller.destroy();
+    assert.equal(h.timers.size, 0, interrupt);
+    h.expireTimers();
+    assert.equal(h.container.hasAttribute('data-video-visible'), false, interrupt);
+    h.controller.destroy();
+  }
 });
 
 test('mute preferences survive video changes, and explicitly looping videos restart at zero', async () => {
@@ -506,7 +563,9 @@ test('caption requests queue before readiness and toggling does not replace or r
   player.modules = ['captions'];
   player.event('onApiChange');
   assert.deepEqual(h.captions.at(-1), { enabled: true, available: true });
+  assert.equal(player.captionOptions.length, 0, 'explicitly enabled captions must keep their track');
   h.controller.setCaptions(false);
+  assert.equal(JSON.stringify(player.captionOptions.at(-1)), JSON.stringify({ module: 'captions', option: 'track', value: {} }));
   assert.equal(player.captionCalls.at(-1), 'unload:captions');
   assert.deepEqual(h.captions.at(-1), { enabled: false, available: true });
   player.modules = [];
@@ -521,6 +580,39 @@ test('caption requests queue before readiness and toggling does not replace or r
   assert.equal(player.calls.some(call => call.name === 'play' || call.name === 'pause'), false);
   assert.equal(player.seekCalls.length, 0);
   h.controller.destroy();
+});
+
+test('default-off captions clear YouTube-selected tracks and stay off after changing videos', async () => {
+  const h = harness();
+  const player = await readyPlayer(h);
+  for (const video of [first, second]) {
+    h.controller.load(video);
+    player.modules = ['captions'];
+    player.event('onApiChange');
+    assert.equal(player.captionCalls.at(-1), 'unload:captions');
+    assert.equal(JSON.stringify(player.captionOptions.at(-1)), JSON.stringify({ module: 'captions', option: 'track', value: {} }));
+    assert.deepEqual(h.captions.at(-1), { enabled: false, available: true });
+    player.modules = [];
+    player.event('onApiChange');
+  }
+  assert.equal(player.captionOptions.length, 2);
+  assert.equal(player.calls.some(call => call.name === 'pause'), false);
+  h.controller.destroy();
+});
+
+test('default-off captions still unload when clearing the selected track is unsupported', async () => {
+  for (const unsupported of ['missing', 'throwing']) {
+    const h = harness();
+    const player = await readyPlayer(h);
+    player.setOption = unsupported === 'missing' ? undefined as unknown as typeof player.setOption
+      : () => { throw new Error('Unsupported option'); };
+    player.modules = ['captions'];
+    player.event('onApiChange');
+    assert.equal(player.captionCalls.at(-1), 'unload:captions');
+    assert.deepEqual(h.captions.at(-1), { enabled: false, available: true });
+    assert.deepEqual(h.errorCodes, []);
+    h.controller.destroy();
+  }
 });
 
 test('caption discovery waits for tracks where exposed, and remembers availability when subtitles are off', async () => {
