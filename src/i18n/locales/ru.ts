@@ -33,6 +33,7 @@ export const ru: Dict = {
 
   nav: {
     partyMode: 'Party Mode',
+    videoMode: 'Video Mode',
     menuLabel: 'Меню',
     closeMenu: 'Закрыть меню',
     skipToContent: 'Перейти к содержимому',

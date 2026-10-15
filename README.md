@@ -1,6 +1,6 @@
 # Open Bitcoin Tracker — Website
 
-[openbitcointracker.com](https://openbitcointracker.com) hosts a Bitcoin price tracker, Party Mode, the [Android app](https://github.com/Max-Hodler/open-bitcoin-tracker) overview, and two supply visualizations. Built with Astro 6, TypeScript, Tailwind CSS 4, and React for the Earth map; deployed as static pages with a Cloudflare Pages Function for language redirects.
+[openbitcointracker.com](https://openbitcointracker.com) hosts a Bitcoin price tracker, Party Mode, Video Mode, the [Android app](https://github.com/Max-Hodler/open-bitcoin-tracker) overview, and two supply visualizations. Built with Astro 6, TypeScript, Tailwind CSS 4, and React for the Earth map; deployed as static pages with a Cloudflare Pages Function for language redirects.
 
 ## Development
 
@@ -30,6 +30,7 @@ The build does **not** perform a full TypeScript check. Development and preview 
 | `/` | Project landing page |
 | `/price-tracker/` | Live price and interactive history since July 2010 |
 | `/party-mode/` | Full-screen live price, local music playlist, and reactive orange visualizer |
+| `/video-mode/` | Full-screen live price over a YouTube video chosen by URL |
 | `/android-app/` | Android app overview and downloads |
 | `/a-bit-of-earth/` | Bitcoin amounts expressed as shares of Earth's land |
 | `/bitcoin-and-the-dollar/` | Money per Person: Bitcoin and five fiat money supplies |
@@ -60,6 +61,16 @@ Select one or more local audio files to create a playlist in the order supplied 
 Audio stays on the device: files and filenames are not uploaded, logged, or saved in storage. A Web Audio analyser provides frequency and volume data; bass hits and sudden changes in audio energy drive the orange pulses. The visualizer stays still before playback, when music is paused or stopped, and when reduced-motion preferences are enabled. Hidden tabs pause the canvas and live feed while audio can continue. Leaving the page stops playback, revokes file object URLs, and releases audio resources.
 
 Fullscreen is available where the browser supports it; live prices, local music playback, and the visualizer require JavaScript.
+
+### Video Mode
+
+Video Mode shares the price tracker's Kraken live feed, ECB currency conversion, and currency preference. Submit a YouTube video URL to play it behind the centered live price, filling the page. Sound is enabled by default; controls allow play/pause, volume, mute, changing the video, and browser fullscreen where supported. If the browser blocks autoplay, press Play to start the video. The progress bar shows the current position and duration; drag it or use its keyboard controls to seek when the video supports seeking. Subtitles can be toggled when YouTube provides them for the selected video. Looping is off by default; enable it to restart from the beginning when the video ends. Videos that disallow embedding or are otherwise unavailable show an error so another video can be selected.
+
+When subtitles are enabled, the player fits the viewport to keep native YouTube captions readable; the background returns to filling the viewport when subtitles are off.
+
+On desktop, all controls and the cursor hide after 2.5 seconds of mouse inactivity, leaving only the price and background video. Mouse movement or keyboard input reveals them again. Controls stay visible while editing a link, using an open menu, or navigating with keyboard focus; touch devices keep them visible.
+
+YouTube is contacted only after a video link is submitted. Playback uses YouTube's privacy-enhanced embed domain and IFrame Player API; YouTube's own service policies apply. Video URLs are not saved in storage. Hidden tabs pause the video and live price feed; returning refreshes the price and requires a deliberate play action to resume the video. Video playback begins only after a submitted link or playback control action, including with reduced motion enabled. Live prices and YouTube playback require JavaScript.
 
 ### A Bit of Earth
 
@@ -109,10 +120,10 @@ Review population annually or after a new WPP revision. Use the linked compact w
 | `src/lib/`, `src/scripts/`, `tests/` | Chart logic, browser interactions, and Node tests |
 | `src/features/earth/`, `public/earth/` | Earth feature, tests, and assets |
 | `src/features/supply/`, `scripts/refresh-supply.ts` | Supply snapshot, model, and refresh/import logic |
-| `src/i18n/` | Page dictionaries, chart and Party Mode copy, and English supply copy |
+| `src/i18n/` | Page dictionaries, chart, Party Mode, and Video Mode copy, and English supply copy |
 | `src/assets/screenshots/` | App screenshots, converted to responsive WebP at build time |
 
-To add a language, update the dictionary and registration in `src/i18n/ui.ts`; `tracker.ts`, `ranges.ts`, `chart-settings.ts`, and `party.ts`; every `src/pages/[lang]/` route's `getStaticPaths()`; Astro locales and sitemap configuration; layout alternates; switcher entries; and middleware matchers. Build and review the generated routes. Earth and supply need separate feature translation work.
+To add a language, update the dictionary and registration in `src/i18n/ui.ts`; `tracker.ts`, `ranges.ts`, `chart-settings.ts`, `party.ts`, and `video.ts`; every `src/pages/[lang]/` route's `getStaticPaths()`; Astro locales and sitemap configuration; layout alternates; switcher entries; and middleware matchers. Build and review the generated routes. Earth and supply need separate feature translation work.
 
 ## Deployment
 

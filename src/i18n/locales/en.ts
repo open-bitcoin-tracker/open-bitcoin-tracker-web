@@ -40,6 +40,7 @@ export const en = {
 
   nav: {
     partyMode: 'Party Mode',
+    videoMode: 'Video Mode',
     menuLabel: 'Menu',
     closeMenu: 'Close menu',
     skipToContent: 'Skip to content',

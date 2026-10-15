@@ -1,0 +1,107 @@
+const IDLE_DELAY = 2500;
+const EDITABLE_CONTROL = 'input:not([type="range"]), textarea, [contenteditable]:not([contenteditable="false"]), [role="textbox"], [role="combobox"]';
+
+/** Hide Video Mode's interface while a cursor is idle, keeping active controls usable. */
+export function createVideoControls(root: HTMLElement) {
+  const cursor = window.matchMedia('(hover: hover) and (pointer: fine)');
+  let enabled = false;
+  let destroyed = false;
+  let touch = false;
+  let lastInput: 'keyboard' | 'pointer' | undefined;
+  let openSelect: Element | null = null;
+  let timer: number | undefined;
+
+  function clearTimer() {
+    if (timer === undefined) return;
+    window.clearTimeout(timer);
+    timer = undefined;
+  }
+
+  function canFade() {
+    if (!enabled || !cursor.matches || touch || document.hidden) return false;
+    if (root.hasAttribute('data-currency-open')) return false;
+    if (document.documentElement.classList.contains('nav-menu-open') || document.querySelector('#site-navigation-dialog[open]')) return false;
+    const active = document.activeElement;
+    if (!active || !root.contains(active)) return true;
+    // Native popups and editable fields must remain visible even after a mouse click.
+    if (active === openSelect || active.matches(EDITABLE_CONTROL)) return false;
+    // Pointer submission can transfer :focus-visible from the URL field to a button.
+    return lastInput === 'pointer' || !active.matches(':focus-visible');
+  }
+
+  function reveal() {
+    if (destroyed) return;
+    clearTimer();
+    root.removeAttribute('data-ui-idle');
+    if (!canFade()) return;
+    timer = window.setTimeout(() => {
+      timer = undefined;
+      if (!destroyed && canFade()) root.setAttribute('data-ui-idle', '');
+    }, IDLE_DELAY);
+  }
+
+  function handlePointerMove(event: PointerEvent) {
+    if (event.pointerType === 'touch') return;
+    touch = false;
+    reveal();
+  }
+
+  function handlePointerDown(event: PointerEvent) {
+    lastInput = 'pointer';
+    touch = event.pointerType === 'touch';
+    const select = (event.target as Element | null)?.closest?.('select');
+    openSelect = select && root.contains(select) ? select : null;
+    reveal();
+  }
+
+  function handleKeyDown() {
+    lastInput = 'keyboard';
+    reveal();
+  }
+
+  function handleChangeOrBlur() {
+    openSelect = null;
+    reveal();
+  }
+
+  window.addEventListener('pointermove', handlePointerMove);
+  window.addEventListener('pointerdown', handlePointerDown);
+  window.addEventListener('keydown', handleKeyDown);
+  root.addEventListener('focusin', reveal);
+  root.addEventListener('focusout', handleChangeOrBlur);
+  root.addEventListener('change', handleChangeOrBlur);
+  root.addEventListener('currencytoggle', reveal);
+  document.addEventListener('visibilitychange', reveal);
+  document.addEventListener('fullscreenchange', reveal);
+  // Navigation moves its dialog outside the page root. These events do not bubble.
+  document.addEventListener('toggle', reveal, true);
+  document.addEventListener('close', reveal, true);
+  cursor.addEventListener('change', reveal);
+
+  return {
+    setEnabled(value: boolean) {
+      if (destroyed || enabled === value) return;
+      enabled = value;
+      reveal();
+    },
+    reveal,
+    destroy() {
+      if (destroyed) return;
+      destroyed = true;
+      window.removeEventListener('pointermove', handlePointerMove);
+      window.removeEventListener('pointerdown', handlePointerDown);
+      window.removeEventListener('keydown', handleKeyDown);
+      root.removeEventListener('focusin', reveal);
+      root.removeEventListener('focusout', handleChangeOrBlur);
+      root.removeEventListener('change', handleChangeOrBlur);
+      root.removeEventListener('currencytoggle', reveal);
+      document.removeEventListener('visibilitychange', reveal);
+      document.removeEventListener('fullscreenchange', reveal);
+      document.removeEventListener('toggle', reveal, true);
+      document.removeEventListener('close', reveal, true);
+      cursor.removeEventListener('change', reveal);
+      clearTimer();
+      root.removeAttribute('data-ui-idle');
+    },
+  };
+}

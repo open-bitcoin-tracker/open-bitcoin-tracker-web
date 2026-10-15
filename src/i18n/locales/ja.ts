@@ -33,6 +33,7 @@ export const ja: Dict = {
 
   nav: {
     partyMode: 'Party Mode',
+    videoMode: 'Video Mode',
     menuLabel: 'メニュー',
     closeMenu: 'メニューを閉じる',
     skipToContent: 'コンテンツへ移動',
