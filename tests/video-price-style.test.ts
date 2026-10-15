@@ -32,7 +32,7 @@ function harness({ saved, blocked = false }: { saved?: string; blocked?: boolean
     querySelectorAll() { return swatches; }
     contains(target: Element | null): boolean { return target === this || this.children.some(child => child.contains(target)); }
     focus() { document.activeElement = this; document.dispatchEvent(eventFor('focusin', this)); }
-    click() { this.dispatchEvent(new Event('click')); }
+    click() { this.dispatchEvent(Object.assign(new Event('click'), { detail: 1 })); }
     append(child: Element) { this.children.push(child); return child; }
   }
   function eventFor(type: string, target: Element) {
@@ -114,7 +114,7 @@ test('style controls preview choices immediately, save them, and restore them on
   assert.equal(restored.colour.value, '#ffffff');
   assert.equal(restored.font.value, 'modern');
   assert.equal(restored.reset.disabled, true);
-  assert.equal(restored.document.activeElement, restored.font);
+  assert.notEqual(restored.document.activeElement, restored.font);
   assert.deepEqual(JSON.parse(restored.saved()!), { version: 1, colour: '#ffffff', font: 'modern', stroke: false, strokeWidth: 1, strokeColour: '#000000' });
   h.style.destroy(); restored.style.destroy();
 });
@@ -222,6 +222,15 @@ test('reset style unticks Stroke, removes its appearance, and saves the disabled
   assert.equal(restored.strokeOptions.hidden, true);
   assert.equal(restored.root.style.values.get('--video-price-stroke-width'), '0px');
   h.style.destroy(); restored.style.destroy();
+});
+
+test('keyboard activation of Reset style keeps focus on an enabled control', () => {
+  const h = harness({ saved: JSON.stringify({ version: 1, font: 'digital', stroke: true }) });
+  h.reset.dispatchEvent(Object.assign(new Event('click'), { detail: 0 }));
+  assert.equal(h.reset.disabled, true);
+  assert.equal(h.document.activeElement, h.font);
+  assert.equal(h.stroke.checked, false);
+  h.style.destroy();
 });
 
 test('Style follows the price and flips above it near the viewport bottom, keeping its panel on screen', () => {
