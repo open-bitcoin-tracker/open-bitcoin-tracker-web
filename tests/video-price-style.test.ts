@@ -225,11 +225,13 @@ test('reset style unticks Stroke, removes its appearance, and saves the disabled
   h.style.destroy(); restored.style.destroy();
 });
 
-test('keyboard activation of Reset style keeps focus on an enabled control', () => {
+test('Reset style works with the panel closed and returns focus to Edit style', () => {
   const h = harness({ saved: JSON.stringify({ version: 1, font: 'digital', stroke: true }) });
+  h.reset.focus();
   h.reset.dispatchEvent(Object.assign(new Event('click'), { detail: 0 }));
   assert.equal(h.reset.disabled, true);
-  assert.equal(h.document.activeElement, h.font);
+  assert.equal(h.panel.hidden, true);
+  assert.equal(h.document.activeElement, h.trigger);
   assert.equal(h.stroke.checked, false);
   h.style.destroy();
 });

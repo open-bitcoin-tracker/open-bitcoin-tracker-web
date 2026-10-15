@@ -163,12 +163,13 @@ export function createVideoPriceStyle(root: HTMLElement, refreshLayout: () => vo
     state.strokeColour = strokeColour.value.toLowerCase();
     save();
   });
-  listen(reset, 'click', ((event: MouseEvent) => {
+  listen(reset, 'click', () => {
+    const restoreFocus = document.activeElement === reset;
     state = { ...DEFAULTS };
     save();
-    // Keep keyboard navigation on an active control without focusing the select after a pointer click.
-    if (event.detail === 0) font.focus();
-  }) as EventListener);
+    // Reset disables itself, so return focus to the neighboring visible control.
+    if (restoreFocus) trigger.focus();
+  });
   panel.hidden = true;
   trigger.setAttribute('aria-expanded', 'false');
   trigger.disabled = colour.disabled = font.disabled = stroke.disabled = false;

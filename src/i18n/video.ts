@@ -31,6 +31,7 @@ export interface VideoCopy {
   strokeWeight: string;
   strokeColour: string;
   priceColour: string;
+  customColour: string;
   priceFont: string;
   fontModern: string;
   fontCondensed: string;
@@ -74,6 +75,7 @@ const en: VideoCopy = {
   strokeWeight: 'Weight',
   strokeColour: 'Stroke colour',
   priceColour: 'Colour',
+  customColour: 'Custom colour',
   priceFont: 'Font',
   fontModern: 'Modern',
   fontCondensed: 'Condensed',
@@ -119,6 +121,7 @@ export const video: Record<Lang, VideoCopy> = {
     strokeWeight: 'Grosor',
     strokeColour: 'Color del contorno',
     priceColour: 'Color',
+    customColour: 'Color personalizado',
     priceFont: 'Fuente',
     fontModern: 'Moderna',
     fontCondensed: 'Condensada',
@@ -161,6 +164,7 @@ export const video: Record<Lang, VideoCopy> = {
     strokeWeight: 'Espessura',
     strokeColour: 'Cor do contorno',
     priceColour: 'Cor',
+    customColour: 'Cor personalizada',
     priceFont: 'Fonte',
     fontModern: 'Moderna',
     fontCondensed: 'Condensada',
@@ -203,6 +207,7 @@ export const video: Record<Lang, VideoCopy> = {
     strokeWeight: 'Épaisseur',
     strokeColour: 'Couleur du contour',
     priceColour: 'Couleur',
+    customColour: 'Couleur personnalisée',
     priceFont: 'Police',
     fontModern: 'Moderne',
     fontCondensed: 'Condensée',
@@ -245,6 +250,7 @@ export const video: Record<Lang, VideoCopy> = {
     strokeWeight: 'Stärke',
     strokeColour: 'Konturfarbe',
     priceColour: 'Farbe',
+    customColour: 'Eigene Farbe',
     priceFont: 'Schrift',
     fontModern: 'Modern',
     fontCondensed: 'Schmal',
@@ -287,6 +293,7 @@ export const video: Record<Lang, VideoCopy> = {
     strokeWeight: 'Spessore',
     strokeColour: 'Colore del contorno',
     priceColour: 'Colore',
+    customColour: 'Colore personalizzato',
     priceFont: 'Carattere',
     fontModern: 'Moderno',
     fontCondensed: 'Condensato',
@@ -329,6 +336,7 @@ export const video: Record<Lang, VideoCopy> = {
     strokeWeight: 'Толщина',
     strokeColour: 'Цвет обводки',
     priceColour: 'Цвет',
+    customColour: 'Свой цвет',
     priceFont: 'Шрифт',
     fontModern: 'Современный',
     fontCondensed: 'Узкий',
@@ -371,6 +379,7 @@ export const video: Record<Lang, VideoCopy> = {
     strokeWeight: 'Kalınlık',
     strokeColour: 'Kontur rengi',
     priceColour: 'Renk',
+    customColour: 'Özel renk',
     priceFont: 'Yazı tipi',
     fontModern: 'Modern',
     fontCondensed: 'Dar',
@@ -413,6 +422,7 @@ export const video: Record<Lang, VideoCopy> = {
     strokeWeight: 'Độ dày',
     strokeColour: 'Màu viền',
     priceColour: 'Màu',
+    customColour: 'Màu tùy chỉnh',
     priceFont: 'Phông chữ',
     fontModern: 'Hiện đại',
     fontCondensed: 'Thu hẹp',
@@ -455,6 +465,7 @@ export const video: Record<Lang, VideoCopy> = {
     strokeWeight: '太さ',
     strokeColour: '縁取りの色',
     priceColour: '色',
+    customColour: 'カスタムカラー',
     priceFont: 'フォント',
     fontModern: 'モダン',
     fontCondensed: 'コンデンス',
