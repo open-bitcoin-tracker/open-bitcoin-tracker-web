@@ -26,7 +26,6 @@ export const ja: Dict = {
   },
 
   landing: {
-    intro: 'ビットコインの価格を追い、さまざまな視点からビットコインを探求できる、無料のオープンソースツール。',
     priceTracker: '価格トラッカー',
     priceDescription: 'ビットコインのリアルタイム価格と2010年からの価格履歴。',
     videoDescription: 'YouTube動画にビットコインのリアルタイム価格を重ねて表示',

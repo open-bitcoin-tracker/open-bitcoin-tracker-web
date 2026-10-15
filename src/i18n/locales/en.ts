@@ -33,7 +33,6 @@ export const en = {
   },
 
   landing: {
-    intro: 'Free, open-source tools to track Bitcoin’s price and explore it from different perspectives.',
     priceTracker: 'Price Tracker',
     priceDescription: 'Live Bitcoin price and history since 2010.',
     videoDescription: 'Live Bitcoin price over YouTube videos',

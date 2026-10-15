@@ -26,7 +26,6 @@ export const vi: Dict = {
   },
 
   landing: {
-    intro: 'Các công cụ miễn phí, mã nguồn mở để theo dõi giá Bitcoin và khám phá Bitcoin từ nhiều góc nhìn.',
     priceTracker: 'Theo dõi giá',
     priceDescription: 'Giá Bitcoin trực tiếp và lịch sử giá từ năm 2010.',
     videoDescription: 'Giá Bitcoin trực tiếp trên video YouTube',

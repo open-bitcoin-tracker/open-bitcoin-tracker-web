@@ -26,7 +26,6 @@ export const de: Dict = {
   },
 
   landing: {
-    intro: 'Kostenlose Open-Source-Tools, um den Bitcoin-Kurs zu tracken und Bitcoin aus verschiedenen Perspektiven zu entdecken.',
     priceTracker: 'Preis-Tracker',
     priceDescription: 'Bitcoin-Livekurs und Kurshistorie seit 2010.',
     videoDescription: 'Der Bitcoin-Livekurs über YouTube-Videos',

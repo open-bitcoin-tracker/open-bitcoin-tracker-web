@@ -26,7 +26,6 @@ export const tr: Dict = {
   },
 
   landing: {
-    intro: 'Bitcoin fiyatını takip etmek ve Bitcoin’i farklı açılardan keşfetmek için ücretsiz, açık kaynaklı araçlar.',
     priceTracker: 'Fiyat takibi',
     priceDescription: 'Canlı Bitcoin fiyatı ve 2010’dan bu yana fiyat geçmişi.',
     videoDescription: 'YouTube videolarının üzerinde canlı Bitcoin fiyatı',

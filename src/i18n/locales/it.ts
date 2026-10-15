@@ -26,7 +26,6 @@ export const it: Dict = {
   },
 
   landing: {
-    intro: 'Strumenti gratuiti e open source per monitorare il prezzo di Bitcoin ed esplorarlo da prospettive diverse.',
     priceTracker: 'Tracker del prezzo',
     priceDescription: 'Prezzo di Bitcoin in tempo reale e storico dal 2010.',
     videoDescription: 'Il prezzo di Bitcoin in tempo reale sui video di YouTube',

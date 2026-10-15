@@ -26,7 +26,6 @@ export const ptBR: Dict = {
   },
 
   landing: {
-    intro: 'Ferramentas gratuitas e de código aberto para trackear o preço do Bitcoin e explorá-lo por diferentes perspectivas.',
     priceTracker: 'Trackeador de preço',
     priceDescription: 'Preço do Bitcoin ao vivo e histórico desde 2010.',
     videoDescription: 'O preço do Bitcoin ao vivo sobre vídeos do YouTube',
