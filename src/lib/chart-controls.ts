@@ -1,7 +1,9 @@
 const IDLE_DELAY = 1500;
+const INITIAL_VISIBLE_DURATION = 3000;
 
 /** Reveal chart controls on activity, on both touch and pointer devices. */
 export function createChartControls(root: HTMLElement) {
+  const initialVisibleUntil = performance.now() + INITIAL_VISIBLE_DURATION;
   const settings = root.querySelector<HTMLDetailsElement>('[data-chart-settings]');
   const navigationTrigger = document.querySelector<HTMLElement>('.nav-menu-trigger');
   const pointers = new Set<number>();
@@ -37,7 +39,7 @@ export function createChartControls(root: HTMLElement) {
     timer = window.setTimeout(() => {
       timer = undefined;
       if (!destroyed && canFade()) root.setAttribute('data-chart-ui-idle', '');
-    }, IDLE_DELAY);
+    }, Math.max(IDLE_DELAY, initialVisibleUntil - performance.now()));
   }
 
   function pointerDown(event: PointerEvent) {
@@ -75,7 +77,7 @@ export function createChartControls(root: HTMLElement) {
   listen(document, 'close', reveal, true);
   listen(document, 'visibilitychange', visibility);
   listen(document, 'fullscreenchange', reveal);
-  root.setAttribute('data-chart-ui-idle', '');
+  reveal();
 
   return {
     destroy() {

@@ -38,7 +38,7 @@ function harness() {
     clearTimeout(id: number) { timers.delete(id); },
   });
   const module = { createChartControls: null as unknown as (root: unknown) => { destroy(): void } };
-  runInNewContext(script, { exports: module, window, document });
+  runInNewContext(script, { exports: module, window, document, performance: { now: () => time } });
   const controls = module.createChartControls(root);
   const pointer = (type: string, pointerType = 'mouse', pointerId = 1) => {
     window.dispatchEvent(Object.assign(new Event(type), { pointerType, pointerId }));
@@ -65,8 +65,31 @@ function harness() {
   };
 }
 
-test('chart controls start hidden, reveal on mouse movement or touch taps, and fade after 1.5 seconds of inactivity', () => {
+test('chart controls stay visible for three seconds after loading without pointer activity', () => {
   const h = harness();
+  assert.equal(h.idle(), false);
+  assert.equal(h.timers.size, 1);
+  h.tick(2999);
+  assert.equal(h.idle(), false);
+  h.tick(1);
+  assert.equal(h.idle(), true);
+  h.controls.destroy();
+});
+
+test('early pointer activity cannot shorten the initial three-second window', () => {
+  const h = harness();
+  h.tick(500);
+  h.pointer('pointermove');
+  h.tick(2499);
+  assert.equal(h.idle(), false);
+  h.tick(1);
+  assert.equal(h.idle(), true);
+  h.controls.destroy();
+});
+
+test('chart controls reveal on mouse movement or touch taps and fade after 1.5 seconds of inactivity', () => {
+  const h = harness();
+  h.tick(3000);
   assert.equal(h.idle(), true);
   assert.equal(h.timers.size, 0);
   h.pointer('pointermove');
@@ -158,6 +181,7 @@ test('keyboard focus on the burger keeps all controls visible until focus leaves
 
 test('fullscreen reveals controls, while leaving the page clears active pointers and timers', () => {
   const h = harness();
+  h.tick(3000);
   h.document.dispatchEvent(new Event('fullscreenchange'));
   assert.equal(h.idle(), false);
   h.pointer('pointerdown');
