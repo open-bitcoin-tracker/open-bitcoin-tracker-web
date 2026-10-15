@@ -29,6 +29,7 @@ const firstUrl = 'https://www.youtube.com/watch?v=abcdefghijk';
 const secondUrl = 'https://youtu.be/ZYXWVUTSRQP?t=30';
 const canonicalSecondUrl = 'https://www.youtube.com/watch?v=ZYXWVUTSRQP&t=30s';
 const videoSelectionKey = 'obt-video-selection';
+const videoPlaybackKey = 'obt-video-playback';
 type Video = { id: string; startSeconds: number };
 type Progress = { currentTime: number; duration: number };
 type Captions = { enabled: boolean; available: boolean };
@@ -71,6 +72,7 @@ interface Options {
   hidden?: boolean;
   fullscreen?: boolean;
   storedSelection?: string;
+  storedPlayback?: string;
   blockedStorage?: boolean;
 }
 
@@ -118,6 +120,7 @@ function harness(options: Options = {}) {
   let reloads = 0;
   const storage = new Map<string, string>();
   if (options.storedSelection !== undefined) storage.set(videoSelectionKey, options.storedSelection);
+  if (options.storedPlayback !== undefined) storage.set(videoPlaybackKey, options.storedPlayback);
   const storageWrites: { key: string; value: string }[] = [];
   const window = Object.assign(new EventTarget(), {
     location: { reload() { reloads++; } },
@@ -147,6 +150,7 @@ function harness(options: Options = {}) {
   const sought: number[] = [];
   const loopStates: boolean[] = [];
   const captionStates: boolean[] = [];
+  const playbackAtLoad: { volume?: number; muted?: boolean; looping?: boolean; subtitlesWanted?: boolean }[] = [];
   let progress: Progress = { currentTime: 0, duration: 0 };
   let progressCalls = 0;
   let playCalls = 0;
@@ -216,7 +220,10 @@ function harness(options: Options = {}) {
       callbacks.onState(false);
       callbacks.onCaptions?.({ enabled: false, available: false });
       return {
-        load(video: Video) { loaded.push(video); progress = { currentTime: video.startSeconds, duration: 0 }; callbacks.onState(false); },
+        load(video: Video) {
+          playbackAtLoad.push({ volume: volumes.at(-1), muted: muted.at(-1), looping: loopStates.at(-1), subtitlesWanted: captionStates.at(-1) });
+          loaded.push(video); progress = { currentTime: video.startSeconds, duration: 0 }; callbacks.onState(false);
+        },
         play() { playCalls++; callbacks.onState(true); },
         pause() { pauseCalls++; callbacks.onState(false); },
         setMuted(value: boolean) { muted.push(value); },
@@ -236,7 +243,7 @@ function harness(options: Options = {}) {
   });
   const control = (selector: string) => root.querySelector(selector);
   return {
-    root, window, requests, intervals, loaded, muted, volumes, sought, loopStates, captionStates, control, storage, storageWrites,
+    root, window, requests, intervals, loaded, muted, volumes, sought, loopStates, captionStates, playbackAtLoad, control, storage, storageWrites,
     initializations, layoutRoots, layoutRefreshes, priceLayoutDestroys: () => priceLayoutDestroys,
     intervalCount: (duration: number) => [...intervalDurations.values()].filter(value => value === duration).length,
     intervalCallback: (duration: number) => [...intervals].find(([id]) => intervalDurations.get(id) === duration)?.[1],
@@ -339,14 +346,14 @@ test('play and pause labels follow player state while mute updates its action an
   assert.equal(h.control('[data-play-icon]').attributes.has('hidden'), false);
   assert.equal(h.control('[data-pause-icon]').attributes.has('hidden'), true);
   h.click('[data-mute]');
-  assert.deepEqual(h.muted, [true]);
+  assert.deepEqual(h.muted, [false, true]);
   assert.equal(h.control('[data-mute]').attributes.get('aria-label'), copy.unmute);
   assert.equal(h.control('[data-mute]').title, copy.unmute);
   assert.equal(h.control('[data-mute]').attributes.has('aria-pressed'), false);
   assert.equal(h.control('[data-muted-icon]').attributes.has('hidden'), false);
   assert.equal(h.control('[data-sound-icon]').attributes.has('hidden'), true);
   h.click('[data-mute]');
-  assert.deepEqual(h.muted, [true, false]);
+  assert.deepEqual(h.muted, [false, true, false]);
   assert.equal(h.control('[data-mute]').attributes.get('aria-label'), copy.mute);
   assert.equal(h.control('[data-mute]').attributes.has('aria-pressed'), false);
   assert.equal(h.control('[data-muted-icon]').attributes.has('hidden'), true);
@@ -1053,7 +1060,105 @@ test('malformed, unsupported, and non-YouTube saved values leave an empty usable
   }
 });
 
-test('blocked local storage does not prevent entering and playing a video', () => {
+test('playback settings survive a fresh visit and apply before the saved video loads', () => {
+  const h = harness();
+  h.submit(secondUrl);
+  const volume = h.control('[data-video-volume]');
+  volume.value = '37';
+  volume.dispatchEvent(new Event('input'));
+  h.click('[data-mute]');
+  h.click('[data-loop]');
+  h.emitCaptions({ enabled: false, available: true });
+  h.click('[data-subtitles]');
+  const storedPlayback = h.storage.get(videoPlaybackKey);
+  assert.deepEqual(JSON.parse(storedPlayback!), {
+    version: 1, volume: 37, muted: true, lastAudibleVolume: 37, looping: true, subtitlesWanted: true,
+  });
+  h.emitCaptions({ enabled: true, available: true });
+  h.submit(firstUrl);
+  h.emitCaptions({ enabled: false, available: false });
+  assert.equal(h.storage.get(videoPlaybackKey), storedPlayback, 'a video without captions must preserve the subtitle preference');
+  h.close();
+
+  const restored = harness({ storedSelection: h.storage.get(videoSelectionKey), storedPlayback });
+  assert.deepEqual(restored.playbackAtLoad, [{ volume: 37, muted: true, looping: true, subtitlesWanted: true }]);
+  assert.equal(restored.control('[data-video-volume]').value, '37');
+  assert.equal(restored.control('[data-video-volume]').attributes.get('aria-valuetext'), '37%');
+  assert.equal(restored.control('[data-mute]').attributes.get('aria-label'), copy.unmute);
+  assert.equal(restored.control('[data-loop]').attributes.get('aria-pressed'), 'true');
+  assert.equal(restored.control('[data-subtitles]').attributes.get('aria-pressed'), 'false', 'captions still need confirmation from the player');
+  assert.equal(restored.root.attributes.has('data-subtitles-enabled'), false);
+  assert.equal(restored.storageWrites.length, 0, 'restoration must not overwrite saved preferences');
+  restored.emitCaptions({ enabled: true, available: true });
+  assert.equal(restored.control('[data-subtitles]').attributes.get('aria-pressed'), 'true');
+  assert.equal(restored.root.attributes.has('data-subtitles-enabled'), true);
+
+  restored.click('[data-mute]');
+  restored.click('[data-loop]');
+  restored.click('[data-subtitles]');
+  restored.close();
+  const disabled = harness({ storedPlayback: restored.storage.get(videoPlaybackKey) });
+  disabled.submit(firstUrl);
+  assert.deepEqual(disabled.playbackAtLoad, [{ volume: 37, muted: false, looping: false, subtitlesWanted: false }]);
+  assert.equal(disabled.control('[data-loop]').attributes.get('aria-pressed'), 'false');
+  assert.equal(disabled.control('[data-mute]').attributes.get('aria-label'), copy.mute);
+  disabled.close();
+});
+
+test('zero volume and the last audible level survive reopening before another video is selected', () => {
+  const h = harness();
+  h.submit(firstUrl);
+  const volume = h.control('[data-video-volume]');
+  for (const value of ['42', '0']) {
+    volume.value = value;
+    volume.dispatchEvent(new Event('input'));
+  }
+  h.close();
+  const restored = harness({ storedPlayback: h.storage.get(videoPlaybackKey) });
+  assert.equal(restored.control('[data-video-volume]').value, '0');
+  assert.equal(restored.control('[data-mute]').attributes.get('aria-label'), copy.unmute);
+  restored.submit(secondUrl);
+  assert.deepEqual(restored.playbackAtLoad, [{ volume: 0, muted: true, looping: false, subtitlesWanted: false }]);
+  restored.click('[data-mute]');
+  assert.equal(restored.control('[data-video-volume]').value, '42');
+  assert.equal(restored.volumes.at(-1), 42);
+  assert.equal(restored.muted.at(-1), false);
+  assert.deepEqual(JSON.parse(restored.storage.get(videoPlaybackKey)!), {
+    version: 1, volume: 42, muted: false, lastAudibleVolume: 42, looping: false, subtitlesWanted: false,
+  });
+  restored.close();
+});
+
+test('invalid saved playback settings safely retain defaults and a valid video selection', () => {
+  for (const storedPlayback of [
+    'broken JSON', 'null', '[]', '{}', JSON.stringify({ version: 2, volume: 10, muted: true, looping: true, subtitlesWanted: true }),
+    ...[-1, 101, '25', null, {}, []].map(volume => JSON.stringify({
+      version: 1, volume, muted: 'true', lastAudibleVolume: 0, looping: 1, subtitlesWanted: 'true',
+    })),
+  ]) {
+    const h = harness({ storedPlayback, storedSelection: JSON.stringify({ version: 1, url: firstUrl }) });
+    assert.deepEqual(h.playbackAtLoad, [{ volume: 100, muted: false, looping: false, subtitlesWanted: false }], storedPlayback);
+    assert.equal(h.control('[data-video-volume]').value, '100');
+    assert.equal(h.control('[data-mute]').attributes.get('aria-label'), copy.mute);
+    assert.equal(h.storageWrites.length, 0);
+    h.close();
+  }
+});
+
+test('saved playback fields are validated independently and zero volume always restores muted', () => {
+  const h = harness({ storedPlayback: JSON.stringify({ version: 1, volume: 24.6, looping: true, subtitlesWanted: true }) });
+  h.submit(firstUrl);
+  assert.deepEqual(h.playbackAtLoad, [{ volume: 25, muted: false, looping: true, subtitlesWanted: true }]);
+  h.close();
+  const zero = harness({ storedPlayback: JSON.stringify({ version: 1, volume: 0, muted: false, lastAudibleVolume: 101 }) });
+  zero.submit(firstUrl);
+  assert.equal(zero.muted.at(-1), true);
+  zero.click('[data-mute]');
+  assert.equal(zero.volumes.at(-1), 100, 'an invalid restore level falls back to full volume');
+  zero.close();
+});
+
+test('blocked local storage does not prevent entering a video, playing, or changing settings', () => {
   const h = harness({ storedSelection: JSON.stringify({ version: 1, url: firstUrl }), blockedStorage: true });
   assert.equal(h.loaded.length, 0, 'an unreadable preference must leave normal selection available');
   h.submit(secondUrl);
@@ -1063,6 +1168,17 @@ test('blocked local storage does not prevent entering and playing a video', () =
   assert.equal(h.storageWrites.length, 0);
   h.click('[data-play-pause]');
   assert.equal(h.playCalls(), 1);
+  h.control('[data-video-volume]').value = '48';
+  h.control('[data-video-volume]').dispatchEvent(new Event('input'));
+  h.click('[data-mute]');
+  h.click('[data-loop]');
+  h.emitCaptions({ enabled: false, available: true });
+  h.click('[data-subtitles]');
+  assert.equal(h.volumes.at(-1), 48);
+  assert.equal(h.muted.at(-1), true);
+  assert.equal(h.loopStates.at(-1), true);
+  assert.equal(h.captionStates.at(-1), true);
+  assert.equal(h.storageWrites.length, 0);
   h.close();
 });
 

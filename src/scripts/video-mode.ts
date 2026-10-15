@@ -10,6 +10,7 @@ import type { PartyCopy } from '../i18n/party';
 import type { VideoCopy } from '../i18n/video';
 
 const VIDEO_SELECTION_KEY = 'obt-video-selection';
+const VIDEO_PLAYBACK_KEY = 'obt-video-playback';
 
 const root = document.querySelector<HTMLElement>('[data-video-mode]');
 if (root) startVideoMode(root);
@@ -102,11 +103,37 @@ function startVideoMode(root: HTMLElement) {
   let volume = 100;
   let lastAudibleVolume = 100;
   let looping = false;
+  let subtitlesWanted = false;
   let subtitlesEnabled = false;
   let scrubbing = false;
   let adjustingVolume = false;
   let duration = 0;
   let progressRefresh: ReturnType<typeof setInterval> | undefined;
+
+  try {
+    const saved = JSON.parse(window.localStorage.getItem(VIDEO_PLAYBACK_KEY) ?? 'null');
+    if (saved?.version === 1) {
+      if (typeof saved.volume === 'number' && Number.isFinite(saved.volume) && saved.volume >= 0 && saved.volume <= 100) {
+        volume = Math.round(saved.volume);
+      }
+      lastAudibleVolume = volume > 0 ? volume : 100;
+      if (typeof saved.lastAudibleVolume === 'number' && Number.isFinite(saved.lastAudibleVolume) && saved.lastAudibleVolume >= 1 && saved.lastAudibleVolume <= 100) {
+        lastAudibleVolume = Math.round(saved.lastAudibleVolume);
+      }
+      muted = volume === 0 || saved.muted === true;
+      looping = saved.looping === true;
+      subtitlesWanted = saved.subtitlesWanted === true;
+    }
+  } catch { /* Keep playback usable when saved settings are malformed or storage is blocked. */ }
+
+  function savePlaybackPreferences() {
+    if (destroyed) return;
+    try {
+      window.localStorage.setItem(VIDEO_PLAYBACK_KEY, JSON.stringify({
+        version: 1, volume, muted, lastAudibleVolume, looping, subtitlesWanted,
+      }));
+    } catch { /* Settings remain usable when storage is blocked or full. */ }
+  }
 
   function updateIdle() {
     uiVisibility.setEnabled(hasVideo && form.hidden && !scrubbing && !adjustingVolume);
@@ -206,9 +233,11 @@ function startVideoMode(root: HTMLElement) {
     player.setVolume(volume);
     player.setMuted(muted);
     paintAudio();
+    savePlaybackPreferences();
   }
 
   paintAudio();
+  loopButton.setAttribute('aria-pressed', String(looping));
 
   const player = createYouTubePlayer(root.querySelector<HTMLElement>('[data-video-player]')!, {
     title: t.backgroundTitle,
@@ -245,6 +274,11 @@ function startVideoMode(root: HTMLElement) {
       if (!destroyed) updateCaptions(enabled, available);
     },
   });
+  // Queue saved settings before a restored video can initialize or autoplay.
+  player.setVolume(volume);
+  player.setMuted(muted);
+  player.setLoop(looping);
+  player.setCaptions(subtitlesWanted);
 
   function loadSelectedVideo(video: YouTubeVideo, { focus = true, persist = true } = {}) {
     if (destroyed) return;
@@ -331,6 +365,7 @@ function startVideoMode(root: HTMLElement) {
     muted = !muted;
     player.setMuted(muted);
     paintAudio();
+    savePlaybackPreferences();
   });
   volumeInput.addEventListener('input', () => {
     if (!volumeInput.disabled) changeVolume(Number(volumeInput.value));
@@ -345,8 +380,14 @@ function startVideoMode(root: HTMLElement) {
     looping = !looping;
     player.setLoop(looping);
     loopButton.setAttribute('aria-pressed', String(looping));
+    savePlaybackPreferences();
   });
-  subtitlesButton.addEventListener('click', () => { player.setCaptions(!subtitlesEnabled); });
+  subtitlesButton.addEventListener('click', () => {
+    // Unavailable tracks and delayed player callbacks must not erase the user's choice.
+    subtitlesWanted = !subtitlesEnabled;
+    savePlaybackPreferences();
+    player.setCaptions(subtitlesWanted);
+  });
   seek.addEventListener('pointerdown', event => {
     if (seek.disabled) return;
     scrubbing = true;
