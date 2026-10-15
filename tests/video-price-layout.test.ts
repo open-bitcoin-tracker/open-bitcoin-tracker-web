@@ -187,9 +187,9 @@ test('price layout stays centered and restores validated bounded preferences ind
   assert.equal(h.frame(), false);
   h.layout.destroy();
   const restored = harness({ saved: JSON.stringify({ version: 1, x: -20, y: 130, size: 300 }) });
-  assert.equal(restored.left(), 16);
-  assert.equal(restored.top(), 384);
-  assert.equal(restored.scale(), 2);
+  assert.equal(restored.left(), 0);
+  assert.equal(restored.top(), 300);
+  assert.equal(restored.scale(), 3);
   assert.equal(restored.root.attributes.has('data-price-default'), false);
   assert.equal(restored.reset.disabled, false);
   restored.layout.destroy();
@@ -201,7 +201,7 @@ test('price layout stays centered and restores validated bounded preferences ind
   }
   const blocked = harness({ blockedStorage: true, observer: false });
   blocked.key(blocked.position, 'ArrowRight');
-  close(blocked.left(), 415.36);
+  close(blocked.left(), 416);
   blocked.layout.destroy();
 });
 
@@ -374,8 +374,8 @@ test('dragging preserves the grab offset, clamps edges, and keeps its frame with
   assert.equal(h.top(), 300);
   assert.equal(h.saved.length, 0);
   h.pointer('pointerup', h.window, { clientX: 10000, clientY: -10000 });
-  assert.equal(h.left(), 784);
-  assert.equal(h.top(), 16);
+  assert.equal(h.left(), 800);
+  assert.equal(h.top(), 0);
   assert.equal(h.root.attributes.has('data-price-dragging'), false);
   assert.equal(h.position.hasPointerCapture(1), false);
   assert.deepEqual(h.saved.at(-1), { version: 1, x: 100, y: 0, size: 100 });
@@ -547,11 +547,11 @@ test('centered resizing stops at the nearest viewport edge without moving the pr
   h.pointer('pointerdown', h.handles.se, { clientX: box.left + box.width, clientY: box.top + box.height, shiftKey: true });
   h.pointer('pointermove', h.window, { clientX: 10000, clientY: 10000, shiftKey: true });
   let resized = h.position.getBoundingClientRect();
-  close(resized.left - h.viewport.left, 16);
+  close(resized.left - h.viewport.left, 0);
   close(resized.left + resized.width / 2, box.left + box.width / 2);
   close(resized.top + resized.height / 2, box.top + box.height / 2);
-  assert.ok(resized.top >= h.viewport.top + 16);
-  assert.ok(resized.top + resized.height <= h.viewport.top + h.viewport.height - 16);
+  assert.ok(resized.top >= h.viewport.top);
+  assert.ok(resized.top + resized.height <= h.viewport.top + h.viewport.height);
   h.pointer('pointerup', h.window, { clientX: -10000, clientY: -10000, shiftKey: true });
   resized = h.position.getBoundingClientRect();
   close(h.scale(), .25);
@@ -610,7 +610,7 @@ test('resize projection ignores perpendicular movement and respects size and vie
   h.pointer('pointermove', h.window, { clientX: x - 50, clientY: y + 100 });
   close(h.scale(), 1);
   h.pointer('pointermove', h.window, { clientX: x + 10000, clientY: y + 10000 });
-  close(h.scale(), 2);
+  close(h.scale(), 3);
   h.pointer('pointerup', h.window, { clientX: x - 10000, clientY: y - 10000 });
   close(h.scale(), .25);
   h.layout.destroy();
@@ -620,15 +620,15 @@ test('resize projection ignores perpendicular movement and respects size and vie
   edge.pointer('pointerdown', edge.handles.se, { clientX: box.left + box.width, clientY: box.top + box.height });
   edge.pointer('pointerup', edge.window, { clientX: 10000, clientY: 10000 });
   close(edge.scale(), 1);
-  close(edge.left(), 784);
-  close(edge.top(), 484);
+  close(edge.left(), 800);
+  close(edge.top(), 500);
   edge.layout.destroy();
 });
 
 test('resizing a fitted price responds immediately to inward movement without a jump', () => {
   const h = harness({ viewport: { width: 320, height: 240 }, width: 600, saved: JSON.stringify({ version: 1, x: 0, y: 50, size: 200 }) });
   const box = h.position.getBoundingClientRect();
-  close(box.width, 288);
+  close(box.width, 320);
   const x = box.left + box.width, y = box.top + box.height;
   h.pointer('pointerdown', h.handles.se, { clientX: x, clientY: y });
   h.pointer('pointermove', h.window, { clientX: x - box.width * .2, clientY: y - box.height * .2 });
@@ -638,7 +638,7 @@ test('resizing a fitted price responds immediately to inward movement without a 
   close(smaller.left, box.left);
   close(smaller.top, box.top);
   h.pointer('pointerup', h.window, { clientX: x - box.width * .2, clientY: y - box.height * .2 });
-  close(h.saved.at(-1)!.size, 38.4);
+  close(h.saved.at(-1)!.size, 128 / 3);
   h.layout.destroy();
 });
 
@@ -653,7 +653,7 @@ test('Shift shrinks fitted prices immediately around their visible center', () =
   close(resized.height, box.height * .8);
   close(resized.left + resized.width / 2, box.left + box.width / 2);
   close(resized.top + resized.height / 2, box.top + box.height / 2);
-  close(h.saved.at(-1)!.size, 38.4);
+  close(h.saved.at(-1)!.size, 128 / 3);
   h.layout.destroy();
 });
 
@@ -679,9 +679,9 @@ test('keyboard position and handle controls move, resize, reset, and preserve na
   assert.equal(h.key(h.position, 'ArrowRight'), true);
   assert.equal(h.root.attributes.has('data-price-default'), false);
   assert.equal(h.reset.disabled, false);
-  close(h.left(), 415.36);
+  close(h.left(), 416);
   h.key(h.position, 'ArrowUp', { shiftKey: true });
-  close(h.top(), 203.2);
+  close(h.top(), 200);
   h.key(h.position, '+');
   close(h.scale(), 1.05);
   h.key(h.position, '=');
@@ -710,7 +710,7 @@ test('keyboard position and handle controls move, resize, reset, and preserve na
 
 test('Reset price restores centered default size from saved placement and persists it independently', () => {
   const h = harness({ saved: JSON.stringify({ version: 1, x: 0, y: 100, size: 150 }) });
-  assert.equal(h.left(), 16);
+  assert.equal(h.left(), 0);
   close(h.scale(), 1.5);
   h.position.click();
   h.key(h.position, 'Escape');
@@ -805,20 +805,20 @@ test('reset returns focus to the price when the reset control becomes disabled',
 
 test('resize observation fits oversized prices, recovers space, and avoids repeated geometry writes', () => {
   const h = harness({ viewport: { width: 320, height: 240 }, width: 600, saved: JSON.stringify({ version: 1, x: 100, y: 100, size: 200 }) });
-  close(Number(h.root.style.getPropertyValue('--video-price-fit')), .24);
-  close(h.left(), 16);
-  close(h.top(), 176);
+  close(Number(h.root.style.getPropertyValue('--video-price-fit')), 4 / 15);
+  close(h.left(), 0);
+  close(h.top(), 560 / 3);
   assert.deepEqual(h.observed, [h.position, h.stage]);
   h.resize({ width: 1280, height: 800 });
   close(Number(h.root.style.getPropertyValue('--video-price-fit')), 1);
-  close(h.left(), 64);
-  close(h.top(), 584);
+  close(h.left(), 80);
+  close(h.top(), 600);
   const writes = h.root.style.writes + h.position.style.writes;
   h.layout.refresh(); h.notifyObserver();
   assert.equal(h.root.style.writes + h.position.style.writes, writes);
   h.resizePrice(624, 384);
-  close(h.left(), 16);
-  close(h.top(), 16);
+  close(h.left(), 32);
+  close(h.top(), 32);
   assert.equal(Number.isFinite(h.left()), true);
   h.layout.destroy();
 });
@@ -926,4 +926,58 @@ test('Reset size restores default size and hides once the whole layout is back a
   h.layout.destroy();
   assert.equal(h.reset.textContent, 'Reset position');
   assert.equal(h.reset.title, 'Reset position');
+});
+
+test('hover margin keeps all four corner handles reachable without activating away from the price', () => {
+  for (const corner of ['nw', 'ne', 'sw', 'se'] as const) {
+    const h = harness();
+    const box = h.position.getBoundingClientRect();
+    const west = corner.endsWith('w'), north = corner.startsWith('n');
+    const x = box.left + (west ? 0 : box.width), y = box.top + (north ? 0 : box.height);
+    const rim = { pointerType: 'mouse', clientX: x + (west ? -20 : 20), clientY: y + (north ? -20 : 20) };
+    h.pointer('pointermove', h.outside, rim);
+    assert.equal(h.frame(), false, 'the margin alone must not reveal the frame');
+    h.pointer('pointerenter', h.position, { pointerType: 'mouse', clientX: x, clientY: y });
+    h.pointer('pointerleave', h.position, rim);
+    h.pointer('pointermove', h.outside, rim);
+    assert.equal(h.frame(), true, corner);
+    assert.equal(h.handles[corner].tabIndex, 0);
+    h.pointer('pointerdown', h.handles[corner], { ...rim, clientX: x, clientY: y });
+    h.pointer('pointerup', h.window, rim);
+    assert.equal(h.frame(), true, 'releasing on the outer handle area retains the frame');
+    const resized = h.position.getBoundingClientRect();
+    h.pointer('pointermove', h.outside, { pointerType: 'mouse', clientX: resized.left - 25, clientY: resized.top });
+    assert.equal(h.frame(), false, 'leaving the 24 px margin hides the frame');
+    h.root.dispatchEvent(new Event('videouidismiss'));
+    h.pointer('pointermove', h.outside, rim);
+    assert.equal(h.frame(), false);
+    h.layout.destroy();
+  }
+});
+
+test('resizing beyond twice the default size stops only at a screen edge and restores on reload', () => {
+  for (const corner of ['nw', 'ne', 'sw', 'se'] as const) {
+    const h = harness();
+    const box = h.position.getBoundingClientRect();
+    const west = corner.endsWith('w'), north = corner.startsWith('n');
+    const x = box.left + (west ? 0 : box.width), y = box.top + (north ? 0 : box.height);
+    const anchorX = box.left + (west ? box.width : 0), anchorY = box.top + (north ? box.height : 0);
+    h.pointer('pointerdown', h.handles[corner], { clientX: x, clientY: y });
+    h.pointer('pointerup', h.window, { clientX: west ? -10000 : 10000, clientY: north ? -10000 : 10000 });
+    const resized = h.position.getBoundingClientRect();
+    close(h.scale(), 3);
+    close(resized.left + (west ? resized.width : 0), anchorX);
+    close(resized.top + (north ? resized.height : 0), anchorY);
+    close(west ? resized.left : resized.left + resized.width, h.viewport.left + (west ? 0 : h.viewport.width));
+    const restored = harness({ saved: JSON.stringify(h.saved.at(-1)) });
+    close(restored.position.getBoundingClientRect().width, resized.width);
+    close(restored.left(), h.left());
+    h.layout.destroy(); restored.layout.destroy();
+  }
+  const h = harness();
+  for (let i = 0; i < 120; i++) h.key(h.position, '+');
+  close(h.position.getBoundingClientRect().width, h.viewport.width);
+  h.key(h.position, '-');
+  assert.ok(h.position.getBoundingClientRect().width < h.viewport.width, 'shrinking at the boundary responds immediately');
+  h.layout.destroy();
 });

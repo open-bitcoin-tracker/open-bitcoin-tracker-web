@@ -54,7 +54,7 @@ const locale = htmlLang(Astro.currentLocale);
           </div>
         </div>
         <div class="video-price-style" data-price-style>
-          <button type="button" class="video-style-reset" data-reset-price-style title={t.resetPriceStyle} disabled>{t.resetPriceStyle}</button>
+          <button type="button" class="video-style-reset" data-reset-price-style title={t.resetPriceStyle} hidden disabled>{t.resetPriceStyle}</button>
           <button type="button" class="video-style-trigger" data-price-style-trigger title={t.style} aria-expanded="false" aria-controls="video-price-style-panel" disabled>
             <span>{t.style}</span>
           </button>
@@ -166,7 +166,7 @@ const locale = htmlLang(Astro.currentLocale);
     font-weight: 400;
     font-display: swap;
   }
-  :global(html:has(.video-page)) { scrollbar-gutter: auto; background: #080808; }
+  :global(html:has(.video-page)) { overflow: hidden; scrollbar-gutter: auto; background: #080808; }
   :global(body:has(.video-page)) { background: #080808; color: #fff; }
   :global(body:has(.video-page) .nav-menu-trigger) { color: #fff; background: rgb(16 16 16 / .65); box-shadow: none; backdrop-filter: blur(12px); }
   :global(body:has(.video-page) .lang-menu), :global(body:has(.video-page) .theme-menu) { border: 0; }
@@ -187,9 +187,12 @@ const locale = htmlLang(Astro.currentLocale);
   .video-icon-button { width: var(--menu-control-size); height: var(--menu-control-size); display: grid; place-items: center; border: 0; background: rgb(16 16 16 / .65); backdrop-filter: blur(12px); border-radius: 50%; color: #fff; }
   .video-icon-button:hover { background: rgb(50 50 50 / .85); }
   .video-currency { position: relative; height: var(--menu-control-size); }
-  .video-price-style { position: fixed; display: flex; align-items: stretch; gap: .65rem; width: max-content; max-width: calc(100vw - 2rem); z-index: 4; opacity: 0; visibility: hidden; pointer-events: none; transition: opacity .15s ease, visibility .15s; text-align: left; }
+  .video-price-style { position: fixed; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); align-items: start; gap: .65rem; width: min(30rem, calc(100vw - 2rem)); z-index: 4; opacity: 0; visibility: hidden; pointer-events: none; transition: opacity .15s ease, visibility .15s; text-align: left; }
   .video-page[data-price-layout-ready] .video-price-style { opacity: 1; visibility: visible; pointer-events: auto; }
-  .video-style-reset, .video-style-trigger, .video-reset-price { display: flex; align-items: center; justify-content: center; flex: 1 1 auto; min-width: 0; min-height: 3.25rem; line-height: 1.25; padding: .75rem 1.25rem; border: 0; border-radius: 999px; background: rgb(16 16 16 / .85); backdrop-filter: blur(12px); color: #fff; font-size: 1rem; font-weight: 600; }
+  .video-style-reset, .video-style-trigger, .video-reset-price { display: flex; align-items: center; justify-content: center; grid-row: 1; justify-self: center; min-width: 0; max-width: 100%; min-height: 3.25rem; line-height: 1.25; padding: .75rem 1.25rem; border: 0; border-radius: 999px; background: rgb(16 16 16 / .85); backdrop-filter: blur(12px); color: #fff; font-size: 1rem; font-weight: 600; overflow-wrap: anywhere; }
+  .video-style-reset { grid-column: 1; }
+  .video-style-trigger { grid-column: 2; }
+  .video-reset-price { grid-column: 3; }
   .video-style-reset:hover:enabled, .video-style-trigger:hover, .video-reset-price:hover, .video-style-trigger[aria-expanded="true"] { background: rgb(50 50 50 / .85); }
   .video-style-panel { position: fixed; width: min(260px, calc(100vw - 2rem)); max-height: calc(100svh - 2rem); overflow-y: auto; padding: 1rem; border: 0; border-radius: 14px; background: rgb(16 16 16 / .95); backdrop-filter: blur(16px); box-shadow: 0 8px 40px #0005; font-size: .8rem; }
   .video-style-row { display: flex; align-items: center; justify-content: space-between; gap: .75rem; }

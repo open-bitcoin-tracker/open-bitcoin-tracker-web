@@ -1,5 +1,6 @@
 const STORAGE_KEY = 'obt-video-price-layout';
-const PADDING = 16;
+const PADDING = 0;
+const HOVER_PADDING = 24;
 const SNAP_DISTANCE = 8;
 const SNAP_RELEASE_DISTANCE = 16;
 const CLICK_DRAG_DISTANCE = 4;
@@ -43,7 +44,7 @@ export function createVideoPriceLayout(root: HTMLElement) {
   try {
     const saved = JSON.parse(window.localStorage.getItem(STORAGE_KEY) ?? 'null');
     if (saved?.version === 1 && ['x', 'y', 'size'].every(axis => typeof saved[axis] === 'number' && Number.isFinite(saved[axis]))) {
-      state = { version: 1, x: clamp(saved.x, 0, 100), y: clamp(saved.y, 0, 100), size: clamp(saved.size, 25, 200) };
+      state = { version: 1, x: clamp(saved.x, 0, 100), y: clamp(saved.y, 0, 100), size: Math.max(25, saved.size) };
     }
   } catch { /* Positioning remains available with blocked or invalid storage. */ }
 
@@ -91,8 +92,8 @@ export function createVideoPriceLayout(root: HTMLElement) {
       const { viewport, box } = geometry();
       const ratio = Math.min(box.width > 0 ? Math.max(0, viewport.width - PADDING * 2) / box.width : 1,
         box.height > 0 ? Math.max(0, viewport.height - PADDING * 2) / box.height : 1);
-      const next = clamp(fit * ratio, .01, 1);
-      if (Math.abs(next - fit) <= .001) break;
+      const next = clamp(fit * ratio, Number.MIN_VALUE, 1);
+      if (Math.abs(next - fit) <= fit * .000001) break;
       fit = next;
       root.style.setProperty('--video-price-fit', String(fit));
     }
@@ -133,6 +134,11 @@ export function createVideoPriceLayout(root: HTMLElement) {
     root.toggleAttribute('data-price-layout-open', visible);
     for (const handle of handles) handle.tabIndex = visible ? 0 : -1;
   }
+  function withinHoverZone(event: PointerEvent) {
+    const box = position.getBoundingClientRect();
+    return event.clientX >= box.left - HOVER_PADDING && event.clientX <= box.left + box.width + HOVER_PADDING
+      && event.clientY >= box.top - HOVER_PADDING && event.clientY <= box.top + box.height + HOVER_PADDING;
+  }
   function revealFrame() {
     if (destroyed) return;
     setFrame(!dismissed && !document.hidden && (hovered || touchEditing || !!operation || keyboardFocus()));
@@ -153,7 +159,7 @@ export function createVideoPriceLayout(root: HTMLElement) {
     const maxHeight = resizing.centered ? Math.min(resizing.anchorY - PADDING, viewport.height - PADDING - resizing.anchorY) * 2
       : north ? resizing.anchorY - PADDING : viewport.height - PADDING - resizing.anchorY;
     const maxRatio = Math.max(0, Math.min(resizing.width > 0 ? maxWidth / resizing.width : 1, resizing.height > 0 ? maxHeight / resizing.height : 1));
-    state.size = clamp(resizing.effectiveSize * Math.min(maxRatio, Math.max(0, ratio)), 25, 200);
+    state.size = Math.max(25, resizing.effectiveSize * Math.min(maxRatio, Math.max(0, ratio)));
     refresh();
     const box = position.getBoundingClientRect();
     place(resizing.anchorX - box.width * (resizing.centered ? .5 : west ? 1 : 0),
@@ -235,10 +241,11 @@ export function createVideoPriceLayout(root: HTMLElement) {
   };
   listen(position, 'pointerenter', hover as EventListener);
   listen(position, 'pointermove', hover as EventListener);
-  listen(position, 'pointerleave', () => {
-    hovered = false;
+  listen(position, 'pointerleave', ((event: PointerEvent) => {
+    if (event.pointerType === 'touch') return;
+    hovered = hovered && withinHoverZone(event);
     revealFrame();
-  });
+  }) as EventListener);
   listen(position, 'pointerdown', ((event: PointerEvent) => {
     if (inStyle(event.target)) return;
     if (operation || !event.isPrimary || event.button !== 0) return;
@@ -275,7 +282,7 @@ export function createVideoPriceLayout(root: HTMLElement) {
     if (event.pointerType !== 'touch') {
       lastInput = 'pointer';
       touchEditing = false;
-      if (!position.contains(event.target as Node | null)) hovered = false;
+      if (!position.contains(event.target as Node | null)) hovered = hovered && withinHoverZone(event);
       revealFrame();
     }
     move(event);
@@ -284,9 +291,7 @@ export function createVideoPriceLayout(root: HTMLElement) {
     if (operation?.pointerId !== event.pointerId) return;
     move(event);
     if (event.pointerType !== 'touch') {
-      const box = position.getBoundingClientRect();
-      hovered = event.clientX >= box.left && event.clientX <= box.left + box.width
-        && event.clientY >= box.top && event.clientY <= box.top + box.height;
+      hovered = withinHoverZone(event);
     }
     finish();
   }) as EventListener);
@@ -340,8 +345,8 @@ export function createVideoPriceLayout(root: HTMLElement) {
         case 'ArrowRight': state.x = clamp(state.x + step, 0, 100); break;
         case 'ArrowUp': state.y = clamp(state.y - step, 0, 100); break;
         case 'ArrowDown': state.y = clamp(state.y + step, 0, 100); break;
-        case '+': case '=': state.size = clamp(state.size * fit + 5, 25, 200); break;
-        case '-': state.size = clamp(state.size * fit - 5, 25, 200); break;
+        case '+': case '=': state.size = Math.max(25, state.size * fit + 5); break;
+        case '-': state.size = Math.max(25, state.size * fit - 5); break;
         case 'Home': event.preventDefault(); reset(); return;
         default: return;
       }

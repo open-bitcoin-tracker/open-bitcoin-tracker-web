@@ -64,7 +64,7 @@ export function createVideoPriceStyle(root: HTMLElement, refreshLayout: () => vo
     strokeOptions.hidden = !state.stroke;
     strokeWidth.disabled = strokeColour.disabled = !state.stroke;
     for (const swatch of swatches) swatch.setAttribute('aria-pressed', String(swatch.dataset.priceSwatch === state.colour));
-    reset.disabled = state.colour === DEFAULTS.colour && state.font === DEFAULTS.font && !state.stroke
+    reset.hidden = reset.disabled = state.colour === DEFAULTS.colour && state.font === DEFAULTS.font && !state.stroke
       && state.strokeWidth === DEFAULTS.strokeWidth && state.strokeColour === DEFAULTS.strokeColour;
     refreshLayout();
     anchor();
@@ -73,7 +73,8 @@ export function createVideoPriceStyle(root: HTMLElement, refreshLayout: () => vo
   function anchor() {
     if (destroyed) return;
     const box = position.getBoundingClientRect();
-    const width = wrapper.offsetWidth, height = wrapper.offsetHeight;
+    // Reserve both side columns; only Edit style determines the vertical anchor.
+    const width = wrapper.offsetWidth, height = trigger.offsetHeight;
     const gap = 10, padding = 16;
     const clamp = (value: number, maximum: number) => Math.max(padding, Math.min(value, maximum));
     const centre = box.left + box.width / 2;
@@ -167,7 +168,7 @@ export function createVideoPriceStyle(root: HTMLElement, refreshLayout: () => vo
     const restoreFocus = document.activeElement === reset;
     state = { ...DEFAULTS };
     save();
-    // Reset disables itself, so return focus to the neighboring visible control.
+    // Reset hides itself, so return focus to the neighboring visible control.
     if (restoreFocus) trigger.focus();
   });
   panel.hidden = true;

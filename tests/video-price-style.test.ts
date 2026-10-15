@@ -93,6 +93,7 @@ test('style controls preview choices immediately, save them, and restore them on
   assert.equal(h.trigger.disabled, false);
   assert.equal(h.panel.hidden, true);
   assert.equal(h.reset.disabled, true);
+  assert.equal(h.reset.hidden, true);
   assert.equal(h.colour.value, '#ffffff');
   assert.equal(h.font.value, 'modern');
   assert.equal(h.writes(), 0);
@@ -106,6 +107,7 @@ test('style controls preview choices immediately, save them, and restore them on
   assert.match(h.root.style.values.get('--video-price-font')!, /Georgia/);
   assert.ok(h.refreshes() > 1, 'font changes must re-fit the price within the viewport');
   assert.equal(h.reset.disabled, false);
+  assert.equal(h.reset.hidden, false);
   const restored = harness({ saved: h.saved() });
   assert.equal(restored.colour.value, '#ab12cd');
   assert.equal(restored.font.value, 'serif');
@@ -115,6 +117,7 @@ test('style controls preview choices immediately, save them, and restore them on
   assert.equal(restored.colour.value, '#ffffff');
   assert.equal(restored.font.value, 'modern');
   assert.equal(restored.reset.disabled, true);
+  assert.equal(restored.reset.hidden, true);
   assert.notEqual(restored.document.activeElement, restored.font);
   assert.deepEqual(JSON.parse(restored.saved()!), { version: 1, colour: '#ffffff', font: 'modern', stroke: false, strokeWidth: 1, strokeColour: '#000000' });
   h.style.destroy(); restored.style.destroy();
@@ -230,6 +233,7 @@ test('Reset style works with the panel closed and returns focus to Edit style', 
   h.reset.focus();
   h.reset.dispatchEvent(Object.assign(new Event('click'), { detail: 0 }));
   assert.equal(h.reset.disabled, true);
+  assert.equal(h.reset.hidden, true);
   assert.equal(h.panel.hidden, true);
   assert.equal(h.document.activeElement, h.trigger);
   assert.equal(h.stroke.checked, false);
@@ -265,19 +269,39 @@ test('Style moves above the price when its usual position would cover playback o
   h.style.destroy();
 });
 
-test('the full price button row stays on screen and avoids playback controls after reset appears', () => {
+test('side reset controls do not shift the Edit style anchor, including above the price', () => {
   const h = harness();
   h.wrapper.offsetWidth = 330;
   h.wrapper.offsetHeight = 72;
   h.position.box = { left: 900, top: 450, width: 80, height: 120, bottom: 570 };
   h.root.dispatchEvent(new Event('pricelayoutchange'));
   assert.equal(h.wrapper.style.values.get('left'), '654px');
-  assert.equal(h.wrapper.style.values.get('top'), '368px');
+  assert.equal(h.wrapper.style.values.get('top'), '396px');
+  h.wrapper.offsetHeight = 100;
+  h.root.dispatchEvent(new Event('pricelayoutchange'));
+  assert.equal(h.wrapper.style.values.get('left'), '654px');
+  assert.equal(h.wrapper.style.values.get('top'), '396px', 'taller reset labels must not move Edit style');
   h.position.box = { left: 300, top: 200, width: 400, height: 100, bottom: 300 };
   h.dock.box = { left: 600, top: 310, width: 300, height: 160, bottom: 470 };
   h.root.selectors.set('.video-dock', h.dock);
   h.root.dispatchEvent(new Event('pricelayoutchange'));
   assert.equal(h.root.hasAttribute('data-price-style-above'), true, 'reset beside Edit style must also avoid the dock');
-  assert.equal(h.wrapper.style.values.get('top'), '118px');
+  assert.equal(h.wrapper.style.values.get('top'), '146px');
+  h.style.destroy();
+});
+
+test('Reset style appears only for changed styles, including manual return to defaults', () => {
+  const h = harness();
+  assert.equal(h.reset.hidden, true);
+  h.swatches[1].click();
+  assert.equal(h.reset.hidden, false);
+  h.swatches[0].click();
+  assert.equal(h.reset.hidden, true);
+  h.changeFont('serif');
+  assert.equal(h.reset.hidden, false);
+  h.reset.focus();
+  h.reset.click();
+  assert.equal(h.reset.hidden, true);
+  assert.equal(h.document.activeElement, h.trigger);
   h.style.destroy();
 });
