@@ -17,7 +17,12 @@ const t = useTranslations(Astro.currentLocale);
   <main id="main-content" class="landing-main">
     <div class="landing-content">
       <header class="landing-brand">
-        <h1 lang="en" class="brand-name">Open Bitcoin Tracker</h1>
+        <h1 lang="en" class="brand-name" aria-label="Open Bitcoin Tracker">
+          <button class="brand-trigger" type="button" data-brand-toggle aria-label="Open Bitcoin Tracker" aria-expanded="false">
+            <img class="brand-icon" src="/app-icon.png" width="96" height="96" alt="" />
+            <span class="brand-wordmark" aria-hidden="true"><span class="brand-word">O<span class="brand-reveal"><span>pen&nbsp;</span></span></span><span class="brand-word">B<span class="brand-reveal"><span>itcoin&nbsp;</span></span></span><span class="brand-word">T<span class="brand-reveal"><span>racker</span></span></span></span>
+          </button>
+        </h1>
       </header>
       <div class="landing-options">
         <a class="landing-option" href={getRelativeLocaleUrl(lang, 'price-tracker')}>
@@ -91,6 +96,26 @@ const t = useTranslations(Astro.currentLocale);
   </main>
 </Layout>
 
+<script>
+  const brand = document.querySelector<HTMLButtonElement>('[data-brand-toggle]');
+  if (brand) {
+    const mobile = window.matchMedia('(max-width: 700px)');
+    const hover = window.matchMedia('(hover: hover)');
+    const usesHover = () => !mobile.matches && hover.matches;
+    const expand = (expanded: boolean) => brand.setAttribute('aria-expanded', String(expanded));
+    brand.addEventListener('pointerenter', () => { if (usesHover()) expand(true); });
+    brand.addEventListener('pointerleave', () => { if (usesHover() && !brand.matches(':focus-visible')) expand(false); });
+    brand.addEventListener('focus', () => { if (usesHover() && brand.matches(':focus-visible')) expand(true); });
+    brand.addEventListener('blur', () => expand(usesHover() && brand.matches(':hover')));
+    brand.addEventListener('click', () => {
+      if (!usesHover()) expand(brand.getAttribute('aria-expanded') !== 'true');
+    });
+    brand.addEventListener('keydown', (event) => { if (event.key === 'Escape') expand(false); });
+    mobile.addEventListener('change', () => expand(false));
+    hover.addEventListener('change', () => expand(false));
+  }
+</script>
+
 <style>
   .landing-main {
     display: grid;
@@ -101,7 +126,15 @@ const t = useTranslations(Astro.currentLocale);
   }
   .landing-content { width: 100%; max-width: 72rem; }
   .landing-brand { container-type: inline-size; margin-bottom: clamp(2rem, 4vw, 3rem); text-align: center; }
-  h1 { min-width: 0; max-width: 100%; font-size: clamp(2rem, 9cqi, 6.5rem); line-height: 1.06; letter-spacing: -.015em; white-space: normal; }
+  h1 { display: inline-flex; min-width: 0; max-width: 100%; font-size: clamp(2rem, 8.4cqi, 6.5rem); line-height: 1.06; letter-spacing: -.015em; white-space: nowrap; }
+  .brand-trigger { display: inline-flex; align-items: center; gap: .22em; border-radius: .1em; font: inherit; letter-spacing: inherit; text-transform: inherit; cursor: pointer; }
+  .brand-icon { flex: none; width: .8em; height: .8em; }
+  .brand-wordmark, .brand-word { display: inline-flex; }
+  /* Center the visible capitals, accounting for the wordmark font's descent. */
+  .brand-wordmark { transform: translateY(-.05em); }
+  .brand-reveal { display: inline-grid; grid-template-columns: 0fr; opacity: 0; transition: grid-template-columns 550ms cubic-bezier(.22, 1, .36, 1), opacity 350ms ease; }
+  .brand-reveal > span { min-width: 0; overflow: hidden; }
+  .brand-trigger[aria-expanded="true"] .brand-reveal { grid-template-columns: 1fr; opacity: 1; }
   .landing-options { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1.25rem; }
   .landing-option {
     position: relative;
@@ -154,7 +187,10 @@ const t = useTranslations(Astro.currentLocale);
     }
     .landing-main { align-items: start; padding: var(--menu-control-top) var(--landing-gutter) max(2rem, env(safe-area-inset-bottom, 0px)); }
     .landing-brand { display: flex; align-items: center; min-height: var(--menu-control-size); padding-right: calc(var(--menu-control-size) + .75rem); margin-bottom: 1.5rem; text-align: left; }
-    h1 { font-size: clamp(1rem, calc(100cqi / 9.3), 3.25rem); white-space: nowrap; }
+    h1 { font-size: calc(var(--menu-control-size) * 1.25); transition: font-size 550ms cubic-bezier(.22, 1, .36, 1); }
+    h1:has(.brand-trigger[aria-expanded="true"]) { font-size: clamp(1rem, calc((100cqi - var(--menu-control-size)) / 8.5), 3.25rem); }
+    .brand-trigger { height: var(--menu-control-size); }
+    .brand-icon { width: var(--menu-control-size); height: var(--menu-control-size); }
     .landing-options { gap: 1.25rem; }
     .landing-option { border-radius: 20px; box-shadow: var(--shadow-card); }
     /* Keep the whole illustration visible instead of cropping it into a strip. */
@@ -171,6 +207,7 @@ const t = useTranslations(Astro.currentLocale);
     .option-copy { padding: 1.125rem; }
   }
   @media (prefers-reduced-motion: reduce) {
+    h1, .brand-reveal { transition: none; }
     .landing-option { transition: none; }
     .landing-option:hover { transform: none; }
   }
