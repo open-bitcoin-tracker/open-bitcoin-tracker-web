@@ -2,12 +2,11 @@ const IDLE_DELAY = 1200;
 const INTERACTIVE = 'button, input, select, textarea, a, [role="button"], [role="dialog"], [data-price-style], [data-price-position], [data-video-form]';
 const EDITABLE_CONTROL = 'input:not([type="range"]), textarea, [contenteditable]:not([contenteditable="false"]), [role="textbox"], [role="combobox"]';
 
-/** Hide Video Mode's interface while a cursor is idle, keeping active controls usable. */
+/** Hide Video Mode's interface after inactivity, keeping active controls usable. */
 export function createVideoControls(root: HTMLElement) {
   const cursor = window.matchMedia('(hover: hover) and (pointer: fine)');
   let enabled = false;
   let destroyed = false;
-  let touch = false;
   let lastInput: 'keyboard' | 'pointer' | undefined;
   let openSelect: Element | null = null;
   let timer: number | undefined;
@@ -21,7 +20,7 @@ export function createVideoControls(root: HTMLElement) {
   }
 
   function canFade() {
-    if (!enabled || !cursor.matches || touch || document.hidden) return false;
+    if (!enabled || document.hidden) return false;
     if (root.hasAttribute('data-currency-open')) return false;
     if (root.hasAttribute('data-price-style-open')) return false;
     if (root.hasAttribute('data-price-dragging')) return false;
@@ -58,15 +57,14 @@ export function createVideoControls(root: HTMLElement) {
 
   function handlePointerMove(event: PointerEvent) {
     if (event.pointerType === 'touch') return;
-    touch = false;
     manuallyHidden = false;
     reveal();
   }
 
   function handlePointerDown(event: PointerEvent) {
     lastInput = 'pointer';
-    touch = event.pointerType === 'touch';
-    revealedByTouch = touch && manuallyHidden;
+    const touch = event.pointerType === 'touch';
+    revealedByTouch = touch && (manuallyHidden || root.hasAttribute('data-ui-idle'));
     if (touch) manuallyHidden = false;
     const select = (event.target as Element | null)?.closest?.('select');
     openSelect = select && root.contains(select) ? select : null;
@@ -81,7 +79,7 @@ export function createVideoControls(root: HTMLElement) {
   }
 
   function handleClick(event: MouseEvent) {
-    if (destroyed) return;
+    if (destroyed || event.defaultPrevented) return;
     if (revealedByTouch) { revealedByTouch = false; return; }
     const target = event.target as Element | null;
     if (target?.closest?.('[data-price-position], [data-price-style]')) return;

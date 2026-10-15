@@ -80,6 +80,11 @@ function harness({ saved, blocked = false }: { saved?: string; blocked?: boolean
     changeColour(value: string) { colour.value = value; colour.dispatchEvent(new Event('input')); },
     changeFont(value: string) { font.value = value; font.dispatchEvent(new Event('change')); },
     outside() { document.dispatchEvent(eventFor('pointerdown', new Element())); },
+    documentClick(target = new Element()) {
+      const event = eventFor('click', target);
+      document.dispatchEvent(event);
+      return event;
+    },
     escape() {
       const event = Object.assign(eventFor('keydown', font), { key: 'Escape' });
       wrapper.dispatchEvent(event);
@@ -331,5 +336,23 @@ test('Reset style appears only for changed styles, including manual return to de
   h.reset.click();
   assert.equal(h.reset.hidden, true);
   assert.equal(h.document.activeElement, h.trigger);
+  h.style.destroy();
+});
+
+
+test('outside pointer dismissal consumes exactly its following click before playback can handle it', () => {
+  const h = harness();
+  h.trigger.click();
+  h.outside();
+  h.position.focus();
+  assert.equal(h.panel.hidden, true);
+  const dismissal = h.documentClick();
+  assert.equal(dismissal.defaultPrevented, true);
+  assert.equal(dismissal.cancelBubble, true, 'dismissal must stop before reaching background playback handlers');
+  assert.equal(h.documentClick().defaultPrevented, false, 'later ordinary clicks are not swallowed');
+  h.trigger.click();
+  const inside = h.documentClick(h.font);
+  assert.equal(inside.defaultPrevented, false);
+  assert.equal(h.panel.hidden, false, 'inside controls keep their normal click behavior');
   h.style.destroy();
 });

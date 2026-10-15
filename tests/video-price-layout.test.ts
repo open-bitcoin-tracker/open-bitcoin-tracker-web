@@ -104,6 +104,7 @@ function harness(options: Options = {}) {
   let naturalWidth = options.width ?? 200;
   let naturalHeight = options.height ?? 100;
   stage.rect = () => ({ ...viewport });
+  style.rect = () => ({ left: viewport.left + 260, top: viewport.top + 180, width: 480, height: 52 });
   position.rect = () => {
     const scale = Number(root.style.getPropertyValue('--video-price-scale') || 1);
     const fit = Number(root.style.getPropertyValue('--video-price-fit') || 1);
@@ -111,6 +112,7 @@ function harness(options: Options = {}) {
   };
   root.selectors.set('[data-price-stage]', stage);
   root.selectors.set('[data-price-position]', position);
+  root.selectors.set('[data-price-style]', style);
   root.selectors.set('[data-reset-price]', reset);
   const saved: { version: number; x: number; y: number; size: number }[] = [];
   let now = 0;
@@ -138,7 +140,7 @@ function harness(options: Options = {}) {
   runInNewContext(script, { exports: module, window, document, Event, ResizeObserver: options.observer === false ? undefined : Observer });
   const layout = module.createVideoPriceLayout!(root as unknown as HTMLElement);
   return {
-    root, stage, position, reset, handles, document, window, outside, saved, layout, viewport, observed, timers,
+    root, stage, position, style, reset, handles, document, window, outside, saved, layout, viewport, observed, timers,
     notifications: () => notifications,
     disconnects: () => disconnects,
     left: () => Number.parseFloat(position.style.left), top: () => Number.parseFloat(position.style.top),
@@ -237,7 +239,7 @@ test('UI dismissal hides the frame until the next price hover or keyboard intera
   h.pointer('pointerleave', h.position);
   h.root.setAttribute('data-price-style-open', '');
   h.root.dispatchEvent(new Event('pricestyletoggle'));
-  assert.equal(h.frame(), false, 'the style panel does not reveal position handles');
+  assert.equal(h.frame(), true, 'an open style panel keeps the frame and editing buttons visible');
   h.layout.destroy();
 });
 
@@ -946,8 +948,8 @@ test('hover margin keeps all four corner handles reachable without activating aw
     h.pointer('pointerup', h.window, rim);
     assert.equal(h.frame(), true, 'releasing on the outer handle area retains the frame');
     const resized = h.position.getBoundingClientRect();
-    h.pointer('pointermove', h.outside, { pointerType: 'mouse', clientX: resized.left - 25, clientY: resized.top });
-    assert.equal(h.frame(), false, 'leaving the 24 px margin hides the frame');
+    h.pointer('pointermove', h.outside, { pointerType: 'mouse', clientX: resized.left - 25, clientY: resized.top + resized.height + 97 });
+    assert.equal(h.frame(), false, 'leaving both price and button safe zones hides the frame');
     h.root.dispatchEvent(new Event('videouidismiss'));
     h.pointer('pointermove', h.outside, rim);
     assert.equal(h.frame(), false);
@@ -979,5 +981,49 @@ test('resizing beyond twice the default size stops only at a screen edge and res
   close(h.position.getBoundingClientRect().width, h.viewport.width);
   h.key(h.position, '-');
   assert.ok(h.position.getBoundingClientRect().width < h.viewport.width, 'shrinking at the boundary responds immediately');
+  h.layout.destroy();
+});
+
+
+test('vertical hover space and the full button row keep price editing reachable', () => {
+  const h = harness();
+  const box = h.position.getBoundingClientRect();
+  h.style.rect = () => ({ left: box.left - 120, top: box.top - 70, width: 440, height: 60 });
+  for (const y of [box.top - 90, box.top + box.height + 90]) {
+    h.pointer('pointerenter', h.position, { pointerType: 'mouse' });
+    const point = { clientX: box.left + 50, clientY: y, pointerType: 'mouse' };
+    h.pointer('pointerleave', h.position, point);
+    h.pointer('pointermove', h.outside, point);
+    assert.equal(h.frame(), true, '96 px above and below the price remains safe');
+  }
+  h.pointer('pointermove', h.outside, { clientX: box.left - 100, clientY: box.top - 50, pointerType: 'mouse' });
+  assert.equal(h.frame(), true, 'outer reset buttons remain reachable even for a narrow price');
+  h.pointer('pointermove', h.outside, { clientX: box.left, clientY: box.top + box.height + 97, pointerType: 'mouse' });
+  assert.equal(h.frame(), false);
+  h.layout.destroy();
+});
+
+test('keyboard focus can move from the price into its controls and leave them normally', () => {
+  const h = harness();
+  h.focus(h.position);
+  h.focus(h.reset);
+  assert.equal(h.frame(), true, 'Tab to an editing button must keep it visible');
+  h.style.dispatchEvent(Object.assign(new Event('focusout'), { relatedTarget: h.outside }));
+  assert.equal(h.frame(), false);
+  h.root.setAttribute('data-price-style-open', '');
+  h.root.dispatchEvent(new Event('pricestyletoggle'));
+  assert.equal(h.frame(), true, 'the expanded style editor keeps the editing group visible');
+  h.root.dispatchEvent(new Event('videouidismiss'));
+  assert.equal(h.frame(), false, 'idle or manual dismissal still hides the frame');
+  h.layout.destroy();
+});
+
+
+test('switching from keyboard focus to the pointer over an editing button keeps it clickable', () => {
+  const h = harness();
+  h.focus(h.position);
+  const row = h.style.getBoundingClientRect();
+  h.pointer('pointermove', h.reset, { pointerType: 'mouse', clientX: row.left + 20, clientY: row.top + 20 });
+  assert.equal(h.frame(), true, 'switching input methods must not hide the button under the cursor');
   h.layout.destroy();
 });

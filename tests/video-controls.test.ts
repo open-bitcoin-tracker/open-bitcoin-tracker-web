@@ -217,8 +217,8 @@ test('touch background dismissal can be reversed with a second tap', () => {
   h.root.addEventListener('videouidismiss', () => h.root.removeAttribute('data-price-layout-open'));
   h.root.addEventListener('videouireveal', () => h.root.setAttribute('data-price-layout-open', ''));
   h.controls.setEnabled(true);
-  h.tick(10000);
-  assert.equal(h.root.hasAttribute('data-price-layout-open'), true, 'the frame stays with touch controls');
+  h.tick(1000);
+  assert.equal(h.root.hasAttribute('data-price-layout-open'), true, 'the frame stays until the idle delay');
   h.pointer('pointerdown', 'touch', h.background);
   h.click();
   assert.equal(h.idle(), true);
@@ -401,27 +401,27 @@ test('a visible price frame does not delay the normal idle timeout', () => {
   h.controls.destroy();
 });
 
-test('touch devices and touch interaction keep controls visible until a cursor is used', () => {
-  const h = harness({ finePointer: false });
-  h.controls.setEnabled(true);
-  h.pointer('pointermove', 'touch');
-  h.tick(10000);
-  assert.equal(h.idle(), false);
-  assert.equal(h.timers.size, 0);
-  h.device(true);
-  h.tick(1200);
-  assert.equal(h.idle(), true);
-  h.pointer('pointerdown', 'touch');
-  h.tick(10000);
-  assert.equal(h.idle(), false);
-  assert.equal(h.timers.size, 0);
-  h.pointer('pointermove');
-  h.tick(1200);
-  assert.equal(h.idle(), true);
-  h.device(false);
-  assert.equal(h.idle(), false);
-  assert.equal(h.timers.size, 0);
-  h.controls.destroy();
+test('touch devices fade after the same idle delay and a tap reveals the UI for a fresh delay', () => {
+  for (const finePointer of [false, true]) {
+    const h = harness({ finePointer });
+    h.controls.setEnabled(true);
+    h.tick(1199);
+    assert.equal(h.idle(), false);
+    h.tick(1);
+    assert.equal(h.idle(), true);
+    h.pointer('pointerdown', 'touch', h.background);
+    h.click();
+    assert.equal(h.idle(), false, 'a tap reveals idle controls without immediately dismissing them again');
+    h.tick(1199);
+    assert.equal(h.idle(), false);
+    h.tick(1);
+    assert.equal(h.idle(), true);
+    h.pointer('pointerdown', 'touch', h.button);
+    h.focus({ visible: true });
+    h.tick(1200);
+    assert.equal(h.idle(), true, 'touch focus must not permanently pin the UI');
+    h.controls.destroy();
+  }
 });
 
 test('opening navigation outside the page root protects controls and closing restarts idle', () => {

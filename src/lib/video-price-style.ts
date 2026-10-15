@@ -29,6 +29,7 @@ export function createVideoPriceStyle(root: HTMLElement, refreshLayout: () => vo
   let state = { ...DEFAULTS };
   let open = false;
   let destroyed = false;
+  let dismissingPointerClick = false;
 
   try {
     const saved = JSON.parse(window.localStorage.getItem(STORAGE_KEY) ?? 'null');
@@ -41,9 +42,9 @@ export function createVideoPriceStyle(root: HTMLElement, refreshLayout: () => vo
     }
   } catch { /* Styling remains available when browser storage is blocked or malformed. */ }
 
-  function listen(target: EventTarget, type: string, listener: EventListener) {
-    target.addEventListener(type, listener);
-    removeListeners.push(() => target.removeEventListener(type, listener));
+  function listen(target: EventTarget, type: string, listener: EventListener, capture = false) {
+    target.addEventListener(type, listener, capture);
+    removeListeners.push(() => target.removeEventListener(type, listener, capture));
   }
 
   function paint() {
@@ -125,7 +126,17 @@ export function createVideoPriceStyle(root: HTMLElement, refreshLayout: () => vo
   const dismissOutside = (event: Event) => {
     if (!wrapper.contains(event.target as Node | null)) close();
   };
-  listen(document, 'pointerdown', dismissOutside);
+  listen(document, 'pointerdown', event => {
+    dismissingPointerClick = open && !wrapper.contains(event.target as Node | null);
+    if (dismissingPointerClick) close();
+  }, true);
+  // Consume the dismissal click before playback or other controls can handle it.
+  listen(document, 'click', event => {
+    if (!dismissingPointerClick) return;
+    dismissingPointerClick = false;
+    event.preventDefault();
+    event.stopPropagation();
+  }, true);
   listen(document, 'focusin', dismissOutside);
   listen(root, 'currencytoggle', () => { if (root.hasAttribute('data-currency-open')) close(); });
   listen(root, 'videouidismiss', () => close());

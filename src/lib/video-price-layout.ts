@@ -1,6 +1,7 @@
 const STORAGE_KEY = 'obt-video-price-layout';
 const PADDING = 0;
 const HOVER_PADDING = 24;
+const HOVER_VERTICAL_PADDING = 96;
 const SNAP_DISTANCE = 8;
 const SNAP_RELEASE_DISTANCE = 16;
 const CLICK_DRAG_DISTANCE = 4;
@@ -17,6 +18,7 @@ type Operation = { pointerId: number; capture: HTMLElement; clientX: number; cli
 export function createVideoPriceLayout(root: HTMLElement) {
   const stage = root.querySelector<HTMLElement>('[data-price-stage]')!;
   const position = root.querySelector<HTMLElement>('[data-price-position]')!;
+  const styleControls = root.querySelector<HTMLElement>('[data-price-style]')!;
   const resetButton = root.querySelector<HTMLButtonElement>('[data-reset-price]')!;
   const handles = [...position.querySelectorAll<HTMLButtonElement>('[data-price-resize]')];
   const original = {
@@ -125,7 +127,7 @@ export function createVideoPriceLayout(root: HTMLElement) {
   }
   function keyboardFocus() {
     const active = document.activeElement;
-    return lastInput !== 'pointer' && !!active && position.contains(active) && active.matches(':focus-visible');
+    return lastInput !== 'pointer' && !!active && (position.contains(active) || styleControls.contains(active)) && active.matches(':focus-visible');
   }
   const inStyle = (target: EventTarget | null) => !!(target as Element | null)?.closest?.('[data-price-style]');
   function setFrame(visible: boolean) {
@@ -136,12 +138,16 @@ export function createVideoPriceLayout(root: HTMLElement) {
   }
   function withinHoverZone(event: PointerEvent) {
     const box = position.getBoundingClientRect();
-    return event.clientX >= box.left - HOVER_PADDING && event.clientX <= box.left + box.width + HOVER_PADDING
-      && event.clientY >= box.top - HOVER_PADDING && event.clientY <= box.top + box.height + HOVER_PADDING;
+    const controls = styleControls.getBoundingClientRect();
+    const inside = (left: number, top: number, width: number, height: number, verticalPadding: number) =>
+      event.clientX >= left - HOVER_PADDING && event.clientX <= left + width + HOVER_PADDING
+      && event.clientY >= top - verticalPadding && event.clientY <= top + height + verticalPadding;
+    return inside(box.left, box.top, box.width, box.height, HOVER_VERTICAL_PADDING)
+      || inside(controls.left, controls.top, controls.width, controls.height, HOVER_PADDING);
   }
   function revealFrame() {
     if (destroyed) return;
-    setFrame(!dismissed && !document.hidden && (hovered || touchEditing || !!operation || keyboardFocus()));
+    setFrame(!dismissed && !document.hidden && (hovered || touchEditing || !!operation || root.hasAttribute('data-price-style-open') || keyboardFocus()));
   }
   function resizeGeometry(corner: Corner, centered = false): Resize {
     const { viewport, box } = geometry();
@@ -282,7 +288,7 @@ export function createVideoPriceLayout(root: HTMLElement) {
     if (event.pointerType !== 'touch') {
       lastInput = 'pointer';
       touchEditing = false;
-      if (!position.contains(event.target as Node | null)) hovered = hovered && withinHoverZone(event);
+      if (!position.contains(event.target as Node | null)) hovered = (hovered || frame) && withinHoverZone(event);
       revealFrame();
     }
     move(event);
@@ -319,10 +325,16 @@ export function createVideoPriceLayout(root: HTMLElement) {
     dismissed = false;
     if (keyboardFocus()) revealFrame();
   }) as EventListener);
-  listen(position, 'focusin', () => { if (keyboardFocus()) revealFrame(); });
-  listen(position, 'focusout', ((event: FocusEvent) => {
-    if (!position.contains(event.relatedTarget as Node | null) && !hovered && !touchEditing && !operation) setFrame(false);
-  }) as EventListener);
+  listen(root, 'pricestyletoggle', revealFrame);
+  const focusIn = () => { if (keyboardFocus()) revealFrame(); };
+  listen(position, 'focusin', focusIn);
+  listen(styleControls, 'focusin', focusIn);
+  const focusOut = ((event: FocusEvent) => {
+    if (!position.contains(event.relatedTarget as Node | null) && !styleControls.contains(event.relatedTarget as Node | null)
+      && !hovered && !touchEditing && !operation && !root.hasAttribute('data-price-style-open')) setFrame(false);
+  }) as EventListener;
+  listen(position, 'focusout', focusOut);
+  listen(styleControls, 'focusout', focusOut);
   listen(position, 'keydown', ((event: KeyboardEvent) => {
     if (inStyle(event.target)) return;
     if (event.key === 'Escape') return;
