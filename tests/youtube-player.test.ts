@@ -51,7 +51,6 @@ function harness({ apiAvailable = false, constructorFails = false } = {}) {
   const timers = new Map<number, () => void>();
   let timerId = 0;
   class Element extends EventTarget {
-    attributes = new Map<string, string>();
     children: Element[] = [];
     parent?: Element;
     src = '';
@@ -59,9 +58,6 @@ function harness({ apiAvailable = false, constructorFails = false } = {}) {
     title = '';
     referrerPolicy = '';
     tabIndex = 0;
-    setAttribute(name: string, value: string) { this.attributes.set(name, value); }
-    removeAttribute(name: string) { this.attributes.delete(name); }
-    hasAttribute(name: string) { return this.attributes.has(name); }
     append(child: Element) { child.parent = this; this.children.push(child); }
     replaceChildren(...children: Element[]) { this.children = children; for (const child of children) child.parent = this; }
     remove() {
@@ -214,54 +210,31 @@ test('pause before API readiness cues the selection and playback state follows a
   h.controller.destroy();
 });
 
-test('background appears only after sustained playback and hides during buffering, pause, and end', async () => {
+test('buffering retains the Pause action and pausing preserves the frame until an explicit resume', async () => {
   const h = harness();
-  const visible = () => h.container.hasAttribute('data-video-visible');
   const player = await readyPlayer(h);
-  assert.equal(visible(), false);
   player.event('onStateChange', 1);
-  assert.equal(h.states.at(-1), true); // Our controls respond without the visual delay.
-  assert.equal(visible(), false);
-  h.expireTimers();
-  assert.equal(visible(), true);
+  assert.equal(h.states.at(-1), true);
 
   player.event('onStateChange', 3);
-  assert.equal(visible(), false);
   assert.equal(h.states.at(-1), true); // Buffering retains the Pause action.
   player.event('onStateChange', 1);
-  h.expireTimers();
-  assert.equal(visible(), true);
 
   h.controller.pause();
-  assert.equal(visible(), false); // Hide before YouTube sends its paused event.
+  assert.equal(h.states.at(-1), false);
+  assert.equal(player.calls.at(-1)?.name, 'pause');
   player.event('onStateChange', 2);
+  assert.deepEqual(h.container.children, [player.iframe]);
+  assert.equal(h.controller.getProgress().currentTime, 42);
+  assert.equal(player.seekCalls.length, 0);
   h.controller.play();
-  assert.equal(visible(), false);
+  assert.equal(h.states.at(-1), false); // Wait for YouTube to confirm playback.
   player.event('onStateChange', 1);
-  h.expireTimers();
-  assert.equal(visible(), true);
+  assert.equal(h.states.at(-1), true);
   player.event('onStateChange', 0);
-  assert.equal(visible(), false);
+  assert.equal(h.states.at(-1), false);
+  assert.deepEqual(h.container.children, [player.iframe]);
   h.controller.destroy();
-});
-
-test('interrupted playback cancels the background reveal, including replacement, failure, and cleanup', async () => {
-  for (const interrupt of ['pause', 'buffer', 'load', 'blocked', 'error', 'destroy'] as const) {
-    const h = harness();
-    const player = await readyPlayer(h);
-    player.event('onStateChange', 1);
-    assert.equal(h.timers.size, 1);
-    if (interrupt === 'pause') h.controller.pause();
-    if (interrupt === 'buffer') player.event('onStateChange', 3);
-    if (interrupt === 'load') h.controller.load(second);
-    if (interrupt === 'blocked') player.event('onAutoplayBlocked');
-    if (interrupt === 'error') player.event('onError', 150);
-    if (interrupt === 'destroy') h.controller.destroy();
-    assert.equal(h.timers.size, 0, interrupt);
-    h.expireTimers();
-    assert.equal(h.container.hasAttribute('data-video-visible'), false, interrupt);
-    h.controller.destroy();
-  }
 });
 
 test('mute preferences survive video changes, and explicitly looping videos restart at zero', async () => {

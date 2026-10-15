@@ -171,9 +171,6 @@ const locale = htmlLang(Astro.currentLocale);
   .video-page { min-height: 100svh; position: relative; isolation: isolate; color-scheme: dark; }
   .video-background, .video-shade { position: fixed; inset: 0; pointer-events: none; }
   .video-background { z-index: -2; overflow: hidden; background: #080808; }
-  /* Keep inactive YouTube overlays out of the background; our controls handle playback. */
-  .video-background :global([data-video-player]) { opacity: 0; }
-  .video-background :global([data-video-player][data-video-visible]) { opacity: 1; }
   /* Cover the viewport with a 16:9 player in either orientation. */
   .video-background :global(iframe) { position: absolute; top: 50%; left: 50%; width: max(100vw, 177.778vh); height: max(100vh, 56.25vw); min-width: 200px; min-height: 200px; transform: translate(-50%, -50%); border: 0; }
   /* Keep YouTube's native captions inside the visible viewport. */

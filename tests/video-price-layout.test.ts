@@ -488,6 +488,90 @@ test('all four resize handles preserve their opposite corner and scale proportio
   }
 });
 
+test('Shift resizes every corner symmetrically around an off-center price and saves its placement', () => {
+  for (const corner of ['nw', 'ne', 'sw', 'se'] as const) {
+    const h = harness({ saved: JSON.stringify({ version: 1, x: 20, y: 75, size: 100 }) });
+    const box = h.position.getBoundingClientRect();
+    const west = corner.endsWith('w'), north = corner.startsWith('n');
+    const x = box.left + (west ? 0 : box.width), y = box.top + (north ? 0 : box.height);
+    const target = { clientX: x + (west ? -40 : 40), clientY: y + (north ? -20 : 20), shiftKey: true };
+    h.pointer('pointerdown', h.handles[corner], { clientX: x, clientY: y, shiftKey: true });
+    h.pointer('pointermove', h.window, target);
+    const resized = h.position.getBoundingClientRect();
+    close(resized.width, 280);
+    close(resized.height, 140);
+    close(resized.left + resized.width / 2, box.left + box.width / 2);
+    close(resized.top + resized.height / 2, box.top + box.height / 2);
+    h.pointer('pointerup', h.window, target);
+    close(h.saved.at(-1)!.size, 140);
+    const restored = harness({ saved: JSON.stringify(h.saved.at(-1)) });
+    close(restored.left(), h.left());
+    close(restored.top(), h.top());
+    h.layout.destroy(); restored.layout.destroy();
+  }
+});
+
+test('centered resizing stops at the nearest viewport edge without moving the price center', () => {
+  const h = harness({ saved: JSON.stringify({ version: 1, x: 5, y: 85, size: 100 }) });
+  const box = h.position.getBoundingClientRect();
+  h.pointer('pointerdown', h.handles.se, { clientX: box.left + box.width, clientY: box.top + box.height, shiftKey: true });
+  h.pointer('pointermove', h.window, { clientX: 10000, clientY: 10000, shiftKey: true });
+  let resized = h.position.getBoundingClientRect();
+  close(resized.left - h.viewport.left, 16);
+  close(resized.left + resized.width / 2, box.left + box.width / 2);
+  close(resized.top + resized.height / 2, box.top + box.height / 2);
+  assert.ok(resized.top >= h.viewport.top + 16);
+  assert.ok(resized.top + resized.height <= h.viewport.top + h.viewport.height - 16);
+  h.pointer('pointerup', h.window, { clientX: -10000, clientY: -10000, shiftKey: true });
+  resized = h.position.getBoundingClientRect();
+  close(h.scale(), .25);
+  close(resized.left + resized.width / 2, box.left + box.width / 2);
+  close(resized.top + resized.height / 2, box.top + box.height / 2);
+  h.layout.destroy();
+});
+
+test('pressing or releasing Shift during a resize switches anchors without a jump', () => {
+  const h = harness();
+  let box = h.position.getBoundingClientRect();
+  let x = box.left + box.width, y = box.top + box.height;
+  h.pointer('pointerdown', h.handles.se, { clientX: x, clientY: y });
+  x += 40; y += 20;
+  h.pointer('pointermove', h.window, { clientX: x, clientY: y });
+  box = h.position.getBoundingClientRect();
+  close(box.width, 240);
+  h.pointer('pointermove', h.window, { clientX: x, clientY: y, shiftKey: true });
+  assert.deepEqual(h.position.getBoundingClientRect(), box);
+  x += 24; y += 12;
+  h.pointer('pointermove', h.window, { clientX: x, clientY: y, shiftKey: true });
+  let resized = h.position.getBoundingClientRect();
+  close(resized.width, 288);
+  close(resized.left + resized.width / 2, box.left + box.width / 2);
+  close(resized.top + resized.height / 2, box.top + box.height / 2);
+  box = resized;
+  h.pointer('pointermove', h.window, { clientX: x, clientY: y, shiftKey: false });
+  assert.deepEqual(h.position.getBoundingClientRect(), box);
+  x += 28.8; y += 14.4;
+  h.pointer('pointerup', h.window, { clientX: x, clientY: y });
+  resized = h.position.getBoundingClientRect();
+  close(resized.width, 316.8);
+  close(resized.left, box.left);
+  close(resized.top, box.top);
+  h.layout.destroy();
+});
+
+test('Shift can be pressed with pointer movement and does not discard that movement', () => {
+  const h = harness();
+  const box = h.position.getBoundingClientRect();
+  const x = box.left + box.width, y = box.top + box.height;
+  h.pointer('pointerdown', h.handles.se, { clientX: x, clientY: y });
+  h.pointer('pointerup', h.window, { clientX: x + 40, clientY: y + 20, shiftKey: true });
+  const resized = h.position.getBoundingClientRect();
+  close(resized.width, 280);
+  close(resized.left + resized.width / 2, box.left + box.width / 2);
+  close(resized.top + resized.height / 2, box.top + box.height / 2);
+  h.layout.destroy();
+});
+
 test('resize projection ignores perpendicular movement and respects size and viewport limits', () => {
   const h = harness();
   let box = h.position.getBoundingClientRect();
@@ -525,6 +609,38 @@ test('resizing a fitted price responds immediately to inward movement without a 
   close(smaller.top, box.top);
   h.pointer('pointerup', h.window, { clientX: x - box.width * .2, clientY: y - box.height * .2 });
   close(h.saved.at(-1)!.size, 38.4);
+  h.layout.destroy();
+});
+
+test('Shift shrinks fitted prices immediately around their visible center', () => {
+  const h = harness({ viewport: { width: 320, height: 240 }, width: 600, saved: JSON.stringify({ version: 1, x: 0, y: 65, size: 200 }) });
+  const box = h.position.getBoundingClientRect();
+  const x = box.left + box.width, y = box.top + box.height;
+  h.pointer('pointerdown', h.handles.se, { clientX: x, clientY: y, shiftKey: true });
+  h.pointer('pointerup', h.window, { clientX: x - box.width * .1, clientY: y - box.height * .1, shiftKey: true });
+  const resized = h.position.getBoundingClientRect();
+  close(resized.width, box.width * .8);
+  close(resized.height, box.height * .8);
+  close(resized.left + resized.width / 2, box.left + box.width / 2);
+  close(resized.top + resized.height / 2, box.top + box.height / 2);
+  close(h.saved.at(-1)!.size, 38.4);
+  h.layout.destroy();
+});
+
+test('Shift with keyboard corner resizing holds the current center fixed', () => {
+  const h = harness({ saved: JSON.stringify({ version: 1, x: 20, y: 75, size: 100 }) });
+  const box = h.position.getBoundingClientRect();
+  h.key(h.handles.nw, 'ArrowUp', { shiftKey: true });
+  let resized = h.position.getBoundingClientRect();
+  close(h.scale(), 1.05);
+  close(resized.left + resized.width / 2, box.left + box.width / 2);
+  close(resized.top + resized.height / 2, box.top + box.height / 2);
+  h.key(h.handles.nw, 'ArrowDown', { shiftKey: true });
+  resized = h.position.getBoundingClientRect();
+  close(resized.left, box.left);
+  close(resized.top, box.top);
+  close(resized.width, box.width);
+  close(resized.height, box.height);
   h.layout.destroy();
 });
 

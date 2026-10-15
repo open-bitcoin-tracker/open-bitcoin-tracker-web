@@ -5,10 +5,10 @@ const SNAP_RELEASE_DISTANCE = 16;
 const DEFAULTS = { version: 1, x: 50, y: 50, size: 100 };
 const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value));
 type Corner = 'nw' | 'ne' | 'sw' | 'se';
-type Resize = { corner: Corner; width: number; height: number; anchorX: number; anchorY: number; effectiveSize: number };
+type Resize = { corner: Corner; centered: boolean; width: number; height: number; anchorX: number; anchorY: number; effectiveSize: number };
 type Operation = { pointerId: number; capture: HTMLElement; clientX: number; clientY: number; moved: boolean } & (
   { kind: 'move'; grabX: number; grabY: number }
-  | ({ kind: 'resize' } & Resize)
+  | ({ kind: 'resize'; lastClientX: number; lastClientY: number } & Resize)
 );
 
 /** Move and resize the live price without changing playback or currency settings. */
@@ -129,24 +129,27 @@ export function createVideoPriceLayout(root: HTMLElement) {
     if (destroyed || dismissed || document.hidden) return;
     setFrame(true);
   }
-  function resizeGeometry(corner: Corner): Resize {
+  function resizeGeometry(corner: Corner, centered = false): Resize {
     const { viewport, box } = geometry();
     return {
-      corner, width: box.width, height: box.height, effectiveSize: state.size * fit,
-      anchorX: box.left - viewport.left + (corner.endsWith('w') ? box.width : 0),
-      anchorY: box.top - viewport.top + (corner.startsWith('n') ? box.height : 0),
+      corner, centered, width: box.width, height: box.height, effectiveSize: state.size * fit,
+      anchorX: box.left - viewport.left + box.width * (centered ? .5 : corner.endsWith('w') ? 1 : 0),
+      anchorY: box.top - viewport.top + box.height * (centered ? .5 : corner.startsWith('n') ? 1 : 0),
     };
   }
   function resize(resizing: Resize, ratio: number) {
     const { viewport } = geometry();
     const west = resizing.corner.endsWith('w'), north = resizing.corner.startsWith('n');
-    const maxWidth = west ? resizing.anchorX - PADDING : viewport.width - PADDING - resizing.anchorX;
-    const maxHeight = north ? resizing.anchorY - PADDING : viewport.height - PADDING - resizing.anchorY;
+    const maxWidth = resizing.centered ? Math.min(resizing.anchorX - PADDING, viewport.width - PADDING - resizing.anchorX) * 2
+      : west ? resizing.anchorX - PADDING : viewport.width - PADDING - resizing.anchorX;
+    const maxHeight = resizing.centered ? Math.min(resizing.anchorY - PADDING, viewport.height - PADDING - resizing.anchorY) * 2
+      : north ? resizing.anchorY - PADDING : viewport.height - PADDING - resizing.anchorY;
     const maxRatio = Math.max(0, Math.min(resizing.width > 0 ? maxWidth / resizing.width : 1, resizing.height > 0 ? maxHeight / resizing.height : 1));
     state.size = clamp(resizing.effectiveSize * Math.min(maxRatio, Math.max(0, ratio)), 25, 200);
     refresh();
     const box = position.getBoundingClientRect();
-    place(resizing.anchorX - (west ? box.width : 0), resizing.anchorY - (north ? box.height : 0));
+    place(resizing.anchorX - box.width * (resizing.centered ? .5 : west ? 1 : 0),
+      resizing.anchorY - box.height * (resizing.centered ? .5 : north ? 1 : 0));
   }
   function finish(persist = true) {
     if (!operation) return;
@@ -162,6 +165,12 @@ export function createVideoPriceLayout(root: HTMLElement) {
   function move(event: PointerEvent) {
     if (destroyed || !operation || operation.pointerId !== event.pointerId) return;
     event.preventDefault();
+    if (operation.kind === 'resize' && operation.centered !== !!event.shiftKey) {
+      // Switch anchors at the current box, preserving movement since the last event.
+      Object.assign(operation, resizeGeometry(operation.corner, !!event.shiftKey), {
+        clientX: operation.lastClientX, clientY: operation.lastClientY,
+      });
+    }
     const dx = event.clientX - operation.clientX, dy = event.clientY - operation.clientY;
     const changed = Math.abs(dx) + Math.abs(dy) >= .001;
     if (!operation.moved && !changed) return;
@@ -173,7 +182,9 @@ export function createVideoPriceLayout(root: HTMLElement) {
       const width = operation.width * (operation.corner.endsWith('w') ? -1 : 1);
       const height = operation.height * (operation.corner.startsWith('n') ? -1 : 1);
       const diagonal = width * width + height * height;
-      resize(operation, diagonal > 0 ? 1 + (dx * width + dy * height) / diagonal : 1);
+      resize(operation, diagonal > 0 ? 1 + (operation.centered ? 2 : 1) * (dx * width + dy * height) / diagonal : 1);
+      operation.lastClientX = event.clientX;
+      operation.lastClientY = event.clientY;
     }
   }
   function stopForInactivePage() {
@@ -211,7 +222,8 @@ export function createVideoPriceLayout(root: HTMLElement) {
     const corner = handle?.dataset.priceResize as Corner | undefined;
     const box = position.getBoundingClientRect();
     operation = corner && ['nw', 'ne', 'sw', 'se'].includes(corner) && position.contains(handle!)
-      ? { kind: 'resize', pointerId: event.pointerId, capture: position, clientX: event.clientX, clientY: event.clientY, moved: false, ...resizeGeometry(corner) }
+      ? { kind: 'resize', pointerId: event.pointerId, capture: position, clientX: event.clientX, clientY: event.clientY,
+        lastClientX: event.clientX, lastClientY: event.clientY, moved: false, ...resizeGeometry(corner, !!event.shiftKey) }
       : { kind: 'move', pointerId: event.pointerId, capture: position, clientX: event.clientX, clientY: event.clientY, moved: false, grabX: event.clientX - box.left, grabY: event.clientY - box.top };
     (handle ?? position).focus({ preventScroll: true });
     setFrame(true);
@@ -265,7 +277,7 @@ export function createVideoPriceLayout(root: HTMLElement) {
       const grow = ['+', '=', 'ArrowUp', 'ArrowRight'].includes(event.key);
       const shrink = ['-', 'ArrowDown', 'ArrowLeft'].includes(event.key);
       if (!grow && !shrink) return;
-      const resizing = resizeGeometry(corner);
+      const resizing = resizeGeometry(corner, event.shiftKey);
       resize(resizing, resizing.effectiveSize > 0 ? (resizing.effectiveSize + (grow ? 5 : -5)) / resizing.effectiveSize : 1);
     } else {
       const step = event.shiftKey ? 10 : 2;
