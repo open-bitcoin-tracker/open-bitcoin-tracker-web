@@ -98,9 +98,18 @@ function themePage(dark = false, saved: string | null = null, blocked = false) {
   const metas: any[] = [];
   const toggles = ['auto', 'light', 'dark'].map(preference => Object.assign(new EventTarget(), {
     dataset: { themePreference: preference },
+    textContent: { auto: 'Auto', light: 'Light mode', dark: 'Dark mode' }[preference],
+    closest: () => themeSelector,
     attributes: new Map<string, string>(),
     setAttribute(name: string, value: string) { this.attributes.set(name, value); },
   }));
+  const label = { textContent: '' };
+  const summary = { focused: false, focus() { this.focused = true; } };
+  const themeSelector = Object.assign(new EventTarget(), {
+    open: false,
+    contains: (target: EventTarget) => target === themeSelector || toggles.includes(target as typeof toggles[number]),
+    querySelector: (query: string) => query === 'summary' ? summary : query === '[data-theme-current]' ? label : toggles.find(toggle => toggle.attributes.get('aria-pressed') === 'true'),
+  });
   const root = { dataset: { themePreference: '' }, classList: {
     contains: (name: string) => classes.has(name), add: (name: string) => classes.add(name),
     remove: (name: string) => classes.delete(name),
@@ -108,7 +117,7 @@ function themePage(dark = false, saved: string | null = null, blocked = false) {
   } };
   const document = Object.assign(new EventTarget(), {
     documentElement: root,
-    querySelectorAll: (selector: string) => selector === '.theme-toggle' ? toggles : [...metas],
+    querySelectorAll: (selector: string) => selector === '.theme-toggle' ? toggles : selector === '.theme-selector' ? [themeSelector] : [...metas],
     createElement: () => {
       const meta = { name: '', content: '', remove() { metas.splice(metas.indexOf(meta), 1); } };
       return meta;
@@ -128,8 +137,9 @@ function themePage(dark = false, saved: string | null = null, blocked = false) {
   const initialDark = classes.has('dark');
   runInNewContext(themeToggle, globals);
   return {
-    classes, metas, toggles, initialDark, saved: () => saved,
+    classes, metas, toggles, selector: themeSelector, label, summary, initialDark, saved: () => saved,
     selected: () => toggles.filter(toggle => toggle.attributes.get('aria-pressed') === 'true').map(toggle => toggle.dataset.themePreference),
+    outsideClick() { document.dispatchEvent(new Event('click')); },
     system(value: boolean) { system.matches = value; system.dispatchEvent(new Event('change')); },
     storage(key: string | null, newValue: string | null) { window.dispatchEvent(Object.assign(new Event('storage'), { key, newValue })); },
   };
@@ -191,6 +201,36 @@ test('Auto restores live system detection after either manual choice, including 
       }
     }
   }
+});
+
+test('theme dropdown updates its label, closes after selection, and restores trigger focus', () => {
+  const page = themePage(false, null);
+  assert.equal(page.label.textContent, 'Auto');
+  page.selector.open = true;
+  page.toggles[2].dispatchEvent(new Event('click'));
+  assert.equal(page.label.textContent, 'Dark mode');
+  assert.equal(page.selector.open, false);
+  assert.equal(page.summary.focused, true);
+  page.selector.open = true;
+  page.summary.focused = false;
+  page.toggles[2].dispatchEvent(new Event('click'));
+  assert.equal(page.selector.open, false, 'selecting the current option also dismisses the dropdown');
+  assert.equal(page.summary.focused, true);
+  page.storage('theme', 'auto');
+  assert.equal(page.label.textContent, 'Auto');
+  page.system(true);
+  assert.equal(page.label.textContent, 'Auto', 'the label names the preference rather than the resolved appearance');
+});
+
+test('theme dropdown dismisses on Escape or outside click', () => {
+  const page = themePage();
+  page.selector.open = true;
+  page.selector.dispatchEvent(Object.assign(new Event('keydown', { cancelable: true }), { key: 'Escape' }));
+  assert.equal(page.selector.open, false);
+  assert.equal(page.summary.focused, true);
+  page.selector.open = true;
+  page.outsideClick();
+  assert.equal(page.selector.open, false);
 });
 
 test('saved theme survives system changes and other-tab changes can restore Auto', () => {
