@@ -2,8 +2,7 @@
 import { getRelativeLocaleUrl } from 'astro:i18n';
 import { resolveLang, stripLocale, useTranslations } from '../i18n/utils';
 import { tracker } from '../i18n/tracker';
-import { aBitOfEarth, bitcoinAndDollar } from '../lib/projects';
-import { supply } from '../i18n/supply';
+import { aBitOfEarth } from '../lib/projects';
 
 const lang = resolveLang(Astro.currentLocale);
 const t = tracker[lang];
@@ -13,7 +12,6 @@ const pages = [
   { path: 'price-tracker', label: t.priceChart, english: false },
   { path: 'video-mode', label: nav.videoMode, english: false },
   { path: aBitOfEarth.path, label: aBitOfEarth.title, english: true },
-  { path: bitcoinAndDollar.path, label: supply.title, english: true },
   { path: 'android-app', label: t.app, english: false },
 ];
 ---

@@ -129,6 +129,11 @@ Review population annually or after a new WPP revision. Use the linked compact w
 
 To add a language, update the dictionary and registration in `src/i18n/ui.ts`; `tracker.ts`, `ranges.ts`, `chart-settings.ts`, `party.ts`, and `video.ts`; every `src/pages/[lang]/` route's `getStaticPaths()`; Astro locales and sitemap configuration; layout alternates; switcher entries; and middleware matchers. Build and review the generated routes. Earth and supply need separate feature translation work.
 
+## Planned work
+
+- [ ] Work on the Party Mode page (`/party-mode/`).
+- [ ] Work on the Money per Person page (`/bitcoin-and-the-dollar/`); its home card and menu entry are hidden pending further work.
+
 ## Deployment
 
 For Cloudflare Pages, build with `npm run build`, serve `dist/`, and include `functions/`. `wrangler.toml` defines the output directory and runtime compatibility date; `astro.config.mjs` defines the canonical site URL, locales, and sitemap. Custom domains or forks must also update `public/robots.txt` and the site's project/download links as needed.

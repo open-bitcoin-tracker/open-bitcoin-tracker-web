@@ -27,6 +27,7 @@ export const de: Dict = {
   landing: {
     priceTracker: 'Preis-Tracker',
     priceDescription: 'Bitcoin-Livekurs und Kurshistorie seit 2010.',
+    videoDescription: 'Der Bitcoin-Livekurs über YouTube-Videos',
     earthDescription: 'Entdecke Bitcoin als Anteil an der Landfläche der Erde.',
     supplyDescription: 'Sieh, wie die Fiat-Geldmenge jedes Jahr steigt und die von Bitcoin nicht.',
   },

@@ -27,6 +27,7 @@ export const fr: Dict = {
   landing: {
     priceTracker: 'Tracker de prix',
     priceDescription: 'Le cours du Bitcoin en direct et son historique depuis 2010.',
+    videoDescription: 'Le cours du Bitcoin en direct sur des vidéos YouTube',
     earthDescription: 'Explore Bitcoin comme une part des terres émergées de la planète.',
     supplyDescription: 'Découvre comment la masse monétaire des monnaies fiat augmente chaque année, tandis que celle du bitcoin reste inchangée.',
   },

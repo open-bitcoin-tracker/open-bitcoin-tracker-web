@@ -27,6 +27,7 @@ export const tr: Dict = {
   landing: {
     priceTracker: 'Fiyat takibi',
     priceDescription: 'Canlı Bitcoin fiyatı ve 2010’dan bu yana fiyat geçmişi.',
+    videoDescription: 'YouTube videolarının üzerinde canlı Bitcoin fiyatı',
     earthDescription: 'Bitcoin’i Dünya’nın kara yüzeyinin bir payı olarak keşfet.',
     supplyDescription: 'İtibari para arzının her yıl nasıl arttığını ve bitcoin arzının artmadığını gör.',
   },
