@@ -100,6 +100,7 @@ const locale = htmlLang(Astro.currentLocale);
       </section>
       <section class="video-dock" aria-label={t.controlsLabel}>
         <form class="video-form" data-video-form novalidate>
+          <button class="video-cancel" type="button" data-cancel-video hidden>{t.cancel}</button>
           <label class="video-sr-only" for="video-url">{t.videoLabel}</label>
           <div class="video-url-field">
             <svg class="video-url-icon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><rect x="2" y="5" width="20" height="14" rx="4" /><path d="m10 9 5 3-5 3z" fill="currentColor" stroke="none" /></svg>
@@ -108,7 +109,6 @@ const locale = htmlLang(Astro.currentLocale);
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14m-6-6 6 6-6 6" /></svg>
             </button>
           </div>
-          <button class="video-cancel" type="button" data-cancel-video hidden>{t.cancel}</button>
         </form>
         <div class="video-playback" data-video-controls hidden>
           <button type="button" class="video-change" data-change-video disabled>{t.changeVideo}</button>
@@ -259,7 +259,7 @@ const locale = htmlLang(Astro.currentLocale);
   .video-url-field:has([data-video-url]:focus-visible) { border-color: rgb(255 255 255 / .45); }
   .video-submit { flex-shrink: 0; display: grid; place-items: center; width: 2.5rem; height: 2.5rem; border: 0; border-radius: 9px; background: #ff981e; color: #211000; }
   .video-submit:hover { background: #ffb047; }
-  .video-cancel { margin-top: .75rem; border: 0; background: rgb(8 8 8 / .7); border-radius: 5px; padding: .3rem .6rem; color: #ddd; font-size: .75rem; }
+  .video-cancel { margin-bottom: .75rem; border: 0; background: rgb(8 8 8 / .7); border-radius: 5px; padding: .3rem .6rem; color: #ddd; font-size: .75rem; }
   .video-playback { display: flex; flex-direction: column; align-items: center; gap: .75rem; }
   .video-player-panel { width: 100%; padding: .35rem; border: 1px solid rgb(255 255 255 / .14); border-radius: 14px; background: rgb(16 16 16 / .75); backdrop-filter: blur(12px); }
   .video-controls { display: flex; align-items: center; gap: .5rem; }
