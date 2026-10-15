@@ -205,6 +205,25 @@ test('digital font and optional stroke settings persist with valid bounds and no
   h.style.destroy(); restored.style.destroy();
 });
 
+test('reset style unticks Stroke, removes its appearance, and saves the disabled state for the next visit', () => {
+  const h = harness({ saved: JSON.stringify({
+    version: 1, colour: '#ff981e', font: 'digital', stroke: true, strokeWidth: 3.5, strokeColour: '#ffffff',
+  }) });
+  assert.equal(h.stroke.checked, true);
+  h.reset.click();
+  assert.equal(h.stroke.checked, false);
+  assert.equal(h.strokeOptions.hidden, true);
+  assert.equal(h.strokeWidth.disabled, true);
+  assert.equal(h.strokeColour.disabled, true);
+  assert.equal(h.root.style.values.get('--video-price-stroke-width'), '0px');
+  assert.equal(JSON.parse(h.saved()!).stroke, false);
+  const restored = harness({ saved: h.saved() });
+  assert.equal(restored.stroke.checked, false);
+  assert.equal(restored.strokeOptions.hidden, true);
+  assert.equal(restored.root.style.values.get('--video-price-stroke-width'), '0px');
+  h.style.destroy(); restored.style.destroy();
+});
+
 test('Style follows the price and flips above it near the viewport bottom, keeping its panel on screen', () => {
   const h = harness();
   assert.equal(h.root.hasAttribute('data-price-style-above'), false);
