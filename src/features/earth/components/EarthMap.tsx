@@ -26,9 +26,7 @@ export default function EarthMap({
         <path ref={overlayRef} />
       </svg>
       {!ready && !error && (
-        <div className="map-loading" role="status">
-          <span>Loading map...</span>
-        </div>
+        <div className="map-loading" role="status" aria-label="Loading map" />
       )}
       {error && (
         <div className="map-error" role="alert">
