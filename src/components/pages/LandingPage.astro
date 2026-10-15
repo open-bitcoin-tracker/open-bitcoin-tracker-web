@@ -137,12 +137,14 @@ const t = useTranslations(Astro.currentLocale);
 
 <style>
   .landing-main {
+    --landing-glow: rgb(247 147 26 / .16);
     display: grid;
     place-items: center;
     min-height: 100dvh;
     padding: max(7rem, env(safe-area-inset-top, 0px)) clamp(1.25rem, 4vw, 3rem) max(7rem, env(safe-area-inset-bottom, 0px));
-    background: radial-gradient(ellipse at center, var(--hero-glow), transparent 50%);
+    background: radial-gradient(ellipse at center, var(--landing-glow), transparent 62%);
   }
+  :global(html.dark) .landing-main { --landing-glow: rgb(247 147 26 / .23); }
   .landing-content { width: 100%; max-width: 72rem; }
   .landing-brand { container-type: inline-size; margin-bottom: clamp(2rem, 4vw, 3rem); text-align: center; }
   h1 { display: inline-flex; min-width: 0; max-width: 100%; font-size: clamp(2rem, 8.4cqi, 6.5rem); line-height: 1.06; letter-spacing: -.015em; white-space: nowrap; }
