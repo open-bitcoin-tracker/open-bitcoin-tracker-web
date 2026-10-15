@@ -1,58 +1,43 @@
 ---
 import { useTranslations } from '../i18n/utils';
 
-interface Props {
-  class?: string;
-  showLabel?: boolean;
-}
-const { class: className = '', showLabel = false } = Astro.props;
-
 const t = useTranslations(Astro.currentLocale);
+const choices = [
+  { value: 'auto', label: t.nav.themeAuto },
+  { value: 'light', label: t.nav.themeLight },
+  { value: 'dark', label: t.nav.themeDark },
+];
 ---
 
-<button
-  type="button"
-  class:list={[
-    'theme-toggle inline-flex items-center justify-center gap-2 hover:text-ink transition-colors duration-200',
-    showLabel && 'theme-toggle--labeled',
-    className,
-  ]}
-  aria-label={t.nav.themeToggleAria}
-  aria-pressed="false"
->
-  <svg class="icon-moon" width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
-  <svg class="icon-sun" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
-  {showLabel && (
-    <>
-      <span class="label-dark text-sm">{t.nav.themeDark}</span>
-      <span class="label-light text-sm">{t.nav.themeLight}</span>
-    </>
-  )}
-</button>
+<div class="theme-selector" role="group" aria-label={t.nav.themeLabel}>
+  {choices.map(({ value, label }) => (
+    <button type="button" class="theme-toggle" data-theme-preference={value} aria-pressed="false">
+      {label}
+    </button>
+  ))}
+</div>
 
 <script>
   const root = document.documentElement;
   const toggles = document.querySelectorAll<HTMLButtonElement>('.theme-toggle');
+  const system = window.matchMedia('(prefers-color-scheme: dark)');
   const reduce = window.matchMedia('(prefers-reduced-motion: reduce)');
-  const sync = () => toggles.forEach((button) => button.setAttribute('aria-pressed', String(root.classList.contains('dark'))));
+  const sync = () => toggles.forEach((button) => button.setAttribute('aria-pressed', String(button.dataset.themePreference === root.dataset.themePreference)));
   sync();
   document.addEventListener('themechange', sync);
   let transition: ViewTransition | undefined;
-  const apply = () => {
-    const dark = root.classList.toggle('dark');
-    try { localStorage.setItem('theme', dark ? 'dark' : 'light'); } catch {}
-    sync();
-    document.querySelectorAll('meta[name="theme-color"]').forEach((meta) => meta.remove());
-    const meta = document.createElement('meta');
-    meta.name = 'theme-color';
-    meta.content = dark ? '#0F1E3A' : '#F8F7F3';
-    document.head.appendChild(meta);
-    document.dispatchEvent(new CustomEvent('themechange', { detail: { dark, source: 'user' } }));
-  };
   toggles.forEach((toggle) => toggle.addEventListener('click', () => {
-    // Let the current wave finish instead of exposing its final frame on a
-    // second click. Keep keyboard focus and the control available throughout.
+    // Let the current wave finish while keeping keyboard focus available.
     if (transition) return;
+    const preference = toggle.dataset.themePreference;
+    if (preference === root.dataset.themePreference) return;
+    const apply = () => document.dispatchEvent(new CustomEvent('themepreferencechange', { detail: { preference } }));
+    const dark = preference === 'auto' ? system.matches : preference === 'dark';
+    // Remember Auto even when it currently resolves to the same appearance.
+    if (dark === root.classList.contains('dark')) {
+      apply();
+      return;
+    }
     if (!document.startViewTransition || reduce.matches) {
       root.classList.add('theme-transition');
       apply();
@@ -83,28 +68,24 @@ const t = useTranslations(Astro.currentLocale);
 </script>
 
 <style>
-  /* Sun/moon swap. Scoped styles can't see the html class on their own, so the
-     dark-state rules reach out via :global(html.dark). */
-  .theme-toggle .icon-sun {
-    display: none;
+  .theme-selector {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .25rem;
+    max-width: 100%;
   }
-  :global(html.dark) .theme-toggle .icon-moon {
-    display: none;
+  .theme-toggle {
+    padding: .5rem .75rem;
+    border: 1px solid transparent;
+    border-radius: 999px;
+    transition: color .2s, background-color .2s, border-color .2s;
   }
-  :global(html.dark) .theme-toggle .icon-sun {
-    display: inline-flex;
+  .theme-toggle[aria-pressed='true'] {
+    color: var(--menu-primary-ink);
+    background: var(--menu-option-hover);
+    border-color: var(--menu-dropdown-border);
   }
-
-  /* Text labels name the *target* theme, so they pair with the icon that shows
-     in the current mode: light mode → moon + "Dark mode"; dark mode → sun +
-     "Light mode". Same :global(html.dark) reach-out as the icon swap above. */
-  .theme-toggle .label-light {
-    display: none;
-  }
-  :global(html.dark) .theme-toggle .label-dark {
-    display: none;
-  }
-  :global(html.dark) .theme-toggle .label-light {
-    display: inline;
+  @media (prefers-reduced-motion: reduce) {
+    .theme-toggle { transition: none; }
   }
 </style>

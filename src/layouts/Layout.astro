@@ -101,31 +101,37 @@ const jsonLd = {
       (function () {
         var stored;
         try { stored = localStorage.getItem('theme'); } catch (e) {}
-        var preference = stored === 'dark' || stored === 'light' ? stored : null;
+        var preference = stored === 'dark' || stored === 'light' ? stored : 'auto';
         var system = window.matchMedia('(prefers-color-scheme: dark)');
         function apply(dark, notify) {
+          document.documentElement.dataset.themePreference = preference;
           document.documentElement.classList.toggle('dark', dark);
           document.querySelectorAll('meta[name="theme-color"]').forEach(function (m) { m.remove(); });
           var meta = document.createElement('meta');
           meta.name = 'theme-color';
           meta.content = dark ? '#0F1E3A' : '#F8F7F3';
           document.head.appendChild(meta);
-          if (notify) document.dispatchEvent(new CustomEvent('themechange', { detail: { dark: dark } }));
+          if (notify) document.dispatchEvent(new CustomEvent('themechange', { detail: { dark: dark, preference: preference } }));
         }
-        apply(preference ? preference === 'dark' : system.matches, false);
+        function sync(notify) {
+          apply(preference === 'auto' ? system.matches : preference === 'dark', notify);
+        }
+        sync(false);
         system.addEventListener('change', function () {
-          if (!preference) apply(system.matches, true);
+          if (preference === 'auto') sync(true);
         });
-        // Keep a manual choice in memory even when storage writes are blocked.
-        document.addEventListener('themechange', function (event) {
-          if (event.detail && event.detail.source === 'user') {
-            preference = event.detail.dark ? 'dark' : 'light';
-          }
+        // Keep the choice in memory even when storage writes are blocked.
+        document.addEventListener('themepreferencechange', function (event) {
+          var choice = event.detail && event.detail.preference;
+          if (choice !== 'auto' && choice !== 'light' && choice !== 'dark') return;
+          preference = choice;
+          try { localStorage.setItem('theme', preference); } catch (e) {}
+          sync(true);
         });
         window.addEventListener('storage', function (event) {
           if (event.key !== 'theme' && event.key !== null) return;
-          preference = event.newValue === 'dark' || event.newValue === 'light' ? event.newValue : null;
-          apply(preference ? preference === 'dark' : system.matches, true);
+          preference = event.newValue === 'dark' || event.newValue === 'light' ? event.newValue : 'auto';
+          sync(true);
         });
       })();
     </script>

@@ -53,11 +53,8 @@ export const en = {
     download: 'Download',
     // Label for the language switcher (matches the app's own "Language" string).
     langLabel: 'Language',
-    // Accessible label for the light/dark theme toggle button in the header.
-    themeToggleAria: 'Toggle dark mode',
-    // Visible labels next to the footer theme toggle. They name the *target*
-    // (what a click switches to): shown in light mode → click goes dark, and
-    // vice-versa. Swapped client-side by ThemeToggle.astro.
+    themeLabel: 'Theme',
+    themeAuto: 'Auto',
     themeDark: 'Dark mode',
     themeLight: 'Light mode',
   },

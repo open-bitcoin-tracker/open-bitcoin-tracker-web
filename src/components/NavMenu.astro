@@ -31,10 +31,13 @@ const isHome = stripLocale(Astro.url.pathname) === '';
         <img class="menu-brand-icon" src="/app-icon.png" width="96" height="96" alt="" />
         <span lang="en" class="brand-name">OBT</span>
       </a>
-      <div class="menu-links"><slot /></div>
+      <div class="menu-links">
+        <slot />
+        <a href="https://github.com/open-bitcoin-tracker/open-bitcoin-tracker-web" target="_blank" rel="noopener noreferrer" aria-label={t.nav.githubAria}>{t.nav.github}</a>
+      </div>
       <div class="nav-menu-settings">
         <LanguageSwitcher placement="up" />
-        <ThemeToggle showLabel />
+        <ThemeToggle />
       </div>
     </div>
   </dialog>

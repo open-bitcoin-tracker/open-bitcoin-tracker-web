@@ -96,11 +96,12 @@ class DetailEvent extends Event {
 function themePage(dark = false, saved: string | null = null, blocked = false) {
   const classes = new Set<string>();
   const metas: any[] = [];
-  const toggles = [new EventTarget(), new EventTarget()].map(button => Object.assign(button, {
+  const toggles = ['auto', 'light', 'dark'].map(preference => Object.assign(new EventTarget(), {
+    dataset: { themePreference: preference },
     attributes: new Map<string, string>(),
     setAttribute(name: string, value: string) { this.attributes.set(name, value); },
   }));
-  const root = { classList: {
+  const root = { dataset: { themePreference: '' }, classList: {
     contains: (name: string) => classes.has(name), add: (name: string) => classes.add(name),
     remove: (name: string) => classes.delete(name),
     toggle(name: string, force = !classes.has(name)) { if (force) classes.add(name); else classes.delete(name); return force; },
@@ -128,6 +129,7 @@ function themePage(dark = false, saved: string | null = null, blocked = false) {
   runInNewContext(themeToggle, globals);
   return {
     classes, metas, toggles, initialDark, saved: () => saved,
+    selected: () => toggles.filter(toggle => toggle.attributes.get('aria-pressed') === 'true').map(toggle => toggle.dataset.themePreference),
     system(value: boolean) { system.matches = value; system.dispatchEvent(new Event('change')); },
     storage(key: string | null, newValue: string | null) { window.dispatchEvent(Object.assign(new Event('storage'), { key, newValue })); },
   };
@@ -138,12 +140,13 @@ test('theme initializes before controls from system or valid saved preference, e
     [true, null, true, false], [false, null, false, false],
     [true, 'light', false, false], [false, 'dark', true, false],
     [true, 'invalid', true, false], [true, 'light', true, true],
+    [true, 'auto', true, false], [false, 'auto', false, false],
   ] as const) {
     const page = themePage(system, saved, blocked);
     assert.equal(page.initialDark, expected);
     assert.equal(page.metas.length, 1);
     assert.equal(page.metas[0].content, expected ? '#0F1E3A' : '#F8F7F3');
-    for (const toggle of page.toggles) assert.equal(toggle.attributes.get('aria-pressed'), String(expected));
+    assert.deepEqual(page.selected(), [!blocked && (saved === 'light' || saved === 'dark') ? saved : 'auto']);
   }
 });
 
@@ -153,11 +156,11 @@ test('system theme changes update browser chrome and controls until a manual cho
     page.system(true);
     assert.equal(page.classes.has('dark'), true);
     assert.equal(page.metas[0].content, '#0F1E3A');
-    assert.equal(page.toggles[1].attributes.get('aria-pressed'), 'true');
-    page.toggles[0].dispatchEvent(new Event('click'));
+    assert.deepEqual(page.selected(), ['auto']);
+    page.toggles[1].dispatchEvent(new Event('click'));
     assert.equal(page.classes.has('dark'), false);
     assert.equal(page.metas[0].content, '#F8F7F3');
-    assert.equal(page.toggles[1].attributes.get('aria-pressed'), 'false');
+    assert.deepEqual(page.selected(), ['light']);
     assert.equal(page.saved(), blocked ? null : 'light');
     page.system(false);
     page.system(true);
@@ -165,20 +168,54 @@ test('system theme changes update browser chrome and controls until a manual cho
   }
 });
 
-test('saved theme survives system changes and other-tab changes can restore system mode', () => {
+test('Auto restores live system detection after either manual choice, including with blocked storage', () => {
+  for (const blocked of [false, true]) {
+    for (const manual of ['light', 'dark']) {
+      for (const systemDark of [false, true]) {
+        const page = themePage(systemDark, null, blocked);
+        page.toggles[manual === 'light' ? 1 : 2].dispatchEvent(new Event('click'));
+        assert.deepEqual(page.selected(), [manual]);
+        assert.equal(page.classes.has('dark'), manual === 'dark');
+        page.toggles[0].dispatchEvent(new Event('click'));
+        assert.deepEqual(page.selected(), ['auto']);
+        assert.equal(page.classes.has('dark'), systemDark);
+        assert.equal(page.saved(), blocked ? null : 'auto');
+        page.system(!systemDark);
+        assert.equal(page.classes.has('dark'), !systemDark);
+        assert.equal(page.metas[0].content, systemDark ? '#F8F7F3' : '#0F1E3A');
+        assert.equal(page.metas.length, 1);
+        assert.deepEqual(page.selected(), ['auto']);
+        const reloaded = themePage(!systemDark, page.saved(), blocked);
+        assert.equal(reloaded.initialDark, !systemDark);
+        assert.deepEqual(reloaded.selected(), ['auto']);
+      }
+    }
+  }
+});
+
+test('saved theme survives system changes and other-tab changes can restore Auto', () => {
   const page = themePage(false, 'dark');
   page.system(true);
   page.system(false);
   assert.equal(page.classes.has('dark'), true);
+  assert.deepEqual(page.selected(), ['dark']);
   page.storage('theme', 'light');
   assert.equal(page.classes.has('dark'), false);
+  assert.deepEqual(page.selected(), ['light']);
   page.storage('other', 'dark');
   assert.equal(page.classes.has('dark'), false);
-  page.storage('theme', null);
+  page.storage('theme', 'auto');
+  assert.deepEqual(page.selected(), ['auto']);
   page.system(true);
   assert.equal(page.classes.has('dark'), true);
-  page.storage(null, null);
+  page.storage('theme', 'dark');
+  page.storage('theme', null);
+  assert.deepEqual(page.selected(), ['auto']);
   page.system(false);
+  assert.equal(page.classes.has('dark'), false);
+  page.storage('theme', 'dark');
+  page.storage(null, null);
+  assert.deepEqual(page.selected(), ['auto']);
   assert.equal(page.classes.has('dark'), false);
 });
 
