@@ -69,9 +69,14 @@ function ModelDetails({ section }: { section: GuideSection }) {
           </div>
           <code>Area = (BTC ÷ 21,000,000) × 148,940,000 km²</code>
           <p>
-            1 BTC ≈ 7.1 km², with a local square about 2.7 km per side. Land
+            1 BTC ≈ 7.1 km², with an equivalent flat square about 2.66 km per side. Land
             includes Antarctica and other ice-covered land, and excludes oceans.
             You can place the comparison over water.
+          </p>
+          <p>
+            Side length is the square root of the unrounded area, expressed as
+            an equivalent flat square. Readouts round to the nearest displayed
+            decimal; the map uses the unrounded area.
           </p>
           <p>
             This model describes scale. It does not describe land prices or

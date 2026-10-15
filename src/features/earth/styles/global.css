@@ -43,7 +43,7 @@
   --text-heading: 1.5rem;
   /* Keep map accents on the shared brand color, with legible readout text. */
   --map-orange: var(--orange);
-  --readout-ink: var(--color-emphasis-ink);
+  --readout-ink: #b45309;
   --readout-halo: #fff7ec;
   color-scheme: light;
   --error: #a4372e;
@@ -93,7 +93,6 @@
 
 .earth-feature[data-theme='dark'] {
   color-scheme: dark;
-  --readout-halo: #151a21;
   --error: #ff9c90;
   --overlay-opacity: 0.2;
   --globe-sky: radial-gradient(

@@ -9,6 +9,7 @@
   z-index: 5;
   flex-shrink: 0;
   min-height: 44px;
+  width: calc(100% - 56px);
 }
 .earth-feature .floating-search .location-search {
   position: absolute;
@@ -21,21 +22,39 @@
   top: 20px;
   left: 20px;
   z-index: 4;
-  width: var(--panel-width);
+  width: calc(var(--panel-width) + 56px);
   max-height: calc(100dvh - 80px);
   display: flex;
   flex-direction: column;
   gap: 12px;
+}
+.earth-feature .amount-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 44px;
+  align-items: start;
+  gap: 12px;
+}
+.earth-feature .amount-row .floating-amount {
+  min-width: 0;
 }
 @media (max-width: 800px) {
   .earth-feature.app-shell .earth-workspace {
     --panel-width: 300px;
   }
   .earth-feature .floating-panels {
-    top: 12px;
+    /* Center the 44px fields against the menu and info button rows. */
+    top: calc(var(--menu-control-top) + (var(--menu-control-size) - 44px) / 2);
     left: 12px;
+    width: var(--panel-width);
     max-width: calc(100% - 104px);
     max-height: calc(100dvh - 100px);
+    gap: calc(var(--menu-control-size) - 44px + 12px);
+  }
+  .earth-feature .amount-row {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .earth-feature .floating-search {
+    width: 100%;
   }
 }
 @media (max-width: 480px) {
@@ -43,5 +62,3 @@
     max-width: calc(100% - 92px);
   }
 }
-
-.earth-feature .brand-name { font-family: inherit; font-weight: inherit; text-transform: none; }

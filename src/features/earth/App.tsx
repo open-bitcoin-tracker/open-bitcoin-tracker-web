@@ -2,7 +2,7 @@ import { useCallback, useState } from 'react';
 import About from './components/About';
 import AmountInput from './components/AmountInput';
 import AreaReadout from './components/AreaReadout';
-import BrandPanel from './components/BrandPanel';
+import InfoButton from './components/InfoButton';
 import EarthMap from './components/EarthMap';
 import LocationSearch from './components/LocationSearch';
 import MeasurementSelect from './components/MeasurementSelect';
@@ -37,14 +37,16 @@ export default function App() {
     <div className="earth-feature app-shell" lang="en" data-theme={theme}>
       <div className="earth-workspace">
         <div className="floating-panels">
-          <BrandPanel onAbout={() => setAboutOpen(true)} />
-          <AmountInput
-            raw={amount.raw}
-            unit={amount.unit}
-            error={amount.error}
-            onChange={amount.setRaw}
-            onUnitChange={amount.chooseUnit}
-          />
+          <div className="amount-row">
+            <AmountInput
+              raw={amount.raw}
+              unit={amount.unit}
+              error={amount.error}
+              onChange={amount.setRaw}
+              onUnitChange={amount.chooseUnit}
+            />
+            <InfoButton onAbout={() => setAboutOpen(true)} />
+          </div>
           <section className="floating-search" aria-label="Comparison location">
             <LocationSearch selectedName={place} onSelect={choosePlace} />
           </section>
@@ -52,6 +54,7 @@ export default function App() {
         <AreaReadout
           km2={amount.km2}
           measurements={measurements}
+          ready={map.ready}
           readoutRef={map.readoutRef}
         />
         <MeasurementSelect value={measurements} onChange={chooseMeasurements} />

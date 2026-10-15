@@ -6,12 +6,14 @@ import './AreaReadout.css';
 interface AreaReadoutProps {
   km2: number | null;
   measurements: MeasurementSystem;
+  ready: boolean;
   readoutRef: Ref<HTMLElement>;
 }
 
 export default function AreaReadout({
   km2,
   measurements,
+  ready,
   readoutRef,
 }: AreaReadoutProps) {
   const readout = km2 === null ? null : formatArea(km2, measurements);
@@ -25,6 +27,7 @@ export default function AreaReadout({
     <section
       ref={readoutRef}
       className="result"
+      hidden={!ready || !hasArea}
       aria-label="Equivalent land area"
     >
       <div className="result-summary">

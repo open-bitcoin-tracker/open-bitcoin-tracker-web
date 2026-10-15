@@ -34,6 +34,7 @@ export function useEarthMap({
   const overlayRef = useRef<SVGPathElement>(null);
   const readoutRef = useRef<HTMLElement>(null);
   const mapRef = useRef<Map | null>(null);
+  const loadedRef = useRef(false);
   const baseStyleRef = useRef<StyleSpecification | null>(null);
   const centerRef = useRef(DEFAULT_CENTER);
   const optionsRef = useRef({ km2, theme, onInteraction });
@@ -51,7 +52,7 @@ export function useEarthMap({
     const map = mapRef.current;
     const path = overlayRef.current;
     const area = optionsRef.current.km2 ?? 0;
-    if (!map || !path || !baseStyleRef.current) return;
+    if (!map || !path || !baseStyleRef.current || !loadedRef.current) return;
     const projected = viewportOverlay(map, area);
     renderOverlay(path, readoutRef.current, projected);
   }, []);
@@ -66,6 +67,9 @@ export function useEarthMap({
     let disposed = false;
 
     function cleanup() {
+      loadedRef.current = false;
+      if (readoutRef.current) readoutRef.current.style.visibility = 'hidden';
+      overlayRef.current?.removeAttribute('d');
       clearTimeout(timer);
       observer?.disconnect();
       stopFollowing?.();
@@ -129,6 +133,7 @@ export function useEarthMap({
         });
         instance.on('load', () => {
           clearTimeout(timer);
+          loadedRef.current = true;
           setReady(true);
           setError(null);
           syncOverlay();
@@ -161,7 +166,7 @@ export function useEarthMap({
     return () => { disposed = true; cleanup(); };
   }, [retryCount, syncOverlay]);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     syncOverlay();
   }, [km2, measurements, ready, syncOverlay]);
 

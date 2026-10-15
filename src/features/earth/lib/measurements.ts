@@ -16,14 +16,14 @@ export function formatArea(
       return { number: formatSmall(m2 / METRES_PER_FOOT ** 2), unit: 'ft²' };
     if (m2 > 0 && m2 / SQUARE_METRES_PER_MILE < 1 - Number.EPSILON * 4)
       return {
-        number: formatRounded(m2 / SQUARE_METRES_PER_ACRE),
+        number: formatMeasurement(m2 / SQUARE_METRES_PER_ACRE),
         unit: 'acres',
       };
     return { number: formatLarge(m2 / SQUARE_METRES_PER_MILE), unit: 'mi²' };
   }
   if (km2 > 0 && km2 < 0.01) return { number: formatSmall(m2), unit: 'm²' };
   if (km2 >= 0.01 && km2 < 1)
-    return { number: formatRounded(km2 * 100), unit: 'ha' };
+    return { number: formatMeasurement(km2 * 100), unit: 'ha' };
   return { number: formatLarge(km2), unit: 'km²' };
 }
 
@@ -36,19 +36,14 @@ export function formatSide(
   const smallUnitMetres = system === 'metric' ? 1 : METRES_PER_FOOT;
   // Treat an exact unit boundary as equal despite square-root roundoff.
   return metres / largeUnitMetres < 1 - Number.EPSILON * 4
-    ? `${formatRounded(metres / smallUnitMetres)} ${system === 'metric' ? 'm' : 'ft'}`
-    : `${formatRounded(metres / largeUnitMetres)} ${system === 'metric' ? 'km' : 'mi'}`;
+    ? `${formatMeasurement(metres / smallUnitMetres)} ${system === 'metric' ? 'm' : 'ft'}`
+    : `${formatMeasurement(metres / largeUnitMetres)} ${system === 'metric' ? 'km' : 'mi'}`;
 }
 
-function formatRounded(value: number): string {
-  const scale = value > 0 && value < 1 ? 10 : 1;
-  const scaled = value * scale;
-  // Do not round an exact measurement up again because of conversion roundoff.
-  const rounded = Math.ceil(scaled - Number.EPSILON * scaled * 4) / scale;
-  const decimals = rounded > 0 && rounded < 1 ? 1 : 0;
-  return rounded.toLocaleString('en-GB', {
-    minimumFractionDigits: decimals,
-    maximumFractionDigits: decimals,
+function formatMeasurement(value: number): string {
+  // Round to nearest, retaining enough precision for sub-unit side lengths.
+  return value.toLocaleString('en-GB', {
+    maximumFractionDigits: value > 0 && value < 1 ? 3 : 2,
   });
 }
 
@@ -59,7 +54,7 @@ function formatSmall(value: number): string {
 }
 
 function formatLarge(value: number): string {
-  return (Math.ceil(value * 10) / 10).toLocaleString('en-GB', {
+  return value.toLocaleString('en-GB', {
     minimumFractionDigits: 1,
     maximumFractionDigits: 1,
   });

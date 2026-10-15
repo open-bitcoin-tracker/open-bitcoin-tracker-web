@@ -1,0 +1,25 @@
+.earth-feature .about-help {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  background: var(--panel);
+  box-shadow: var(--panel-shadow);
+  color: var(--muted);
+}
+.earth-feature .about-help:hover {
+  background: var(--panel);
+  color: var(--ink);
+}
+@media (max-width: 800px) {
+  .earth-feature .about-help {
+    position: fixed;
+    top: calc(var(--menu-control-top) + var(--menu-control-size) + 12px);
+    right: var(--menu-control-right);
+    width: var(--menu-control-size);
+    height: var(--menu-control-size);
+  }
+}

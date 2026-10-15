@@ -26,28 +26,23 @@ export function renderOverlay(
 
   if (!readout) return;
   const anchor = projected.bottomLeft;
-  const offscreenApproximation =
-    projected.overlay.approximate &&
-    anchor &&
-    (anchor.x < 0 ||
-      anchor.x + readoutWidth + 32 > projected.viewportWidth ||
-      anchor.y > projected.viewportHeight ||
-      anchor.y - readoutHeight - 32 < 0);
-  readout.classList.toggle(
-    'result-anchored',
-    !!anchor && !offscreenApproximation,
-  );
-  if (anchor && !offscreenApproximation) {
+  const anchored = !!projected.path && !!anchor;
+  readout.classList.toggle('result-anchored', anchored);
+  if (anchor && anchored) {
     readout.style.left = `${anchor.x + 16}px`;
     readout.style.top = `${anchor.y - 16}px`;
     readout.style.visibility =
       projected.width >= readoutWidth + 32 &&
-      projected.height >= readoutHeight + 32
-        ? ''
+      projected.height >= readoutHeight + 32 &&
+      anchor.x >= 0 &&
+      anchor.x + readoutWidth + 32 <= projected.viewportWidth &&
+      anchor.y <= projected.viewportHeight &&
+      anchor.y - readoutHeight - 32 >= 0
+        ? 'visible'
         : 'hidden';
   } else {
     readout.style.removeProperty('left');
     readout.style.removeProperty('top');
-    readout.style.removeProperty('visibility');
+    readout.style.visibility = 'hidden';
   }
 }

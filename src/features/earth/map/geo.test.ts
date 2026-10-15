@@ -4,7 +4,7 @@ import { LAND_KM2, toArea } from '../lib/bitcoin';
 import { createOverlay } from './geo';
 
 describe('spherical geographic overlay', () => {
-  for (const btc of [0.00000001, 0.001, 1, 100, 10_000, 140_000]) {
+  for (const btc of [0.00000001, 0.001, 1, 10.6, 100, 10_000, 140_000]) {
     for (const lat of [0, 51.5072, -33.9, 75, 84]) {
       for (const lng of [0, 179.99999, -179.99999]) {
         it(`verifies ${btc} BTC at ${lng}, ${lat}`, () => {
