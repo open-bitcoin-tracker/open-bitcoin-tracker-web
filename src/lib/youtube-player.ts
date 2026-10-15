@@ -1,5 +1,5 @@
 export type YouTubeVideo = { id: string; startSeconds: number };
-export type YouTubeProgress = { currentTime: number; duration: number };
+export type YouTubeProgress = { currentTime: number; duration: number; isLive: boolean };
 export type YouTubeCaptions = { enabled: boolean; available: boolean };
 
 const VIDEO_ID = /^[A-Za-z0-9_-]{11}$/;
@@ -54,6 +54,7 @@ type YouTubePlayer = {
   seekTo(seconds: number, allowSeekAhead: boolean): void;
   getCurrentTime(): number;
   getDuration(): number;
+  getVideoData?(): { video_id?: string; isLive?: boolean };
   getOptions?(module?: string): unknown;
   getOption?(module: string, option: string): unknown;
   setOption?(module: string, option: string, value: unknown): void;
@@ -161,14 +162,20 @@ export function createYouTubePlayer(container: HTMLElement, callbacks: YouTubeCa
   let generation = 0;
 
   function readProgress(): YouTubeProgress {
-    if (!ready || !player || !selected || destroyed) return { currentTime: 0, duration: 0 };
+    if (!ready || !player || !selected || destroyed) return { currentTime: 0, duration: 0, isLive: false };
+    let isLive = false;
+    try {
+      // Optional player metadata: live streams can report a finite duration too.
+      const data = player.getVideoData?.();
+      isLive = data?.video_id === selected.id && data.isLive === true;
+    } catch { /* Missing metadata must not interrupt progress or playback. */ }
     try {
       const rawDuration = player.getDuration();
       const duration = Number.isFinite(rawDuration) && rawDuration > 0 ? rawDuration : 0;
       const rawTime = player.getCurrentTime();
       const currentTime = duration && Number.isFinite(rawTime) ? Math.max(0, Math.min(rawTime, duration)) : 0;
-      return { currentTime, duration };
-    } catch { return { currentTime: 0, duration: 0 }; }
+      return { currentTime, duration, isLive };
+    } catch { return { currentTime: 0, duration: 0, isLive }; }
   }
   function applyPendingSeek() {
     if (!ready || !player || pendingSeek === undefined || destroyed) return;

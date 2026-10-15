@@ -102,18 +102,31 @@ const locale = htmlLang(Astro.currentLocale);
         </div>
         <p id="video-price-keyboard-hint" class="video-sr-only">{t.priceKeyboardHint}</p>
       </section>
-      <section class="video-dock" aria-label={t.controlsLabel}>
+      <dialog id="video-picker" class="video-picker" data-video-picker aria-labelledby="video-picker-title">
+        <h2 id="video-picker-title" class="video-sr-only">{t.pickVideo}</h2>
         <form class="video-form" data-video-form novalidate>
-          <button class="video-change video-cancel" type="button" data-cancel-video hidden>{t.cancel}</button>
-          <label class="video-sr-only" for="video-url">{t.videoLabel}</label>
-          <div class="video-url-field">
-            <input id="video-url" data-video-url type="text" inputmode="url" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder={t.urlPlaceholder} aria-describedby="video-error" disabled />
-            <button class="video-submit" type="submit" data-load-video aria-label={t.load} title={t.load} disabled>
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14m-6-6 6 6-6 6" /></svg>
+          <div class="video-picker-header">
+            <label class="video-sr-only" for="video-url">{t.videoLabel}</label>
+            <div class="video-url-field">
+              <input id="video-url" data-video-url type="text" inputmode="url" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder={t.urlPlaceholder} aria-describedby="video-error" disabled />
+              <button class="video-submit" type="submit" data-load-video aria-label={t.load} title={t.load} disabled>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14m-6-6 6 6-6 6" /></svg>
+              </button>
+            </div>
+            <button class="video-icon-button video-cancel" type="button" data-cancel-video aria-label={t.cancel} title={t.cancel}>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="m6 6 12 12M6 18 18 6" /></svg>
             </button>
           </div>
-          <button id="video-suggestions-toggle" class="video-change video-suggestions-toggle" type="button" data-video-suggestions-toggle aria-expanded="false" aria-controls="video-suggestions" disabled>{t.viewSuggestions}</button>
-          <ul id="video-suggestions" class="video-suggestions" data-video-suggestions aria-label={t.suggestionsLabel} hidden>
+          <p id="video-error" class="video-message video-error" data-video-error role="alert" hidden></p>
+          <div class="video-picker-tabs" role="tablist" aria-label={t.pickVideo}>
+            <button id="video-recent-tab" class="video-picker-tab" type="button" role="tab" data-video-tab="recent" aria-controls="video-recent-panel" aria-selected="false" tabindex="-1" hidden disabled>{t.recentTab}</button>
+            <button id="video-suggestions-tab" class="video-picker-tab" type="button" role="tab" data-video-tab="suggestions" aria-controls="video-suggestions-panel" aria-selected="true" disabled>{t.suggestionsTab}</button>
+          </div>
+          <div id="video-recent-panel" class="video-picker-content" role="tabpanel" data-video-panel="recent" aria-labelledby="video-recent-tab" tabindex="0" hidden>
+            <ul class="video-recents" data-video-recents></ul>
+          </div>
+          <div id="video-suggestions-panel" class="video-picker-content" role="tabpanel" data-video-panel="suggestions" aria-labelledby="video-suggestions-tab" tabindex="0">
+          <ul class="video-suggestions" data-video-suggestions aria-label={t.suggestionsLabel}>
             {videoSuggestions.map(suggestion => (
               <li>
                 <button type="button" class="video-suggestion" data-video-suggestion={suggestion.id} aria-label={`${t.load}: ${suggestion.title}`} title={suggestion.title} disabled>
@@ -123,13 +136,13 @@ const locale = htmlLang(Astro.currentLocale);
               </li>
             ))}
           </ul>
-        </form>
-        <div class="video-playback" data-video-controls hidden>
-          <button type="button" class="video-change" data-change-video disabled>{t.changeVideo}</button>
-          <div class="video-player-panel" role="group" aria-label={t.controlsLabel}>
-          <div class="video-timeline">
-            <input class="video-seek" data-video-seek type="range" min="0" max="0" value="0" step="1" aria-label={t.seek} aria-valuetext={t.playbackPosition.replace('{current}', '0:00').replace('{duration}', '—')} disabled />
           </div>
+        </form>
+      </dialog>
+      <section class="video-dock" aria-label={t.controlsLabel}>
+        <div class="video-playback" data-video-controls hidden>
+          <button type="button" class="video-change" data-change-video aria-haspopup="dialog" aria-controls="video-picker" aria-expanded="false" disabled>{t.changeVideo}</button>
+          <div class="video-player-panel" data-playback-panel role="group" aria-label={t.controlsLabel} hidden>
           <div class="video-controls">
           <button type="button" class="video-icon-button" data-play-pause aria-label={t.play} title={t.play} disabled>
             <svg data-play-icon width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="m8 5 11 7-11 7z" /></svg>
@@ -144,7 +157,7 @@ const locale = htmlLang(Astro.currentLocale);
               <input id="video-volume" class="video-seek video-volume-slider" data-video-volume type="range" min="0" max="100" value="100" step="1" aria-valuetext="100%" disabled />
             </span>
           </div>
-          <div class="video-time" aria-hidden="true">
+          <div class="video-time" data-video-time aria-hidden="true">
             <span data-video-current>0:00</span><span>/</span><span data-video-duration>—</span>
           </div>
           <button type="button" class="video-icon-button" data-subtitles aria-label={t.subtitles} title={t.subtitlesUnavailable} aria-pressed="false" disabled>
@@ -154,9 +167,11 @@ const locale = htmlLang(Astro.currentLocale);
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m17 2 4 4-4 4M3 11V9a3 3 0 0 1 3-3h15M7 22l-4-4 4-4m14-1v2a3 3 0 0 1-3 3H3" /></svg>
           </button>
           </div>
+          <div class="video-timeline" data-video-timeline>
+            <input class="video-seek" data-video-seek type="range" min="0" max="0" value="0" step="1" aria-label={t.seek} aria-valuetext={t.playbackPosition.replace('{current}', '0:00').replace('{duration}', '—')} disabled />
+          </div>
           </div>
         </div>
-        <p id="video-error" class="video-message video-error" data-video-error role="alert" hidden></p>
         <p class="video-sr-only" data-video-status role="status" hidden></p>
         <p class="video-message" data-control-status role="status" hidden></p>
         <noscript><p class="video-message">{t.noScript}</p></noscript>
@@ -270,7 +285,19 @@ const locale = htmlLang(Astro.currentLocale);
   .video-price { --price-chars: 8; --video-price-base-size: clamp(3rem, min(9.375vw, 16.6667vh, 207vw / var(--price-chars)), 22.5rem); color: var(--video-price-colour, #fff); font-family: var(--video-price-font, var(--font-sans)); font-size: calc(var(--video-price-base-size) * var(--video-price-scale, 1) * var(--video-price-fit, 1)); font-weight: var(--video-price-weight, 750); letter-spacing: var(--video-price-spacing, -.065em); padding-inline-end: .065em; padding-block: var(--video-price-padding, 0); -webkit-text-stroke: var(--video-price-stroke-width, 0px) var(--video-price-stroke-colour, #000); paint-order: stroke fill; line-height: 1.2; font-variant-numeric: tabular-nums; white-space: nowrap; text-shadow: 0 3px 30px #000, 0 0 80px #0009; }
   .video-dock { position: fixed; bottom: max(1rem, env(safe-area-inset-bottom)); left: 50%; transform: translateX(-50%); width: min(480px, calc(100% - 3rem)); z-index: 3; text-align: center; }
   .video-page[data-subtitles-enabled] .video-dock { bottom: max(7rem, 16svh, env(safe-area-inset-bottom)); }
-  .video-url-field { display: flex; align-items: center; gap: .75rem; padding: .5rem; padding-left: 1rem; border: 0; border-radius: 14px; background: rgb(16 16 16 / .75); backdrop-filter: blur(12px); }
+  .video-picker { position: fixed; inset: 0 auto 0 0; width: min(32rem, 100%); max-width: 100%; height: 100dvh; max-height: 100dvh; margin: 0; padding: max(1.75rem, env(safe-area-inset-top)) max(1.5rem, env(safe-area-inset-right)) max(1.75rem, env(safe-area-inset-bottom)) max(1.5rem, env(safe-area-inset-left)); overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; border: 0; border-right: 1px solid #ffffff14; background: #111; color: #fff; box-shadow: 12px 0 60px #0005; transform: translate3d(-100%, 0, 0); transition: transform .3s ease; will-change: transform; }
+  .video-picker[open] { transform: translate3d(0, 0, 0); }
+  .video-picker[open][data-closing] { transform: translate3d(-100%, 0, 0); pointer-events: none; }
+  .video-picker::backdrop { background: rgb(0 0 0 / .45); opacity: 0; transition: opacity .3s ease; }
+  .video-picker[open]::backdrop { opacity: 1; }
+  .video-picker[open][data-closing]::backdrop { opacity: 0; }
+  @starting-style {
+    .video-picker[open] { transform: translate3d(-100%, 0, 0); }
+    .video-picker[open]::backdrop { opacity: 0; }
+  }
+  .video-picker-header { display: flex; align-items: center; gap: .75rem; margin-bottom: 1.25rem; }
+  .video-cancel { flex-shrink: 0; width: 3.5rem; height: 3.5rem; background: #ffffff0d; }
+  .video-url-field { display: flex; flex: 1; min-width: 0; height: 3.5rem; align-items: center; gap: .5rem; padding: .4375rem; padding-left: 1rem; border: 1px solid #ffffff14; border-radius: 14px; background: #ffffff08; }
   input { min-width: 0; width: 100%; border: 0; background: transparent; color: #fff; font-size: .85rem; padding: .5rem 0; }
   input::placeholder { color: #aaa; }
   input[aria-invalid="true"] { color: #ffc2b2; }
@@ -278,24 +305,40 @@ const locale = htmlLang(Astro.currentLocale);
   .video-url-field:hover, .video-url-field:has([data-video-url]:focus-visible) { background: rgb(50 50 50 / .9); }
   .video-submit { flex-shrink: 0; display: grid; place-items: center; width: 2.5rem; height: 2.5rem; border: 0; border-radius: 9px; background: #ff981e; color: #211000; }
   .video-submit:hover { background: #ffb047; }
-  .video-form { max-height: calc(100svh - 2rem); overflow-y: auto; scrollbar-width: thin; }
-  .video-form:has(.video-suggestions:not([hidden])) { padding: .75rem; border-radius: 18px; background: #101010; box-shadow: 0 8px 40px #0005; }
-  .video-page[data-subtitles-enabled] .video-form { max-height: calc(100svh - max(7rem, 16svh, env(safe-area-inset-bottom)) - 1rem); }
-  .video-suggestions-toggle { margin-top: .75rem; }
-  .video-suggestions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .75rem; max-height: min(60svh, 28rem); overflow-y: auto; scrollbar-width: thin; margin: .75rem 0 0; padding: .25rem; list-style: none; text-align: left; }
+  .video-picker-tabs { display: flex; gap: .35rem; padding: .3rem; border-radius: 999px; background: #ffffff08; }
+  .video-picker-tab { flex: 1; min-height: 2.75rem; padding: .65rem 1rem; border: 0; border-radius: 999px; background: transparent; color: #aaa; font-size: .9rem; font-weight: 600; }
+  .video-picker-tab:hover { color: #fff; background: #ffffff08; }
+  .video-picker-tab[aria-selected="true"] { color: #fff; background: #ffffff14; box-shadow: 0 1px 4px #0002; }
+  .video-picker-content { margin-top: 1.25rem; }
+  .video-picker-content:focus-visible { outline: 2px solid #ffc477; outline-offset: 4px; }
+  .video-recents { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; margin: 0; padding: 0; list-style: none; }
+  .video-recents :global(.video-recent) { position: relative; min-width: 0; }
+  .video-recents :global(.video-recent-load) { display: block; width: 100%; height: 100%; padding: 0; overflow: hidden; border: 0; border-radius: 10px; background: rgb(20 20 20 / .95); color: #fff; text-align: left; }
+  .video-recents :global(.video-recent-load img) { display: block; width: 100%; height: auto; aspect-ratio: 16 / 9; object-fit: cover; background: #242424; }
+  .video-recents :global(.video-recent-title) { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; min-height: 2.8em; overflow: hidden; margin: .65rem .75rem; font-size: .8rem; line-height: 1.4; overflow-wrap: anywhere; }
+  .video-recents :global(.video-recent-delete) { position: absolute; top: .35rem; right: .35rem; display: grid; place-items: center; width: 2.5rem; height: 2.5rem; padding: 0; border: 0; border-radius: 50%; background: #000b; backdrop-filter: blur(8px); color: #eee; }
+  .video-recents :global(.video-recent-load:hover) { background: #303030; }
+  .video-recents :global(.video-recent-delete:hover) { background: #191919; color: #fff; }
+  .video-recents :global(button:focus-visible) { outline: 2px solid #ffc477; outline-offset: 2px; }
+  .video-suggestions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; margin: 0; padding: 0; list-style: none; text-align: left; }
   .video-suggestion { display: block; width: 100%; height: 100%; padding: 0; overflow: hidden; border: 0; border-radius: 10px; background: rgb(20 20 20 / .95); color: #fff; text-align: left; }
   .video-suggestion:hover { background: #303030; }
   .video-suggestion img { display: block; width: 100%; height: auto; aspect-ratio: 16 / 9; object-fit: cover; }
   .video-suggestion span { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; margin: .65rem .75rem; font-size: .8rem; line-height: 1.4; }
-  .video-cancel { margin-bottom: .75rem; }
   .video-playback { display: flex; flex-direction: column; align-items: center; gap: .75rem; }
+  .video-playback:not([hidden]) { animation: video-controls-in .3s ease; }
+  @keyframes video-controls-in {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
   .video-player-panel { width: 100%; padding: .35rem; border: 0; border-radius: 14px; background: rgb(16 16 16 / .75); backdrop-filter: blur(12px); }
   .video-controls { display: flex; align-items: center; gap: .5rem; }
   .video-controls .video-icon-button { width: 2.75rem; height: 2.75rem; flex-shrink: 0; border: 0; background: transparent; backdrop-filter: none; }
   .video-controls .video-icon-button:hover { background: rgb(255 255 255 / .1); }
   .video-icon-button[aria-pressed="true"] { color: #ffb047; background: rgb(71 41 9 / .85); }
-  .video-timeline { display: flex; align-items: center; padding: 0 .5rem; margin-bottom: .25rem; }
+  .video-timeline { display: flex; align-items: center; padding: 0 .5rem; margin-top: .25rem; }
   .video-time { display: flex; align-items: center; gap: .25rem; flex-shrink: 0; margin-right: auto; font-size: .7rem; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .video-controls:has(.video-time[hidden]) [data-subtitles] { margin-left: auto; }
   .video-seek { --video-progress: 0%; height: 2.75rem; padding: 0; cursor: pointer; appearance: none; accent-color: #ff981e; }
   .video-seek:disabled { cursor: default; }
   .video-seek::-webkit-slider-runnable-track { height: 4px; border-radius: 4px; background: linear-gradient(to right, #ff981e var(--video-progress), #ffffff50 var(--video-progress)); }
@@ -338,6 +381,8 @@ const locale = htmlLang(Astro.currentLocale);
     .video-playback:not([hidden]) ~ [data-video-status] { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
   }
   @media (max-width: 400px) {
+    .video-picker { padding-inline: 1rem; }
+    .video-suggestions, .video-recents { gap: .75rem; }
     .video-controls { gap: .25rem; }
     .video-controls .video-icon-button { width: 2rem; }
     .video-volume-control { min-width: 2rem; }
@@ -360,6 +405,8 @@ const locale = htmlLang(Astro.currentLocale);
     .video-price-stage { justify-content: flex-start; padding-top: calc(var(--menu-control-top) + var(--menu-control-size) + .5rem); }
   }
   @media (prefers-reduced-motion: reduce) {
+    .video-picker, .video-picker::backdrop { transition: none; }
+    .video-playback:not([hidden]) { animation: none; }
     .video-price-style { transition: none; }
     .video-appearance, .video-dock, .video-currency-chevron, .video-volume-reveal, .video-price-editing, .video-reset-price, .video-page :global(.site-nav) { transition: none; }
   }

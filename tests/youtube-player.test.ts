@@ -81,6 +81,7 @@ function harness({ apiAvailable = false, constructorFails = false } = {}) {
     calls: { name: string; volume?: number; request?: { videoId: string; startSeconds: number } }[] = [];
     currentTime = 42;
     duration = 300;
+    videoData: { video_id?: string; isLive?: boolean } = { video_id: VIDEO, isLive: false };
     seekCalls: { seconds: number; allowSeekAhead: boolean }[] = [];
     captionCalls: string[] = [];
     captionOptions: { module: string; option: string; value: unknown }[] = [];
@@ -99,6 +100,7 @@ function harness({ apiAvailable = false, constructorFails = false } = {}) {
     pauseVideo() { this.calls.push({ name: 'pause' }); }
     getCurrentTime() { return this.currentTime; }
     getDuration() { return this.duration; }
+    getVideoData() { return this.videoData; }
     seekTo(seconds: number, allowSeekAhead: boolean) {
       this.seekCalls.push({ seconds, allowSeekAhead }); this.currentTime = seconds;
     }
@@ -420,23 +422,43 @@ test('malformed player diagnostics never propagate non-numeric or non-finite err
   h.controller.destroy();
 });
 
+test('live metadata follows the selected video and safely handles unavailable player metadata', async () => {
+  const h = harness();
+  const player = await readyPlayer(h);
+  player.videoData = { video_id: VIDEO, isLive: true };
+  assert.equal(h.controller.getProgress().isLive, true, 'a live stream can have a finite duration');
+  h.controller.load(second);
+  assert.equal(h.controller.getProgress().isLive, false, 'metadata from the previous video must not mark the replacement live');
+  player.videoData = { video_id: SECOND, isLive: true };
+  assert.equal(h.controller.getProgress().isLive, true);
+  player.videoData = { video_id: SECOND, isLive: false };
+  assert.equal(h.controller.getProgress().isLive, false, 'a finished broadcast can return to normal timing');
+  player.getVideoData = () => { throw new Error('Metadata unavailable'); };
+  assert.equal(h.controller.getProgress().isLive, false);
+  assert.equal(h.controller.getProgress().duration, 300);
+  Object.defineProperty(player, 'getVideoData', { value: undefined });
+  assert.equal(h.controller.getProgress().isLive, false);
+  assert.equal(h.controller.getProgress().duration, 300);
+  h.controller.destroy();
+});
+
 test('progress readings remain finite and clamp missing, invalid, and out-of-range metadata', async () => {
   const h = harness();
-  assert.deepEqual({ ...h.controller.getProgress() }, { currentTime: 0, duration: 0 });
+  assert.deepEqual({ ...h.controller.getProgress() }, { currentTime: 0, duration: 0, isLive: false });
   const player = await readyPlayer(h);
-  assert.deepEqual({ ...h.controller.getProgress() }, { currentTime: 42, duration: 300 });
+  assert.deepEqual({ ...h.controller.getProgress() }, { currentTime: 42, duration: 300, isLive: false });
   player.currentTime = 500;
-  assert.deepEqual({ ...h.controller.getProgress() }, { currentTime: 300, duration: 300 });
+  assert.deepEqual({ ...h.controller.getProgress() }, { currentTime: 300, duration: 300, isLive: false });
   player.currentTime = -10;
   assert.equal(h.controller.getProgress().currentTime, 0);
   player.currentTime = NaN;
   assert.equal(h.controller.getProgress().currentTime, 0);
   for (const duration of [NaN, Infinity, -1, 0]) {
     player.duration = duration;
-    assert.deepEqual({ ...h.controller.getProgress() }, { currentTime: 0, duration: 0 });
+    assert.deepEqual({ ...h.controller.getProgress() }, { currentTime: 0, duration: 0, isLive: false });
   }
   player.getDuration = () => { throw new Error('Not ready'); };
-  assert.deepEqual({ ...h.controller.getProgress() }, { currentTime: 0, duration: 0 });
+  assert.deepEqual({ ...h.controller.getProgress() }, { currentTime: 0, duration: 0, isLive: false });
   assert.deepEqual(h.errorCodes, []);
   h.controller.destroy();
 });
@@ -504,7 +526,7 @@ test('replacing a selection cancels its queued seek and destroyed controls canno
   h.controller.destroy();
   h.controller.seekTo(30);
   h.controller.setLoop(true);
-  assert.deepEqual({ ...h.controller.getProgress() }, { currentTime: 0, duration: 0 });
+  assert.deepEqual({ ...h.controller.getProgress() }, { currentTime: 0, duration: 0, isLive: false });
   assert.equal(player.seekCalls.length, 0);
 });
 

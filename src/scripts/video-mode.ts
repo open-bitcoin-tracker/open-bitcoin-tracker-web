@@ -7,6 +7,7 @@ import { createVideoControls } from '../lib/video-controls';
 import { createVideoCurrencyPicker } from '../lib/video-currency-picker';
 import { createVideoPriceLayout } from '../lib/video-price-layout';
 import { createVideoPriceStyle } from '../lib/video-price-style';
+import { createVideoPickerTabs } from '../lib/video-picker-tabs';
 import type { PartyCopy } from '../i18n/party';
 import type { VideoCopy } from '../i18n/video';
 
@@ -80,13 +81,13 @@ function startVideoMode(root: HTMLElement) {
   });
 
   const form = root.querySelector<HTMLFormElement>('[data-video-form]')!;
+  const picker = root.querySelector<HTMLDialogElement>('[data-video-picker]')!;
   const input = root.querySelector<HTMLInputElement>('[data-video-url]')!;
-  const suggestionsToggle = root.querySelector<HTMLButtonElement>('[data-video-suggestions-toggle]')!;
-  const suggestions = root.querySelector<HTMLElement>('[data-video-suggestions]')!;
   const suggestionButtons = [...root.querySelectorAll<HTMLButtonElement>('[data-video-suggestion]')];
   const loadButton = root.querySelector<HTMLButtonElement>('[data-load-video]')!;
   const cancelButton = root.querySelector<HTMLButtonElement>('[data-cancel-video]')!;
   const controls = root.querySelector<HTMLElement>('[data-video-controls]')!;
+  const playbackPanel = root.querySelector<HTMLElement>('[data-playback-panel]')!;
   const playButton = root.querySelector<HTMLButtonElement>('[data-play-pause]')!;
   const muteButton = root.querySelector<HTMLButtonElement>('[data-mute]')!;
   const volumeInput = root.querySelector<HTMLInputElement>('[data-video-volume]')!;
@@ -94,6 +95,8 @@ function startVideoMode(root: HTMLElement) {
   const seek = root.querySelector<HTMLInputElement>('[data-video-seek]')!;
   const currentTime = root.querySelector<HTMLElement>('[data-video-current]')!;
   const totalTime = root.querySelector<HTMLElement>('[data-video-duration]')!;
+  const videoTime = root.querySelector<HTMLElement>('[data-video-time]')!;
+  const videoTimeline = root.querySelector<HTMLElement>('[data-video-timeline]')!;
   const subtitlesButton = root.querySelector<HTMLButtonElement>('[data-subtitles]')!;
   const loopButton = root.querySelector<HTMLButtonElement>('[data-loop]')!;
   const error = root.querySelector<HTMLElement>('[data-video-error]')!;
@@ -112,6 +115,9 @@ function startVideoMode(root: HTMLElement) {
   let adjustingVolume = false;
   let duration = 0;
   let progressRefresh: ReturnType<typeof setInterval> | undefined;
+  let pickerCloseTimer: ReturnType<typeof setTimeout> | undefined;
+  let restorePickerFocus = false;
+  let pendingVideo: YouTubeVideo | undefined;
 
   try {
     const saved = JSON.parse(window.localStorage.getItem(VIDEO_PLAYBACK_KEY) ?? 'null');
@@ -143,19 +149,52 @@ function startVideoMode(root: HTMLElement) {
   }
 
   function updateIdle() {
-    uiVisibility.setEnabled(hasVideo && form.hidden && !scrubbing && !adjustingVolume);
+    uiVisibility.setEnabled(hasVideo && !picker.open && !scrubbing && !adjustingVolume);
   }
 
   function showForm(show: boolean, focus = true) {
-    setSuggestionsOpen(false);
-    form.hidden = !show;
     controls.hidden = show;
-    cancelButton.hidden = !hasVideo;
+    playbackPanel.hidden = !hasVideo;
+    changeButton.setAttribute('aria-expanded', String(show));
+    if (pickerCloseTimer !== undefined) clearTimeout(pickerCloseTimer);
+    pickerCloseTimer = undefined;
+    restorePickerFocus = !show && focus;
+    if (show) {
+      pickerTabs.refresh();
+      picker.removeAttribute('data-closing');
+      if (!picker.open) picker.showModal();
+      if (focus) { input.focus(); input.select(); }
+    } else if (picker.open && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      // Keep the dialog rendered until it has slid offscreen.
+      picker.setAttribute('data-closing', '');
+      pickerCloseTimer = setTimeout(finishPickerClose, 350);
+    } else {
+      finishPickerClose();
+    }
     updateIdle();
-    if (!focus) return;
-    if (show) { input.focus(); input.select(); }
-    else changeButton.focus();
   }
+
+  function finishPickerClose() {
+    if (pickerCloseTimer !== undefined) clearTimeout(pickerCloseTimer);
+    pickerCloseTimer = undefined;
+    if (picker.open) picker.close();
+    picker.removeAttribute('data-closing');
+    if (destroyed) return;
+    if (restorePickerFocus) changeButton.focus();
+    restorePickerFocus = false;
+    if (pendingVideo) {
+      const video = pendingVideo;
+      pendingVideo = undefined;
+      player.load(video);
+      startProgressRefresh();
+    }
+    updateIdle();
+  }
+
+  const onPickerTransitionEnd = (event: TransitionEvent) => {
+    if (event.target === picker && event.propertyName === 'transform' && pickerCloseTimer !== undefined) finishPickerClose();
+  };
+  picker.addEventListener('transitionend', onPickerTransitionEnd);
 
   function setPlaying(value: boolean) {
     playing = value;
@@ -192,6 +231,8 @@ function startVideoMode(root: HTMLElement) {
   function paintProgress() {
     if (destroyed || document.hidden || !hasVideo) return;
     const progress = player.getProgress();
+    videoTime.hidden = progress.isLive === true;
+    videoTimeline.hidden = progress.isLive === true;
     duration = Number.isFinite(progress.duration) && progress.duration > 0 ? progress.duration : 0;
     if (duration > 0 && videoStatus.textContent === t.loadingVideo) videoStatus.hidden = true;
     seek.disabled = duration <= 0;
@@ -250,11 +291,11 @@ function startVideoMode(root: HTMLElement) {
   const player = createYouTubePlayer(root.querySelector<HTMLElement>('[data-video-player]')!, {
     title: t.backgroundTitle,
     onState(value) {
-      if (destroyed) return;
+      if (destroyed || pendingVideo) return;
       setPlaying(value);
     },
     onError(code) {
-      if (destroyed) return;
+      if (destroyed || pendingVideo) return;
       hasVideo = false;
       scrubbing = false;
       adjustingVolume = false;
@@ -304,10 +345,12 @@ function startVideoMode(root: HTMLElement) {
   }
   mobileAudio.addEventListener('change', updateAudioMode);
 
-  function loadSelectedVideo(video: YouTubeVideo, { focus = true, persist = true } = {}) {
+  function loadSelectedVideo(video: YouTubeVideo, { focus = true, persist = true, remember = false } = {}) {
     if (destroyed) return;
     // Store only the validated ID and requested start time, without share tracking.
     const url = `https://www.youtube.com/watch?v=${video.id}${video.startSeconds > 0 ? `&t=${video.startSeconds}s` : ''}`;
+    // Persist history on acceptance; redraw only when the picker opens again.
+    if (remember) pickerTabs.remember(url, { deferRender: true });
     if (persist) {
       try { window.localStorage.setItem(VIDEO_SELECTION_KEY, JSON.stringify({ version: 1, url })); }
       catch { /* Playback remains available when browser storage is blocked. */ }
@@ -321,6 +364,8 @@ function startVideoMode(root: HTMLElement) {
     scrubbing = false;
     adjustingVolume = false;
     duration = 0;
+    videoTime.hidden = false;
+    videoTimeline.hidden = false;
     seek.value = seek.max = '0';
     seek.disabled = true;
     renderPosition(0);
@@ -330,9 +375,9 @@ function startVideoMode(root: HTMLElement) {
     setPlaying(false);
     videoStatus.textContent = t.loadingVideo;
     videoStatus.hidden = false;
+    stopProgressRefresh();
+    pendingVideo = video;
     showForm(false, focus);
-    player.load(video);
-    startProgressRefresh();
   }
 
   function restoreSelectedVideo() {
@@ -344,22 +389,7 @@ function startVideoMode(root: HTMLElement) {
     } catch { /* Missing, malformed, or blocked storage leaves the URL picker ready. */ }
   }
 
-  function setSuggestionsOpen(open: boolean) {
-    suggestions.hidden = !open;
-    suggestionsToggle.setAttribute('aria-expanded', String(open));
-    suggestionsToggle.textContent = open ? t.hideSuggestions : t.viewSuggestions;
-  }
-  const toggleSuggestions = () => {
-    if (!destroyed) setSuggestionsOpen(suggestions.hidden);
-  };
-  const dismissSuggestions = (event: KeyboardEvent) => {
-    if (event.key !== 'Escape' || suggestions.hidden) return;
-    event.preventDefault();
-    setSuggestionsOpen(false);
-    suggestionsToggle.focus();
-  };
-  suggestionsToggle.addEventListener('click', toggleSuggestions);
-  suggestions.addEventListener('keydown', dismissSuggestions);
+  const pickerTabs = createVideoPickerTabs(root, { copy: t, onSelect: video => loadSelectedVideo(video, { remember: true }) });
   for (const button of suggestionButtons) {
     button.disabled = false;
     button.addEventListener('click', () => {
@@ -368,8 +398,7 @@ function startVideoMode(root: HTMLElement) {
       if (video) loadSelectedVideo(video);
     });
   }
-  setSuggestionsOpen(false);
-  input.disabled = loadButton.disabled = changeButton.disabled = suggestionsToggle.disabled = false;
+  input.disabled = loadButton.disabled = changeButton.disabled = false;
   form.addEventListener('submit', event => {
     event.preventDefault();
     if (destroyed) return;
@@ -381,13 +410,14 @@ function startVideoMode(root: HTMLElement) {
       input.focus();
       return;
     }
-    loadSelectedVideo(video);
+    loadSelectedVideo(video, { remember: true });
   });
   input.addEventListener('input', () => {
     input.removeAttribute('aria-invalid');
     error.hidden = true;
   });
   changeButton.addEventListener('click', () => {
+    if (destroyed) return;
     input.value = '';
     input.removeAttribute('aria-invalid');
     error.hidden = true;
@@ -395,17 +425,17 @@ function startVideoMode(root: HTMLElement) {
     showForm(true);
   });
   function cancelEdit() {
-    if (!hasVideo) return;
+    if (destroyed) return;
     input.removeAttribute('aria-invalid');
     error.hidden = true;
     showForm(false);
   }
   cancelButton.addEventListener('click', cancelEdit);
-  input.addEventListener('keydown', event => {
-    if (event.key !== 'Escape' || !hasVideo) return;
+  const dismissPicker = (event: Event) => {
     event.preventDefault();
     cancelEdit();
-  });
+  };
+  picker.addEventListener('cancel', dismissPicker);
   function togglePlayback() {
     if (destroyed || !hasVideo) return;
     if (playing) player.pause();
@@ -413,7 +443,7 @@ function startVideoMode(root: HTMLElement) {
   }
   playButton.addEventListener('click', togglePlayback);
   function onVideoClick(event: MouseEvent) {
-    if (event.defaultPrevented || !form.hidden) return;
+    if (event.defaultPrevented || picker.open) return;
     const target = event.target as Element | null;
     // Price drags cancel their trailing click; plain price clicks toggle playback.
     // Leave editor buttons, form fields, and playback controls to their handlers.
@@ -527,6 +557,7 @@ function startVideoMode(root: HTMLElement) {
   document.addEventListener('visibilitychange', onVisibility);
   window.addEventListener('online', onOnline);
   restoreSelectedVideo();
+  if (!hasVideo) showForm(true, false);
   onVisibility();
   window.addEventListener('pagehide', () => {
     if (destroyed) return;
@@ -537,8 +568,13 @@ function startVideoMode(root: HTMLElement) {
     priceLayout?.destroy();
     uiVisibility.destroy();
     root.removeEventListener('click', onVideoClick);
-    suggestionsToggle.removeEventListener('click', toggleSuggestions);
-    suggestions.removeEventListener('keydown', dismissSuggestions);
+    pickerTabs.destroy();
+    pendingVideo = undefined;
+    picker.removeEventListener('cancel', dismissPicker);
+    picker.removeEventListener('transitionend', onPickerTransitionEnd);
+    if (pickerCloseTimer !== undefined) clearTimeout(pickerCloseTimer);
+    pickerCloseTimer = undefined;
+    if (picker.open) picker.close();
     stopProgressRefresh();
     player.destroy();
     if (rateRefresh !== undefined) clearInterval(rateRefresh);

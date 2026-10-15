@@ -11,8 +11,12 @@ import type { PriceFeedState } from '../src/lib/bitcoin-live-price.ts';
 import { parseYouTubeVideo } from '../src/lib/youtube-player.ts';
 import { videoSuggestions } from '../src/lib/video-suggestions.ts';
 import { video as videoCopy } from '../src/i18n/video.ts';
+import type { createVideoPickerTabs } from '../src/lib/video-picker-tabs.ts';
 
 const script = ts.transpileModule(readFileSync(new URL('../src/scripts/video-mode.ts', import.meta.url), 'utf8'), {
+  compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 },
+}).outputText;
+const pickerScript = ts.transpileModule(readFileSync(new URL('../src/lib/video-picker-tabs.ts', import.meta.url), 'utf8'), {
   compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 },
 }).outputText;
 
@@ -23,7 +27,7 @@ const copy = {
   invalidUrl: 'Enter a valid YouTube video URL.', videoUnavailable: 'This video cannot be played here.',
   embeddingDisabled: 'The owner of this video does not allow embedded playback. Try another YouTube video.',
   loadingVideo: 'Loading video', backgroundTitle: 'YouTube background video',
-  viewSuggestions: 'View suggestions', hideSuggestions: 'Hide suggestions',
+  removeRecent: 'Remove from recent videos', recentTitleLoading: 'Loading title…', recentTitleUnavailable: 'Title unavailable',
   seek: 'Video progress', subtitles: 'Subtitles', loop: 'Loop video', volume: 'Volume',
   subtitlesUnavailable: 'Subtitles unavailable for this video', playbackPosition: '{current} of {duration}',
   fullscreen: 'Fullscreen', exitFullscreen: 'Exit fullscreen', fullscreenUnavailable: 'Fullscreen unavailable',
@@ -34,22 +38,30 @@ const canonicalSecondUrl = 'https://www.youtube.com/watch?v=ZYXWVUTSRQP&t=30s';
 const videoSelectionKey = 'obt-video-selection';
 const videoPlaybackKey = 'obt-video-playback';
 type Video = { id: string; startSeconds: number };
-type Progress = { currentTime: number; duration: number };
+type Progress = { currentTime: number; duration: number; isLive?: boolean };
 type Captions = { enabled: boolean; available: boolean };
 
 class Control extends EventTarget {
+  children: Control[] = [];
   dataset: Record<string, string> = {};
   attributes = new Map<string, string>();
   controls = new Map<string, Control>();
   style = { values: new Map<string, string>(), setProperty(name: string, value: string) { this.values.set(name, value); } };
   textContent = '—';
   hidden = false;
+  open = false;
+  showModalCount = 0;
+  showModal() { this.open = true; this.showModalCount++; }
+  close() { this.open = false; }
   disabled = false;
   value = '';
   min = '0';
   max = '0';
   step = '1';
   title = '';
+  className = '';
+  type = '';
+  tabIndex = 0;
   focusCount = 0;
   selectCount = 0;
   capturedPointers = new Set<number>();
@@ -75,6 +87,8 @@ class Control extends EventTarget {
   setPointerCapture(id: number) { this.capturedPointers.add(id); }
   releasePointerCapture(id: number) { this.capturedPointers.delete(id); }
   hasPointerCapture(id: number) { return this.capturedPointers.has(id); }
+  append(...children: Control[]) { this.children.push(...children); }
+  replaceChildren() { this.children = []; }
 }
 
 interface Options {
@@ -87,12 +101,15 @@ interface Options {
   blockedStorage?: boolean;
   mobile?: boolean;
   viewportWidth?: number;
+  reducedMotion?: boolean;
+  realPicker?: boolean;
+  storedRecents?: string;
 }
 
 function harness(options: Options = {}) {
   const root = new Control();
   root.dataset = { copy: JSON.stringify(copy), locale: 'en-US' };
-  for (const selector of ['[data-video-controls]', '[data-video-error]', '[data-video-status]', '[data-cancel-video]', '[data-control-status]']) {
+  for (const selector of ['[data-video-controls]', '[data-video-error]', '[data-video-status]', '[data-control-status]']) {
     root.querySelector(selector).hidden = true;
   }
   for (const selector of ['[data-currency]', '[data-video-url]', '[data-load-video]', '[data-play-pause]', '[data-mute]', '[data-change-video]', '[data-video-seek]', '[data-video-volume]', '[data-subtitles]', '[data-loop]']) {
@@ -120,6 +137,8 @@ function harness(options: Options = {}) {
     },
   };
   const document = Object.assign(new EventTarget(), {
+    createElement: () => new Control(),
+    createElementNS: () => new Control(),
     hidden: options.hidden ?? false, fullscreenEnabled: options.fullscreen ?? false,
     fullscreenElement: null as object | null, documentElement,
     querySelector: () => root,
@@ -134,10 +153,12 @@ function harness(options: Options = {}) {
   const storage = new Map<string, string>();
   if (options.storedSelection !== undefined) storage.set(videoSelectionKey, options.storedSelection);
   if (options.storedPlayback !== undefined) storage.set(videoPlaybackKey, options.storedPlayback);
+  if (options.storedRecents !== undefined) storage.set('obt-video-recents', options.storedRecents);
   const storageWrites: { key: string; value: string }[] = [];
   const mobileAudio = Object.assign(new EventTarget(), { matches: options.mobile ?? false });
   const window = Object.assign(new EventTarget(), {
     matchMedia: (query: string) => {
+      if (query === '(prefers-reduced-motion: reduce)') return { matches: options.reducedMotion ?? false };
       const maxWidth = query.match(/max-width:\s*(\d+)px/);
       return maxWidth
         ? Object.assign(new EventTarget(), { matches: (options.viewportWidth ?? 1280) <= Number(maxWidth[1]) })
@@ -161,6 +182,7 @@ function harness(options: Options = {}) {
   const requests: { resolve: (values: Partial<Record<Currency, number>>) => void; reject: () => void }[] = [];
   const intervals = new Map<number, () => void>();
   const intervalDurations = new Map<number, number>();
+  const timeouts = new Map<number, () => void>();
   let timerId = 0;
   let feed: { onPrice(point: HistoryPoint): void; onState(state: PriceFeedState): void };
   let feedStops = 0;
@@ -180,6 +202,8 @@ function harness(options: Options = {}) {
   let controlsDestroys = 0;
   let currencyPickerDestroys = 0;
   const initializations: string[] = [];
+  const rememberedUrls: string[] = [];
+  let pickerTabDestroys = 0;
   const layoutRoots: unknown[] = [];
   const layoutRefreshes: { price: string; currency: string }[] = [];
   let priceLayoutDestroys = 0;
@@ -237,6 +261,22 @@ function harness(options: Options = {}) {
       refreshLayout();
       return { destroy() {} };
     },
+    createVideoPickerTabs: (pickerRoot: HTMLElement, pickerOptions: Parameters<typeof createVideoPickerTabs>[1]) => {
+      let picker: ReturnType<typeof createVideoPickerTabs> | undefined;
+      if (options.realPicker) {
+        const exports: { createVideoPickerTabs?: typeof createVideoPickerTabs } = {};
+        runInNewContext(pickerScript, {
+          exports, require: () => ({ parseYouTubeVideo, videoSuggestions }), document, window,
+          AbortController, AbortSignal, URLSearchParams, fetch: async () => ({ ok: false }),
+        });
+        picker = exports.createVideoPickerTabs!(pickerRoot, pickerOptions);
+      }
+      return {
+        remember(url: string, rememberOptions?: { deferRender?: boolean }) { rememberedUrls.push(url); picker?.remember(url, rememberOptions); },
+        refresh() { picker?.refresh(); },
+        destroy() { pickerTabDestroys++; picker?.destroy(); },
+      };
+    },
     // Exercise the real URL boundary without loading the external iframe API.
     parseYouTubeVideo,
     createYouTubePlayer: (_container: unknown, input: typeof callbacks) => {
@@ -264,35 +304,44 @@ function harness(options: Options = {}) {
     require: () => modules, exports: {}, document, window, navigator, Intl,
     setInterval: (callback: () => void, duration: number) => { intervals.set(++timerId, callback); intervalDurations.set(timerId, duration); return timerId; },
     clearInterval: (id: number) => { intervals.delete(id); intervalDurations.delete(id); },
+    setTimeout: (callback: () => void) => { timeouts.set(++timerId, callback); return timerId; },
+    clearTimeout: (id: number) => { timeouts.delete(id); },
   });
   const control = (selector: string) => root.querySelector(selector);
+  const finishPickerTransition = () => control('[data-video-picker]').dispatchEvent(Object.assign(new Event('transitionend'), { propertyName: 'transform' }));
   return {
-    root, window, requests, intervals, loaded, muted, volumes, sought, loopStates, captionStates, playbackAtLoad, control, storage, storageWrites,
+    root, window, requests, intervals, timeouts, loaded, muted, volumes, sought, loopStates, captionStates, playbackAtLoad, control, storage, storageWrites, finishPickerTransition,
     mobile(matches: boolean) { mobileAudio.matches = matches; mobileAudio.dispatchEvent(new Event('change')); },
-    initializations, layoutRoots, layoutRefreshes, priceLayoutDestroys: () => priceLayoutDestroys,
+    initializations, layoutRoots, layoutRefreshes, rememberedUrls, pickerTabDestroys: () => pickerTabDestroys, priceLayoutDestroys: () => priceLayoutDestroys,
     intervalCount: (duration: number) => [...intervalDurations.values()].filter(value => value === duration).length,
     intervalCallback: (duration: number) => [...intervals].find(([id]) => intervalDurations.get(id) === duration)?.[1],
     tick(duration: number) { for (const [id, callback] of [...intervals]) if (intervalDurations.get(id) === duration) callback(); },
     setProgress(value: Progress) { progress = { ...value }; },
     progressCalls: () => progressCalls,
     revealCalls: () => revealCalls,
-    click(selector: string) { control(selector).dispatchEvent(new Event('click')); },
+    click(selector: string, finishTransition = true) {
+      control(selector).dispatchEvent(new Event('click'));
+      if (finishTransition) finishPickerTransition();
+    },
     videoClick(target = root, prevented = false) {
       const event = new Event('click', { cancelable: true });
       Object.defineProperty(event, 'target', { value: target });
       if (prevented) event.preventDefault();
       root.dispatchEvent(event);
     },
-    submit(url: string) {
+    submit(url: string, finishTransition = true) {
       control('[data-video-url]').value = url;
       const event = new Event('submit', { cancelable: true });
       control('[data-video-form]').dispatchEvent(event);
       assert.equal(event.defaultPrevented, true);
+      if (finishTransition) finishPickerTransition();
     },
     escape() {
-      const event = Object.assign(new Event('keydown', { cancelable: true }), { key: 'Escape' });
-      control('[data-video-url]').dispatchEvent(event);
-      return event.defaultPrevented;
+      const event = new Event('cancel', { cancelable: true });
+      control('[data-video-picker]').dispatchEvent(event);
+      assert.equal(event.defaultPrevented, true, 'the picker controls whether Escape can dismiss it');
+      finishPickerTransition();
+      return !control('[data-video-picker]').open;
     },
     price(value: number) { feed.onPrice({ time: 1_000_000, price: value }); },
     state(value: PriceFeedState) { feed.onState(value); },
@@ -333,12 +382,14 @@ test('video submission replaces the picker with playback controls and rejects in
   assert.equal(h.control('[data-video-url]').attributes.get('aria-invalid'), 'true');
   assert.equal(h.control('[data-video-error]').textContent, copy.invalidUrl);
   assert.equal(h.control('[data-video-error]').hidden, false);
-  assert.equal(h.control('[data-video-form]').hidden, false);
-  assert.equal(h.escape(), false, 'the initial picker stays open without a selected video');
+  assert.equal(h.control('[data-video-picker]').open, true);
+  assert.equal(h.escape(), true, 'the initial picker can be dismissed without selecting a video');
+  assert.equal(h.control('[data-playback-panel]').hidden, true);
+  h.click('[data-change-video]');
   h.submit(firstUrl);
   assert.deepEqual(h.loaded, [{ id: 'abcdefghijk', startSeconds: 0 }]);
   assert.equal(h.control('[data-video-url]').attributes.has('aria-invalid'), false);
-  assert.equal(h.control('[data-video-form]').hidden, true);
+  assert.equal(h.control('[data-video-picker]').open, false);
   assert.equal(h.control('[data-video-controls]').hidden, false);
   assert.equal(h.control('[data-play-pause]').disabled, false);
   assert.equal(h.control('[data-mute]').disabled, false);
@@ -593,14 +644,14 @@ test('change, cancel, and Escape preserve the selected video and return keyboard
   h.emitPlaying(true);
   h.click('[data-change-video]');
   assert.equal(h.control('[data-video-url]').value, '', 'changing a video opens an empty URL field');
-  assert.equal(h.control('[data-video-form]').hidden, false);
+  assert.equal(h.control('[data-video-picker]').open, true);
   assert.equal(h.control('[data-video-controls]').hidden, true);
   assert.equal(h.control('[data-cancel-video]').hidden, false);
   assert.equal(h.control('[data-video-url]').focusCount, 1);
   assert.equal(h.control('[data-video-url]').selectCount, 1);
   h.submit('invalid');
   h.click('[data-cancel-video]');
-  assert.equal(h.control('[data-video-form]').hidden, true);
+  assert.equal(h.control('[data-video-picker]').open, false);
   assert.equal(h.control('[data-video-controls]').hidden, false);
   assert.equal(h.control('[data-video-error]').hidden, true);
   assert.equal(h.control('[data-video-url]').attributes.has('aria-invalid'), false);
@@ -608,7 +659,7 @@ test('change, cancel, and Escape preserve the selected video and return keyboard
   h.click('[data-change-video]');
   assert.equal(h.control('[data-video-url]').value, '', 'reopening after cancelling an invalid URL clears the draft');
   assert.equal(h.escape(), true);
-  assert.equal(h.control('[data-video-form]').hidden, true);
+  assert.equal(h.control('[data-video-picker]').open, false);
   assert.equal(h.control('[data-change-video]').focusCount, 3);
   assert.equal(h.loaded.length, 1);
   assert.equal(h.pauseCalls(), 0);
@@ -658,30 +709,33 @@ test('embed errors expose a replacement picker and a blocked autoplay can be res
   h.submit(firstUrl);
   h.emitPlaying(true);
   h.emitError();
-  assert.equal(h.control('[data-video-form]').hidden, false);
+  assert.equal(h.control('[data-video-picker]').open, true);
   assert.equal(h.control('[data-video-url]').value, firstUrl, 'automatic error recovery retains the failed URL');
   assert.equal(h.control('[data-video-error]').hidden, false);
   assert.equal(h.control('[data-video-error]').textContent, copy.videoUnavailable);
   assert.equal(h.control('[data-play-pause]').disabled, true);
   assert.equal(h.control('[data-play-pause]').attributes.get('aria-label'), copy.play);
-  assert.equal(h.control('[data-cancel-video]').hidden, true, 'a failed video cannot be restored with cancel');
+  assert.equal(h.control('[data-cancel-video]').hidden, false, 'error recovery can still be dismissed');
   assert.equal(h.control('[data-video-seek]').disabled, true);
   assert.equal(h.control('[data-video-volume]').disabled, true);
   assert.equal(h.intervalCount(500), 0, 'failed playback must stop progress polling');
-  assert.equal(h.escape(), false, 'Escape cannot dismiss required error recovery');
+  assert.equal(h.escape(), true);
+  assert.equal(h.control('[data-playback-panel]').hidden, true, 'failed playback controls stay hidden after dismissal');
+  h.click('[data-change-video]');
   h.click('[data-cancel-video]');
-  assert.equal(h.control('[data-video-form]').hidden, false);
-  assert.equal(h.control('[data-video-error]').hidden, false);
+  assert.equal(h.control('[data-video-picker]').open, false);
+  assert.equal(h.control('[data-video-error]').hidden, true);
   h.visibility(true);
   h.visibility(false);
   assert.equal(h.intervalCount(500), 0, 'returning to a failed video must not restart polling');
+  h.click('[data-change-video]');
   h.submit(secondUrl);
   assert.equal(h.control('[data-video-error]').hidden, true);
   assert.equal(h.control('[data-play-pause]').disabled, false);
   assert.equal(h.control('[data-video-volume]').disabled, false);
   assert.equal(h.intervalCount(500), 1, 'a valid replacement restores progress polling');
   h.emitBlocked();
-  assert.equal(h.control('[data-video-form]').hidden, true);
+  assert.equal(h.control('[data-video-picker]').open, false);
   assert.equal(h.control('[data-video-status]').textContent, '');
   assert.equal(h.control('[data-video-status]').hidden, true, 'blocked autoplay leaves playback to the play button without a prompt');
   h.click('[data-play-pause]');
@@ -699,7 +753,7 @@ test('owner embedding restrictions explain the failure and successful selection 
     assert.equal(h.control('[data-video-error]').hidden, false);
     assert.equal(h.control('[data-video-error]').textContent, code === 100 ? copy.videoUnavailable : copy.embeddingDisabled);
     assert.equal(h.control('[data-video-error]').attributes.get('data-youtube-error'), String(code));
-    assert.equal(h.control('[data-video-form]').hidden, false);
+    assert.equal(h.control('[data-video-picker]').open, true);
     h.submit(secondUrl);
     assert.equal(h.control('[data-video-error]').hidden, true);
     assert.equal(h.control('[data-video-error]').attributes.has('data-youtube-error'), false);
@@ -811,6 +865,27 @@ test('range input previews the selected time and change seeks without starting p
   seek.dispatchEvent(new Event('input'));
   seek.dispatchEvent(new Event('change'));
   assert.deepEqual(h.sought, [75, 0, 180]);
+  h.close();
+});
+
+test('live videos hide timing even with a finite DVR duration, and recorded videos restore it', () => {
+  const h = harness();
+  h.submit(firstUrl);
+  h.setProgress({ currentTime: 120, duration: 180, isLive: true });
+  h.tick(500);
+  assert.equal(h.control('[data-video-time]').hidden, true);
+  assert.equal(h.control('[data-video-timeline]').hidden, true, 'live videos must not show a progress bar');
+  h.setProgress({ currentTime: 125, duration: 180, isLive: false });
+  h.tick(500);
+  assert.equal(h.control('[data-video-time]').hidden, false);
+  assert.equal(h.control('[data-video-timeline]').hidden, false);
+  assert.equal(h.control('[data-video-current]').textContent, '2:05');
+  h.setProgress({ currentTime: 130, duration: 190, isLive: true });
+  h.tick(500);
+  h.click('[data-change-video]');
+  h.submit(secondUrl);
+  assert.equal(h.control('[data-video-time]').hidden, false, 'a replacement must not inherit the live stream display');
+  assert.equal(h.control('[data-video-timeline]').hidden, false);
   h.close();
 });
 
@@ -1029,7 +1104,7 @@ test('pagehide releases the player, feed, listeners, and timers and ignores late
   h.visibility(true);
   h.visibility(false);
   assert.equal(h.control('[data-play-pause]').attributes.get('aria-label'), label);
-  assert.equal(h.control('[data-video-form]').hidden, true);
+  assert.equal(h.control('[data-video-picker]').open, false);
   assert.equal(h.control('[data-video-error]').hidden, true);
   assert.equal(h.control('[data-video-status]').hidden, true);
   assert.equal(h.pauseCalls(), pauseCalls);
@@ -1138,7 +1213,7 @@ test('a saved selection restores playback controls and its requested start witho
   const h = harness({ storedSelection, preferences: { currency: 'EUR', scale: 'linear' }, rates: { EUR: .9 } });
   assert.deepEqual(h.loaded, [{ id: 'ZYXWVUTSRQP', startSeconds: 30 }]);
   assert.equal(h.control('[data-video-url]').value, canonicalSecondUrl);
-  assert.equal(h.control('[data-video-form]').hidden, true);
+  assert.equal(h.control('[data-video-picker]').open, false);
   assert.equal(h.control('[data-video-controls]').hidden, false);
   assert.equal(h.control('[data-play-pause]').disabled, false);
   assert.equal(h.control('[data-video-volume]').disabled, false);
@@ -1169,7 +1244,7 @@ test('restored videos preserve autoplay recovery and retain the canonical URL if
   assert.equal(h.playCalls(), 1);
   assert.equal(h.control('[data-play-pause]').attributes.get('aria-label'), copy.pause);
   h.emitError(150);
-  assert.equal(h.control('[data-video-form]').hidden, false);
+  assert.equal(h.control('[data-video-picker]').open, true);
   assert.equal(h.control('[data-video-url]').value, canonicalSecondUrl);
   assert.equal(h.control('[data-video-error]').textContent, copy.embeddingDisabled);
   assert.equal(h.control('[data-video-url]').focusCount, 0, 'automatic restoration and its failure must not steal focus');
@@ -1193,7 +1268,7 @@ test('malformed, unsupported, and non-YouTube saved values leave an empty usable
   ]) {
     const h = harness({ storedSelection });
     assert.equal(h.loaded.length, 0, storedSelection);
-    assert.equal(h.control('[data-video-form]').hidden, false);
+    assert.equal(h.control('[data-video-picker]').open, true);
     assert.equal(h.control('[data-video-url]').value, '');
     assert.equal(h.control('[data-video-url]').disabled, false);
     assert.equal(h.control('[data-load-video]').disabled, false);
@@ -1306,7 +1381,7 @@ test('blocked local storage does not prevent entering a video, playing, or chang
   assert.equal(h.loaded.length, 0, 'an unreadable preference must leave normal selection available');
   h.submit(secondUrl);
   assert.deepEqual(h.loaded, [{ id: 'ZYXWVUTSRQP', startSeconds: 30 }]);
-  assert.equal(h.control('[data-video-form]').hidden, true);
+  assert.equal(h.control('[data-video-picker]').open, false);
   assert.equal(h.control('[data-video-error]').hidden, true);
   assert.equal(h.storageWrites.length, 0);
   h.click('[data-play-pause]');
@@ -1375,57 +1450,142 @@ test('destroyed bfcache pages neither restore again nor save stale form submissi
 });
 
 
-test('video suggestions expand below the initial picker and load every curated video through the normal player flow', () => {
+test('the initial drawer shows suggestions and loads every curated video through the normal player flow', () => {
   for (const suggestion of videoSuggestions) {
     const h = harness();
-    const toggle = h.control('[data-video-suggestions-toggle]');
-    const panel = h.control('[data-video-suggestions]');
-    assert.equal(toggle.disabled, false);
-    assert.equal(toggle.textContent, copy.viewSuggestions);
-    assert.equal(toggle.attributes.get('aria-expanded'), 'false');
-    assert.equal(panel.hidden, true);
-    h.click('[data-video-suggestions-toggle]');
-    assert.equal(panel.hidden, false);
-    assert.equal(toggle.textContent, copy.hideSuggestions);
-    assert.equal(toggle.attributes.get('aria-expanded'), 'true');
-    assert.equal(h.idleEnabled(), false, 'the URL picker and suggestions stay visible while choosing');
+    const picker = h.control('[data-video-picker]');
+    assert.equal(picker.open, true);
+    assert.equal(picker.showModalCount, 1);
+    assert.equal(h.control('[data-video-suggestions]').hidden, false);
+    assert.equal(h.idleEnabled(), false, 'the drawer stays visible while choosing');
     assert.equal(h.loaded.length, 0, 'browsing suggestions must not change playback');
     h.click(`[data-video-suggestion="${suggestion.id}"]`);
     assert.deepEqual(h.loaded, [{ id: suggestion.id, startSeconds: 0 }]);
-    assert.equal(h.control('[data-video-form]').hidden, true);
-    assert.equal(panel.hidden, true);
+    assert.equal(picker.open, false);
     assert.deepEqual(JSON.parse(h.storage.get(videoSelectionKey)!), { version: 1, url: `https://www.youtube.com/watch?v=${suggestion.id}` });
     h.click('[data-change-video]');
-    assert.equal(h.control('[data-video-form]').hidden, false);
-    assert.equal(toggle.textContent, copy.viewSuggestions);
-    assert.equal(panel.hidden, true, 'Change video reopens a collapsed suggestions picker');
+    assert.equal(picker.open, true);
+    assert.equal(picker.showModalCount, 2);
+    assert.equal(h.control('[data-video-url]').value, '');
+    assert.equal(h.control('[data-video-suggestions]').hidden, false, 'Change video immediately shows suggestions again');
     h.close();
   }
 });
 
-test('suggestions toggle and Escape preserve the current video and keyboard focus', () => {
+test('URL submission, suggestions, and the initial close button keep the drawer rendered until its exit completes', () => {
+  for (const action of ['url', 'suggestion', 'close']) {
+    const h = harness();
+    const picker = h.control('[data-video-picker]');
+    if (action === 'url') h.submit(firstUrl, false);
+    else h.click(action === 'suggestion' ? `[data-video-suggestion="${videoSuggestions[0].id}"]` : '[data-cancel-video]', false);
+    assert.equal(picker.open, true, 'the dialog must remain rendered for the exit animation');
+    assert.equal(picker.attributes.has('data-closing'), true);
+    assert.equal(h.control('[data-video-controls]').hidden, false, 'controls can fade in during the slide out');
+    assert.equal(h.control('[data-playback-panel]').hidden, action === 'close');
+    assert.equal(h.control('[data-change-video]').focusCount, 0, 'focus stays inside the modal until it closes');
+    assert.equal(h.idleEnabled(), false);
+    h.finishPickerTransition();
+    assert.equal(picker.open, false);
+    assert.equal(picker.attributes.has('data-closing'), false);
+    assert.equal(h.timeouts.size, 0);
+    assert.equal(h.control('[data-change-video]').focusCount, 1);
+    h.click('[data-change-video]');
+    assert.equal(picker.open, true);
+    h.close();
+  }
+});
+
+test('loading waits for the exit, previous player errors cannot interrupt it, and reduced motion closes without waiting', () => {
+  const h = harness();
+  h.submit(firstUrl, false);
+  assert.equal(h.loaded.length, 0, 'iframe work waits until the slide out has finished');
+  assert.deepEqual(h.rememberedUrls, [firstUrl], 'history must be saved before the slide out finishes');
+  h.emitError(150);
+  h.finishPickerTransition();
+  assert.equal(h.control('[data-video-picker]').open, false, 'an old player error must not interrupt the replacement');
+  assert.equal(h.loaded.length, 1);
+  assert.deepEqual(h.rememberedUrls, [firstUrl]);
+  h.emitError(150);
+  assert.equal(h.control('[data-video-picker]').open, true, 'errors from the replacement still reopen recovery');
+  assert.equal(h.control('[data-video-picker]').attributes.has('data-closing'), false);
+  assert.equal(h.control('[data-video-error]').hidden, false);
+  assert.equal(h.timeouts.size, 0);
+  h.click('[data-cancel-video]', false);
+  const fallback = [...h.timeouts.values()][0];
+  fallback();
+  assert.equal(h.control('[data-video-picker]').open, false, 'closing finishes even if no transition event arrives');
+  h.click('[data-change-video]');
+  h.click('[data-cancel-video]', false);
+  h.close();
+  assert.equal(h.timeouts.size, 0, 'cleanup cancels the pending exit');
+
+  const reduced = harness({ reducedMotion: true });
+  reduced.click('[data-cancel-video]', false);
+  assert.equal(reduced.control('[data-video-picker]').open, false);
+  assert.equal(reduced.timeouts.size, 0);
+  reduced.close();
+});
+
+test('only submitted URLs are remembered, using canonical URLs without share parameters', () => {
+  const h = harness();
+  h.submit(`${secondUrl}&si=ignored`);
+  assert.deepEqual(h.rememberedUrls, [canonicalSecondUrl]);
+  h.click('[data-change-video]');
+  h.submit('https://example.com/not-youtube');
+  assert.deepEqual(h.rememberedUrls, [canonicalSecondUrl]);
+  h.click(`[data-video-suggestion="${videoSuggestions[0].id}"]`);
+  assert.deepEqual(h.rememberedUrls, [canonicalSecondUrl], 'suggestion clicks do not add URLs to the entered history');
+  h.close();
+  h.close();
+  assert.equal(h.pickerTabDestroys(), 1);
+  const restored = harness({ storedSelection: JSON.stringify({ version: 1, url: firstUrl }) });
+  assert.deepEqual(restored.rememberedUrls, [], 'restoring playback does not rewrite history');
+  restored.close();
+});
+
+test('the real picker saves submitted URLs before animation or playback and restores them after reload', () => {
+  const h = harness({ realPicker: true });
+  h.submit(`${secondUrl}&si=ignored`, false);
+  assert.equal(h.loaded.length, 0, 'playback can wait for the animation');
+  const saved = h.storage.get('obt-video-recents');
+  assert.ok(saved, 'an accepted URL must already be saved before the drawer finishes closing');
+  assert.deepEqual(JSON.parse(saved), { version: 1, urls: [canonicalSecondUrl] });
+  h.close();
+
+  const restored = harness({ realPicker: true, storedRecents: saved, storedSelection: h.storage.get(videoSelectionKey) });
+  restored.click('[data-change-video]');
+  assert.equal(restored.control('[data-video-tab="recent"]').hidden, false);
+  assert.equal(restored.control('[data-video-panel="recent"]').hidden, false);
+  const list = restored.control('[data-video-recents]');
+  assert.equal(list.children[0].children[0].dataset.recentVideo, canonicalSecondUrl);
+  list.children[0].children[1].dispatchEvent(new Event('click'));
+  assert.deepEqual(JSON.parse(restored.storage.get('obt-video-recents')!), { version: 1, urls: [] });
+  assert.equal(restored.control('[data-video-tab="recent"]').hidden, true);
+  restored.close();
+});
+
+test('Escape dismisses the whole drawer and preserves playback and keyboard focus', () => {
   const h = harness();
   h.submit(firstUrl);
   h.emitPlaying(true);
   h.click('[data-change-video]');
-  h.click('[data-video-suggestions-toggle]');
-  h.click('[data-video-suggestions-toggle]');
-  assert.equal(h.control('[data-video-suggestions]').hidden, true);
-  h.click('[data-video-suggestions-toggle]');
-  const event = Object.assign(new Event('keydown', { cancelable: true }), { key: 'Escape' });
-  h.control('[data-video-suggestions]').dispatchEvent(event);
-  assert.equal(event.defaultPrevented, true);
-  assert.equal(h.control('[data-video-suggestions]').hidden, true);
-  assert.equal(h.control('[data-video-suggestions-toggle]').focusCount, 1);
+  assert.equal(h.control('[data-change-video]').attributes.get('aria-expanded'), 'true');
+  assert.equal(h.escape(), true);
+  assert.equal(h.control('[data-video-picker]').open, false);
+  assert.equal(h.control('[data-change-video]').attributes.get('aria-expanded'), 'false');
+  assert.equal(h.control('[data-change-video]').focusCount, 2);
   assert.equal(h.loaded.length, 1);
   assert.equal(h.pauseCalls(), 0);
   assert.equal(h.playCalls(), 0);
-  h.click('[data-video-suggestions-toggle]');
+  h.click('[data-change-video]');
   h.click('[data-cancel-video]');
-  assert.equal(h.control('[data-video-suggestions]').hidden, true);
+  assert.equal(h.control('[data-video-picker]').open, false);
+  h.click('[data-change-video]');
   h.close();
-  h.click('[data-video-suggestions-toggle]');
+  assert.equal(h.control('[data-video-picker]').open, false, 'cleanup removes the open modal');
+  h.click('[data-change-video]');
   h.click(`[data-video-suggestion="${videoSuggestions[0].id}"]`);
+  assert.equal(h.control('[data-video-picker]').open, false);
   assert.equal(h.loaded.length, 1, 'stale controls must not load videos after cleanup');
 });
 
@@ -1438,6 +1598,6 @@ test('suggestions have unique validated video IDs and consistent translated cont
   const keys = Object.keys(videoCopy.en).sort();
   for (const translation of Object.values(videoCopy)) {
     assert.deepEqual(Object.keys(translation).sort(), keys);
-    for (const key of ['viewSuggestions', 'hideSuggestions', 'suggestionsLabel'] as const) assert.ok(translation[key].trim());
+    for (const key of ['pickVideo', 'suggestionsLabel', 'recentTab', 'suggestionsTab', 'removeRecent', 'recentTitleLoading', 'recentTitleUnavailable'] as const) assert.ok(translation[key].trim());
   }
 });

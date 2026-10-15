@@ -31,6 +31,8 @@ Prices use Kraken and bundled Coin Metrics history; currency conversions use ECB
 
 Edit `src/lib/video-suggestions.ts` to add or reorder Video Mode suggestions. Each entry needs a YouTube video ID and its original title; thumbnails use YouTube images, and selection uses the normal player and saved-video flow.
 
+Recent videos stay in browser storage. Titles use the suggestion catalog when available; other titles come from YouTube's oEmbed endpoint and are cached alongside the saved URLs. Unavailable metadata does not prevent playback or removal.
+
 ### Price history
 
 Synchronize `public/data/btc-history.csv` with the Android project's `assets/btc_history.csv`: `YYYY-MM-DD,USD_PRICE`, one daily point per line, no header. Preserve existing history and unavailable data; never invent prices across gaps.
