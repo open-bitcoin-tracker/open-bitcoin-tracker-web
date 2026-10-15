@@ -60,6 +60,11 @@ const locale = htmlLang(Astro.currentLocale);
           </button>
           <button type="button" class="video-reset-price" data-reset-price data-reset-position-label={t.resetPrice} data-reset-size-label={t.resetPriceSize} title={t.resetPrice} hidden disabled>{t.resetPrice}</button>
           <div id="video-price-style-panel" class="video-style-panel" data-price-style-panel role="group" aria-label={t.priceStyle} hidden>
+            <div class="video-colour-swatches" role="group" aria-label={t.priceColour}>
+              {['#ffffff', '#ff981e', '#ffd166', '#80ed99', '#90c7ff', '#ff99c8'].map(colour => (
+                <button type="button" class="video-colour-swatch" data-price-swatch={colour} style={`--swatch: ${colour}`} aria-label={`${t.priceColour}: ${colour}`} title={colour} aria-pressed={colour === '#ffffff' ? 'true' : 'false'} disabled></button>
+              ))}
+            </div>
             <label class="video-custom-colour" for="video-price-colour">
               <span>{t.customColour}</span>
               <span class="video-custom-colour-control">
@@ -67,11 +72,6 @@ const locale = htmlLang(Astro.currentLocale);
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6" /></svg>
               </span>
             </label>
-            <div class="video-colour-swatches" role="group" aria-label={t.priceColour}>
-              {['#ffffff', '#ff981e', '#ffd166', '#80ed99', '#90c7ff', '#ff99c8'].map(colour => (
-                <button type="button" class="video-colour-swatch" data-price-swatch={colour} style={`--swatch: ${colour}`} aria-label={`${t.priceColour}: ${colour}`} title={colour} aria-pressed={colour === '#ffffff' ? 'true' : 'false'} disabled></button>
-              ))}
-            </div>
             <div class="video-style-row video-font-row">
               <label for="video-price-font">{t.priceFont}</label>
               <select id="video-price-font" data-price-font disabled>
@@ -204,7 +204,7 @@ const locale = htmlLang(Astro.currentLocale);
   .video-colour-input::-webkit-color-swatch-wrapper { padding: 0; }
   .video-colour-input::-webkit-color-swatch { border: 0; border-radius: 3px; }
   .video-colour-input::-moz-color-swatch { border: 0; border-radius: 3px; }
-  .video-colour-swatches { display: flex; justify-content: space-between; gap: .25rem; margin: .5rem -.25rem .85rem; }
+  .video-colour-swatches { display: flex; justify-content: space-between; gap: .25rem; margin: 0 -.25rem .5rem; }
   .video-colour-swatch { display: grid; place-items: center; width: 2rem; height: 2rem; flex-shrink: 0; padding: .25rem; border: 0; border-radius: 50%; background: transparent; }
   .video-colour-swatch::after { content: ''; width: 100%; height: 100%; border-radius: 50%; background: var(--swatch); }
   .video-colour-swatch:hover { background: #ffffff20; }
