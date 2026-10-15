@@ -1,6 +1,5 @@
 const STORAGE_KEY = 'obt-video-price-layout';
 const PADDING = 16;
-const FRAME_DELAY = 1500;
 const DEFAULTS = { version: 1, x: 50, y: 50, size: 100 };
 const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value));
 type Corner = 'nw' | 'ne' | 'sw' | 'se';
@@ -29,7 +28,6 @@ export function createVideoPriceLayout(root: HTMLElement) {
   let destroyed = false;
   let frame = false;
   let dismissed = false;
-  let frameTimer: number | undefined;
   let lastInput: 'keyboard' | 'pointer' | undefined;
   let operation: Operation | undefined;
 
@@ -96,10 +94,6 @@ export function createVideoPriceLayout(root: HTMLElement) {
     writePosition(startX + travelX * state.x / 100, startY + travelY * state.y / 100);
     updateDefault();
   }
-  function clearFrameTimer() {
-    if (frameTimer !== undefined) window.clearTimeout(frameTimer);
-    frameTimer = undefined;
-  }
   function keyboardFocus() {
     const active = document.activeElement;
     return lastInput !== 'pointer' && !!active && (position.contains(active) || inStyle(active)) && active.matches(':focus-visible');
@@ -111,18 +105,9 @@ export function createVideoPriceLayout(root: HTMLElement) {
     root.toggleAttribute('data-price-layout-open', visible);
     for (const handle of handles) handle.tabIndex = visible ? 0 : -1;
   }
-  function scheduleHide(ignoreFocus = false) {
-    clearFrameTimer();
-    if (destroyed || operation || root.hasAttribute('data-price-style-open') || (!ignoreFocus && keyboardFocus())) return;
-    frameTimer = window.setTimeout(() => {
-      frameTimer = undefined;
-      if (!destroyed && !operation && !root.hasAttribute('data-price-style-open') && !keyboardFocus()) setFrame(false);
-    }, FRAME_DELAY);
-  }
   function revealFrame() {
     if (destroyed || dismissed || document.hidden) return;
     setFrame(true);
-    scheduleHide();
   }
   function resizeGeometry(corner: Corner): Resize {
     const { viewport, box } = geometry();
@@ -152,7 +137,6 @@ export function createVideoPriceLayout(root: HTMLElement) {
     root.removeAttribute('data-price-resizing');
     notify();
     if (persist) save();
-    scheduleHide();
   }
   function move(event: PointerEvent) {
     if (destroyed || !operation || operation.pointerId !== event.pointerId) return;
@@ -173,7 +157,6 @@ export function createVideoPriceLayout(root: HTMLElement) {
   }
   function stopForInactivePage() {
     finish();
-    clearFrameTimer();
     setFrame(false);
   }
   function reset() {
@@ -191,12 +174,11 @@ export function createVideoPriceLayout(root: HTMLElement) {
   listen(root, 'videouidismiss', () => {
     finish();
     dismissed = true;
-    clearFrameTimer();
     setFrame(false);
   });
-  listen(root, 'pricestyletoggle', () => {
-    if (root.hasAttribute('data-price-style-open')) clearFrameTimer();
-    else scheduleHide();
+  listen(root, 'videouireveal', () => {
+    dismissed = false;
+    revealFrame();
   });
   listen(position, 'pointerdown', ((event: PointerEvent) => {
     if (inStyle(event.target)) return;
@@ -211,7 +193,6 @@ export function createVideoPriceLayout(root: HTMLElement) {
       ? { kind: 'resize', pointerId: event.pointerId, capture: position, clientX: event.clientX, clientY: event.clientY, moved: false, ...resizeGeometry(corner) }
       : { kind: 'move', pointerId: event.pointerId, capture: position, clientX: event.clientX, clientY: event.clientY, moved: false, grabX: event.clientX - box.left, grabY: event.clientY - box.top };
     (handle ?? position).focus({ preventScroll: true });
-    clearFrameTimer();
     setFrame(true);
     try { position.setPointerCapture(event.pointerId); } catch { /* Window listeners also support uncaptured dragging. */ }
     root.setAttribute('data-price-dragging', '');
@@ -219,7 +200,6 @@ export function createVideoPriceLayout(root: HTMLElement) {
     notify();
   }) as EventListener);
   listen(position, 'click', event => { if (!inStyle(event.target)) { dismissed = false; revealFrame(); } });
-  listen(position, 'pointermove', () => { if (frame) scheduleHide(); });
   listen(window, 'pointermove', move as EventListener);
   listen(window, 'pointerup', ((event: PointerEvent) => {
     if (operation?.pointerId !== event.pointerId) return;
@@ -230,18 +210,20 @@ export function createVideoPriceLayout(root: HTMLElement) {
   listen(window, 'pointercancel', cancel as EventListener);
   listen(position, 'lostpointercapture', cancel as EventListener);
   listen(window, 'blur', stopForInactivePage);
-  listen(document, 'visibilitychange', () => { if (document.hidden) stopForInactivePage(); else if (keyboardFocus()) revealFrame(); });
-  listen(window, 'focus', () => { if (keyboardFocus()) revealFrame(); });
+  listen(document, 'visibilitychange', () => { if (document.hidden) stopForInactivePage(); else revealFrame(); });
+  listen(window, 'focus', revealFrame);
   listen(window, 'keydown', ((event: KeyboardEvent) => {
     lastInput = 'keyboard';
     if (event.defaultPrevented) return;
     if (event.key === 'Escape') {
+      // The navigation dialog lives outside the page root and owns its Escape.
+      if (!root.contains(event.target as Node | null)) return;
       if (!frame && !operation) return;
       event.preventDefault();
       finish();
       dismissed = true;
-      clearFrameTimer();
       setFrame(false);
+      root.dispatchEvent(new Event('videouihide'));
       if (handles.some(handle => handle === document.activeElement)) position.focus({ preventScroll: true });
       return;
     }
@@ -249,7 +231,6 @@ export function createVideoPriceLayout(root: HTMLElement) {
     if (keyboardFocus()) revealFrame();
   }) as EventListener);
   listen(position, 'focusin', () => { if (keyboardFocus()) revealFrame(); });
-  listen(position, 'focusout', ((event: FocusEvent) => { if (!position.contains(event.relatedTarget as Node | null)) scheduleHide(true); }) as EventListener);
   listen(position, 'keydown', ((event: KeyboardEvent) => {
     if (inStyle(event.target)) return;
     if (event.key === 'Escape') return;
@@ -289,6 +270,7 @@ export function createVideoPriceLayout(root: HTMLElement) {
   root.setAttribute('data-price-layout-ready', '');
   root.style.setProperty('--video-price-fit', '1');
   refresh();
+  revealFrame();
   if (typeof ResizeObserver !== 'undefined') {
     observer = new ResizeObserver(refresh);
     observer.observe(position);
@@ -301,7 +283,6 @@ export function createVideoPriceLayout(root: HTMLElement) {
       if (destroyed) return;
       finish(false);
       destroyed = true;
-      clearFrameTimer();
       setFrame(false);
       observer?.disconnect();
       for (const remove of removeListeners) remove();

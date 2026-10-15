@@ -76,9 +76,13 @@ export function createVideoPriceStyle(root: HTMLElement, refreshLayout: () => vo
     const gap = 10, padding = 16;
     const clamp = (value: number, maximum: number) => Math.max(padding, Math.min(value, maximum));
     const centre = box.left + box.width / 2;
-    const above = box.bottom + gap + height > window.innerHeight - padding;
+    const left = clamp(centre - width / 2, window.innerWidth - width - padding);
+    const below = box.bottom + gap;
+    const dock = root.querySelector<HTMLElement>('.video-dock')?.getBoundingClientRect();
+    const overlapsDock = dock && left < dock.right && left + width > dock.left && below < dock.bottom && below + height > dock.top;
+    const above = below + height > window.innerHeight - padding || !!overlapsDock;
     const top = clamp(above ? box.top - gap - height : box.bottom + gap, window.innerHeight - height - padding);
-    wrapper.style.setProperty('left', `${clamp(centre - width / 2, window.innerWidth - width - padding)}px`);
+    wrapper.style.setProperty('left', `${left}px`);
     wrapper.style.setProperty('top', `${top}px`);
     root.toggleAttribute('data-price-style-above', above);
     if (!open) return;

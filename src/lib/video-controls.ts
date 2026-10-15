@@ -38,6 +38,7 @@ export function createVideoControls(root: HTMLElement) {
     if (destroyed || manuallyHidden) return;
     clearTimer();
     root.removeAttribute('data-ui-idle');
+    root.dispatchEvent(new Event('videouireveal'));
     if (!canFade()) return;
     timer = window.setTimeout(() => {
       timer = undefined;
@@ -72,7 +73,8 @@ export function createVideoControls(root: HTMLElement) {
     reveal();
   }
 
-  function handleKeyDown() {
+  function handleKeyDown(event: KeyboardEvent) {
+    if (event.key === 'Escape' && event.defaultPrevented) return;
     lastInput = 'keyboard';
     manuallyHidden = false;
     reveal();
@@ -85,8 +87,10 @@ export function createVideoControls(root: HTMLElement) {
     if (target?.closest?.('[data-price-position], [data-price-style]')) return;
     const editing = root.hasAttribute('data-price-layout-open');
     const background = !!target && root.contains(target) && !target.closest(INTERACTIVE);
-    if (editing || (enabled && background)) hide(true);
+    if (background && (editing || enabled)) hide(true);
   }
+
+  function dismiss() { hide(true); }
 
   function handleChangeOrBlur() {
     openSelect = null;
@@ -103,6 +107,7 @@ export function createVideoControls(root: HTMLElement) {
   root.addEventListener('currencytoggle', reveal);
   root.addEventListener('pricestyletoggle', reveal);
   root.addEventListener('pricelayoutchange', reveal);
+  root.addEventListener('videouihide', dismiss);
   document.addEventListener('visibilitychange', reveal);
   document.addEventListener('fullscreenchange', reveal);
   // Navigation moves its dialog outside the page root. These events do not bubble.
@@ -130,6 +135,7 @@ export function createVideoControls(root: HTMLElement) {
       root.removeEventListener('currencytoggle', reveal);
       root.removeEventListener('pricestyletoggle', reveal);
       root.removeEventListener('pricelayoutchange', reveal);
+      root.removeEventListener('videouihide', dismiss);
       document.removeEventListener('visibilitychange', reveal);
       document.removeEventListener('fullscreenchange', reveal);
       document.removeEventListener('toggle', reveal, true);

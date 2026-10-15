@@ -174,8 +174,8 @@ test('price layout stays centered and restores validated bounded preferences ind
   assert.equal(h.position.tabIndex, 0);
   assert.equal(h.reset.disabled, true);
   assert.equal(h.root.attributes.has('data-price-default'), true);
-  assert.equal(Object.values(h.handles).every(handle => handle.tabIndex === -1), true);
-  assert.equal(h.frame(), false);
+  assert.equal(Object.values(h.handles).every(handle => handle.tabIndex === 0), true);
+  assert.equal(h.frame(), true);
   h.layout.destroy();
   const restored = harness({ saved: JSON.stringify({ version: 1, x: -20, y: 130, size: 300 }) });
   assert.equal(restored.left(), 16);
@@ -196,21 +196,19 @@ test('price layout stays centered and restores validated bounded preferences ind
   blocked.layout.destroy();
 });
 
-test('click reveals the frame temporarily, hover alone does not, and revealing never resets page idle', () => {
+test('the frame starts visible and follows page UI dismissal and reveal without its own timeout', () => {
   const h = harness();
-  h.pointer('pointermove', h.position);
-  assert.equal(h.frame(), false);
-  h.position.click();
   assert.equal(h.frame(), true);
   assert.equal(Object.values(h.handles).every(handle => handle.tabIndex === 0), true);
-  h.advance(1499);
-  assert.equal(h.frame(), true);
-  h.pointer('pointermove', h.position);
-  h.advance(1499);
-  assert.equal(h.frame(), true);
-  h.advance(1);
+  h.advance(10000);
+  assert.equal(h.frame(), true, 'the frame stays visible as long as the page UI does');
+  assert.equal(h.timers.size, 0);
+  h.root.dispatchEvent(new Event('videouidismiss'));
   assert.equal(h.frame(), false);
   assert.equal(Object.values(h.handles).every(handle => handle.tabIndex === -1), true);
+  h.root.dispatchEvent(new Event('videouireveal'));
+  assert.equal(h.frame(), true);
+  assert.equal(Object.values(h.handles).every(handle => handle.tabIndex === 0), true);
   assert.equal(h.notifications(), 0, 'frame show/hide must not restart the page idle timer');
   h.layout.destroy();
 });
@@ -233,7 +231,7 @@ test('UI dismissal closes the price frame without reopening it on hover or stale
   h.layout.destroy();
 });
 
-test('keyboard-visible focus keeps handles accessible and the frame fades after focus leaves', () => {
+test('keyboard focus and blur leave the frame following page UI visibility', () => {
   const h = harness();
   h.focus(h.position);
   h.advance(10000);
@@ -246,16 +244,23 @@ test('keyboard-visible focus keeps handles accessible and the frame fades after 
   h.advance(1499);
   assert.equal(h.frame(), true);
   h.advance(1);
+  assert.equal(h.frame(), true);
+  h.root.dispatchEvent(new Event('videouidismiss'));
   assert.equal(h.frame(), false);
   h.layout.destroy();
 });
 
 test('Escape hides focused handles without reopening and safely ends an active resize', () => {
   const h = harness();
+  assert.equal(h.key(h.outside, 'Escape'), false, 'navigation outside the page root keeps its own Escape behavior');
+  assert.equal(h.frame(), true);
+  let dismissals = 0;
+  h.root.addEventListener('videouihide', () => { dismissals++; });
   h.focus(h.position);
   h.focus(h.handles.ne);
   assert.equal(h.key(h.handles.ne, 'Escape'), true);
   assert.equal(h.frame(), false);
+  assert.equal(dismissals, 1, 'Escape asks the page controls to hide with the frame');
   assert.equal(h.document.activeElement, h.position);
   assert.equal(h.handles.ne.tabIndex, -1);
   h.window.dispatchEvent(new Event('focus'));
@@ -278,18 +283,20 @@ test('Escape hides focused handles without reopening and safely ends an active r
   h.layout.destroy();
 });
 
-test('pointer interaction releases inherited keyboard focus protection after its quiet delay', () => {
+test('ending pointer interaction keeps the frame visible until the page UI is dismissed', () => {
   const h = harness();
   h.focus(h.position);
   const box = h.position.getBoundingClientRect();
   h.pointer('pointerdown', h.position, { clientX: box.left + 20, clientY: box.top + 20 });
   h.pointer('pointerup', h.window, { clientX: box.left + 20, clientY: box.top + 20 });
   h.advance(1500);
+  assert.equal(h.frame(), true);
+  h.root.dispatchEvent(new Event('videouidismiss'));
   assert.equal(h.frame(), false);
   h.layout.destroy();
 });
 
-test('dragging preserves the grab offset, clamps edges, and hides its frame after release', () => {
+test('dragging preserves the grab offset, clamps edges, and keeps its frame with the page UI', () => {
   const h = harness();
   const start = h.position.getBoundingClientRect();
   assert.equal(h.pointer('pointerdown', h.position, { button: 2 }), false);
@@ -314,6 +321,8 @@ test('dragging preserves the grab offset, clamps edges, and hides its frame afte
   assert.equal(h.saved.length, 1);
   assert.equal(h.notifications(), 2);
   h.advance(1500);
+  assert.equal(h.frame(), true);
+  h.root.dispatchEvent(new Event('videouidismiss'));
   assert.equal(h.frame(), false);
   h.layout.destroy();
 });
@@ -461,6 +470,8 @@ test('Reset price restores centered default size from saved placement and persis
   assert.equal(h.reset.disabled, true);
   assert.equal(h.frame(), true, 'reset reveals the frame even after Escape dismissal');
   h.advance(1500);
+  assert.equal(h.frame(), true);
+  h.root.dispatchEvent(new Event('videouidismiss'));
   assert.equal(h.frame(), false);
   h.layout.destroy();
   assert.equal(h.reset.disabled, true);
@@ -555,7 +566,7 @@ test('resize observation fits oversized prices, recovers space, and avoids repea
   h.layout.destroy();
 });
 
-test('cancel, lost capture, blur, and hiding release interaction and clear pending frame timers', () => {
+test('cancel, lost capture, blur, and hiding release interaction without independent frame timers', () => {
   for (const ending of ['pointercancel', 'lostpointercapture', 'blur', 'hidden']) {
     const h = harness();
     h.position.captureFails = ending === 'blur';
@@ -572,15 +583,14 @@ test('cancel, lost capture, blur, and hiding release interaction and clear pendi
     close(h.left(), left);
     assert.equal(h.saved.length, 1, ending);
     if (ending === 'hidden' || ending === 'blur') { assert.equal(h.timers.size, 0); assert.equal(h.frame(), false); }
-    else { h.advance(1500); assert.equal(h.frame(), false); }
+    else { h.advance(1500); assert.equal(h.frame(), true); }
     h.layout.destroy();
   }
 });
 
-test('destroy releases observers, captures, timers, and listeners and ignores stale callbacks', () => {
+test('destroy releases observers, captures, and listeners and ignores stale callbacks', () => {
   const h = harness();
   h.position.click();
-  const staleTimer = [...h.timers.values()][0].run;
   const box = h.position.getBoundingClientRect();
   h.pointer('pointerdown', h.handles.nw, { clientX: box.left, clientY: box.top });
   h.layout.destroy(); h.layout.destroy();
@@ -598,7 +608,7 @@ test('destroy releases observers, captures, timers, and listeners and ignores st
   for (const element of [h.position, h.reset, h.document, h.window, ...Object.values(h.handles)]) assert.equal(element.listenerCount(), 0);
   const writes = h.root.style.writes + h.position.style.writes;
   const notifications = h.notifications();
-  h.layout.refresh(); h.notifyObserver(); staleTimer(); h.advance(10000);
+  h.layout.refresh(); h.notifyObserver(); h.root.dispatchEvent(new Event('videouireveal')); h.advance(10000);
   h.resize({ width: 600 }); h.pointer('pointermove', h.window, { clientX: 1000 }); h.position.click(); h.reset.click();
   assert.equal(h.root.style.writes + h.position.style.writes, writes);
   assert.equal(h.notifications(), notifications);

@@ -23,7 +23,7 @@ function harness({ saved, blocked = false }: { saved?: string; blocked?: boolean
     offsetWidth = 90;
     offsetHeight = 44;
     box = { left: 300, top: 200, width: 400, height: 100, bottom: 300 };
-    getBoundingClientRect() { return this.box; }
+    getBoundingClientRect() { return { ...this.box, right: this.box.left + this.box.width }; }
     setAttribute(name: string, value: string) { this.attributes.set(name, value); }
     removeAttribute(name: string) { this.attributes.delete(name); }
     toggleAttribute(name: string, value: boolean) { if (value) this.attributes.set(name, ""); else this.attributes.delete(name); }
@@ -41,6 +41,7 @@ function harness({ saved, blocked = false }: { saved?: string; blocked?: boolean
     return event;
   }
   const root = new Element();
+  const dock = root.append(new Element());
   const position = root.append(new Element());
   root.selectors.set('[data-price-position]', position);
   const wrapper = root.append(new Element());
@@ -73,7 +74,7 @@ function harness({ saved, blocked = false }: { saved?: string; blocked?: boolean
   runInNewContext(script, { exports: module, window, document, Event });
   const style = module.createVideoPriceStyle!(root as unknown as HTMLElement, () => { refreshes++; });
   return {
-    root, wrapper, position, window, trigger, panel, colour, font, reset, stroke, strokeWidth, strokeColour, strokeOptions, strokeValue, swatches, document, style,
+    root, dock, wrapper, position, window, trigger, panel, colour, font, reset, stroke, strokeWidth, strokeColour, strokeOptions, strokeValue, swatches, document, style,
     writes: () => writes, refreshes: () => refreshes, toggles: () => toggles,
     saved: () => storage.get('obt-video-price-style'),
     changeColour(value: string) { colour.value = value; colour.dispatchEvent(new Event('input')); },
@@ -246,5 +247,18 @@ test('Style follows the price and flips above it near the viewport bottom, keepi
   assert.ok(Number.parseFloat(h.panel.style.values.get('top')!) >= 16);
   h.root.dispatchEvent(new Event('videouidismiss'));
   assert.equal(h.panel.hidden, true);
+  h.style.destroy();
+});
+
+test('Style moves above the price when its usual position would cover playback or URL controls', () => {
+  const h = harness();
+  h.dock.box = { left: 250, top: 310, width: 500, height: 160, bottom: 470 };
+  h.root.selectors.set('.video-dock', h.dock);
+  h.root.dispatchEvent(new Event('pricelayoutchange'));
+  assert.equal(h.root.hasAttribute('data-price-style-above'), true);
+  assert.equal(h.wrapper.style.values.get('top'), '146px');
+  h.position.box = { left: 40, top: 200, width: 100, height: 100, bottom: 300 };
+  h.root.dispatchEvent(new Event('pricelayoutchange'));
+  assert.equal(h.root.hasAttribute('data-price-style-above'), false, 'controls beside the price do not force the button above it');
   h.style.destroy();
 });
