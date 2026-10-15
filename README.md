@@ -131,6 +131,7 @@ To add a language, update the dictionary and registration in `src/i18n/ui.ts`; `
 
 ## Planned work
 
+- [ ] Refine and restore the home page particle background: gentle wave flow, particle density, and subtle cursor response. The implementation is preserved in `LandingParticles.astro` and `landing-particles.ts` but is currently disabled on all home routes.
 - [ ] Work on the Party Mode page (`/party-mode/`).
 - [ ] Work on the Money per Person page (`/bitcoin-and-the-dollar/`); its home card and menu entry are hidden pending further work.
 
