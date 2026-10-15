@@ -47,9 +47,11 @@ const locale = htmlLang(Astro.currentLocale);
         <div class="video-price-position" data-price-position role="group" aria-label={t.movePrice} aria-describedby="video-price-keyboard-hint" tabindex="0">
           <p class="video-price" data-price aria-label={t.unavailable}>—</p>
           <span class="video-sr-only" data-price-status role="status">{t.loadingPrice}</span>
-          {['nw', 'ne', 'sw', 'se'].map(corner => (
-            <button type="button" class:list={['video-price-resize', `video-price-resize-${corner}`]} data-price-resize={corner} aria-label={t.resizePrice} title={t.resizePrice} tabindex="-1"></button>
-          ))}
+          <div class="video-price-editing">
+            {['nw', 'ne', 'sw', 'se'].map(corner => (
+              <button type="button" class:list={['video-price-resize', `video-price-resize-${corner}`]} data-price-resize={corner} aria-label={t.resizePrice} title={t.resizePrice} tabindex="-1"></button>
+            ))}
+          </div>
         </div>
         <div class="video-price-style" data-price-style>
           <button type="button" class="video-style-trigger" data-price-style-trigger title={t.style} aria-expanded="false" aria-controls="video-price-style-panel" disabled>
@@ -167,7 +169,7 @@ const locale = htmlLang(Astro.currentLocale);
   :global(body:has(.video-page)) { background: #080808; color: #fff; }
   :global(body:has(.video-page) .nav-menu-trigger) { color: #fff; background: rgb(16 16 16 / .65); box-shadow: none; backdrop-filter: blur(12px); }
   :global(body:has(.video-page) .lang-menu), :global(body:has(.video-page) .theme-menu) { border: 0; }
-  .video-page { min-height: 100svh; position: relative; isolation: isolate; color-scheme: dark; }
+  .video-page { --video-ui-fade: .25s; min-height: 100svh; position: relative; isolation: isolate; color-scheme: dark; }
   .video-background, .video-shade { position: fixed; inset: 0; pointer-events: none; }
   .video-background { z-index: -2; overflow: hidden; background: #080808; }
   /* Cover the viewport with a 16:9 player in either orientation. */
@@ -228,19 +230,19 @@ const locale = htmlLang(Astro.currentLocale);
   .video-page[data-price-snap-x] .video-alignment-grid, .video-page[data-price-snap-y] .video-alignment-grid { opacity: 1; }
   .video-page[data-price-snap-x] .video-alignment-grid::before, .video-page[data-price-snap-y] .video-alignment-grid::after { background: #ff981e; }
   .video-price-position { display: flex; flex-direction: column; align-items: center; width: max-content; }
-  .video-page[data-price-layout-ready] .video-price-position { position: absolute; pointer-events: auto; cursor: grab; touch-action: none; user-select: none; }
-  .video-price-position::after { content: ''; position: absolute; inset: 0; border: 1px solid rgb(255 255 255 / .8); border-radius: 3px; pointer-events: none; opacity: 0; transition: opacity .25s ease; }
-  .video-page[data-price-layout-open] .video-price-position::after { opacity: 1; }
-  .video-page[data-price-layout-open] .video-price-position { z-index: 2; }
-  .video-price-resize { position: absolute; width: 32px; height: 32px; display: grid; place-items: center; border: 0; padding: 0; background: transparent; transform: translate(-50%, -50%); touch-action: none; opacity: 0; visibility: hidden; pointer-events: none; transition: opacity .25s ease, visibility .25s; }
+  .video-page[data-price-layout-ready] .video-price-position { position: absolute; z-index: 2; pointer-events: auto; cursor: grab; touch-action: none; user-select: none; }
+  .video-price-editing { position: absolute; inset: 0; opacity: 0; visibility: hidden; pointer-events: none; transition: opacity var(--video-ui-fade) ease, visibility 0s linear var(--video-ui-fade); }
+  .video-price-editing::after { content: ''; position: absolute; inset: 0; border: 1px solid rgb(255 255 255 / .8); border-radius: 3px; pointer-events: none; }
+  .video-page[data-price-layout-open] .video-price-editing { opacity: 1; visibility: visible; transition-delay: 0s; }
+  .video-price-resize { position: absolute; width: 32px; height: 32px; display: grid; place-items: center; border: 0; padding: 0; background: transparent; transform: translate(-50%, -50%); touch-action: none; pointer-events: none; }
   .video-price-resize::after { content: ''; width: 11px; height: 11px; border: 1px solid #fff; border-radius: 2px; background: #ff981e; box-shadow: 0 1px 5px #0008; }
-  .video-page[data-price-layout-open] .video-price-resize { opacity: 1; visibility: visible; pointer-events: auto; }
+  .video-page[data-price-layout-open] .video-price-resize { pointer-events: auto; }
   .video-price-resize-nw { top: 0; left: 0; cursor: nwse-resize; }
   .video-price-resize-ne { top: 0; left: 100%; cursor: nesw-resize; }
   .video-price-resize-sw { top: 100%; left: 0; cursor: nesw-resize; }
   .video-price-resize-se { top: 100%; left: 100%; cursor: nwse-resize; }
   .video-price-position:focus-visible { outline: none; }
-  .video-price-position:focus-visible::after { border-color: #ffc477; }
+  .video-price-position:focus-visible .video-price-editing::after { border-color: #ffc477; }
   .video-price-resize:focus-visible { outline: none; }
   .video-price-resize:focus-visible::after { background: #fff; border-color: #ff981e; }
   .video-page[data-price-dragging] .video-price-position { cursor: grabbing; }
@@ -286,7 +288,7 @@ const locale = htmlLang(Astro.currentLocale);
   .video-change:hover { background: rgb(50 50 50 / .9); }
   .video-message { margin-top: .75rem; padding: .4rem .7rem; font-size: .75rem; line-height: 1.5; color: #ddd; background: rgb(8 8 8 / .85); border-radius: 8px; }
   .video-error { color: #ffc2b2; }
-  .video-appearance, .video-dock, .video-page :global(.site-nav) { transition: opacity .25s ease; }
+  .video-appearance, .video-dock, .video-page :global(.site-nav) { transition: opacity var(--video-ui-fade) ease; }
   .video-page[data-ui-idle] { cursor: none; }
   .video-page[data-ui-idle] .video-price-position { cursor: none; }
   .video-page[data-ui-idle] .video-appearance,
@@ -338,6 +340,6 @@ const locale = htmlLang(Astro.currentLocale);
   }
   @media (prefers-reduced-motion: reduce) {
     .video-price-style { transition: none; }
-    .video-appearance, .video-dock, .video-currency-chevron, .video-volume-reveal, .video-price-position::after, .video-price-resize, .video-reset-price, .video-page :global(.site-nav) { transition: none; }
+    .video-appearance, .video-dock, .video-currency-chevron, .video-volume-reveal, .video-price-editing, .video-reset-price, .video-page :global(.site-nav) { transition: none; }
   }
 </style>
