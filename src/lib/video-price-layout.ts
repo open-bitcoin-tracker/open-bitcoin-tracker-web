@@ -21,7 +21,7 @@ export function createVideoPriceLayout(root: HTMLElement) {
     scale: root.style.getPropertyValue('--video-price-scale'), fit: root.style.getPropertyValue('--video-price-fit'),
     left: position.style.left, top: position.style.top, tabIndex: position.tabIndex,
     handleTabIndexes: handles.map(handle => handle.tabIndex),
-    resetDisabled: resetButton.disabled,
+    resetDisabled: resetButton.disabled, resetHidden: resetButton.hidden,
   };
   const removeListeners: (() => void)[] = [];
   let state = { ...DEFAULTS };
@@ -52,9 +52,10 @@ export function createVideoPriceLayout(root: HTMLElement) {
     catch { /* A blocked preference store must not prevent positioning. */ }
   }
   function updateDefault() {
-    const isDefault = Math.abs(state.x - 50) <= .01 && Math.abs(state.y - 50) <= .01 && Math.abs(state.size - 100) <= .01;
+    const centered = Math.abs(state.x - 50) <= .01 && Math.abs(state.y - 50) <= .01;
+    const isDefault = centered && Math.abs(state.size - 100) <= .01;
     root.toggleAttribute('data-price-default', isDefault);
-    resetButton.disabled = isDefault;
+    resetButton.disabled = resetButton.hidden = centered;
   }
   function geometry() {
     const viewport = stage.getBoundingClientRect();
@@ -196,6 +197,7 @@ export function createVideoPriceLayout(root: HTMLElement) {
     finish(false);
     state = { ...DEFAULTS };
     refresh();
+    notify();
     save();
     dismissed = false;
     revealFrame();
@@ -294,6 +296,7 @@ export function createVideoPriceLayout(root: HTMLElement) {
       refresh();
     }
     event.preventDefault();
+    notify();
     save();
   }) as EventListener);
   listen(window, 'resize', refresh);
@@ -329,6 +332,7 @@ export function createVideoPriceLayout(root: HTMLElement) {
       position.style.top = original.top;
       position.tabIndex = original.tabIndex;
       resetButton.disabled = original.resetDisabled;
+      resetButton.hidden = original.resetHidden;
       handles.forEach((handle, index) => { handle.tabIndex = original.handleTabIndexes[index]; });
     },
   };

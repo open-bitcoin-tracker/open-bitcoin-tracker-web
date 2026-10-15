@@ -72,7 +72,7 @@ export function createVideoPriceStyle(root: HTMLElement, refreshLayout: () => vo
   function anchor() {
     if (destroyed) return;
     const box = position.getBoundingClientRect();
-    const width = trigger.offsetWidth, height = trigger.offsetHeight;
+    const width = wrapper.offsetWidth, height = wrapper.offsetHeight;
     const gap = 10, padding = 16;
     const clamp = (value: number, maximum: number) => Math.max(padding, Math.min(value, maximum));
     const centre = box.left + box.width / 2;
@@ -176,6 +176,7 @@ export function createVideoPriceStyle(root: HTMLElement, refreshLayout: () => vo
   let observer: ResizeObserver | undefined;
   if (typeof ResizeObserver !== 'undefined') {
     observer = new ResizeObserver(anchor);
+    observer.observe(wrapper);
     observer.observe(position);
     observer.observe(panel);
   }

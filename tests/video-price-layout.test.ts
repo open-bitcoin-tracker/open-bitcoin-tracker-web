@@ -36,6 +36,7 @@ function harness(options: Options = {}) {
     style = new Style();
     tabIndex = -1;
     disabled = true;
+    hidden = false;
     captures = new Set<number>();
     captureFails = false;
     focusVisible = false;
@@ -82,7 +83,10 @@ function harness(options: Options = {}) {
   const root = new Element();
   const stage = root.append(new Element());
   const position = stage.append(new Element());
-  const reset = root.append(new Element());
+  const style = stage.append(new Element());
+  style.dataset.priceStyle = '';
+  const reset = style.append(new Element());
+  reset.hidden = true;
   position.tabIndex = 0;
   const handles = Object.fromEntries((['nw', 'ne', 'sw', 'se'] as const).map(corner => {
     const handle = position.append(new Element());
@@ -730,7 +734,8 @@ test('default layout detection includes size and tolerates insignificant saved f
   ] as const) {
     const h = harness({ saved: JSON.stringify(state) });
     assert.equal(h.root.attributes.has('data-price-default'), isDefault);
-    assert.equal(h.reset.disabled, isDefault);
+    assert.equal(h.reset.disabled, Math.abs(state.x - 50) <= .01 && Math.abs(state.y - 50) <= .01);
+    assert.equal(h.reset.hidden, h.reset.disabled);
     h.layout.destroy();
   }
 });
@@ -739,7 +744,8 @@ test('default state follows size and drag changes and persists through saved rou
   const h = harness();
   h.key(h.position, '+');
   assert.equal(h.root.attributes.has('data-price-default'), false);
-  assert.equal(h.reset.disabled, false);
+  assert.equal(h.reset.disabled, true);
+  assert.equal(h.reset.hidden, true);
   h.key(h.position, '-');
   assert.equal(h.root.attributes.has('data-price-default'), true);
   const box = h.position.getBoundingClientRect();
@@ -837,4 +843,37 @@ test('destroy releases observers, captures, and listeners and ignores stale call
   assert.equal(h.root.style.writes + h.position.style.writes, writes);
   assert.equal(h.notifications(), notifications);
   assert.equal(h.saved.length, 0);
+});
+
+test('Reset position is visible only off-center, including restored sizes and keyboard movement', () => {
+  const h = harness({ saved: JSON.stringify({ version: 1, x: 50, y: 50, size: 150 }) });
+  assert.equal(h.reset.hidden, true, 'resizing alone does not show reset');
+  h.key(h.position, 'ArrowRight');
+  assert.equal(h.reset.hidden, false);
+  assert.equal(h.reset.disabled, false);
+  h.key(h.position, 'ArrowLeft');
+  assert.equal(h.reset.hidden, true, 'returning to the center hides reset at a custom size');
+  h.key(h.position, 'ArrowDown');
+  assert.equal(h.reset.hidden, false);
+  h.focus(h.reset);
+  h.reset.click();
+  assert.equal(h.reset.hidden, true);
+  assert.equal(h.document.activeElement, h.position);
+  close(h.left(), 400);
+  close(h.top(), 250);
+  h.layout.destroy();
+  assert.equal(h.reset.hidden, true);
+});
+
+test('Reset position appears during dragging and disappears when snapped back to the center', () => {
+  const h = harness();
+  const box = h.position.getBoundingClientRect();
+  h.pointer('pointerdown', h.position, { clientX: box.left + 10, clientY: box.top + 10 });
+  h.pointer('pointermove', h.window, { clientX: box.left + 70, clientY: box.top + 10 });
+  assert.equal(h.reset.hidden, false);
+  h.pointer('pointermove', h.window, { clientX: box.left + 10, clientY: box.top + 10 });
+  assert.equal(h.reset.hidden, true);
+  h.pointer('pointerup', h.window, { clientX: box.left + 10, clientY: box.top + 10 });
+  assert.equal(h.reset.hidden, true);
+  h.layout.destroy();
 });

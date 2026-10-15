@@ -262,3 +262,20 @@ test('Style moves above the price when its usual position would cover playback o
   assert.equal(h.root.hasAttribute('data-price-style-above'), false, 'controls beside the price do not force the button above it');
   h.style.destroy();
 });
+
+test('the full price button row stays on screen and avoids playback controls after reset appears', () => {
+  const h = harness();
+  h.wrapper.offsetWidth = 330;
+  h.wrapper.offsetHeight = 72;
+  h.position.box = { left: 900, top: 450, width: 80, height: 120, bottom: 570 };
+  h.root.dispatchEvent(new Event('pricelayoutchange'));
+  assert.equal(h.wrapper.style.values.get('left'), '654px');
+  assert.equal(h.wrapper.style.values.get('top'), '368px');
+  h.position.box = { left: 300, top: 200, width: 400, height: 100, bottom: 300 };
+  h.dock.box = { left: 600, top: 310, width: 300, height: 160, bottom: 470 };
+  h.root.selectors.set('.video-dock', h.dock);
+  h.root.dispatchEvent(new Event('pricelayoutchange'));
+  assert.equal(h.root.hasAttribute('data-price-style-above'), true, 'reset beside Edit style must also avoid the dock');
+  assert.equal(h.wrapper.style.values.get('top'), '118px');
+  h.style.destroy();
+});
