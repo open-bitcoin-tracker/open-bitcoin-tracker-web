@@ -5,6 +5,7 @@ import { resolveLang, htmlLang } from '../../i18n/utils';
 import { party } from '../../i18n/party';
 import { video } from '../../i18n/video';
 import { currencies } from '../../lib/bitcoin-currency';
+import { videoSuggestions } from '../../lib/video-suggestions';
 
 const lang = resolveLang(Astro.currentLocale);
 const t = { ...party[lang], ...video[lang] };
@@ -106,12 +107,22 @@ const locale = htmlLang(Astro.currentLocale);
           <button class="video-change video-cancel" type="button" data-cancel-video hidden>{t.cancel}</button>
           <label class="video-sr-only" for="video-url">{t.videoLabel}</label>
           <div class="video-url-field">
-            <svg class="video-url-icon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><rect x="2" y="5" width="20" height="14" rx="4" /><path d="m10 9 5 3-5 3z" fill="currentColor" stroke="none" /></svg>
             <input id="video-url" data-video-url type="text" inputmode="url" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder={t.urlPlaceholder} aria-describedby="video-error" disabled />
             <button class="video-submit" type="submit" data-load-video aria-label={t.load} title={t.load} disabled>
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14m-6-6 6 6-6 6" /></svg>
             </button>
           </div>
+          <button id="video-suggestions-toggle" class="video-change video-suggestions-toggle" type="button" data-video-suggestions-toggle aria-expanded="false" aria-controls="video-suggestions" disabled>{t.viewSuggestions}</button>
+          <ul id="video-suggestions" class="video-suggestions" data-video-suggestions aria-label={t.suggestionsLabel} hidden>
+            {videoSuggestions.map(suggestion => (
+              <li>
+                <button type="button" class="video-suggestion" data-video-suggestion={suggestion.id} aria-label={`${t.load}: ${suggestion.title}`} title={suggestion.title} disabled>
+                  <img src={`https://i.ytimg.com/vi/${suggestion.id}/hqdefault.jpg`} width="480" height="360" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" />
+                  <span>{suggestion.title}</span>
+                </button>
+              </li>
+            ))}
+          </ul>
         </form>
         <div class="video-playback" data-video-controls hidden>
           <button type="button" class="video-change" data-change-video disabled>{t.changeVideo}</button>
@@ -259,15 +270,23 @@ const locale = htmlLang(Astro.currentLocale);
   .video-price { --price-chars: 8; --video-price-base-size: clamp(3rem, min(9.375vw, 16.6667vh, 207vw / var(--price-chars)), 22.5rem); color: var(--video-price-colour, #fff); font-family: var(--video-price-font, var(--font-sans)); font-size: calc(var(--video-price-base-size) * var(--video-price-scale, 1) * var(--video-price-fit, 1)); font-weight: var(--video-price-weight, 750); letter-spacing: var(--video-price-spacing, -.065em); padding-inline-end: .065em; padding-block: var(--video-price-padding, 0); -webkit-text-stroke: var(--video-price-stroke-width, 0px) var(--video-price-stroke-colour, #000); paint-order: stroke fill; line-height: 1.2; font-variant-numeric: tabular-nums; white-space: nowrap; text-shadow: 0 3px 30px #000, 0 0 80px #0009; }
   .video-dock { position: fixed; bottom: max(1rem, env(safe-area-inset-bottom)); left: 50%; transform: translateX(-50%); width: min(480px, calc(100% - 3rem)); z-index: 3; text-align: center; }
   .video-page[data-subtitles-enabled] .video-dock { bottom: max(7rem, 16svh, env(safe-area-inset-bottom)); }
-  .video-url-field { display: flex; align-items: center; gap: .75rem; padding: .5rem; padding-left: 1rem; border: 0; border-radius: 14px; background: rgb(20 20 20 / .85); backdrop-filter: blur(16px); box-shadow: 0 8px 40px #0003; }
-  .video-url-icon { flex-shrink: 0; color: #aaa; }
+  .video-url-field { display: flex; align-items: center; gap: .75rem; padding: .5rem; padding-left: 1rem; border: 0; border-radius: 14px; background: rgb(16 16 16 / .75); backdrop-filter: blur(12px); }
   input { min-width: 0; width: 100%; border: 0; background: transparent; color: #fff; font-size: .85rem; padding: .5rem 0; }
   input::placeholder { color: #aaa; }
   input[aria-invalid="true"] { color: #ffc2b2; }
   [data-video-url]:focus-visible { outline: none; }
-  .video-url-field:has([data-video-url]:focus-visible) { background: rgb(35 35 35 / .95); }
+  .video-url-field:hover, .video-url-field:has([data-video-url]:focus-visible) { background: rgb(50 50 50 / .9); }
   .video-submit { flex-shrink: 0; display: grid; place-items: center; width: 2.5rem; height: 2.5rem; border: 0; border-radius: 9px; background: #ff981e; color: #211000; }
   .video-submit:hover { background: #ffb047; }
+  .video-form { max-height: calc(100svh - 2rem); overflow-y: auto; scrollbar-width: thin; }
+  .video-form:has(.video-suggestions:not([hidden])) { padding: .75rem; border-radius: 18px; background: #101010; box-shadow: 0 8px 40px #0005; }
+  .video-page[data-subtitles-enabled] .video-form { max-height: calc(100svh - max(7rem, 16svh, env(safe-area-inset-bottom)) - 1rem); }
+  .video-suggestions-toggle { margin-top: .75rem; }
+  .video-suggestions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .75rem; max-height: min(60svh, 28rem); overflow-y: auto; scrollbar-width: thin; margin: .75rem 0 0; padding: .25rem; list-style: none; text-align: left; }
+  .video-suggestion { display: block; width: 100%; height: 100%; padding: 0; overflow: hidden; border: 0; border-radius: 10px; background: rgb(20 20 20 / .95); color: #fff; text-align: left; }
+  .video-suggestion:hover { background: #303030; }
+  .video-suggestion img { display: block; width: 100%; height: auto; aspect-ratio: 16 / 9; object-fit: cover; }
+  .video-suggestion span { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; margin: .65rem .75rem; font-size: .8rem; line-height: 1.4; }
   .video-cancel { margin-bottom: .75rem; }
   .video-playback { display: flex; flex-direction: column; align-items: center; gap: .75rem; }
   .video-player-panel { width: 100%; padding: .35rem; border: 0; border-radius: 14px; background: rgb(16 16 16 / .75); backdrop-filter: blur(12px); }

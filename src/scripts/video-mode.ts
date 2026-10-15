@@ -81,6 +81,9 @@ function startVideoMode(root: HTMLElement) {
 
   const form = root.querySelector<HTMLFormElement>('[data-video-form]')!;
   const input = root.querySelector<HTMLInputElement>('[data-video-url]')!;
+  const suggestionsToggle = root.querySelector<HTMLButtonElement>('[data-video-suggestions-toggle]')!;
+  const suggestions = root.querySelector<HTMLElement>('[data-video-suggestions]')!;
+  const suggestionButtons = [...root.querySelectorAll<HTMLButtonElement>('[data-video-suggestion]')];
   const loadButton = root.querySelector<HTMLButtonElement>('[data-load-video]')!;
   const cancelButton = root.querySelector<HTMLButtonElement>('[data-cancel-video]')!;
   const controls = root.querySelector<HTMLElement>('[data-video-controls]')!;
@@ -144,6 +147,7 @@ function startVideoMode(root: HTMLElement) {
   }
 
   function showForm(show: boolean, focus = true) {
+    setSuggestionsOpen(false);
     form.hidden = !show;
     controls.hidden = show;
     cancelButton.hidden = !hasVideo;
@@ -340,7 +344,32 @@ function startVideoMode(root: HTMLElement) {
     } catch { /* Missing, malformed, or blocked storage leaves the URL picker ready. */ }
   }
 
-  input.disabled = loadButton.disabled = changeButton.disabled = false;
+  function setSuggestionsOpen(open: boolean) {
+    suggestions.hidden = !open;
+    suggestionsToggle.setAttribute('aria-expanded', String(open));
+    suggestionsToggle.textContent = open ? t.hideSuggestions : t.viewSuggestions;
+  }
+  const toggleSuggestions = () => {
+    if (!destroyed) setSuggestionsOpen(suggestions.hidden);
+  };
+  const dismissSuggestions = (event: KeyboardEvent) => {
+    if (event.key !== 'Escape' || suggestions.hidden) return;
+    event.preventDefault();
+    setSuggestionsOpen(false);
+    suggestionsToggle.focus();
+  };
+  suggestionsToggle.addEventListener('click', toggleSuggestions);
+  suggestions.addEventListener('keydown', dismissSuggestions);
+  for (const button of suggestionButtons) {
+    button.disabled = false;
+    button.addEventListener('click', () => {
+      if (destroyed) return;
+      const video = parseYouTubeVideo(`https://www.youtube.com/watch?v=${button.dataset.videoSuggestion}`);
+      if (video) loadSelectedVideo(video);
+    });
+  }
+  setSuggestionsOpen(false);
+  input.disabled = loadButton.disabled = changeButton.disabled = suggestionsToggle.disabled = false;
   form.addEventListener('submit', event => {
     event.preventDefault();
     if (destroyed) return;
@@ -508,6 +537,8 @@ function startVideoMode(root: HTMLElement) {
     priceLayout?.destroy();
     uiVisibility.destroy();
     root.removeEventListener('click', onVideoClick);
+    suggestionsToggle.removeEventListener('click', toggleSuggestions);
+    suggestions.removeEventListener('keydown', dismissSuggestions);
     stopProgressRefresh();
     player.destroy();
     if (rateRefresh !== undefined) clearInterval(rateRefresh);

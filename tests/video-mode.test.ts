@@ -9,6 +9,8 @@ import type { Currency } from '../src/lib/bitcoin-currency.ts';
 import type { DisplayPreferences } from '../src/lib/bitcoin-display-preferences.ts';
 import type { PriceFeedState } from '../src/lib/bitcoin-live-price.ts';
 import { parseYouTubeVideo } from '../src/lib/youtube-player.ts';
+import { videoSuggestions } from '../src/lib/video-suggestions.ts';
+import { video as videoCopy } from '../src/i18n/video.ts';
 
 const script = ts.transpileModule(readFileSync(new URL('../src/scripts/video-mode.ts', import.meta.url), 'utf8'), {
   compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 },
@@ -21,6 +23,7 @@ const copy = {
   invalidUrl: 'Enter a valid YouTube video URL.', videoUnavailable: 'This video cannot be played here.',
   embeddingDisabled: 'The owner of this video does not allow embedded playback. Try another YouTube video.',
   loadingVideo: 'Loading video', backgroundTitle: 'YouTube background video',
+  viewSuggestions: 'View suggestions', hideSuggestions: 'Hide suggestions',
   seek: 'Video progress', subtitles: 'Subtitles', loop: 'Loop video', volume: 'Volume',
   subtitlesUnavailable: 'Subtitles unavailable for this video', playbackPosition: '{current} of {duration}',
   fullscreen: 'Fullscreen', exitFullscreen: 'Exit fullscreen', fullscreenUnavailable: 'Fullscreen unavailable',
@@ -55,6 +58,14 @@ class Control extends EventTarget {
   querySelector(selector: string): Control {
     if (!this.controls.has(selector)) this.controls.set(selector, new Control());
     return this.controls.get(selector)!;
+  }
+  querySelectorAll(selector: string): Control[] {
+    assert.equal(selector, '[data-video-suggestion]');
+    return videoSuggestions.map(suggestion => {
+      const button = this.querySelector(`[data-video-suggestion="${suggestion.id}"]`);
+      button.dataset.videoSuggestion = suggestion.id;
+      return button;
+    });
   }
   setAttribute(name: string, value: string) { this.attributes.set(name, value); }
   removeAttribute(name: string) { this.attributes.delete(name); }
@@ -1361,4 +1372,72 @@ test('destroyed bfcache pages neither restore again nor save stale form submissi
   assert.equal(h.storage.get(videoSelectionKey), storedSelection);
   assert.equal(h.storageWrites.length, 0);
   assert.equal(h.reloads(), 1);
+});
+
+
+test('video suggestions expand below the initial picker and load every curated video through the normal player flow', () => {
+  for (const suggestion of videoSuggestions) {
+    const h = harness();
+    const toggle = h.control('[data-video-suggestions-toggle]');
+    const panel = h.control('[data-video-suggestions]');
+    assert.equal(toggle.disabled, false);
+    assert.equal(toggle.textContent, copy.viewSuggestions);
+    assert.equal(toggle.attributes.get('aria-expanded'), 'false');
+    assert.equal(panel.hidden, true);
+    h.click('[data-video-suggestions-toggle]');
+    assert.equal(panel.hidden, false);
+    assert.equal(toggle.textContent, copy.hideSuggestions);
+    assert.equal(toggle.attributes.get('aria-expanded'), 'true');
+    assert.equal(h.idleEnabled(), false, 'the URL picker and suggestions stay visible while choosing');
+    assert.equal(h.loaded.length, 0, 'browsing suggestions must not change playback');
+    h.click(`[data-video-suggestion="${suggestion.id}"]`);
+    assert.deepEqual(h.loaded, [{ id: suggestion.id, startSeconds: 0 }]);
+    assert.equal(h.control('[data-video-form]').hidden, true);
+    assert.equal(panel.hidden, true);
+    assert.deepEqual(JSON.parse(h.storage.get(videoSelectionKey)!), { version: 1, url: `https://www.youtube.com/watch?v=${suggestion.id}` });
+    h.click('[data-change-video]');
+    assert.equal(h.control('[data-video-form]').hidden, false);
+    assert.equal(toggle.textContent, copy.viewSuggestions);
+    assert.equal(panel.hidden, true, 'Change video reopens a collapsed suggestions picker');
+    h.close();
+  }
+});
+
+test('suggestions toggle and Escape preserve the current video and keyboard focus', () => {
+  const h = harness();
+  h.submit(firstUrl);
+  h.emitPlaying(true);
+  h.click('[data-change-video]');
+  h.click('[data-video-suggestions-toggle]');
+  h.click('[data-video-suggestions-toggle]');
+  assert.equal(h.control('[data-video-suggestions]').hidden, true);
+  h.click('[data-video-suggestions-toggle]');
+  const event = Object.assign(new Event('keydown', { cancelable: true }), { key: 'Escape' });
+  h.control('[data-video-suggestions]').dispatchEvent(event);
+  assert.equal(event.defaultPrevented, true);
+  assert.equal(h.control('[data-video-suggestions]').hidden, true);
+  assert.equal(h.control('[data-video-suggestions-toggle]').focusCount, 1);
+  assert.equal(h.loaded.length, 1);
+  assert.equal(h.pauseCalls(), 0);
+  assert.equal(h.playCalls(), 0);
+  h.click('[data-video-suggestions-toggle]');
+  h.click('[data-cancel-video]');
+  assert.equal(h.control('[data-video-suggestions]').hidden, true);
+  h.close();
+  h.click('[data-video-suggestions-toggle]');
+  h.click(`[data-video-suggestion="${videoSuggestions[0].id}"]`);
+  assert.equal(h.loaded.length, 1, 'stale controls must not load videos after cleanup');
+});
+
+test('suggestions have unique validated video IDs and consistent translated controls in every locale', () => {
+  assert.equal(new Set(videoSuggestions.map(suggestion => suggestion.id)).size, videoSuggestions.length);
+  for (const suggestion of videoSuggestions) {
+    assert.ok(suggestion.title.trim());
+    assert.deepEqual(parseYouTubeVideo(`https://www.youtube.com/watch?v=${suggestion.id}`), { id: suggestion.id, startSeconds: 0 });
+  }
+  const keys = Object.keys(videoCopy.en).sort();
+  for (const translation of Object.values(videoCopy)) {
+    assert.deepEqual(Object.keys(translation).sort(), keys);
+    for (const key of ['viewSuggestions', 'hideSuggestions', 'suggestionsLabel'] as const) assert.ok(translation[key].trim());
+  }
 });
