@@ -102,8 +102,9 @@ export function createVideoPriceLayout(root: HTMLElement) {
   }
   function keyboardFocus() {
     const active = document.activeElement;
-    return lastInput !== 'pointer' && !!active && position.contains(active) && active.matches(':focus-visible');
+    return lastInput !== 'pointer' && !!active && (position.contains(active) || inStyle(active)) && active.matches(':focus-visible');
   }
+  const inStyle = (target: EventTarget | null) => !!(target as Element | null)?.closest?.('[data-price-style]');
   function setFrame(visible: boolean) {
     if (frame === visible) return;
     frame = visible;
@@ -112,10 +113,10 @@ export function createVideoPriceLayout(root: HTMLElement) {
   }
   function scheduleHide(ignoreFocus = false) {
     clearFrameTimer();
-    if (destroyed || operation || (!ignoreFocus && keyboardFocus())) return;
+    if (destroyed || operation || root.hasAttribute('data-price-style-open') || (!ignoreFocus && keyboardFocus())) return;
     frameTimer = window.setTimeout(() => {
       frameTimer = undefined;
-      if (!destroyed && !operation && !keyboardFocus()) setFrame(false);
+      if (!destroyed && !operation && !root.hasAttribute('data-price-style-open') && !keyboardFocus()) setFrame(false);
     }, FRAME_DELAY);
   }
   function revealFrame() {
@@ -187,7 +188,18 @@ export function createVideoPriceLayout(root: HTMLElement) {
   }
 
   listen(resetButton, 'click', reset);
+  listen(root, 'videouidismiss', () => {
+    finish();
+    dismissed = true;
+    clearFrameTimer();
+    setFrame(false);
+  });
+  listen(root, 'pricestyletoggle', () => {
+    if (root.hasAttribute('data-price-style-open')) clearFrameTimer();
+    else scheduleHide();
+  });
   listen(position, 'pointerdown', ((event: PointerEvent) => {
+    if (inStyle(event.target)) return;
     if (operation || !event.isPrimary || event.button !== 0) return;
     lastInput = 'pointer';
     dismissed = false;
@@ -206,7 +218,7 @@ export function createVideoPriceLayout(root: HTMLElement) {
     if (operation.kind === 'resize') root.setAttribute('data-price-resizing', operation.corner);
     notify();
   }) as EventListener);
-  listen(position, 'click', () => { dismissed = false; revealFrame(); });
+  listen(position, 'click', event => { if (!inStyle(event.target)) { dismissed = false; revealFrame(); } });
   listen(position, 'pointermove', () => { if (frame) scheduleHide(); });
   listen(window, 'pointermove', move as EventListener);
   listen(window, 'pointerup', ((event: PointerEvent) => {
@@ -222,6 +234,7 @@ export function createVideoPriceLayout(root: HTMLElement) {
   listen(window, 'focus', () => { if (keyboardFocus()) revealFrame(); });
   listen(window, 'keydown', ((event: KeyboardEvent) => {
     lastInput = 'keyboard';
+    if (event.defaultPrevented) return;
     if (event.key === 'Escape') {
       if (!frame && !operation) return;
       event.preventDefault();
@@ -238,6 +251,7 @@ export function createVideoPriceLayout(root: HTMLElement) {
   listen(position, 'focusin', () => { if (keyboardFocus()) revealFrame(); });
   listen(position, 'focusout', ((event: FocusEvent) => { if (!position.contains(event.relatedTarget as Node | null)) scheduleHide(true); }) as EventListener);
   listen(position, 'keydown', ((event: KeyboardEvent) => {
+    if (inStyle(event.target)) return;
     if (event.key === 'Escape') return;
     lastInput = 'keyboard';
     dismissed = false;

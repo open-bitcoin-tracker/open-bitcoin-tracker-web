@@ -54,11 +54,12 @@ function harness(options: Options = {}) {
     listenerCount() { return [...this.listeners.values()].reduce((sum, listeners) => sum + listeners.size, 0); }
     setAttribute(name: string, value: string) { this.attributes.set(name, value); }
     removeAttribute(name: string) { this.attributes.delete(name); }
+    hasAttribute(name: string) { return this.attributes.has(name); }
     toggleAttribute(name: string, force: boolean) { if (force) this.attributes.set(name, ''); else this.attributes.delete(name); }
     querySelector(selector: string) { return this.selectors.get(selector) ?? null; }
     querySelectorAll(selector: string) { assert.equal(selector, '[data-price-resize]'); return this.children; }
     contains(target: Element | null): boolean { return target === this || this.children.some(child => child.contains(target)); }
-    closest(selector: string): Element | null { assert.equal(selector, '[data-price-resize]'); return this.dataset.priceResize ? this : this.parent?.closest(selector) ?? null; }
+    closest(selector: string): Element | null { if (selector === '[data-price-style]') return this.dataset.priceStyle !== undefined ? this : this.parent?.closest(selector) ?? null; assert.equal(selector, '[data-price-resize]'); return this.dataset.priceResize ? this : this.parent?.closest(selector) ?? null; }
     matches(selector: string) { assert.equal(selector, ':focus-visible'); return this.focusVisible; }
     getBoundingClientRect() { return this.rect(); }
     focus() {
@@ -211,6 +212,24 @@ test('click reveals the frame temporarily, hover alone does not, and revealing n
   assert.equal(h.frame(), false);
   assert.equal(Object.values(h.handles).every(handle => handle.tabIndex === -1), true);
   assert.equal(h.notifications(), 0, 'frame show/hide must not restart the page idle timer');
+  h.layout.destroy();
+});
+
+test('UI dismissal closes the price frame without reopening it on hover or stale focus', () => {
+  const h = harness();
+  h.focus(h.position);
+  assert.equal(h.frame(), true);
+  h.root.dispatchEvent(new Event('videouidismiss'));
+  assert.equal(h.frame(), false);
+  h.pointer('pointermove', h.position);
+  h.window.dispatchEvent(new Event('focus'));
+  assert.equal(h.frame(), false);
+  h.position.click();
+  assert.equal(h.frame(), true);
+  h.root.setAttribute('data-price-style-open', '');
+  h.root.dispatchEvent(new Event('pricestyletoggle'));
+  h.advance(10000);
+  assert.equal(h.frame(), true, 'style controls must remain available while their panel is open');
   h.layout.destroy();
 });
 

@@ -1,4 +1,5 @@
-const IDLE_DELAY = 2500;
+const IDLE_DELAY = 1200;
+const INTERACTIVE = 'button, input, select, textarea, a, [role="button"], [role="dialog"], [data-price-style], [data-price-position], [data-video-form]';
 const EDITABLE_CONTROL = 'input:not([type="range"]), textarea, [contenteditable]:not([contenteditable="false"]), [role="textbox"], [role="combobox"]';
 
 /** Hide Video Mode's interface while a cursor is idle, keeping active controls usable. */
@@ -10,6 +11,8 @@ export function createVideoControls(root: HTMLElement) {
   let lastInput: 'keyboard' | 'pointer' | undefined;
   let openSelect: Element | null = null;
   let timer: number | undefined;
+  let manuallyHidden = false;
+  let revealedByTouch = false;
 
   function clearTimer() {
     if (timer === undefined) return;
@@ -32,25 +35,38 @@ export function createVideoControls(root: HTMLElement) {
   }
 
   function reveal() {
-    if (destroyed) return;
+    if (destroyed || manuallyHidden) return;
     clearTimer();
     root.removeAttribute('data-ui-idle');
     if (!canFade()) return;
     timer = window.setTimeout(() => {
       timer = undefined;
-      if (!destroyed && canFade()) root.setAttribute('data-ui-idle', '');
+      if (!destroyed && canFade()) hide();
     }, IDLE_DELAY);
+  }
+
+  function hide(manual = false) {
+    clearTimer();
+    manuallyHidden = true;
+    openSelect = null;
+    // Close the editor and menus before hiding; their close events cannot undo a manual dismissal.
+    root.dispatchEvent(new Event('videouidismiss'));
+    root.setAttribute('data-ui-idle', '');
+    manuallyHidden = manual;
   }
 
   function handlePointerMove(event: PointerEvent) {
     if (event.pointerType === 'touch') return;
     touch = false;
+    manuallyHidden = false;
     reveal();
   }
 
   function handlePointerDown(event: PointerEvent) {
     lastInput = 'pointer';
     touch = event.pointerType === 'touch';
+    revealedByTouch = touch && manuallyHidden;
+    if (touch) manuallyHidden = false;
     const select = (event.target as Element | null)?.closest?.('select');
     openSelect = select && root.contains(select) ? select : null;
     reveal();
@@ -58,7 +74,18 @@ export function createVideoControls(root: HTMLElement) {
 
   function handleKeyDown() {
     lastInput = 'keyboard';
+    manuallyHidden = false;
     reveal();
+  }
+
+  function handleClick(event: MouseEvent) {
+    if (destroyed) return;
+    if (revealedByTouch) { revealedByTouch = false; return; }
+    const target = event.target as Element | null;
+    if (target?.closest?.('[data-price-position], [data-price-style]')) return;
+    const editing = root.hasAttribute('data-price-layout-open');
+    const background = !!target && root.contains(target) && !target.closest(INTERACTIVE);
+    if (editing || (enabled && background)) hide(true);
   }
 
   function handleChangeOrBlur() {
@@ -69,6 +96,7 @@ export function createVideoControls(root: HTMLElement) {
   window.addEventListener('pointermove', handlePointerMove);
   window.addEventListener('pointerdown', handlePointerDown);
   window.addEventListener('keydown', handleKeyDown);
+  window.addEventListener('click', handleClick);
   root.addEventListener('focusin', reveal);
   root.addEventListener('focusout', handleChangeOrBlur);
   root.addEventListener('change', handleChangeOrBlur);
@@ -95,6 +123,7 @@ export function createVideoControls(root: HTMLElement) {
       window.removeEventListener('pointermove', handlePointerMove);
       window.removeEventListener('pointerdown', handlePointerDown);
       window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('click', handleClick);
       root.removeEventListener('focusin', reveal);
       root.removeEventListener('focusout', handleChangeOrBlur);
       root.removeEventListener('change', handleChangeOrBlur);
