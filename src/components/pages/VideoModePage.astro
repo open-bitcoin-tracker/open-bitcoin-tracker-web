@@ -247,9 +247,10 @@ const locale = htmlLang(Astro.currentLocale);
   .video-page[data-price-resizing="nw"] .video-price-position, .video-page[data-price-resizing="se"] .video-price-position { cursor: nwse-resize; }
   .video-page[data-price-resizing="ne"] .video-price-position, .video-page[data-price-resizing="sw"] .video-price-position { cursor: nesw-resize; }
   .video-sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+  /* Scale the default proportionally up to 4K; saved sizes remain relative multipliers. */
   /* Compensate for the final negative letter spacing so the last glyph stays inside the frame. */
-  .video-price { --price-chars: 8; --video-price-base-size: clamp(3rem, min(25.5vw, 36vh, 207vw / var(--price-chars)), 22.5rem); color: var(--video-price-colour, #fff); font-family: var(--video-price-font, var(--font-sans)); font-size: calc(var(--video-price-base-size) * var(--video-price-scale, 1) * var(--video-price-fit, 1)); font-weight: var(--video-price-weight, 750); letter-spacing: var(--video-price-spacing, -.065em); padding-inline-end: .065em; padding-block: var(--video-price-padding, 0); -webkit-text-stroke: var(--video-price-stroke-width, 0px) var(--video-price-stroke-colour, #000); paint-order: stroke fill; line-height: 1.2; font-variant-numeric: tabular-nums; white-space: nowrap; text-shadow: 0 3px 30px #000, 0 0 80px #0009; }
-  .video-dock { position: fixed; bottom: max(clamp(2rem, 8svh, 5rem), env(safe-area-inset-bottom)); left: 50%; transform: translateX(-50%); width: min(480px, calc(100% - 3rem)); z-index: 3; text-align: center; }
+  .video-price { --price-chars: 8; --video-price-base-size: clamp(3rem, min(9.375vw, 16.6667vh, 207vw / var(--price-chars)), 22.5rem); color: var(--video-price-colour, #fff); font-family: var(--video-price-font, var(--font-sans)); font-size: calc(var(--video-price-base-size) * var(--video-price-scale, 1) * var(--video-price-fit, 1)); font-weight: var(--video-price-weight, 750); letter-spacing: var(--video-price-spacing, -.065em); padding-inline-end: .065em; padding-block: var(--video-price-padding, 0); -webkit-text-stroke: var(--video-price-stroke-width, 0px) var(--video-price-stroke-colour, #000); paint-order: stroke fill; line-height: 1.2; font-variant-numeric: tabular-nums; white-space: nowrap; text-shadow: 0 3px 30px #000, 0 0 80px #0009; }
+  .video-dock { position: fixed; bottom: max(1rem, env(safe-area-inset-bottom)); left: 50%; transform: translateX(-50%); width: min(480px, calc(100% - 3rem)); z-index: 3; text-align: center; }
   .video-page[data-subtitles-enabled] .video-dock { bottom: max(7rem, 16svh, env(safe-area-inset-bottom)); }
   .video-url-field { display: flex; align-items: center; gap: .75rem; padding: .5rem; padding-left: 1rem; border: 0; border-radius: 14px; background: rgb(20 20 20 / .85); backdrop-filter: blur(16px); box-shadow: 0 8px 40px #0003; }
   .video-url-icon { flex-shrink: 0; color: #aaa; }
@@ -257,7 +258,7 @@ const locale = htmlLang(Astro.currentLocale);
   input::placeholder { color: #aaa; }
   input[aria-invalid="true"] { color: #ffc2b2; }
   [data-video-url]:focus-visible { outline: none; }
-  .video-url-field:has([data-video-url]:focus-visible) { outline: 2px solid #ffc477; outline-offset: 4px; }
+  .video-url-field:has([data-video-url]:focus-visible) { background: rgb(35 35 35 / .95); }
   .video-submit { flex-shrink: 0; display: grid; place-items: center; width: 2.5rem; height: 2.5rem; border: 0; border-radius: 9px; background: #ff981e; color: #211000; }
   .video-submit:hover { background: #ffb047; }
   .video-cancel { margin-bottom: .75rem; }
@@ -300,14 +301,12 @@ const locale = htmlLang(Astro.currentLocale);
   }
   @media (max-width: 700px) {
     .video-price-stage { padding: 5rem 1rem 6rem; }
-    .video-price { --video-price-base-size: clamp(3rem, min(27vw, 36vh, 210vw / var(--price-chars)), 12rem); }
     .video-dock { width: calc(100% - 2rem); }
   }
   @media (max-width: 600px) {
     .video-appearance { flex-wrap: wrap; justify-content: flex-end; width: 14.5rem; max-width: calc(100vw - var(--menu-control-right) - var(--menu-control-size) - 1.75rem); height: auto; gap: .5rem; }
     .video-currency-trigger { padding-inline: .75rem; }
     .video-style-trigger, .video-reset-price { padding-inline: 1rem; }
-    .video-dock { bottom: max(1rem, env(safe-area-inset-bottom)); }
   }
   @media (max-width: 600px) and (max-height: 640px) {
     .video-playback:not([hidden]) ~ [data-video-status] { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
@@ -322,7 +321,6 @@ const locale = htmlLang(Astro.currentLocale);
     .video-price-stage { padding-top: 3.5rem; padding-bottom: 11rem; }
     .video-page[data-subtitles-enabled] .video-price-stage { padding-bottom: 14rem; }
     .video-price { line-height: 1.1; }
-    .video-dock { bottom: max(1rem, env(safe-area-inset-bottom)); }
     .video-page[data-subtitles-enabled] .video-dock { bottom: max(5rem, env(safe-area-inset-bottom)); }
   }
   @media (max-height: 480px) and (min-width: 600px) {
@@ -334,7 +332,6 @@ const locale = htmlLang(Astro.currentLocale);
   }
   @media (max-height: 360px) and (min-width: 600px) {
     .video-price-stage { justify-content: flex-start; padding-top: calc(var(--menu-control-top) + var(--menu-control-size) + .5rem); }
-    .video-price { --video-price-base-size: clamp(3rem, min(21vw, 22.5vh, 165vw / var(--price-chars)), 9rem); }
   }
   @media (prefers-reduced-motion: reduce) {
     .video-price-style { transition: none; }
