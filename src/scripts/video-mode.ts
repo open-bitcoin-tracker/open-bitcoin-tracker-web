@@ -269,8 +269,8 @@ function startVideoMode(root: HTMLElement) {
     onBlocked() {
       if (destroyed) return;
       setPlaying(false);
-      videoStatus.textContent = t.autoplayBlocked;
-      videoStatus.hidden = false;
+      videoStatus.textContent = '';
+      videoStatus.hidden = true;
     },
     onCaptions({ enabled, available }) {
       if (!destroyed) updateCaptions(enabled, available);

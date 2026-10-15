@@ -50,7 +50,9 @@ const t = useTranslations(Astro.currentLocale);
     document.dispatchEvent(new CustomEvent('themechange', { detail: { dark, source: 'user' } }));
   };
   toggles.forEach((toggle) => toggle.addEventListener('click', () => {
-    transition?.skipTransition();
+    // Let the current wave finish instead of exposing its final frame on a
+    // second click. Keep keyboard focus and the control available throughout.
+    if (transition) return;
     if (!document.startViewTransition || reduce.matches) {
       root.classList.add('theme-transition');
       apply();
@@ -61,12 +63,22 @@ const t = useTranslations(Astro.currentLocale);
     const x = bounds.left + bounds.width / 2;
     const y = bounds.top + bounds.height / 2;
     const radius = Math.hypot(Math.max(x, innerWidth - x), Math.max(y, innerHeight - y));
+    root.style.setProperty('--theme-reveal-x', `${x}px`);
+    root.style.setProperty('--theme-reveal-y', `${y}px`);
+    root.style.setProperty('--theme-reveal-radius', `${radius}px`);
+    root.classList.add('theme-revealing');
     transition = document.startViewTransition(apply);
-    transition.ready.then(() => {
-      root.animate({ clipPath: [`circle(0px at ${x}px ${y}px)`, `circle(${radius}px at ${x}px ${y}px)`] }, {
-        duration: 550, easing: 'cubic-bezier(.22, 1, .36, 1)', pseudoElement: '::view-transition-new(root)',
-      });
-    }).catch(() => {});
+    // CSS clips the new snapshot from its very first frame, rather than
+    // attaching the reveal after the browser has created that snapshot.
+    void transition.ready.catch(() => {});
+    const finish = () => {
+      root.classList.remove('theme-revealing');
+      root.style.removeProperty('--theme-reveal-x');
+      root.style.removeProperty('--theme-reveal-y');
+      root.style.removeProperty('--theme-reveal-radius');
+      transition = undefined;
+    };
+    void transition.finished.then(finish, finish);
   }));
 </script>
 

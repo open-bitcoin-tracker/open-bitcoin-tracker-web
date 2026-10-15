@@ -12,7 +12,6 @@ export interface VideoCopy {
   videoUnavailable: string;
   embeddingDisabled: string;
   loadingVideo: string;
-  autoplayBlocked: string;
   mute: string;
   unmute: string;
   volume: string;
@@ -57,7 +56,6 @@ const en: VideoCopy = {
   videoUnavailable: 'This video cannot be played here. Try another YouTube video.',
   embeddingDisabled: 'The video owner has disabled playback on other websites. Try another YouTube video.',
   loadingVideo: 'Loading video…',
-  autoplayBlocked: 'Press play to start the video.',
   mute: 'Mute video',
   unmute: 'Unmute video',
   volume: 'Volume',
@@ -104,7 +102,6 @@ export const video: Record<Lang, VideoCopy> = {
     videoUnavailable: 'Este vídeo no se puede reproducir aquí. Prueba con otro vídeo de YouTube.',
     embeddingDisabled: 'El propietario del vídeo ha desactivado la reproducción en otros sitios web. Prueba con otro vídeo de YouTube.',
     loadingVideo: 'Cargando vídeo…',
-    autoplayBlocked: 'Pulsa reproducir para iniciar el vídeo.',
     mute: 'Silenciar vídeo',
     unmute: 'Activar sonido del vídeo',
     volume: 'Volumen',
@@ -148,7 +145,6 @@ export const video: Record<Lang, VideoCopy> = {
     videoUnavailable: 'Este vídeo não pode ser reproduzido aqui. Tente outro vídeo do YouTube.',
     embeddingDisabled: 'O proprietário do vídeo desativou a reprodução em outros sites. Tente outro vídeo do YouTube.',
     loadingVideo: 'Carregando vídeo…',
-    autoplayBlocked: 'Toque em reproduzir para iniciar o vídeo.',
     mute: 'Silenciar vídeo',
     unmute: 'Ativar som do vídeo',
     volume: 'Volume',
@@ -192,7 +188,6 @@ export const video: Record<Lang, VideoCopy> = {
     videoUnavailable: 'Cette vidéo ne peut pas être lue ici. Essaie une autre vidéo YouTube.',
     embeddingDisabled: 'Le propriétaire de la vidéo a désactivé sa lecture sur d’autres sites. Essaie une autre vidéo YouTube.',
     loadingVideo: 'Chargement de la vidéo…',
-    autoplayBlocked: 'Appuie sur lecture pour lancer la vidéo.',
     mute: 'Couper le son de la vidéo',
     unmute: 'Activer le son de la vidéo',
     volume: 'Volume',
@@ -236,7 +231,6 @@ export const video: Record<Lang, VideoCopy> = {
     videoUnavailable: 'Dieses Video kann hier nicht abgespielt werden. Versuche ein anderes YouTube-Video.',
     embeddingDisabled: 'Der Inhaber des Videos hat die Wiedergabe auf anderen Websites deaktiviert. Versuche ein anderes YouTube-Video.',
     loadingVideo: 'Video wird geladen…',
-    autoplayBlocked: 'Drücke auf Abspielen, um das Video zu starten.',
     mute: 'Video stummschalten',
     unmute: 'Videoton einschalten',
     volume: 'Lautstärke',
@@ -280,7 +274,6 @@ export const video: Record<Lang, VideoCopy> = {
     videoUnavailable: 'Questo video non può essere riprodotto qui. Prova un altro video di YouTube.',
     embeddingDisabled: 'Il proprietario del video ha disattivato la riproduzione su altri siti web. Prova un altro video di YouTube.',
     loadingVideo: 'Caricamento del video…',
-    autoplayBlocked: 'Premi riproduci per avviare il video.',
     mute: 'Disattiva audio del video',
     unmute: 'Attiva audio del video',
     volume: 'Volume',
@@ -324,7 +317,6 @@ export const video: Record<Lang, VideoCopy> = {
     videoUnavailable: 'Это видео нельзя воспроизвести здесь. Попробуй другое видео YouTube.',
     embeddingDisabled: 'Владелец видео запретил воспроизведение на других сайтах. Попробуй другое видео YouTube.',
     loadingVideo: 'Загрузка видео…',
-    autoplayBlocked: 'Нажми «Воспроизвести», чтобы запустить видео.',
     mute: 'Выключить звук видео',
     unmute: 'Включить звук видео',
     volume: 'Громкость',
@@ -368,7 +360,6 @@ export const video: Record<Lang, VideoCopy> = {
     videoUnavailable: 'Bu video burada oynatılamıyor. Başka bir YouTube videosu dene.',
     embeddingDisabled: 'Videonun sahibi başka web sitelerinde oynatmayı devre dışı bırakmış. Başka bir YouTube videosu dene.',
     loadingVideo: 'Video yükleniyor…',
-    autoplayBlocked: 'Videoyu başlatmak için oynat düğmesine bas.',
     mute: 'Videonun sesini kapat',
     unmute: 'Videonun sesini aç',
     volume: 'Ses düzeyi',
@@ -412,7 +403,6 @@ export const video: Record<Lang, VideoCopy> = {
     videoUnavailable: 'Không thể phát video này tại đây. Hãy thử video YouTube khác.',
     embeddingDisabled: 'Chủ sở hữu video đã tắt tính năng phát trên các trang web khác. Hãy thử video YouTube khác.',
     loadingVideo: 'Đang tải video…',
-    autoplayBlocked: 'Nhấn phát để bắt đầu video.',
     mute: 'Tắt tiếng video',
     unmute: 'Bật tiếng video',
     volume: 'Âm lượng',
@@ -456,7 +446,6 @@ export const video: Record<Lang, VideoCopy> = {
     videoUnavailable: 'この動画はここでは再生できません。別のYouTube動画を試してください。',
     embeddingDisabled: '動画の所有者が他のウェブサイトでの再生を無効にしています。別のYouTube動画を試してください。',
     loadingVideo: '動画を読み込み中…',
-    autoplayBlocked: '再生ボタンを押して動画を開始してください。',
     mute: '動画をミュート',
     unmute: '動画のミュートを解除',
     volume: '音量',

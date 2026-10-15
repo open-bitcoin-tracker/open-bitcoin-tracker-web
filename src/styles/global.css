@@ -181,9 +181,19 @@ html { scrollbar-gutter: stable; }
 .motion-ready [data-reveal='fade'] { transform: none; }
 .motion-ready [data-reveal].is-revealed { opacity: 1; transform: none; }
 .theme-transition body { transition: background-color .3s, color .3s; }
+/* Keep the old theme opaque underneath a single, steadily expanding reveal.
+   The backwards fill clips the new snapshot before its first painted frame. */
+html.theme-revealing::view-transition-group(root) { animation: none; }
 ::view-transition-old(root), ::view-transition-new(root) { animation: none; mix-blend-mode: normal; }
 ::view-transition-old(root) { z-index: 1; }
 ::view-transition-new(root) { z-index: 2; }
+html.theme-revealing::view-transition-new(root) {
+  animation: theme-reveal 1200ms cubic-bezier(.4, 0, .2, 1) both;
+}
+@keyframes theme-reveal {
+  from { clip-path: circle(0px at var(--theme-reveal-x) var(--theme-reveal-y)); }
+  to { clip-path: circle(var(--theme-reveal-radius) at var(--theme-reveal-x) var(--theme-reveal-y)); }
+}
 
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }

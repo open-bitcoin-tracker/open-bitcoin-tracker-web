@@ -20,7 +20,7 @@ const copy = {
   play: 'Play', pause: 'Pause', mute: 'Mute video', unmute: 'Unmute video',
   invalidUrl: 'Enter a valid YouTube video URL.', videoUnavailable: 'This video cannot be played here.',
   embeddingDisabled: 'The owner of this video does not allow embedded playback. Try another YouTube video.',
-  loadingVideo: 'Loading video', autoplayBlocked: 'Press play to start the video.', backgroundTitle: 'YouTube background video',
+  loadingVideo: 'Loading video', backgroundTitle: 'YouTube background video',
   seek: 'Video progress', subtitles: 'Subtitles', loop: 'Loop video', volume: 'Volume',
   subtitlesUnavailable: 'Subtitles unavailable for this video', playbackPosition: '{current} of {duration}',
   fullscreen: 'Fullscreen', exitFullscreen: 'Exit fullscreen', fullscreenUnavailable: 'Fullscreen unavailable',
@@ -556,8 +556,8 @@ test('embed errors expose a replacement picker and a blocked autoplay can be res
   assert.equal(h.intervalCount(500), 1, 'a valid replacement restores progress polling');
   h.emitBlocked();
   assert.equal(h.control('[data-video-form]').hidden, true);
-  assert.equal(h.control('[data-video-status]').textContent, copy.autoplayBlocked);
-  assert.equal(h.control('[data-video-status]').hidden, false);
+  assert.equal(h.control('[data-video-status]').textContent, '');
+  assert.equal(h.control('[data-video-status]').hidden, true, 'blocked autoplay leaves playback to the play button without a prompt');
   h.click('[data-play-pause]');
   assert.equal(h.playCalls(), 1);
   assert.equal(h.control('[data-play-pause]').attributes.get('aria-label'), copy.pause);
@@ -1023,8 +1023,8 @@ test('a saved selection restores playback controls and its requested start witho
 test('restored videos preserve autoplay recovery and retain the canonical URL if embedding fails', () => {
   const h = harness({ storedSelection: JSON.stringify({ version: 1, url: secondUrl }) });
   h.emitBlocked();
-  assert.equal(h.control('[data-video-status]').textContent, copy.autoplayBlocked);
-  assert.equal(h.control('[data-video-status]').hidden, false);
+  assert.equal(h.control('[data-video-status]').textContent, '');
+  assert.equal(h.control('[data-video-status]').hidden, true);
   assert.equal(h.control('[data-play-pause]').attributes.get('aria-label'), copy.play);
   h.click('[data-play-pause]');
   assert.equal(h.playCalls(), 1);
