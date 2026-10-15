@@ -210,7 +210,7 @@ test('pause before API readiness cues the selection and playback state follows a
   h.controller.destroy();
 });
 
-test('buffering retains the Pause action and pausing preserves the frame until an explicit resume', async () => {
+test('buffering retains the Pause action and pausing preserves the frame until playback resumes', async () => {
   const h = harness();
   const player = await readyPlayer(h);
   player.event('onStateChange', 1);
@@ -460,6 +460,13 @@ test('seeking clamps to video bounds, ignores invalid inputs, and preserves paus
   assert.equal(player.calls.at(-1)?.name, 'pause');
   assert.equal(player.seekCalls.at(-1)?.seconds, 70);
   assert.equal(h.states.at(-1), false);
+  player.event('onStateChange', 1);
+  assert.equal(h.states.at(-1), false, 'a paused seek must still reject unintended playback');
+  player.event('onStateChange', 2);
+  const calls = player.calls.length;
+  player.event('onStateChange', 1);
+  assert.equal(h.states.at(-1), true, 'browser controls can resume once the paused seek settles');
+  assert.equal(player.calls.length, calls);
   assert.equal(player.calls.filter(call => call.name === 'load').length, 1);
   h.controller.destroy();
 });
@@ -642,6 +649,39 @@ test('unsupported or throwing caption APIs stay unavailable without breaking vid
 });
 
 
+test('browser media controls can pause and resume repeatedly without the page cancelling playback', async () => {
+  const h = harness();
+  const player = await readyPlayer(h);
+  player.event('onStateChange', 1);
+  const calls = player.calls.length;
+  for (let cycle = 0; cycle < 3; cycle++) {
+    player.event('onStateChange', 2);
+    assert.equal(h.states.at(-1), false);
+    player.event('onStateChange', 1);
+    assert.equal(h.states.at(-1), true);
+    assert.equal(player.calls.length, calls, 'external playback must not be countermanded');
+  }
+  h.controller.setLoop(true);
+  player.event('onStateChange', 0);
+  assert.equal(player.calls.at(-1)?.name, 'play', 'external resume also restores looping intent');
+  h.controller.destroy();
+});
+
+test('browser controls can resume after the page Pause has been confirmed by YouTube', async () => {
+  const h = harness();
+  const player = await readyPlayer(h);
+  player.event('onStateChange', 1);
+  h.controller.pause();
+  player.event('onStateChange', 1);
+  assert.equal(h.states.at(-1), false, 'unconfirmed Pause still rejects a delayed playing event');
+  player.event('onStateChange', 2);
+  const calls = player.calls.length;
+  player.event('onStateChange', 1);
+  assert.equal(h.states.at(-1), true);
+  assert.equal(player.calls.length, calls);
+  h.controller.destroy();
+});
+
 test('a transitional pause from the old video cannot cancel playback of a replacement selection', async () => {
   const h = harness();
   const player = await readyPlayer(h);
@@ -654,27 +694,33 @@ test('a transitional pause from the old video cannot cancel playback of a replac
   assert.equal(h.states.at(-1), true);
   assert.equal(player.calls.some(call => call.name === 'pause'), false);
   assert.deepEqual(player.calls.at(-1), { name: 'load', request: { videoId: VIDEO, startSeconds: 120 } });
-  // A pause after the replacement has actually played remains authoritative.
+  // Once the replacement has played, browser pause/resume events are authoritative.
   player.event('onStateChange', 2);
-  player.event('onStateChange', 1);
   assert.equal(h.states.at(-1), false);
-  assert.equal(player.calls.at(-1)?.name, 'pause');
+  const calls = player.calls.length;
+  player.event('onStateChange', 1);
+  assert.equal(h.states.at(-1), true);
+  assert.equal(player.calls.length, calls);
   h.controller.destroy();
 });
 
-test('explicit Pause after replacement still rejects late autoplay from the new selection', async () => {
+test('explicit Pause after replacement rejects delayed playback until the pause is confirmed', async () => {
   const h = harness();
   const player = await readyPlayer(h);
   player.event('onStateChange', 1);
   h.controller.load(second);
   h.controller.pause();
   const count = h.states.length;
-  player.event('onStateChange', 2);
-  player.event('onStateChange', 5);
   player.event('onStateChange', 1);
   assert.equal(h.states.at(-1), false);
   assert.equal(h.states.slice(count).includes(true), false);
   assert.equal(player.calls.at(-1)?.name, 'pause');
+  player.event('onStateChange', 2);
+  player.event('onStateChange', 5);
+  const calls = player.calls.length;
+  player.event('onStateChange', 1);
+  assert.equal(h.states.at(-1), true, 'a confirmed pause must allow a later browser resume');
+  assert.equal(player.calls.length, calls);
   h.controller.destroy();
 });
 

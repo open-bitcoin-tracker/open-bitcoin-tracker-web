@@ -147,6 +147,7 @@ export function createYouTubePlayer(container: HTMLElement, callbacks: YouTubeCa
   let initializing = false;
   let destroyed = false;
   let wantsPlayback = false;
+  let pausePending = false;
   let awaitingSelection = false;
   let muted = false;
   let volume = 100;
@@ -176,6 +177,7 @@ export function createYouTubePlayer(container: HTMLElement, callbacks: YouTubeCa
     const seconds = Math.min(pendingSeek, duration);
     pendingSeek = undefined;
     try {
+      if (!wantsPlayback) pausePending = true;
       player.seekTo(seconds, true);
       // YouTube can start a cued or ended video on seek; preserve our paused intent.
       if (!wantsPlayback) player.pauseVideo();
@@ -304,7 +306,11 @@ export function createYouTubePlayer(container: HTMLElement, callbacks: YouTubeCa
             if (destroyed || token !== generation) return;
             if (event.data === 1) {
               awaitingSelection = false;
-              if (!wantsPlayback) { player?.pauseVideo(); return; }
+              // Reject delayed playback only while our Pause awaits confirmation.
+              // After that, the browser's media controls may resume the iframe
+              // directly, without going through this controller's play().
+              if (pausePending) { player?.pauseVideo(); return; }
+              wantsPlayback = true;
               applyPendingSeek();
               refreshCaptions();
               if (wantsPlayback) callbacks.onState(true);
@@ -318,12 +324,14 @@ export function createYouTubePlayer(container: HTMLElement, callbacks: YouTubeCa
                 wantsPlayback = false;
               }
             } else if (event.data === 2) {
+              pausePending = false;
               // loadVideoById can emit a pause for the previous video before the
               // new selection starts. Only explicit pause() can cancel that intent.
               if (!awaitingSelection) wantsPlayback = false;
               stopState();
             } else if (event.data === -1 || event.data === 5) {
               if (event.data === 5) {
+                pausePending = false;
                 if (!wantsPlayback) awaitingSelection = false;
                 applyPendingSeek();
                 refreshCaptions();
@@ -365,6 +373,7 @@ export function createYouTubePlayer(container: HTMLElement, callbacks: YouTubeCa
       captionCommand = undefined;
       emitCaptions(false);
       wantsPlayback = true;
+      pausePending = false;
       awaitingSelection = true;
       stopState();
       if (ready) applySelection();
@@ -373,6 +382,7 @@ export function createYouTubePlayer(container: HTMLElement, callbacks: YouTubeCa
     play() {
       if (destroyed || !selected) return;
       wantsPlayback = true;
+      pausePending = false;
       if (ready) {
         try { player?.playVideo(); } catch { fail(); }
       } else void initialize();
@@ -380,6 +390,7 @@ export function createYouTubePlayer(container: HTMLElement, callbacks: YouTubeCa
     pause() {
       if (destroyed) return;
       wantsPlayback = false;
+      pausePending = true;
       awaitingSelection = false;
       if (ready) {
         try { player?.pauseVideo(); } catch { fail(); }
