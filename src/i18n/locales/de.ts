@@ -3,8 +3,8 @@ import type { Dict } from '../ui';
 export const de: Dict = {
   meta: {
     landing: {
-      title: 'Open Bitcoin Tracker',
-      description: 'Bitcoin-Livekurs und Kurshistorie sowie eine quelloffene Android-App, um den Wert deiner Stacks zu tracken.',
+      title: 'Open Bitcoin Tracker — Bitcoin-Tools & Android-App',
+      description: 'Tracke den Bitcoin-Livekurs, erkunde historische Charts und A Bit of Earth oder nutze Video Mode. Kostenlose Open-Source-Tools und eine datenschutzfreundliche Portfolio-App für Android.',
     },
     home: {
       title: 'Open Bitcoin Tracker für Android',
@@ -14,17 +14,19 @@ export const de: Dict = {
     about: {
       title: 'Über — Open Bitcoin Tracker',
       description:
-        'Über Open Bitcoin Tracker – eine datenschutzfreundliche, quelloffene Android-App, um den Wert deiner Bitcoin-Stacks zu tracken. Links, Datenquellen und Open-Source-Lizenzen.',
+        'Entdecke die kostenlosen Open-Source-Bitcoin-Tools und die Android-Portfolio-App von Open Bitcoin Tracker, mit Projektinformationen und Datenquellen.',
     },
     privacy: {
       title: 'Datenschutzerklärung — Open Bitcoin Tracker',
       description:
         'Datenschutzerklärung für Open Bitcoin Tracker – eine datenschutzfreundliche, quelloffene Android-App, um den Wert deiner Bitcoin-Stacks zu tracken.',
     },
-    ogImageAlt: 'Open Bitcoin Tracker — Privater Bitcoin-Werttracker für Android',
+    ogImageAlt: 'Open Bitcoin Tracker — kostenlose Open-Source-Bitcoin-Tools und Android-App',
+    socialTagline: 'Kostenlose Open-Source-Tools für Bitcoin',
   },
 
   landing: {
+    intro: 'Kostenlose Open-Source-Tools, um den Bitcoin-Kurs zu tracken und Bitcoin aus verschiedenen Perspektiven zu entdecken.',
     priceTracker: 'Preis-Tracker',
     priceDescription: 'Bitcoin-Livekurs und Kurshistorie seit 2010.',
     videoDescription: 'Der Bitcoin-Livekurs über YouTube-Videos',

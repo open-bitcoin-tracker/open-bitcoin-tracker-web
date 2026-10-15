@@ -3,8 +3,8 @@ import type { Dict } from '../ui';
 export const fr: Dict = {
   meta: {
     landing: {
-      title: 'Open Bitcoin Tracker',
-      description: 'Le cours du Bitcoin en direct, son historique et une appli Android open source pour tracker la valeur de tes stacks.',
+      title: 'Open Bitcoin Tracker — Outils Bitcoin et appli Android',
+      description: 'Tracke le cours du Bitcoin en direct, explore les graphiques historiques et A Bit of Earth, ou utilise Video Mode. Des outils open source et une appli de portfolio Android qui respecte ta vie privée, le tout gratuit.',
     },
     home: {
       title: 'Open Bitcoin Tracker pour Android',
@@ -14,17 +14,19 @@ export const fr: Dict = {
     about: {
       title: 'À propos — Open Bitcoin Tracker',
       description:
-        'À propos d’Open Bitcoin Tracker : une application Android open source et respectueuse de la vie privée pour tracker la valeur de tes stacks de Bitcoin. Liens, sources de données et licences open source.',
+        'Découvre les outils Bitcoin gratuits et open source d’Open Bitcoin Tracker et son appli de portfolio Android, avec les informations du projet et les sources de données.',
     },
     privacy: {
       title: 'Politique de confidentialité — Open Bitcoin Tracker',
       description:
         'Politique de confidentialité d’Open Bitcoin Tracker : une application Android open source et respectueuse de la vie privée pour tracker la valeur de tes stacks de Bitcoin.',
     },
-    ogImageAlt: 'Open Bitcoin Tracker — Tracker privé de la valeur du Bitcoin pour Android',
+    ogImageAlt: 'Open Bitcoin Tracker — outils Bitcoin gratuits et open source et appli Android',
+    socialTagline: 'Des outils Bitcoin gratuits et open source',
   },
 
   landing: {
+    intro: 'Des outils gratuits et open source pour tracker le cours du Bitcoin et l’explorer sous différents angles.',
     priceTracker: 'Tracker de prix',
     priceDescription: 'Le cours du Bitcoin en direct et son historique depuis 2010.',
     videoDescription: 'Le cours du Bitcoin en direct sur des vidéos YouTube',

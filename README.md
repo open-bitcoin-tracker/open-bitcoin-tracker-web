@@ -20,6 +20,7 @@ npm run dev
 | `npm run refresh:supply` | Refresh US M2 from the official Federal Reserve H.6 release |
 | `npm run build` | Generate the production site in `dist/` |
 | `npm run preview` | Serve the built site locally |
+| `npm run generate:social` | Regenerate the checked-in social preview PNGs for all languages |
 
 The build does **not** perform a full TypeScript check. Development and preview do not run the Pages Function.
 
@@ -101,6 +102,12 @@ Reduced motion keeps estimates and illustrations still; hidden tabs stop timers.
 ### Price history
 
 Keep `public/data/btc-history.csv` synchronized with the Android project's `assets/btc_history.csv`: `YYYY-MM-DD,USD_PRICE`, one daily point per line, no header. Preserve existing data and unavailable states when recent candles cannot connect without gaps; never invent prices.
+
+### Search metadata and social previews
+
+The locale dictionaries define homepage and About metadata, the homepage introduction, and social preview copy. The shared layout uses this metadata for search, Open Graph, and Twitter cards. Homepages include `WebSite` structured data for the canonical site root; `SoftwareApplication` data is specific to Android app pages.
+
+After editing social copy or tool labels, run `npm run generate:social`, review every language's `public/og-bitcoin-tools*.png`, and rebuild. The generator requires the system fonts **Noto Sans** and **Noto Sans CJK JP**; generated PNGs are checked in, so normal builds need no system fonts. The layout selects each language's image. When adding a language, also register its dictionary in `scripts/generate-social-images.ts` and generate its image. After deployment, request a homepage recrawl in Google Search Console to help Google discover metadata changes.
 
 ### Supply snapshot
 

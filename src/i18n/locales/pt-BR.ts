@@ -3,8 +3,8 @@ import type { Dict } from '../ui';
 export const ptBR: Dict = {
   meta: {
     landing: {
-      title: 'Open Bitcoin Tracker',
-      description: 'Preço e histórico do Bitcoin ao vivo e um app Android de código aberto para trackear o valor dos seus stacks.',
+      title: 'Open Bitcoin Tracker — Ferramentas Bitcoin e app Android',
+      description: 'Trackeie o preço do Bitcoin ao vivo, explore gráficos históricos e A Bit of Earth ou use o Video Mode. Ferramentas de código aberto e um app de portfólio para Android que respeita sua privacidade, tudo grátis.',
     },
     home: {
       title: 'Open Bitcoin Tracker para Android',
@@ -14,17 +14,19 @@ export const ptBR: Dict = {
     about: {
       title: 'Sobre — Open Bitcoin Tracker',
       description:
-        'Sobre o Open Bitcoin Tracker: um app Android de código aberto e focado em privacidade para trackear o valor dos seus stacks de Bitcoin. Links, fontes de dados e licenças de código aberto.',
+        'Conheça as ferramentas Bitcoin gratuitas e de código aberto do Open Bitcoin Tracker e seu app de portfólio para Android, com informações do projeto e fontes de dados.',
     },
     privacy: {
       title: 'Política de Privacidade — Open Bitcoin Tracker',
       description:
         'Política de privacidade do Open Bitcoin Tracker: um app Android de código aberto e focado em privacidade para trackear o valor dos seus stacks de Bitcoin.',
     },
-    ogImageAlt: 'Open Bitcoin Tracker — Trackeador privado do valor do Bitcoin para Android',
+    ogImageAlt: 'Open Bitcoin Tracker — ferramentas Bitcoin gratuitas e de código aberto e app Android',
+    socialTagline: 'Ferramentas Bitcoin gratuitas e de código aberto',
   },
 
   landing: {
+    intro: 'Ferramentas gratuitas e de código aberto para trackear o preço do Bitcoin e explorá-lo por diferentes perspectivas.',
     priceTracker: 'Trackeador de preço',
     priceDescription: 'Preço do Bitcoin ao vivo e histórico desde 2010.',
     videoDescription: 'O preço do Bitcoin ao vivo sobre vídeos do YouTube',

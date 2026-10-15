@@ -3,8 +3,8 @@ import type { Dict } from '../ui';
 export const es: Dict = {
   meta: {
     landing: {
-      title: 'Open Bitcoin Tracker',
-      description: 'Precio e historial de Bitcoin en directo y una app Android de código abierto para trackear el valor de tus stacks.',
+      title: 'Open Bitcoin Tracker — Herramientas Bitcoin y app Android',
+      description: 'Trackea el precio de Bitcoin en directo, explora gráficos históricos y A Bit of Earth, o usa Video Mode. Herramientas de código abierto y una app de portfolio para Android que respeta tu privacidad, todo gratis.',
     },
     home: {
       title: 'Open Bitcoin Tracker para Android',
@@ -14,17 +14,19 @@ export const es: Dict = {
     about: {
       title: 'Acerca de — Open Bitcoin Tracker',
       description:
-        'Acerca de Open Bitcoin Tracker: una app de Android de código abierto y centrada en la privacidad para trackear el valor de tus stacks de Bitcoin. Enlaces, fuentes de datos y licencias de código abierto.',
+        'Descubre las herramientas Bitcoin gratuitas y de código abierto de Open Bitcoin Tracker y su app de portfolio para Android, con información del proyecto y fuentes de datos.',
     },
     privacy: {
       title: 'Política de privacidad — Open Bitcoin Tracker',
       description:
         'Política de privacidad de Open Bitcoin Tracker: una app de Android de código abierto y centrada en la privacidad para trackear el valor de tus stacks de Bitcoin.',
     },
-    ogImageAlt: 'Open Bitcoin Tracker — Trackeador privado del valor de Bitcoin para Android',
+    ogImageAlt: 'Open Bitcoin Tracker — herramientas Bitcoin gratuitas y de código abierto y app Android',
+    socialTagline: 'Herramientas Bitcoin gratuitas y de código abierto',
   },
 
   landing: {
+    intro: 'Herramientas gratuitas y de código abierto para trackear el precio de Bitcoin y explorarlo desde distintas perspectivas.',
     priceTracker: 'Trackeador de precio',
     priceDescription: 'Precio de Bitcoin en directo e historial desde 2010.',
     videoDescription: 'El precio de Bitcoin en directo sobre vídeos de YouTube',

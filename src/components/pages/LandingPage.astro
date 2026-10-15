@@ -22,6 +22,7 @@ const t = useTranslations(Astro.currentLocale);
             <span class="brand-wordmark" aria-hidden="true"><span class="brand-word">O<span class="brand-reveal"><span>pen&nbsp;</span></span></span><span class="brand-word">B<span class="brand-reveal"><span>itcoin&nbsp;</span></span></span><span class="brand-word">T<span class="brand-reveal"><span>racker</span></span></span></span>
           </button>
         </h1>
+        <p class="landing-intro">{t.landing.intro}</p>
       </header>
       <div class="landing-options">
         <a class="landing-option" href={getRelativeLocaleUrl(lang, 'price-tracker')}>
@@ -147,6 +148,14 @@ const t = useTranslations(Astro.currentLocale);
   :global(html.dark) .landing-main { --landing-glow: rgb(247 147 26 / .23); }
   .landing-content { width: 100%; max-width: 72rem; }
   .landing-brand { container-type: inline-size; margin-bottom: clamp(2rem, 4vw, 3rem); text-align: center; }
+  .landing-intro {
+    max-width: 44rem;
+    margin: 1.25rem auto 0;
+    color: var(--color-ink-muted);
+    font-size: clamp(1rem, 2.2cqi, 1.125rem);
+    line-height: 1.6;
+    text-wrap: pretty;
+  }
   h1 { display: inline-flex; min-width: 0; max-width: 100%; font-size: clamp(2rem, 8.4cqi, 6.5rem); line-height: 1.06; letter-spacing: -.015em; white-space: nowrap; }
   .brand-trigger { display: inline-flex; align-items: center; gap: .22em; border-radius: .1em; font: inherit; letter-spacing: inherit; text-transform: inherit; cursor: default; }
   .brand-icon { flex: none; width: .8em; height: .8em; }
@@ -207,7 +216,8 @@ const t = useTranslations(Astro.currentLocale);
       --landing-gutter: 1.25rem;
     }
     .landing-main { align-items: start; padding: var(--menu-control-top) var(--landing-gutter) max(2rem, env(safe-area-inset-bottom, 0px)); }
-    .landing-brand { display: flex; align-items: center; min-height: var(--menu-control-size); padding-right: calc(var(--menu-control-size) + .75rem); margin-bottom: 1.5rem; text-align: left; }
+    .landing-brand { display: grid; grid-template-columns: minmax(0, 1fr) var(--menu-control-size); column-gap: .75rem; align-items: center; min-height: var(--menu-control-size); margin-bottom: 1.5rem; text-align: left; }
+    .landing-intro { grid-column: 1 / -1; margin: 1.25rem 0 0; }
     h1 { font-size: calc(var(--menu-control-size) * 1.25); transition: font-size 550ms cubic-bezier(.22, 1, .36, 1); }
     h1:has(.brand-trigger[aria-expanded="true"]) { font-size: clamp(1rem, calc((100cqi - var(--menu-control-size)) / 8.5), 3.25rem); }
     .brand-trigger { height: var(--menu-control-size); }

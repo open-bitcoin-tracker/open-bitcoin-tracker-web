@@ -3,8 +3,8 @@ import type { Dict } from '../ui';
 export const ja: Dict = {
   meta: {
     landing: {
-      title: 'Open Bitcoin Tracker',
-      description: 'ビットコインのリアルタイム価格と価格履歴、そして保有ビットコインの価値を追跡するオープンソースのAndroidアプリ。',
+      title: 'Open Bitcoin Tracker — ビットコインツールとAndroidアプリ',
+      description: 'ビットコインのリアルタイム価格や過去のチャート、A Bit of Earth、Video Modeを楽しもう。無料のオープンソースツールと、プライバシーを重視したAndroid向けポートフォリオアプリ。',
     },
     home: {
       title: 'Android向けOpen Bitcoin Tracker',
@@ -12,19 +12,21 @@ export const ja: Dict = {
         'ビットコインのスタックの価値を追跡する、プライバシー重視のオープンソース Android アプリ。アカウント不要、解析なし、テレメトリーなし。',
     },
     about: {
-      title: 'アプリについて — Open Bitcoin Tracker',
+      title: 'プロジェクトについて — Open Bitcoin Tracker',
       description:
-        'Open Bitcoin Tracker について — ビットコインのスタックの価値を追跡する、プライバシー重視のオープンソース Android アプリ。リンク、データソース、オープンソースライセンス。',
+        'Open Bitcoin Trackerの無料オープンソースのビットコインツールとAndroid向けポートフォリオアプリを紹介。プロジェクト情報やデータソースも確認できます。',
     },
     privacy: {
       title: 'プライバシーポリシー — Open Bitcoin Tracker',
       description:
         'Open Bitcoin Tracker のプライバシーポリシー — ビットコインのスタックの価値を追跡する、プライバシー重視のオープンソース Android アプリ。',
     },
-    ogImageAlt: 'Open Bitcoin Tracker — Android向けのプライベートなビットコイン価値トラッカー',
+    ogImageAlt: 'Open Bitcoin Tracker — 無料のオープンソース・ビットコインツールとAndroidアプリ',
+    socialTagline: '無料のオープンソース・ビットコインツール',
   },
 
   landing: {
+    intro: 'ビットコインの価格を追い、さまざまな視点からビットコインを探求できる、無料のオープンソースツール。',
     priceTracker: '価格トラッカー',
     priceDescription: 'ビットコインのリアルタイム価格と2010年からの価格履歴。',
     videoDescription: 'YouTube動画にビットコインのリアルタイム価格を重ねて表示',
@@ -114,7 +116,7 @@ export const ja: Dict = {
   },
 
   about: {
-    h1: 'アプリについて',
+    h1: 'プロジェクトについて',
     storyHeader: '私が OBT を作った理由',
     story: [
       'Open Bitcoin Tracker を作ったのは、複数のスタックを手軽にまとめて見たかったからです。送金する必要はなく、ただ価値を追いたいだけ。でも、たいていのウォレットはスタックを一つしか登録できないか、ノードに接続するせいで動作がもたつきます。',

@@ -21,7 +21,7 @@ const title = titleProp ?? t.meta[page].title;
 const description = descriptionProp ?? t.meta[page].description;
 
 const canonical = new URL(Astro.url.pathname, Astro.site).toString();
-const ogImage = new URL('/og-image.png', Astro.site).toString();
+const ogImage = new URL(`/og-bitcoin-tools${lang === 'en' ? '' : `-${lang}`}.png`, Astro.site).toString();
 const ogImageAlt = t.meta.ogImageAlt;
 const siteName = 'Open Bitcoin Tracker';
 const appUrl = new URL('/android-app', Astro.site).toString();
@@ -29,6 +29,18 @@ const appUrl = new URL('/android-app', Astro.site).toString();
 // The locale-agnostic remainder of the current path,
 // used to build this same page's URL in every language for hreflang.
 const localePath = stripLocale(Astro.url.pathname);
+
+// All translated homepages describe the same site at its canonical root.
+// SoftwareApplication below remains specific to the Android app page.
+const isLanding = localePath === '';
+const siteUrl = new URL('/', Astro.site).toString();
+const websiteJsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'WebSite',
+  '@id': `${siteUrl}#website`,
+  name: siteName,
+  url: siteUrl,
+};
 
 // hreflang advertises every translation of the current page. The `loc` is the
 // URL path segment Astro routes on (pt), while `code` is the BCP-47 value
@@ -164,6 +176,7 @@ const jsonLd = {
          variable Inter file since it's used for all body text on first paint. -->
     <link rel="preload" href="/fonts/InterVariable.woff2" as="font" type="font/woff2" crossorigin />
 
+    {isLanding && <script type="application/ld+json" set:html={JSON.stringify(websiteJsonLd)} />}
     {isApp && <script type="application/ld+json" set:html={JSON.stringify(jsonLd)} />}
   </head>
   <body class="bg-paper text-ink antialiased">

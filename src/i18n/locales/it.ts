@@ -3,8 +3,8 @@ import type { Dict } from '../ui';
 export const it: Dict = {
   meta: {
     landing: {
-      title: 'Open Bitcoin Tracker',
-      description: 'Prezzo di Bitcoin in tempo reale, storico dei prezzi e un’app Android open source per monitorare il valore dei tuoi stack.',
+      title: 'Open Bitcoin Tracker — Strumenti Bitcoin e app Android',
+      description: 'Monitora il prezzo di Bitcoin in tempo reale, esplora i grafici storici e A Bit of Earth o usa Video Mode. Strumenti gratuiti e open source e un’app di portfolio Android attenta alla privacy.',
     },
     home: {
       title: 'Open Bitcoin Tracker per Android',
@@ -14,17 +14,19 @@ export const it: Dict = {
     about: {
       title: 'Informazioni — Open Bitcoin Tracker',
       description:
-        'Informazioni su Open Bitcoin Tracker: un’app Android open source e attenta alla privacy per monitorare il valore dei tuoi stack di Bitcoin. Link, fonti dei dati e licenze open source.',
+        'Scopri gli strumenti Bitcoin gratuiti e open source e l’app di portfolio Android di Open Bitcoin Tracker, con informazioni sul progetto e fonti dei dati.',
     },
     privacy: {
       title: 'Informativa sulla privacy — Open Bitcoin Tracker',
       description:
         'Informativa sulla privacy di Open Bitcoin Tracker: un’app Android open source e attenta alla privacy per monitorare il valore dei tuoi stack di Bitcoin.',
     },
-    ogImageAlt: 'Open Bitcoin Tracker — Tracker privato del valore di Bitcoin per Android',
+    ogImageAlt: 'Open Bitcoin Tracker — strumenti Bitcoin gratuiti e open source e app Android',
+    socialTagline: 'Strumenti Bitcoin gratuiti e open source',
   },
 
   landing: {
+    intro: 'Strumenti gratuiti e open source per monitorare il prezzo di Bitcoin ed esplorarlo da prospettive diverse.',
     priceTracker: 'Tracker del prezzo',
     priceDescription: 'Prezzo di Bitcoin in tempo reale e storico dal 2010.',
     videoDescription: 'Il prezzo di Bitcoin in tempo reale sui video di YouTube',
