@@ -233,6 +233,7 @@ function startVideoMode(root: HTMLElement) {
     const progress = player.getProgress();
     videoTime.hidden = progress.isLive === true;
     videoTimeline.hidden = progress.isLive === true;
+    loopButton.hidden = progress.isLive === true;
     duration = Number.isFinite(progress.duration) && progress.duration > 0 ? progress.duration : 0;
     if (duration > 0 && videoStatus.textContent === t.loadingVideo) videoStatus.hidden = true;
     seek.disabled = duration <= 0;
@@ -366,6 +367,7 @@ function startVideoMode(root: HTMLElement) {
     duration = 0;
     videoTime.hidden = false;
     videoTimeline.hidden = false;
+    loopButton.hidden = false;
     seek.value = seek.max = '0';
     seek.disabled = true;
     renderPosition(0);

@@ -868,17 +868,21 @@ test('range input previews the selected time and change seeks without starting p
   h.close();
 });
 
-test('live videos hide timing even with a finite DVR duration, and recorded videos restore it', () => {
+test('live videos hide timing and loop controls, and recorded videos restore them', () => {
   const h = harness();
   h.submit(firstUrl);
+  h.click('[data-loop]');
   h.setProgress({ currentTime: 120, duration: 180, isLive: true });
   h.tick(500);
   assert.equal(h.control('[data-video-time]').hidden, true);
   assert.equal(h.control('[data-video-timeline]').hidden, true, 'live videos must not show a progress bar');
+  assert.equal(h.control('[data-loop]').hidden, true);
   h.setProgress({ currentTime: 125, duration: 180, isLive: false });
   h.tick(500);
   assert.equal(h.control('[data-video-time]').hidden, false);
   assert.equal(h.control('[data-video-timeline]').hidden, false);
+  assert.equal(h.control('[data-loop]').hidden, false);
+  assert.equal(h.control('[data-loop]').attributes.get('aria-pressed'), 'true', 'live detection must preserve the saved loop preference');
   assert.equal(h.control('[data-video-current]').textContent, '2:05');
   h.setProgress({ currentTime: 130, duration: 190, isLive: true });
   h.tick(500);
@@ -886,6 +890,7 @@ test('live videos hide timing even with a finite DVR duration, and recorded vide
   h.submit(secondUrl);
   assert.equal(h.control('[data-video-time]').hidden, false, 'a replacement must not inherit the live stream display');
   assert.equal(h.control('[data-video-timeline]').hidden, false);
+  assert.equal(h.control('[data-loop]').hidden, false);
   h.close();
 });
 
