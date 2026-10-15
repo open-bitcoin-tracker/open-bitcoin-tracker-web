@@ -12,26 +12,49 @@ const feedScript = ts.transpileModule(readFileSync(new URL('../src/lib/bitcoin-l
   compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 },
 }).outputText;
 
-function harness(hidden = false) {
+function harness(hidden = false, fullscreenEnabled = false) {
   class Control extends EventTarget {
     textContent = '—';
+    value = '';
+    disabled = true;
+    title = '';
+    attributes = new Map<string, string>();
     hidden = false;
     dataset: Record<string, string> = {};
     style = { setProperty() {}, opacity: '', transform: '' };
-    setAttribute() {}
+    setAttribute(name: string, value: string) { this.attributes.set(name, value); }
     removeAttribute() {}
     querySelectorAll() { return []; }
   }
   const controls = new Map<string, Control>();
   const root = Object.assign(new Control(), {
-    dataset: { copy: '{}', rangeCopy: '{}', settingsCopy: '{}', locale: 'en-US', historyStart: '0' },
+    dataset: { copy: '{}', rangeCopy: '{}', settingsCopy: JSON.stringify({ fullscreen: 'Fullscreen', exitFullscreen: 'Exit fullscreen', fullscreenUnavailable: 'Fullscreen unavailable' }), locale: 'en-US', historyStart: '0' },
     querySelector: (selector: string) => {
       if (!controls.has(selector)) controls.set(selector, new Control());
       return controls.get(selector);
     },
   });
   const media = Object.assign(new EventTarget(), { matches: false });
-  const document = Object.assign(new EventTarget(), { hidden, querySelector: () => root });
+  let fullscreenRequests = 0;
+  let fullscreenExits = 0;
+  let rejectFullscreen = false;
+  const documentElement = {
+    async requestFullscreen() {
+      fullscreenRequests++;
+      if (rejectFullscreen) throw Error('Fullscreen denied');
+      document.fullscreenElement = documentElement;
+      document.dispatchEvent(new Event('fullscreenchange'));
+    },
+  };
+  const document = Object.assign(new EventTarget(), {
+    hidden, querySelector: () => root, fullscreenEnabled, documentElement,
+    fullscreenElement: null as typeof documentElement | null,
+    async exitFullscreen() {
+      fullscreenExits++;
+      document.fullscreenElement = null;
+      document.dispatchEvent(new Event('fullscreenchange'));
+    },
+  });
   const window = Object.assign(new EventTarget(), { matchMedia: () => media, location: { reload() {} } });
   const timers = new Map<number, () => void>();
   const frames = new Map<number, () => void>();
@@ -52,14 +75,20 @@ function harness(hidden = false) {
     current() { return { rate: 1 }; }
     convert(points: unknown) { return points; }
   }
+  const savedPreferences: unknown[] = [];
+  let pickerDestroyed = false;
   const modules = {
     candleWindow: () => undefined,
     readRangePreferences: () => ({ selected: 'all', counts: {} }),
     readDisplayPreferences: () => ({ currency: 'USD', scale: 'logarithmic' }),
     createRangePill: () => ({ select() {}, destroy() {} }),
+    createVideoCurrencyPicker: () => ({ destroy() { pickerDestroyed = true; } }),
+    createChartControls: () => ({ destroy() {} }),
+    isCurrency: (value: string) => ['USD', 'EUR', 'GBP', 'AUD', 'CAD', 'CHF', 'JPY'].includes(value),
+    saveDisplayPreferences: (preferences: unknown) => savedPreferences.push(preferences),
     createPriceChangeFormatter: () => () => '',
     CurrencyRates: Rates,
-    ChartMotion: class { finish() {} },
+    ChartMotion: class { finish() {} clear() {} },
   };
   const globals = {
     document, window, navigator: { onLine: true },
@@ -83,7 +112,10 @@ function harness(hidden = false) {
     request.resolve({ ok: true, json: async () => ({ error: [], result: { XBTUSD: { c: ['83000'] } } }) });
     await setImmediate();
   };
-  return { controls, document, window, timers, frames, requests, sockets, visibility, respondToTicker, disconnected: () => disconnected };
+  return { controls, document, window, timers, frames, requests, sockets, visibility, respondToTicker, disconnected: () => disconnected, savedPreferences, pickerDestroyed: () => pickerDestroyed,
+    fullscreenRequests: () => fullscreenRequests, fullscreenExits: () => fullscreenExits,
+    rejectFullscreen() { rejectFullscreen = true; },
+  };
 }
 
 test('hidden trackers release their stream and timers, then reconnect once when visible', () => {
@@ -135,4 +167,54 @@ test('late REST responses cannot paint a hidden page or replace a newer stream p
   assert.equal(live.controls.get('[data-price]')!.textContent, '$85,000');
   await live.respondToTicker();
   assert.equal(live.controls.get('[data-price]')!.textContent, '$85,000');
+});
+
+
+test('the chart currency select updates the live price and shared preferences, and cleans up the picker', async () => {
+  const h = harness();
+  await h.respondToTicker();
+  const select = h.controls.get('[data-currency]')!;
+  assert.equal(select.value, 'USD');
+  assert.equal(select.disabled, false);
+  assert.equal(h.controls.get('[data-price]')!.textContent, '$83,000');
+  select.value = 'EUR';
+  select.dispatchEvent(new Event('change'));
+  assert.equal(h.controls.get('[data-price]')!.textContent, '€83,000');
+  assert.deepEqual(JSON.parse(JSON.stringify(h.savedPreferences)), [{ scale: 'logarithmic', currency: 'EUR' }]);
+  select.dispatchEvent(new Event('change'));
+  assert.equal(h.savedPreferences.length, 1);
+  h.window.dispatchEvent(new Event('pagehide'));
+  assert.equal(h.pickerDestroyed(), true);
+});
+
+test('the chart fullscreen button enters, exits, updates its label, and reports rejected requests', async () => {
+  const h = harness(false, true);
+  const button = h.controls.get('[data-fullscreen]')!;
+  const status = h.controls.get('[data-control-status]')!;
+  assert.equal(button.hidden, false);
+  assert.equal(button.disabled, false);
+  assert.equal(button.attributes.get('aria-label'), 'Fullscreen');
+  button.dispatchEvent(new Event('click'));
+  assert.equal(h.fullscreenRequests(), 1);
+  assert.equal(button.title, 'Exit fullscreen');
+  assert.equal(button.attributes.get('aria-label'), 'Exit fullscreen');
+  button.dispatchEvent(new Event('click'));
+  assert.equal(h.fullscreenExits(), 1);
+  assert.equal(button.title, 'Fullscreen');
+  h.rejectFullscreen();
+  button.dispatchEvent(new Event('click'));
+  await setImmediate();
+  assert.equal(status.hidden, false);
+  assert.equal(status.textContent, 'Fullscreen unavailable');
+  h.window.dispatchEvent(new Event('pagehide'));
+  h.document.fullscreenElement = h.document.documentElement;
+  h.document.dispatchEvent(new Event('fullscreenchange'));
+  assert.equal(button.title, 'Fullscreen');
+});
+
+test('the chart hides and disables fullscreen when the browser does not support it', () => {
+  const h = harness();
+  const button = h.controls.get('[data-fullscreen]')!;
+  assert.equal(button.hidden, true);
+  assert.equal(button.disabled, true);
 });

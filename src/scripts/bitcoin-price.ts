@@ -10,6 +10,9 @@ import { CurrencyRates, isCurrency, type Currency } from '../lib/bitcoin-currenc
 import { readDisplayPreferences, saveDisplayPreferences } from '../lib/bitcoin-display-preferences';
 import type { ChartSettingsCopy } from '../i18n/chart-settings';
 import { subscribeBitcoinPrice } from '../lib/bitcoin-live-price';
+import { createVideoCurrencyPicker } from '../lib/video-currency-picker';
+import type { PartyCopy } from '../i18n/party';
+import { createChartControls } from '../lib/chart-controls';
 
 const root = document.querySelector<HTMLElement>('[data-bitcoin-tracker]');
 if (root) startTracker(root);
@@ -17,7 +20,7 @@ if (root) startTracker(root);
 function startTracker(root: HTMLElement) {
   const t: TrackerCopy = JSON.parse(root.dataset.copy!);
   const r: RangeCopy = JSON.parse(root.dataset.rangeCopy!);
-  const settingsCopy: ChartSettingsCopy = JSON.parse(root.dataset.settingsCopy!);
+  const settingsCopy: ChartSettingsCopy & Pick<PartyCopy, 'fullscreen' | 'exitFullscreen' | 'fullscreenUnavailable'> = JSON.parse(root.dataset.settingsCopy!);
   const locale = root.dataset.locale || 'en';
   const priceEl = root.querySelector<HTMLElement>('[data-price]')!;
   const priceChangeEl = root.querySelector<HTMLElement>('[data-price-change]')!;
@@ -43,7 +46,7 @@ function startTracker(root: HTMLElement) {
   const chartControls = root.querySelector<HTMLElement>('[data-chart-controls]')!;
   const settingsMenu = root.querySelector<HTMLDetailsElement>('[data-chart-settings]')!;
   const settingsTrigger = root.querySelector<HTMLElement>('[data-settings-trigger]')!;
-  const currencyOptions = [...root.querySelectorAll<HTMLInputElement>('[data-currency-option]')];
+  const currencySelect = root.querySelector<HTMLSelectElement>('[data-currency]')!;
   const currencyStatus = root.querySelector<HTMLElement>('[data-currency-status]')!;
   const scaleOptions = [...root.querySelectorAll<HTMLInputElement>('[data-scale-option]')];
   const preferences = readRangePreferences();
@@ -302,7 +305,7 @@ function startTracker(root: HTMLElement) {
     settingsMenu.open = false;
     settingsTrigger.focus({ preventScroll: true });
   }
-  for (const option of [...scaleOptions, ...currencyOptions]) {
+  for (const option of scaleOptions) {
     // A click on the current selection does not fire a change event.
     option.addEventListener('click', () => {
       if (option.checked) closeSettings();
@@ -319,30 +322,29 @@ function startTracker(root: HTMLElement) {
       closeSettings();
     });
   }
-  for (const option of currencyOptions) {
-    option.checked = option.value === currency;
-    option.addEventListener('change', () => {
-      if (!option.checked || !isCurrency(option.value)) return;
-      clearSelection();
-      currency = option.value;
-      money = new Intl.NumberFormat(locale, { style: 'currency', currency, maximumFractionDigits: 0 });
-      formatPriceChange = createPriceChangeFormatter(locale, currency);
-      saveDisplayPreferences({ scale, currency });
-      currencyError = undefined;
-      currencyLoading = false;
-      // Discard the old currency's scene immediately, including under reduced motion.
-      motion.clear();
-      plottedPoints = [];
-      plottedPositions = [];
-      line.setAttribute('d', '');
-      area.setAttribute('d', '');
-      void refreshCurrency();
-      updatePriceDisplay();
-      updateCurrencyStatus();
-      scheduleDraw();
-      closeSettings();
-    });
-  }
+  currencySelect.value = currency;
+  currencySelect.disabled = false;
+  currencySelect.addEventListener('change', () => {
+    if (!isCurrency(currencySelect.value) || currencySelect.value === currency) return;
+    clearSelection();
+    currency = currencySelect.value;
+    money = new Intl.NumberFormat(locale, { style: 'currency', currency, maximumFractionDigits: 0 });
+    formatPriceChange = createPriceChangeFormatter(locale, currency);
+    saveDisplayPreferences({ scale, currency });
+    currencyError = undefined;
+    currencyLoading = false;
+    // Discard the old currency's scene immediately, including under reduced motion.
+    motion.clear();
+    plottedPoints = [];
+    plottedPositions = [];
+    line.setAttribute('d', '');
+    area.setAttribute('d', '');
+    void refreshCurrency();
+    updatePriceDisplay();
+    updateCurrencyStatus();
+    scheduleDraw();
+  });
+  const currencyPicker = createVideoCurrencyPicker(root, currencySelect);
   settingsMenu.addEventListener('keydown', (event) => {
     if (event.key === 'Escape' && settingsMenu.open) {
       event.preventDefault();
@@ -355,6 +357,24 @@ function startTracker(root: HTMLElement) {
   document.addEventListener('focusin', (event) => {
     if (settingsMenu.open && !settingsMenu.contains(event.target as Node)) settingsMenu.open = false;
   });
+
+  const fullscreen = root.querySelector<HTMLButtonElement>('[data-fullscreen]')!;
+  const controlStatus = root.querySelector<HTMLElement>('[data-control-status]')!;
+  function updateFullscreen() {
+    const label = document.fullscreenElement ? settingsCopy.exitFullscreen : settingsCopy.fullscreen;
+    fullscreen.setAttribute('aria-label', label);
+    fullscreen.title = label;
+    controlStatus.hidden = true;
+  }
+  fullscreen.hidden = !document.fullscreenEnabled;
+  fullscreen.disabled = !document.fullscreenEnabled;
+  fullscreen.addEventListener('click', () => {
+    const request = document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen();
+    void request.catch(() => { controlStatus.textContent = settingsCopy.fullscreenUnavailable; controlStatus.hidden = false; });
+  });
+  document.addEventListener('fullscreenchange', updateFullscreen);
+  updateFullscreen();
+  const controlVisibility = createChartControls(root);
 
   function updateCurrencyStatus() {
     const rate = exchangeRates.current(currency);
@@ -500,6 +520,9 @@ function startTracker(root: HTMLElement) {
     cancelAnimationFrame(motionFrame);
     reduceMotion.removeEventListener('change', onMotionPreferenceChange);
     rangePill.destroy();
+    currencyPicker.destroy();
+    controlVisibility.destroy();
+    document.removeEventListener('fullscreenchange', updateFullscreen);
     stopTimers();
     stopPriceFeed();
   });

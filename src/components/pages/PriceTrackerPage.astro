@@ -20,8 +20,8 @@ const pageTitle = `${t.priceChart} — Open Bitcoin Tracker`;
 </Layout>
 
 <style>
-  .tracker-page { display: flex; flex-direction: column; min-height: 100dvh; }
-  .tracker-main { display: flex; flex-direction: column; flex: 1; }
+  .tracker-page { display: flex; flex-direction: column; height: 100dvh; }
+  .tracker-main { display: flex; flex-direction: column; flex: 1; min-height: 0; }
   @media (max-width: 700px) {
     :global(body:has(.tracker-page) .nav-menu-settings) { padding-right: 3.5rem; }
   }

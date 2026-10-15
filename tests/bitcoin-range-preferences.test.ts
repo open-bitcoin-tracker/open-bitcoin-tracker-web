@@ -4,7 +4,7 @@ import { readFileSync } from 'node:fs';
 import { createContext, runInContext } from 'node:vm';
 import ts from 'typescript';
 
-const names = ['bitcoin-price', 'bitcoin-live-price', 'bitcoin-chart', 'bitcoin-chart-motion', 'bitcoin-price-change', 'bitcoin-range', 'bitcoin-range-preferences', 'bitcoin-range-pill', 'bitcoin-currency', 'bitcoin-display-preferences'];
+const names = ['bitcoin-price', 'bitcoin-live-price', 'bitcoin-chart', 'bitcoin-chart-motion', 'bitcoin-price-change', 'bitcoin-range', 'bitcoin-range-preferences', 'bitcoin-range-pill', 'bitcoin-currency', 'bitcoin-display-preferences', 'video-currency-picker', 'chart-controls'];
 const scripts = Object.fromEntries(names.map(name => [name, ts.transpileModule(
   readFileSync(new URL(`../src/${['bitcoin-price', 'bitcoin-range-pill'].includes(name) ? 'scripts' : 'lib'}/${name}.ts`, import.meta.url), 'utf8'),
   { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 } },
@@ -26,6 +26,8 @@ class Control extends EventTarget {
   parent: Control | undefined;
   value = '';
   checked = false;
+  disabled = false;
+  tabIndex = -1;
   open = false;
   contains(node: Control | null) {
     while (node) { if (node === this) return true; node = node.parent ?? null; }
@@ -37,6 +39,7 @@ class Control extends EventTarget {
   }
   querySelectorAll(_selector: string): Control[] { return []; }
   setAttribute(name: string, value: string) { this.attributes[name] = value; }
+  hasAttribute(name: string) { return name in this.attributes; }
   removeAttribute(name: string) { delete this.attributes[name]; }
   getBoundingClientRect() { return rect(); }
   closest(selector: string): Control | null {
@@ -85,10 +88,15 @@ function page(stored: Map<string, string>, locale = 'en', blocked: 'read' | 'wri
   bar.querySelectorAll = () => slots;
   const scaleOptions = ['logarithmic', 'linear'].map(value => Object.assign(new Control(), { value }));
 
+  const currencySelect = root.querySelector('[data-currency]');
+  const currencyPicker = root.querySelector('[data-currency-picker]');
+  const currencyTrigger = currencyPicker.querySelector('[data-currency-trigger]');
+  const currencyList = currencyPicker.querySelector('[data-currency-list]');
   const currencyOptions = ['USD', 'EUR', 'GBP', 'AUD', 'CAD', 'CHF', 'JPY'].map(code => Object.assign(new Control(), {
-    value: code, checked: code === 'USD',
+    dataset: { currencyOption: code }, parent: currencyList,
   }));
-  root.querySelectorAll = selector => selector === '[data-currency-option]' ? currencyOptions : scaleOptions;
+  currencyList.querySelectorAll = () => currencyOptions;
+  root.querySelectorAll = () => scaleOptions;
   const document = Object.assign(new EventTarget(), { hidden: false, querySelector: () => root });
   const window = Object.assign(new EventTarget(), {
     matchMedia: () => Object.assign(new EventTarget(), { matches: true }),
@@ -113,7 +121,7 @@ function page(stored: Map<string, string>, locale = 'en', blocked: 'read' | 'wri
   const now = Date.now();
   const day = 86_400_000;
   const context = createContext({
-    document, window, navigator: { onLine: true }, Intl, Date, AbortController, AbortSignal, URLSearchParams,
+    document, window, navigator: { onLine: true }, Intl, Date, Event, AbortController, AbortSignal, URLSearchParams,
     performance: { now: () => 0 },
     WebSocket: class extends EventTarget { static CLOSING = 2; readyState = 0; close() {} },
     ResizeObserver: class { observe() {} disconnect() {} },
@@ -155,10 +163,10 @@ function page(stored: Map<string, string>, locale = 'en', blocked: 'read' | 'wri
     return event;
   }
   return {
-    root, slots, pill, requests, document, currencyOptions, releaseRequests,
+    root, slots, pill, requests, document, currencyOptions, currencySelect, currencyTrigger, currencyList, releaseRequests,
     currency(code: string) {
-      currencyOptions.forEach(option => { option.checked = option.value === code; });
-      currencyOptions.find(option => option.value === code)!.dispatchEvent(new Event('change'));
+      if (currencyTrigger.attributes['aria-expanded'] !== 'true') currencyTrigger.dispatchEvent(new Event('click'));
+      currencyOptions.find(option => option.dataset.currencyOption === code)!.dispatchEvent(new Event('click'));
     },
     scale(value: string) {
       const option = scaleOptions.find(option => option.value === value)!;
@@ -318,7 +326,8 @@ test('currency converts live and inspected prices and persists with scale across
   assert.deepEqual(JSON.parse(storage.get('bitcoin-tracker-display')!), { scale: 'linear', currency: 'EUR' });
   const restored = page(storage);
   await restored.ready();
-  assert.equal(restored.currencyOptions.find(option => option.value === 'EUR')!.checked, true);
+  assert.equal(restored.currencySelect.value, 'EUR');
+  assert.equal(restored.currencyOptions.find(option => option.dataset.currencyOption === 'EUR')!.attributes['aria-selected'], 'true');
   assert.match(restored.root.querySelector('[data-chart]').attributes['aria-label'], /EUR.*Linear/);
   assert.ok(restored.requests.some(url => url.includes('frankfurter')));
   restored.close();
@@ -354,19 +363,22 @@ test('settings dismiss on Escape and outside interaction without changing range 
   p.close();
 });
 
-test('currency radio controls keep one selection and ignore unchecked changes', () => {
+test('the currency picker keeps one selection and ignores invalid native changes', () => {
   const storage = new Map<string, string>();
   const p = page(storage);
-  assert.deepEqual(p.currencyOptions.map(option => option.value), ['USD', 'EUR', 'GBP', 'AUD', 'CAD', 'CHF', 'JPY']);
-  assert.equal(p.currencyOptions.filter(option => option.checked).length, 1);
+  assert.deepEqual(p.currencyOptions.map(option => option.dataset.currencyOption), ['USD', 'EUR', 'GBP', 'AUD', 'CAD', 'CHF', 'JPY']);
+  assert.equal(p.currencyOptions.filter(option => option.attributes['aria-selected'] === 'true').length, 1);
   p.currency('EUR');
-  p.currencyOptions[0].dispatchEvent(new Event('change'));
+  p.currencySelect.value = 'invalid';
+  p.currencySelect.dispatchEvent(new Event('change'));
   assert.equal(JSON.parse(storage.get('bitcoin-tracker-display')!).currency, 'EUR');
-  assert.equal(p.currencyOptions.filter(option => option.checked).length, 1);
+  p.currencySelect.value = 'EUR';
+  p.currencySelect.dispatchEvent(new Event('change'));
+  assert.equal(p.currencyOptions.filter(option => option.attributes['aria-selected'] === 'true').length, 1);
   p.close();
 });
 
-test('settings close and return focus after scale or currency selection, including the current option', async () => {
+test('scale settings and the currency picker each close and return focus to their own trigger', async () => {
   const storage = new Map<string, string>();
   const p = page(storage, 'en', undefined, false, 'fx');
   await p.ready();
@@ -374,20 +386,21 @@ test('settings close and return focus after scale or currency selection, includi
   const trigger = p.root.querySelector('[data-settings-trigger]');
   let focused = false;
   trigger.focus = () => { focused = true; };
-  for (const select of [() => p.scale('linear'), () => p.currency('EUR')]) {
-    menu.open = true;
-    focused = false;
-    select();
-    assert.equal(menu.open, false);
-    assert.equal(focused, true);
-  }
+  menu.open = true;
+  p.scale('linear');
+  assert.equal(menu.open, false);
+  assert.equal(focused, true);
+  focused = false;
+  p.currencyTrigger.focus = () => { focused = true; };
+  p.currency('EUR');
+  assert.equal(p.currencyList.hidden, true);
+  assert.equal(focused, true);
   assert.deepEqual(JSON.parse(storage.get('bitcoin-tracker-display')!), { scale: 'linear', currency: 'EUR' });
   await p.ready();
   assert.equal(p.root.querySelector('[data-chart-loading]').hidden, false);
-  menu.open = true;
   focused = false;
-  p.currencyOptions.find(option => option.value === 'EUR')!.dispatchEvent(new Event('click'));
-  assert.equal(menu.open, false);
+  p.currency('EUR');
+  assert.equal(p.currencyList.hidden, true);
   assert.equal(focused, true);
   p.releaseRequests();
   await p.ready();
