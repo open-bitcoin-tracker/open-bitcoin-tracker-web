@@ -28,10 +28,13 @@ const t = useTranslations(Astro.currentLocale);
         <a class="landing-option" href={getRelativeLocaleUrl(lang, 'price-tracker')}>
           <div class="option-preview preview-chart" aria-hidden="true">
             <svg viewBox="0 0 360 240" fill="none">
+              <defs><clipPath id="landing-chart-clip"><rect x="30" y="40" width="300" height="170" rx="16" /></clipPath></defs>
               <rect class="chart-window" x="30" y="40" width="300" height="170" rx="16" />
-              <path class="chart-grid" d="M52 80h256M52 120h256M52 160h256M96 64v128M156 64v128M216 64v128M276 64v128" />
-              <path class="chart-fill" d="M52 177l27-17 18 9 27-36 21 10 24-28 22 9 28-37 20 12 31-43 38-9v145H52Z" />
-              <path class="chart-line" d="m52 177 27-17 18 9 27-36 21 10 24-28 22 9 28-37 20 12 31-43 38-9" />
+              <g clip-path="url(#landing-chart-clip)">
+                <path class="chart-grid" d="M52 80h278M52 120h278M52 160h278M96 64v146M156 64v146M216 64v146M276 64v146" />
+                <path class="chart-fill" d="M52 177l27-17 18 9 27-36 21 10 24-28 22 9 28-37 20 12 31-43 60-9V210H52Z" />
+                <path class="chart-line" d="m52 177 27-17 18 9 27-36 21 10 24-28 22 9 28-37 20 12 31-43 60-9" />
+              </g>
             </svg>
           </div>
           <div class="option-copy">
@@ -80,11 +83,13 @@ const t = useTranslations(Astro.currentLocale);
         <a class="landing-option" href={getRelativeLocaleUrl(lang, bitcoinAndDollar.path)}>
           <div class="option-preview preview-supply" aria-hidden="true">
             <svg viewBox="0 0 360 240" fill="none">
-              <path class="supply-box btc-box" d="M42 91v90h111V91" /><path class="supply-lid" d="M37 81h121v13H37z" />
-              <g class="supply-coins"><circle cx="64" cy="163" r="13" /><circle cx="93" cy="163" r="13" /><circle cx="123" cy="163" r="13" /><circle cx="78" cy="135" r="13" /><circle cx="107" cy="135" r="13" /></g>
-              <path class="supply-box usd-box" d="M207 91v90h111V91" /><path class="supply-rim" d="M207 91h111" />
-              <g class="supply-bills"><rect x="223" y="144" width="59" height="25" rx="3" transform="rotate(-7 223 144)" /><rect x="246" y="113" width="59" height="25" rx="3" transform="rotate(8 246 113)" /><rect x="233" y="46" width="51" height="23" rx="3" transform="rotate(-12 233 46)" /></g>
-              <path class="supply-connect" d="M98 187v6m165-6v6" /><g class="supply-person" transform="translate(0 -12)"><circle cx="98" cy="210" r="6" /><path d="M87 234v-7a11 11 0 0 1 22 0v7" /><circle cx="263" cy="210" r="6" /><path d="M252 234v-7a11 11 0 0 1 22 0v7" /></g>
+              <g transform="translate(0 -8)">
+                <path class="supply-box btc-box" d="M42 91v90h111V91" /><path class="supply-lid" d="M37 81h121v13H37z" />
+                <g class="supply-coins"><circle cx="64" cy="163" r="13" /><circle cx="93" cy="163" r="13" /><circle cx="123" cy="163" r="13" /><circle cx="78" cy="135" r="13" /><circle cx="107" cy="135" r="13" /></g>
+                <path class="supply-box usd-box" d="M207 91v90h111V91" /><path class="supply-rim" d="M207 91h111" />
+                <g class="supply-bills"><rect x="223" y="144" width="59" height="25" rx="3" transform="rotate(-7 223 144)" /><rect x="246" y="113" width="59" height="25" rx="3" transform="rotate(8 246 113)" /><rect x="233" y="46" width="51" height="23" rx="3" transform="rotate(-12 233 46)" /></g>
+              </g>
+              <path class="supply-connect" d="M98 179v14m165-14v14" /><g class="supply-person" transform="translate(0 -12)"><circle cx="98" cy="210" r="6" /><path d="M87 234v-7a11 11 0 0 1 22 0v7" /><circle cx="263" cy="210" r="6" /><path d="M252 234v-7a11 11 0 0 1 22 0v7" /></g>
             </svg>
           </div>
           <div class="option-copy"><div class="option-title"><h2 lang="en">{supply.title}</h2></div><p>{t.landing.supplyDescription}</p></div>
