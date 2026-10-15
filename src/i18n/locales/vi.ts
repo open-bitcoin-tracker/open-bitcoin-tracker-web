@@ -57,7 +57,7 @@ export const vi: Dict = {
     reasons: [
       {
         title: 'Riêng tư tuyệt đối',
-        body: 'OBT không cần seed hay key. Số lượng trong mỗi stack do bạn tự tay nhập, và nó không bao giờ rời khỏi điện thoại.',
+        body: 'OBT không cần seed hay key. Lượng bitcoin được nhập bằng tay và không bao giờ rời khỏi điện thoại của bạn.',
       },
       {
         title: 'Nhanh và nhẹ',

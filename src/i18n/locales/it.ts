@@ -57,7 +57,7 @@ export const it: Dict = {
     reasons: [
       {
         title: 'Privacy totale',
-        body: 'A OBT non servono né seed né chiavi. L’importo di ogni stack lo inserisci a mano e non lascia mai il tuo telefono.',
+        body: 'A OBT non servono né seed né chiavi. Le quantità di bitcoin si inseriscono a mano e non lasciano mai il tuo telefono.',
       },
       {
         title: 'Veloce e leggero',

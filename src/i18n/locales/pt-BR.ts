@@ -57,7 +57,7 @@ export const ptBR: Dict = {
     reasons: [
       {
         title: 'Privacidade total',
-        body: 'O OBT não precisa de seeds nem de chaves. O valor de cada stack você digita na mão, e ele nunca sai do seu celular.',
+        body: 'O OBT não precisa de seeds nem de chaves. As quantidades de bitcoin são digitadas à mão e nunca saem do seu celular.',
       },
       {
         title: 'Rápido e leve',

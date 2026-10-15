@@ -32,8 +32,6 @@ const t = useTranslations(Astro.currentLocale);
               <path class="chart-grid" d="M52 80h256M52 120h256M52 160h256M96 64v128M156 64v128M216 64v128M276 64v128" />
               <path class="chart-fill" d="M52 177l27-17 18 9 27-36 21 10 24-28 22 9 28-37 20 12 31-43 38-9v145H52Z" />
               <path class="chart-line" d="m52 177 27-17 18 9 27-36 21 10 24-28 22 9 28-37 20 12 31-43 38-9" />
-              <circle class="chart-coin" cx="287" cy="53" r="27" />
-              <text class="chart-glyph" x="287" y="63" text-anchor="middle">₿</text>
             </svg>
           </div>
           <div class="option-copy">
@@ -158,8 +156,6 @@ const t = useTranslations(Astro.currentLocale);
   .chart-grid { stroke: var(--color-divider); }
   .chart-fill { fill: var(--color-accent); fill-opacity: .13; }
   .chart-line { stroke: var(--color-accent); stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
-  .chart-coin { fill: var(--color-accent); stroke: var(--color-surface); stroke-width: 5; }
-  .chart-glyph { fill: #1F1B14; font-size: 30px; font-weight: 600; }
   .preview-app { background: radial-gradient(ellipse at 50% 95%, var(--hero-glow), transparent 70%), var(--color-paper); }
   .preview-phone { position: absolute; top: 12%; left: 50%; width: 52%; max-width: 180px; padding: 4px; border: 1px solid rgb(255 255 255 / .15); border-radius: 24px; background: #1F1B14; box-shadow: 12px 16px 32px var(--phone-shadow); transform: translateX(-50%) rotate(-8deg); }
   .preview-phone :global(img) { display: block; width: 100%; border-radius: 20px; }

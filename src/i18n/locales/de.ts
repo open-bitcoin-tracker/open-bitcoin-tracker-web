@@ -57,7 +57,7 @@ export const de: Dict = {
     reasons: [
       {
         title: 'Volle Privatsphäre',
-        body: 'OBT braucht weder Seed noch Keys. Den Betrag jedes Stacks trägst du von Hand ein, und er verlässt nie dein Handy.',
+        body: 'OBT braucht weder Seed noch Keys. Bitcoin-Beträge trägst du von Hand ein, und sie verlassen nie dein Handy.',
       },
       {
         title: 'Schnell und schlank',

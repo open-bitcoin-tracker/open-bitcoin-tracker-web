@@ -72,7 +72,7 @@ export const en = {
     reasons: [
       {
         title: 'Total Privacy',
-        body: "OBT doesn't need seeds or keys. The amount in each stack is entered by hand and never leaves your phone.",
+        body: "OBT doesn't need seeds or keys. Bitcoin amounts are entered by hand and never leave your phone.",
       },
       {
         title: 'Fast and lightweight',

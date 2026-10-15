@@ -57,7 +57,7 @@ export const es: Dict = {
     reasons: [
       {
         title: 'Privacidad total',
-        body: 'OBT no necesita semillas ni llaves. La cantidad en cada stack se mete a mano y nunca sale de tu teléfono.',
+        body: 'OBT no necesita semillas ni llaves. Las cantidades de bitcoin se introducen a mano y nunca salen de tu teléfono.',
       },
       {
         title: 'Rápido y ligero',

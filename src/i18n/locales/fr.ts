@@ -57,7 +57,7 @@ export const fr: Dict = {
     reasons: [
       {
         title: 'Confidentialité totale',
-        body: 'OBT n’a besoin ni de seed ni de clés. Le montant de chaque stack se saisit à la main, et il ne quitte jamais ton téléphone.',
+        body: 'OBT n’a besoin ni de seed ni de clés. Les montants en bitcoin sont saisis à la main et ne quittent jamais ton téléphone.',
       },
       {
         title: 'Rapide et léger',

@@ -57,7 +57,7 @@ export const tr: Dict = {
     reasons: [
       {
         title: 'Tam gizlilik',
-        body: "OBT'nin ne seed'e ne de key'lere ihtiyacı var. Her stack'teki miktarı elle girersin ve asla telefonundan çıkmaz.",
+        body: "OBT'nin ne seed'e ne de key'lere ihtiyacı var. Bitcoin miktarlarını elle girersin ve bu bilgiler asla telefonundan çıkmaz.",
       },
       {
         title: 'Hızlı ve hafif',

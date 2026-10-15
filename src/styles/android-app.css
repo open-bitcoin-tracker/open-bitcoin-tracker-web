@@ -84,7 +84,7 @@
 .source-link { position: absolute; bottom: 1.75rem; left: 1.75rem; }
 
 @media (min-width: 1200px) {
-  .hero-grid { grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); }
+  .hero-grid { max-width: 72rem; grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); gap: 3rem; }
   .hero-copy, .hero-subtitle { max-width: none; }
 }
 @media (min-width: 1600px) {
