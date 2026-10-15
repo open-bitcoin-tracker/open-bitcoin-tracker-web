@@ -410,35 +410,6 @@ test('snap guides clear on cancellation, capture loss, dismissal, reset, hidden 
   }
 });
 
-test('the video dock follows the opposite half during price dragging and keyboard movement', () => {
-  const h = harness();
-  const atTop = () => h.root.attributes.has('data-video-dock-top');
-  assert.equal(atTop(), false);
-  const box = h.position.getBoundingClientRect();
-  h.pointer('pointerdown', h.position, { clientX: box.left + 20, clientY: box.top + 20 });
-  h.pointer('pointermove', h.window, { clientX: box.left + 20, clientY: 1000 });
-  assert.equal(atTop(), true, 'the dock moves while dragging, before releasing the price');
-  h.pointer('pointerup', h.window, { clientX: box.left + 20, clientY: 1000 });
-  for (let i = 0; i < 5; i++) h.key(h.position, 'ArrowUp', { shiftKey: true });
-  assert.equal(atTop(), false, 'a centered price keeps the dock at the bottom');
-  h.key(h.position, 'ArrowDown');
-  assert.equal(atTop(), true);
-  h.key(h.position, 'Home');
-  assert.equal(atTop(), false);
-  h.layout.destroy();
-});
-
-test('restored lower price placement keeps the dock at the top through viewport changes and cleans up', () => {
-  const h = harness({ saved: JSON.stringify({ version: 1, x: 80, y: 100, size: 100 }) });
-  assert.equal(h.root.attributes.has('data-video-dock-top'), true);
-  h.resize({ width: 390, height: 844 });
-  assert.equal(h.root.attributes.has('data-video-dock-top'), true);
-  h.resizePrice(150, 80);
-  assert.equal(h.root.attributes.has('data-video-dock-top'), true);
-  h.layout.destroy();
-  assert.equal(h.root.attributes.has('data-video-dock-top'), false);
-});
-
 test('clicking a fitted price preserves normalized placement when no pointer movement occurs', () => {
   const initial = { version: 1, x: 15, y: 85, size: 200 };
   const h = harness({ viewport: { width: 320, height: 240 }, width: 600, saved: JSON.stringify(initial) });

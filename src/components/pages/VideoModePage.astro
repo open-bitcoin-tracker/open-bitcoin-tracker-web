@@ -248,7 +248,7 @@ const locale = htmlLang(Astro.currentLocale);
   .video-sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
   /* Compensate for the final negative letter spacing so the last glyph stays inside the frame. */
   .video-price { --price-chars: 8; --video-price-base-size: clamp(3rem, min(25.5vw, 36vh, 207vw / var(--price-chars)), 22.5rem); color: var(--video-price-colour, #fff); font-family: var(--video-price-font, var(--font-sans)); font-size: calc(var(--video-price-base-size) * var(--video-price-scale, 1) * var(--video-price-fit, 1)); font-weight: var(--video-price-weight, 750); letter-spacing: var(--video-price-spacing, -.065em); padding-inline-end: .065em; padding-block: var(--video-price-padding, 0); -webkit-text-stroke: var(--video-price-stroke-width, 0px) var(--video-price-stroke-colour, #000); paint-order: stroke fill; line-height: 1.2; font-variant-numeric: tabular-nums; white-space: nowrap; text-shadow: 0 3px 30px #000, 0 0 80px #0009; }
-  .video-dock { position: absolute; bottom: max(clamp(2rem, 8svh, 5rem), env(safe-area-inset-bottom)); left: 50%; transform: translateX(-50%); width: min(480px, calc(100% - 3rem)); z-index: 1; text-align: center; }
+  .video-dock { position: fixed; bottom: max(clamp(2rem, 8svh, 5rem), env(safe-area-inset-bottom)); left: 50%; transform: translateX(-50%); width: min(480px, calc(100% - 3rem)); z-index: 3; text-align: center; }
   .video-page[data-subtitles-enabled] .video-dock { bottom: max(7rem, 16svh, env(safe-area-inset-bottom)); }
   .video-url-field { display: flex; align-items: center; gap: .75rem; padding: .5rem; padding-left: 1rem; border: 1px solid rgb(255 255 255 / .18); border-radius: 14px; background: rgb(20 20 20 / .85); backdrop-filter: blur(16px); box-shadow: 0 8px 40px #0003; }
   .video-url-icon { flex-shrink: 0; color: #aaa; }
@@ -334,12 +334,6 @@ const locale = htmlLang(Astro.currentLocale);
   @media (max-height: 360px) and (min-width: 600px) {
     .video-price-stage { justify-content: flex-start; padding-top: calc(var(--menu-control-top) + var(--menu-control-size) + .5rem); }
     .video-price { --video-price-base-size: clamp(3rem, min(21vw, 22.5vh, 165vw / var(--price-chars)), 9rem); }
-  }
-  /* Keep playback and URL controls opposite a price placed in the lower half. */
-  .video-page[data-video-dock-top] .video-dock { top: calc(var(--menu-control-top) + var(--menu-control-size) + 1rem); bottom: auto; }
-  .video-page[data-video-dock-top] .video-playback { flex-direction: column-reverse; }
-  @media (max-width: 600px) {
-    .video-page[data-video-dock-top] .video-dock { top: calc(var(--menu-control-top) + var(--menu-control-size) + 4.25rem); }
   }
   @media (prefers-reduced-motion: reduce) {
     .video-price-style { transition: none; }
