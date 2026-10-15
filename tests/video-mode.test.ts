@@ -213,6 +213,10 @@ function harness(options: Options = {}) {
         destroy() { priceLayoutDestroys++; },
       };
     },
+    createVideoPriceStyle: (_root: unknown, refreshLayout: () => void) => {
+      refreshLayout();
+      return { destroy() {} };
+    },
     // Exercise the real URL boundary without loading the external iframe API.
     parseYouTubeVideo,
     createYouTubePlayer: (_container: unknown, input: typeof callbacks) => {

@@ -106,6 +106,22 @@ function harness({ finePointer = true, hidden = false } = {}) {
   return { controls, root, button, window, document, cursor, timers, tick, pointer, focus, blur, visibility, device, menu, key, idle };
 }
 
+test('an open price style panel prevents idle hiding until dismissed', () => {
+  const h = harness();
+  h.controls.setEnabled(true);
+  h.tick(2500);
+  assert.equal(h.idle(), true);
+  h.root.setAttribute('data-price-style-open', '');
+  h.root.dispatchEvent(new Event('pricestyletoggle'));
+  h.tick(10000);
+  assert.equal(h.idle(), false);
+  h.root.removeAttribute('data-price-style-open');
+  h.root.dispatchEvent(new Event('pricestyletoggle'));
+  h.tick(2500);
+  assert.equal(h.idle(), true);
+  h.controls.destroy();
+});
+
 test('Video Mode hides the interface after 2.5 seconds only when enabled', () => {
   const h = harness();
   h.tick(10000);

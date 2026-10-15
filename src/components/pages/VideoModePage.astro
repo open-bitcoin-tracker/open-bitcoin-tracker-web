@@ -23,6 +23,32 @@ const locale = htmlLang(Astro.currentLocale);
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 10a9 9 0 1 1 2 8M3 4v6h6" /></svg>
           <span>{t.resetPrice}</span>
         </button>
+        <div class="video-price-style" data-price-style>
+          <button type="button" class="video-style-trigger" data-price-style-trigger aria-label={t.priceStyle} title={t.priceStyle} aria-expanded="false" aria-controls="video-price-style-panel" disabled>
+            <span aria-hidden="true">Aa</span><span class="video-style-dot" aria-hidden="true"></span>
+          </button>
+          <div id="video-price-style-panel" class="video-style-panel" data-price-style-panel role="group" aria-label={t.priceStyle} hidden>
+            <div class="video-style-row">
+              <label for="video-price-colour">{t.priceColour}</label>
+              <input id="video-price-colour" class="video-colour-input" data-price-colour type="color" value="#ffffff" title={t.priceColour} disabled />
+            </div>
+            <div class="video-colour-swatches" role="group" aria-label={t.priceColour}>
+              {['#ffffff', '#ff981e', '#ffd166', '#80ed99', '#90c7ff', '#ff99c8'].map(colour => (
+                <button type="button" class="video-colour-swatch" data-price-swatch={colour} style={`--swatch: ${colour}`} aria-label={`${t.priceColour}: ${colour}`} title={colour} aria-pressed={colour === '#ffffff' ? 'true' : 'false'} disabled></button>
+              ))}
+            </div>
+            <div class="video-style-row video-font-row">
+              <label for="video-price-font">{t.priceFont}</label>
+              <select id="video-price-font" data-price-font disabled>
+                <option value="modern">{t.fontModern}</option>
+                <option value="condensed">{t.fontCondensed}</option>
+                <option value="serif">{t.fontSerif}</option>
+                <option value="mono">{t.fontMono}</option>
+              </select>
+            </div>
+            <button type="button" class="video-style-reset" data-reset-price-style disabled>{t.resetPriceStyle}</button>
+          </div>
+        </div>
         <label class="video-sr-only" for="video-currency">{t.currency}</label>
         <div class="video-currency" data-currency-picker>
           <select id="video-currency" data-currency hidden disabled>{currencies.map(code => <option value={code}>{code}</option>)}</select>
@@ -133,6 +159,26 @@ const locale = htmlLang(Astro.currentLocale);
   .video-icon-button { width: var(--menu-control-size); height: var(--menu-control-size); display: grid; place-items: center; border: 1px solid rgb(255 255 255 / .16); background: rgb(16 16 16 / .65); backdrop-filter: blur(12px); border-radius: 50%; color: #fff; }
   .video-icon-button:hover { background: rgb(50 50 50 / .85); }
   .video-currency { position: relative; height: var(--menu-control-size); }
+  .video-price-style { position: relative; }
+  .video-style-trigger { display: flex; align-items: center; justify-content: center; gap: .45rem; height: var(--menu-control-size); padding: .5rem .85rem; border: 1px solid rgb(255 255 255 / .16); border-radius: 999px; background: rgb(16 16 16 / .65); backdrop-filter: blur(12px); color: #fff; font-size: 1rem; font-weight: 600; }
+  .video-style-trigger:hover, .video-style-trigger[aria-expanded="true"] { background: rgb(50 50 50 / .85); }
+  .video-style-dot { width: .6rem; height: .6rem; border-radius: 50%; background: var(--video-price-colour, #fff); box-shadow: 0 0 0 1px rgb(255 255 255 / .3); }
+  .video-style-panel { position: absolute; top: calc(100% + .5rem); right: 0; width: min(240px, calc(100vw - 2rem)); max-height: calc(100svh - var(--menu-control-top) - var(--menu-control-size) - 1.5rem); overflow-y: auto; padding: 1rem; border: 1px solid rgb(255 255 255 / .16); border-radius: 14px; background: rgb(16 16 16 / .95); backdrop-filter: blur(16px); box-shadow: 0 8px 40px #0005; font-size: .8rem; }
+  .video-style-row { display: flex; align-items: center; justify-content: space-between; gap: .75rem; }
+  .video-style-row label { color: #ddd; }
+  .video-colour-input { width: 2.75rem; height: 2rem; padding: .2rem; border: 1px solid rgb(255 255 255 / .25); border-radius: 7px; cursor: pointer; }
+  .video-colour-input::-webkit-color-swatch-wrapper { padding: 0; }
+  .video-colour-input::-webkit-color-swatch { border: 0; border-radius: 3px; }
+  .video-colour-input::-moz-color-swatch { border: 0; border-radius: 3px; }
+  .video-colour-swatches { display: flex; justify-content: space-between; gap: .25rem; margin: .5rem -.25rem .85rem; }
+  .video-colour-swatch { display: grid; place-items: center; width: 2rem; height: 2rem; flex-shrink: 0; padding: .25rem; border: 1px solid transparent; border-radius: 50%; background: transparent; }
+  .video-colour-swatch::after { content: ''; width: 100%; height: 100%; border-radius: 50%; background: var(--swatch); box-shadow: inset 0 0 0 1px rgb(255 255 255 / .2); }
+  .video-colour-swatch:hover { background: #ffffff20; }
+  .video-colour-swatch[aria-pressed="true"] { border-color: #fff; }
+  .video-font-row { padding-top: .85rem; border-top: 1px solid rgb(255 255 255 / .12); }
+  .video-font-row select { min-width: 0; max-width: 70%; padding: .45rem; border: 1px solid rgb(255 255 255 / .2); border-radius: 7px; background: #242424; color: #fff; font-size: .8rem; }
+  .video-style-reset { display: block; margin: .85rem auto 0; padding: .35rem .5rem; border: 0; border-radius: 5px; background: transparent; color: #ccc; font-size: .75rem; }
+  .video-style-reset:hover:enabled { background: #ffffff15; color: #fff; }
   .video-currency-trigger { display: inline-flex; align-items: center; justify-content: center; gap: .4rem; height: var(--menu-control-size); padding: .5rem 1.1rem; border: 1px solid rgb(255 255 255 / .16); background: rgb(16 16 16 / .65); backdrop-filter: blur(12px); border-radius: 999px; color: #fff; letter-spacing: .08em; font-size: .85rem; font-weight: 600; }
   .video-currency-trigger:hover, .video-currency-trigger[aria-expanded="true"] { background: rgb(50 50 50 / .85); }
   .video-currency-chevron { flex-shrink: 0; transition: transform .15s ease; }
@@ -166,7 +212,7 @@ const locale = htmlLang(Astro.currentLocale);
   .video-page[data-price-resizing="ne"] .video-price-position, .video-page[data-price-resizing="sw"] .video-price-position { cursor: nesw-resize; }
   .video-sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
   /* Compensate for the final negative letter spacing so the last glyph stays inside the frame. */
-  .video-price { --price-chars: 8; --video-price-base-size: clamp(2rem, min(17vw, 24vh, 138vw / var(--price-chars)), 15rem); font-size: calc(var(--video-price-base-size) * var(--video-price-scale, 1) * var(--video-price-fit, 1)); font-weight: 750; letter-spacing: -.065em; padding-inline-end: .065em; line-height: 1.2; font-variant-numeric: tabular-nums; white-space: nowrap; text-shadow: 0 3px 30px #000, 0 0 80px #0009; }
+  .video-price { --price-chars: 8; --video-price-base-size: clamp(2rem, min(17vw, 24vh, 138vw / var(--price-chars)), 15rem); color: var(--video-price-colour, #fff); font-family: var(--video-price-font, var(--font-sans)); font-size: calc(var(--video-price-base-size) * var(--video-price-scale, 1) * var(--video-price-fit, 1)); font-weight: 750; letter-spacing: -.065em; padding-inline-end: .065em; line-height: 1.2; font-variant-numeric: tabular-nums; white-space: nowrap; text-shadow: 0 3px 30px #000, 0 0 80px #0009; }
   .video-currency-note { max-width: min(28rem, calc(100vw - 2rem)); font-size: .7rem; color: #fff; margin-top: .6rem; text-shadow: 0 1px 8px #000; }
   .video-dock { position: absolute; bottom: max(clamp(2rem, 8svh, 5rem), env(safe-area-inset-bottom)); left: 50%; transform: translateX(-50%); width: min(480px, calc(100% - 3rem)); z-index: 1; text-align: center; }
   .video-page[data-subtitles-enabled] .video-dock { bottom: max(7rem, 16svh, env(safe-area-inset-bottom)); }
@@ -219,7 +265,10 @@ const locale = htmlLang(Astro.currentLocale);
     .video-dock { width: calc(100% - 2rem); }
   }
   @media (max-width: 600px) {
-    .video-appearance { flex-wrap: wrap; justify-content: flex-end; width: 10rem; height: auto; }
+    .video-appearance { flex-wrap: wrap; justify-content: flex-end; width: 14.5rem; max-width: calc(100vw - var(--menu-control-right) - var(--menu-control-size) - 1.75rem); height: auto; gap: .5rem; }
+    .video-currency-trigger { padding-inline: .75rem; }
+    .video-style-trigger { padding-inline: .75rem; }
+    .video-style-panel { position: fixed; top: calc(var(--menu-control-top) + var(--menu-control-size) + .5rem); right: var(--menu-control-right); }
     .video-reset-price { order: 1; width: 100%; height: auto; min-height: 2.75rem; }
     .video-dock { bottom: max(1rem, env(safe-area-inset-bottom)); }
   }

@@ -68,6 +68,8 @@ Video Mode shares the price tracker's Kraken live feed, ECB currency conversion,
 
 Drag the price to move it. Clicking or dragging reveals a frame with four corner handles for resizing; the frame fades after interaction stops. A hint appears below the default price and disappears when its layout changes. Reset price position appears beside the currency picker for a modified layout and restores the centered position and original size. With the price focused, arrow keys move it (Shift makes larger steps), +/− resize it, and Home also resets the layout. Escape hides the frame. The price stays within the viewport as its value, currency, or screen size changes. Currency, position, and size are saved locally and restored on the next visit; layout settings are separate from chart preferences.
 
+The Aa button beside the currency picker opens price styling: choose a colour swatch or any custom colour, select a modern, condensed, serif, or monospace font, or reset the style. Changes preview immediately; colour and font are saved locally independently of price position and size.
+
 Volume, mute, subtitles, and loop preferences are saved locally and restored on the next visit. The subtitle preference is retained even when a video has no captions. When subtitles are enabled, the player fits the viewport to keep native YouTube captions readable; the background returns to filling the viewport when subtitles are off.
 
 On desktop, all controls and the cursor hide after 2.5 seconds of mouse inactivity, leaving only the price and background video. Mouse movement or keyboard input reveals them again. Controls stay visible while editing a link, using an open menu, or navigating with keyboard focus; touch devices keep them visible.

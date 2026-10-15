@@ -120,6 +120,7 @@ export function createVideoCurrencyPicker(root: HTMLElement, select: HTMLSelectE
   listen(wrapper, 'keydown', onKeyDown as EventListener);
   for (const option of options) listen(option, 'click', () => choose(option));
   listen(select, 'change', sync);
+  listen(root, 'pricestyletoggle', () => { if (root.hasAttribute('data-price-style-open')) close(); });
   listen(document, 'pointerdown', dismissOutside);
   listen(document, 'focusin', dismissOutside);
   list.hidden = true;

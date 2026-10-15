@@ -6,6 +6,7 @@ import { createYouTubePlayer, parseYouTubeVideo, type YouTubeVideo } from '../li
 import { createVideoControls } from '../lib/video-controls';
 import { createVideoCurrencyPicker } from '../lib/video-currency-picker';
 import { createVideoPriceLayout } from '../lib/video-price-layout';
+import { createVideoPriceStyle } from '../lib/video-price-style';
 import type { PartyCopy } from '../i18n/party';
 import type { VideoCopy } from '../i18n/video';
 
@@ -74,6 +75,7 @@ function startVideoMode(root: HTMLElement) {
   });
   const currencyPicker = createVideoCurrencyPicker(root, currencySelect);
   priceLayout = createVideoPriceLayout(root);
+  const priceStyle = createVideoPriceStyle(root, () => priceLayout?.refresh());
   const stopPrice = subscribeBitcoinPrice({
     onPrice(point) { livePoint = point; paintPrice(); },
     onState(value) { state = value; paintPrice(); },
@@ -472,6 +474,7 @@ function startVideoMode(root: HTMLElement) {
     destroyed = true;
     stopPrice();
     currencyPicker.destroy();
+    priceStyle.destroy();
     priceLayout?.destroy();
     uiVisibility.destroy();
     stopProgressRefresh();

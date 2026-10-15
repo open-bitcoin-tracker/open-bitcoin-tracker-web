@@ -20,6 +20,7 @@ export function createVideoControls(root: HTMLElement) {
   function canFade() {
     if (!enabled || !cursor.matches || touch || document.hidden) return false;
     if (root.hasAttribute('data-currency-open')) return false;
+    if (root.hasAttribute('data-price-style-open')) return false;
     if (root.hasAttribute('data-price-dragging')) return false;
     if (document.documentElement.classList.contains('nav-menu-open') || document.querySelector('#site-navigation-dialog[open]')) return false;
     const active = document.activeElement;
@@ -72,6 +73,7 @@ export function createVideoControls(root: HTMLElement) {
   root.addEventListener('focusout', handleChangeOrBlur);
   root.addEventListener('change', handleChangeOrBlur);
   root.addEventListener('currencytoggle', reveal);
+  root.addEventListener('pricestyletoggle', reveal);
   root.addEventListener('pricelayoutchange', reveal);
   document.addEventListener('visibilitychange', reveal);
   document.addEventListener('fullscreenchange', reveal);
@@ -97,6 +99,7 @@ export function createVideoControls(root: HTMLElement) {
       root.removeEventListener('focusout', handleChangeOrBlur);
       root.removeEventListener('change', handleChangeOrBlur);
       root.removeEventListener('currencytoggle', reveal);
+      root.removeEventListener('pricestyletoggle', reveal);
       root.removeEventListener('pricelayoutchange', reveal);
       document.removeEventListener('visibilitychange', reveal);
       document.removeEventListener('fullscreenchange', reveal);

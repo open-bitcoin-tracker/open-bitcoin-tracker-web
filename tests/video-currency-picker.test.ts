@@ -36,6 +36,7 @@ function harness({ currency = 'USD', disabled = false } = {}) {
     listenerCount() { return [...this.listeners.values()].reduce((sum, listeners) => sum + listeners.size, 0); }
     setAttribute(name: string, value: string) { this.attributes.set(name, value); }
     removeAttribute(name: string) { this.attributes.delete(name); }
+    hasAttribute(name: string) { return this.attributes.has(name); }
     querySelector(selector: string) { return this.selectors.get(selector) ?? null; }
     querySelectorAll(selector: string) { assert.equal(selector, '[data-currency-option]'); return this.children; }
     contains(target: Element | null): boolean { return target === this || this.children.some(child => child.contains(target)); }
@@ -245,4 +246,14 @@ test('destroy closes an open currency menu once and removes all helper listeners
   assert.equal(h.list.hidden, true);
   assert.equal(h.toggles(), 2);
   assert.equal(h.value.textContent, 'USD');
+});
+
+test('opening price styling closes the currency menu', () => {
+  const h = harness();
+  h.trigger.click();
+  h.root.setAttribute('data-price-style-open', '');
+  h.root.dispatchEvent(new Event('pricestyletoggle'));
+  assert.equal(h.list.hidden, true);
+  assert.equal(h.root.attributes.has('data-currency-open'), false);
+  h.picker.destroy();
 });
