@@ -149,7 +149,7 @@ const t = useTranslations(Astro.currentLocale);
   h1 { display: inline-flex; min-width: 0; max-width: 100%; font-size: clamp(2rem, 8.4cqi, 6.5rem); line-height: 1.06; letter-spacing: -.015em; white-space: nowrap; }
   .brand-trigger { display: inline-flex; align-items: center; gap: .22em; border-radius: .1em; font: inherit; letter-spacing: inherit; text-transform: inherit; cursor: default; }
   .brand-icon { flex: none; width: .8em; height: .8em; }
-  .brand-wordmark, .brand-word { display: inline-flex; }
+  .brand-wordmark, .brand-word { display: inline-flex; flex-shrink: 0; }
   /* Center the visible capitals, accounting for the wordmark font's descent. */
   .brand-wordmark { transform: translateY(-.05em); }
   .brand-reveal { display: inline-grid; grid-template-columns: 0fr; opacity: 0; transition: grid-template-columns 550ms cubic-bezier(.22, 1, .36, 1), opacity 350ms ease; }
@@ -207,7 +207,8 @@ const t = useTranslations(Astro.currentLocale);
     .landing-main { align-items: start; padding: var(--menu-control-top) var(--landing-gutter) max(2rem, env(safe-area-inset-bottom, 0px)); }
     .landing-brand { display: grid; grid-template-columns: minmax(0, 1fr) var(--menu-control-size); column-gap: .75rem; align-items: center; min-height: var(--menu-control-size); margin-bottom: 1.5rem; text-align: left; }
     h1 { font-size: calc(var(--menu-control-size) * 1.25); transition: font-size 550ms cubic-bezier(.22, 1, .36, 1); }
-    h1:has(.brand-trigger[aria-expanded="true"]) { font-size: clamp(1rem, calc((100cqi - var(--menu-control-size)) / 8.5), 3.25rem); }
+    /* Reserve the logo, menu button, and menu gap before sizing the full name. */
+    h1:has(.brand-trigger[aria-expanded="true"]) { font-size: clamp(1rem, calc((100cqi - 2 * var(--menu-control-size) - .75rem) / 8.5), 3.25rem); }
     .brand-trigger { height: var(--menu-control-size); }
     .brand-icon { width: var(--menu-control-size); height: var(--menu-control-size); }
     .landing-options { gap: 1.25rem; }
