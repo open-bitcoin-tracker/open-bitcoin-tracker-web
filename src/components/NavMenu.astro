@@ -253,7 +253,7 @@ const isHome = stripLocale(Astro.url.pathname) === '';
     font-weight: 700; line-height: 1.04; letter-spacing: -.015em; text-transform: uppercase;
     color: var(--menu-link-ink); overflow-wrap: anywhere; text-decoration: none;
   }
-  .menu-links :global(a.page-link) { color: var(--menu-primary-ink); }
+  .menu-links :global(a.page-link) { color: var(--menu-primary-ink); transition: color 200ms ease; }
   .menu-links :global(a:hover) { color: var(--color-accent); }
   .menu-links :global(a:focus-visible) { color: var(--color-accent); }
   .menu-links :global(a[aria-current='page']) { color: var(--color-accent); }
@@ -282,5 +282,6 @@ const isHome = stripLocale(Astro.url.pathname) === '';
   }
   @media (prefers-reduced-motion: reduce) {
     .nav-menu-dialog, .nav-menu-panel, .menu-bar { transition: none; }
+    .menu-links :global(a.page-link) { transition: none; }
   }
 </style>
