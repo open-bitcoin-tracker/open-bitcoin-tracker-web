@@ -377,10 +377,20 @@ function startVideoMode(root: HTMLElement) {
     event.preventDefault();
     cancelEdit();
   });
-  playButton.addEventListener('click', () => {
+  function togglePlayback() {
+    if (destroyed || !hasVideo) return;
     if (playing) player.pause();
     else player.play();
-  });
+  }
+  playButton.addEventListener('click', togglePlayback);
+  function onVideoClick(event: MouseEvent) {
+    if (event.defaultPrevented || !form.hidden) return;
+    const target = event.target as Element | null;
+    // Leave price editing, form fields, and playback controls to their own handlers.
+    if (target?.closest?.('button, input, select, textarea, a, label, [role="button"], [role="dialog"], [contenteditable], [data-price-position], [data-price-style], [data-video-form], [data-video-controls]')) return;
+    togglePlayback();
+  }
+  root.addEventListener('click', onVideoClick);
   muteButton.addEventListener('click', () => {
     if (phoneAudio) return;
     if (muted && volume === 0) { changeVolume(lastAudibleVolume); return; }
@@ -496,6 +506,7 @@ function startVideoMode(root: HTMLElement) {
     priceStyle.destroy();
     priceLayout?.destroy();
     uiVisibility.destroy();
+    root.removeEventListener('click', onVideoClick);
     stopProgressRefresh();
     player.destroy();
     if (rateRefresh !== undefined) clearInterval(rateRefresh);
