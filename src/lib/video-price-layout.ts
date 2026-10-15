@@ -2,6 +2,7 @@ const STORAGE_KEY = 'obt-video-price-layout';
 const PADDING = 16;
 const SNAP_DISTANCE = 8;
 const SNAP_RELEASE_DISTANCE = 16;
+const CLICK_DRAG_DISTANCE = 4;
 const DEFAULTS = { version: 1, x: 50, y: 50, size: 100 };
 const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value));
 type Corner = 'nw' | 'ne' | 'sw' | 'se';
@@ -32,6 +33,7 @@ export function createVideoPriceLayout(root: HTMLElement) {
   let dismissed = false;
   let lastInput: 'keyboard' | 'pointer' | undefined;
   let operation: Operation | undefined;
+  let suppressClick = false;
   let snappedX = false;
   let snappedY = false;
 
@@ -172,6 +174,7 @@ export function createVideoPriceLayout(root: HTMLElement) {
       });
     }
     const dx = event.clientX - operation.clientX, dy = event.clientY - operation.clientY;
+    suppressClick ||= Math.hypot(dx, dy) > CLICK_DRAG_DISTANCE;
     const changed = Math.abs(dx) + Math.abs(dy) >= .001;
     if (!operation.moved && !changed) return;
     operation.moved ||= changed;
@@ -226,6 +229,7 @@ export function createVideoPriceLayout(root: HTMLElement) {
       ? { kind: 'resize', pointerId: event.pointerId, capture: position, clientX: event.clientX, clientY: event.clientY,
         lastClientX: event.clientX, lastClientY: event.clientY, moved: false, ...resizeGeometry(corner, !!event.shiftKey) }
       : { kind: 'move', pointerId: event.pointerId, capture: position, clientX: event.clientX, clientY: event.clientY, moved: false, grabX: event.clientX - box.left, grabY: event.clientY - box.top };
+    suppressClick = operation.kind === 'resize';
     (handle ?? position).focus({ preventScroll: true });
     setFrame(true);
     try { position.setPointerCapture(event.pointerId); } catch { /* Window listeners also support uncaptured dragging. */ }
@@ -233,7 +237,15 @@ export function createVideoPriceLayout(root: HTMLElement) {
     if (operation.kind === 'resize') root.setAttribute('data-price-resizing', operation.corner);
     notify();
   }) as EventListener);
-  listen(position, 'click', event => { if (!inStyle(event.target)) { dismissed = false; revealFrame(); } });
+  listen(position, 'click', event => {
+    if (inStyle(event.target)) return;
+    dismissed = false;
+    revealFrame();
+    // Pointer capture can target this element with a click after moving/resizing.
+    // Let the page toggle playback only for an ordinary click or tap.
+    if (suppressClick) event.preventDefault();
+    suppressClick = false;
+  });
   listen(window, 'pointermove', move as EventListener);
   listen(window, 'pointerup', ((event: PointerEvent) => {
     if (operation?.pointerId !== event.pointerId) return;

@@ -347,7 +347,7 @@ test('video submission replaces the picker with playback controls and rejects in
   h.close();
 });
 
-test('video background clicks toggle playback without interfering with editing or controls', () => {
+test('video background and price clicks toggle playback without interfering with editing or controls', () => {
   const h = harness();
   h.videoClick();
   assert.equal(h.playCalls(), 0, 'the initial picker has no video to play');
@@ -360,24 +360,35 @@ test('video background clicks toggle playback without interfering with editing o
   assert.equal(h.playCalls(), 1);
   assert.equal(h.control('[data-play-pause]').attributes.get('aria-label'), copy.pause);
 
-  for (const selector of ['button', 'input', 'a', '[data-price-position]', '[data-price-style]', '[data-video-form]', '[data-video-controls]']) {
+  const price = Object.assign(new Control(), {
+    closest(selectors: string) { return selectors.split(', ').includes('[data-price-position]') ? this : null; },
+  });
+  h.videoClick(price);
+  assert.equal(h.pauseCalls(), 2, 'clicking the price pauses playback');
+  h.videoClick(price);
+  assert.equal(h.playCalls(), 2, 'clicking the price again resumes playback');
+  h.videoClick(price, true);
+
+  for (const selector of ['button', 'input', 'a', '[data-price-style]', '[data-video-form]', '[data-video-controls]']) {
     const target = Object.assign(new Control(), {
       closest(selectors: string) { return selectors.split(', ').includes(selector) ? this : null; },
     });
     h.videoClick(target);
   }
   h.videoClick(h.root, true);
-  assert.equal(h.pauseCalls(), 1, 'controls, price dragging, and handled clicks do not pause');
+  assert.equal(h.pauseCalls(), 2, 'controls, price dragging, and handled clicks do not pause');
   h.click('[data-change-video]');
   h.videoClick();
-  assert.equal(h.pauseCalls(), 1, 'editing a replacement URL leaves playback alone');
+  h.videoClick(price);
+  assert.equal(h.pauseCalls(), 2, 'editing a replacement URL leaves playback alone');
   h.click('[data-cancel-video]');
   h.emitError(150);
   h.videoClick();
-  assert.equal(h.playCalls(), 1, 'an unavailable video cannot restart from the background');
+  h.videoClick(price);
+  assert.equal(h.playCalls(), 2, 'an unavailable video cannot restart from the background or price');
   h.close();
   h.videoClick();
-  assert.equal(h.pauseCalls(), 1);
+  assert.equal(h.pauseCalls(), 2);
 });
 
 test('play and pause labels follow player state while mute updates its action and icon', () => {

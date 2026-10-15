@@ -386,8 +386,9 @@ function startVideoMode(root: HTMLElement) {
   function onVideoClick(event: MouseEvent) {
     if (event.defaultPrevented || !form.hidden) return;
     const target = event.target as Element | null;
-    // Leave price editing, form fields, and playback controls to their own handlers.
-    if (target?.closest?.('button, input, select, textarea, a, label, [role="button"], [role="dialog"], [contenteditable], [data-price-position], [data-price-style], [data-video-form], [data-video-controls]')) return;
+    // Price drags cancel their trailing click; plain price clicks toggle playback.
+    // Leave editor buttons, form fields, and playback controls to their handlers.
+    if (target?.closest?.('button, input, select, textarea, a, label, [role="button"], [role="dialog"], [contenteditable], [data-price-style], [data-video-form], [data-video-controls]')) return;
     togglePlayback();
   }
   root.addEventListener('click', onVideoClick);

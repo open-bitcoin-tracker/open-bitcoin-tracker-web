@@ -69,7 +69,7 @@ function harness(options: Options = {}) {
       document.activeElement = this;
       if (position.contains(this)) position.dispatchEvent(targetEvent('focusin', this));
     }
-    click() { if (position.contains(this)) position.dispatchEvent(targetEvent('click', this)); else this.dispatchEvent(new Event('click')); }
+    click() { return position.contains(this) ? !position.dispatchEvent(targetEvent('click', this)) : !this.dispatchEvent(new Event('click')); }
     append(child: Element) { child.parent = this; this.children.push(child); return child; }
     setPointerCapture(id: number) { if (this.captureFails) throw Error('Capture unavailable'); this.captures.add(id); }
     hasPointerCapture(id: number) { return this.captures.has(id); }
@@ -298,6 +298,33 @@ test('ending pointer interaction keeps the frame visible until the page UI is di
   h.root.dispatchEvent(new Event('videouidismiss'));
   assert.equal(h.frame(), false);
   h.layout.destroy();
+});
+
+test('price clicks allow playback, but trailing clicks after dragging or resizing are cancelled', () => {
+  for (const pointerType of ['mouse', 'touch']) {
+    const h = harness();
+    let box = h.position.getBoundingClientRect();
+    const start = { clientX: box.left + 20, clientY: box.top + 20, pointerType };
+    h.pointer('pointerdown', h.position, start);
+    h.pointer('pointerup', h.window, { ...start, clientX: start.clientX + 1 });
+    assert.equal(h.position.click(), false, 'a click or tap tolerates slight pointer movement');
+
+    h.pointer('pointerdown', h.position, start);
+    h.pointer('pointermove', h.window, { ...start, clientX: start.clientX + 50 });
+    h.pointer('pointerup', h.window, start);
+    assert.equal(h.position.click(), true, 'a drag returning to its start must not toggle playback');
+
+    h.pointer('pointerdown', h.position, start);
+    h.pointer('pointerup', h.window, start);
+    assert.equal(h.position.click(), false, 'the next ordinary click can toggle playback');
+
+    box = h.position.getBoundingClientRect();
+    const corner = { clientX: box.left + box.width, clientY: box.top + box.height, pointerType };
+    h.pointer('pointerdown', h.handles.se, corner);
+    h.pointer('pointerup', h.window, corner);
+    assert.equal(h.position.click(), true, 'captured clicks from resize handles must not toggle playback');
+    h.layout.destroy();
+  }
 });
 
 test('dragging preserves the grab offset, clamps edges, and keeps its frame with the page UI', () => {
