@@ -22,7 +22,6 @@ function startVideoMode(root: HTMLElement) {
   const price = root.querySelector<HTMLElement>('[data-price]')!;
   const status = root.querySelector<HTMLElement>('[data-price-status]')!;
   const currencySelect = root.querySelector<HTMLSelectElement>('[data-currency]')!;
-  const currencyNote = root.querySelector<HTMLElement>('[data-currency-note]')!;
   const rates = new CurrencyRates();
   let currency: Currency = readDisplayPreferences().currency;
   const formatMoney = () => new Intl.NumberFormat(locale, { style: 'currency', currency, minimumFractionDigits: 0, maximumFractionDigits: 0 });
@@ -47,7 +46,6 @@ function startVideoMode(root: HTMLElement) {
       : currency !== 'USD' && !rate ? (loadingRates ? t.fxLoading : t.fxUnavailable)
       : !livePoint ? (state === 'connecting' ? t.loadingPrice : t.unavailable)
       : t[state];
-    currencyNote.hidden = currency === 'USD';
     priceLayout?.refresh();
   }
 

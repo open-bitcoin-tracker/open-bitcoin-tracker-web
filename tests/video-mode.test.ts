@@ -878,7 +878,6 @@ test('Video Mode restores currency and saves changes without altering the shared
   h.state('live');
   h.price(100_000);
   assert.equal(h.control('[data-price]').textContent, '€90,000');
-  assert.equal(h.control('[data-currency-note]').hidden, false);
   h.currency('GBP');
   assert.equal(h.control('[data-price]').textContent, '£75,000');
   assert.deepEqual(h.saved(), [{ currency: 'GBP', scale: 'linear' }]);
@@ -908,7 +907,6 @@ test('unavailable exchange rates keep a dash until rates recover or USD is selec
   h.currency('USD');
   assert.equal(h.control('[data-price]').textContent, '$100,000');
   assert.equal(h.control('[data-price]').attributes.has('aria-label'), false);
-  assert.equal(h.control('[data-currency-note]').hidden, true);
   h.state('offline');
   assert.equal(h.control('[data-price-status]').textContent, copy.offline);
   h.close();
