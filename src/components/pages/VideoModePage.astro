@@ -282,7 +282,7 @@ const locale = htmlLang(Astro.currentLocale);
   .video-volume-control:has(:focus-visible) .video-volume-reveal,
   .video-volume-control:has(input:active) .video-volume-reveal { width: calc(clamp(3rem, 15vw, 6rem) + .5rem); opacity: 1; visibility: visible; pointer-events: auto; }
   .video-volume-slider { --video-progress: 100%; width: clamp(3rem, 15vw, 6rem); margin-left: .5rem; }
-  .video-change { display: inline-flex; align-items: center; justify-content: center; min-height: 2.75rem; padding: .5rem 1rem; border: 0; border-radius: 999px; background: rgb(16 16 16 / .75); backdrop-filter: blur(12px); color: #fff; font-size: .8rem; font-weight: 600; }
+  .video-change { display: inline-flex; align-items: center; justify-content: center; min-height: 2.75rem; padding: .5rem 1rem; border: 0; border-radius: 999px; background: rgb(16 16 16 / .75); backdrop-filter: blur(12px); color: #fff; font-size: 1rem; font-weight: 600; }
   .video-change:hover { background: rgb(50 50 50 / .9); }
   .video-message { margin-top: .75rem; padding: .4rem .7rem; font-size: .75rem; line-height: 1.5; color: #ddd; background: rgb(8 8 8 / .85); border-radius: 8px; }
   .video-error { color: #ffc2b2; }
@@ -329,7 +329,7 @@ const locale = htmlLang(Astro.currentLocale);
     .video-timeline .video-seek { height: 1.5rem; }
     .video-player-panel { padding: 1px .25rem; }
     .video-playback { gap: .375rem; }
-    .video-change { min-height: 1.75rem; padding: .2rem .8rem; font-size: .75rem; }
+    .video-change { min-height: 1.75rem; padding: .2rem .8rem; }
     .video-page[data-subtitles-enabled] .video-dock { bottom: max(3rem, env(safe-area-inset-bottom)); }
   }
   @media (max-height: 360px) and (min-width: 600px) {
