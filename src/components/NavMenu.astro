@@ -27,7 +27,10 @@ const isHome = stripLocale(Astro.url.pathname) === '';
       </svg>
     </button>
     <div class="nav-menu-panel">
-      <a class="menu-brand" href={homeHref} aria-current={isHome ? 'page' : undefined}><span lang="en" class="brand-name">Open Bitcoin Tracker</span></a>
+      <a class="menu-brand" href={homeHref} aria-label="Open Bitcoin Tracker" aria-current={isHome ? 'page' : undefined}>
+        <img class="menu-brand-icon" src="/app-icon.png" width="96" height="96" alt="" />
+        <span lang="en" class="brand-name">OBT</span>
+      </a>
       <div class="menu-links"><slot /></div>
       <div class="nav-menu-settings">
         <LanguageSwitcher placement="up" />
@@ -178,6 +181,7 @@ const isHome = stripLocale(Astro.url.pathname) === '';
     --menu-panel-shadow: -12px 0 32px rgb(0 0 0 / .12);
     --menu-link-ink: var(--color-ink-muted);
     --menu-primary-ink: var(--color-ink);
+    --menu-brand-ink: var(--color-ink);
     --menu-dropdown-bg: var(--color-surface);
     --menu-dropdown-border: var(--color-divider);
     --menu-dropdown-shadow: var(--shadow-card-hover);
@@ -189,6 +193,7 @@ const isHome = stripLocale(Astro.url.pathname) === '';
     --menu-panel-shadow: -12px 0 32px rgb(0 0 0 / .3);
     --menu-link-ink: #CBD3E6;
     --menu-primary-ink: #FFF3D9;
+    --menu-brand-ink: #FFFFFF;
     --menu-dropdown-bg: #14213D;
     --menu-dropdown-border: rgb(255 255 255 / .12);
     --menu-dropdown-shadow: 0 12px 40px rgb(0 0 0 / .4);
@@ -237,8 +242,9 @@ const isHome = stripLocale(Astro.url.pathname) === '';
     position: fixed; z-index: 1; top: var(--menu-control-top); right: var(--menu-control-right);
     cursor: pointer;
   }
-  .menu-brand { display: flex; align-items: center; min-height: var(--menu-control-size); padding-right: 3.5rem; font-size: clamp(1.5rem, 2.2vw, 2rem); line-height: 1.15; color: var(--color-ink-muted); text-decoration: none; }
-  .menu-brand:hover, .menu-brand:focus-visible { text-decoration: underline; }
+  .menu-brand { --menu-brand-size: 36px; display: flex; align-items: center; gap: .22em; min-height: var(--menu-control-size); padding-right: 3.5rem; font-size: calc(var(--menu-brand-size) * 1.25); line-height: 1.06; color: var(--menu-brand-ink); text-decoration: none; }
+  .menu-brand-icon { flex: none; width: var(--menu-brand-size); height: var(--menu-brand-size); }
+  .menu-brand .brand-name { line-height: .8; transform: translateY(-.05em); }
   .menu-links { display: grid; align-content: start; gap: 1.25rem; }
   .menu-links :global(.menu-page-links) { display: contents; }
   .menu-links :global(a) {
@@ -271,7 +277,6 @@ const isHome = stripLocale(Astro.url.pathname) === '';
     .nav-menu-dialog { width: 100vw; }
     .nav-menu-panel { padding: var(--menu-panel-top) 1.5rem max(1.5rem, env(safe-area-inset-bottom)); }
     .nav-menu-settings { flex-direction: column; align-items: flex-start; gap: .25rem; }
-    .menu-brand { font-size: clamp(1.375rem, 6vw, 1.625rem); }
     .menu-links { gap: 1.125rem; }
     .menu-links :global(a) { font-size: clamp(2rem, 9vw, 3.25rem); }
   }
