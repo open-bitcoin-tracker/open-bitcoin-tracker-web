@@ -86,7 +86,7 @@ const t = useTranslations(Astro.currentLocale);
               <g class="supply-coins"><circle cx="64" cy="163" r="13" /><circle cx="93" cy="163" r="13" /><circle cx="123" cy="163" r="13" /><circle cx="78" cy="135" r="13" /><circle cx="107" cy="135" r="13" /></g>
               <path class="supply-box usd-box" d="M207 91v90h111V91" /><path class="supply-rim" d="M207 91h111" />
               <g class="supply-bills"><rect x="223" y="144" width="59" height="25" rx="3" transform="rotate(-7 223 144)" /><rect x="246" y="113" width="59" height="25" rx="3" transform="rotate(8 246 113)" /><rect x="233" y="46" width="51" height="23" rx="3" transform="rotate(-12 233 46)" /></g>
-              <path class="supply-connect" d="M98 187v18m165-18v18" /><g class="supply-person"><circle cx="98" cy="210" r="6" /><path d="M87 234v-7a11 11 0 0 1 22 0v7" /><circle cx="263" cy="210" r="6" /><path d="M252 234v-7a11 11 0 0 1 22 0v7" /></g>
+              <path class="supply-connect" d="M98 187v6m165-6v6" /><g class="supply-person" transform="translate(0 -12)"><circle cx="98" cy="210" r="6" /><path d="M87 234v-7a11 11 0 0 1 22 0v7" /><circle cx="263" cy="210" r="6" /><path d="M252 234v-7a11 11 0 0 1 22 0v7" /></g>
             </svg>
           </div>
           <div class="option-copy"><div class="option-title"><h2 lang="en">{supply.title}</h2></div><p>{t.landing.supplyDescription}</p></div>
@@ -127,7 +127,7 @@ const t = useTranslations(Astro.currentLocale);
   .landing-content { width: 100%; max-width: 72rem; }
   .landing-brand { container-type: inline-size; margin-bottom: clamp(2rem, 4vw, 3rem); text-align: center; }
   h1 { display: inline-flex; min-width: 0; max-width: 100%; font-size: clamp(2rem, 8.4cqi, 6.5rem); line-height: 1.06; letter-spacing: -.015em; white-space: nowrap; }
-  .brand-trigger { display: inline-flex; align-items: center; gap: .22em; border-radius: .1em; font: inherit; letter-spacing: inherit; text-transform: inherit; cursor: pointer; }
+  .brand-trigger { display: inline-flex; align-items: center; gap: .22em; border-radius: .1em; font: inherit; letter-spacing: inherit; text-transform: inherit; cursor: default; }
   .brand-icon { flex: none; width: .8em; height: .8em; }
   .brand-wordmark, .brand-word { display: inline-flex; }
   /* Center the visible capitals, accounting for the wordmark font's descent. */
