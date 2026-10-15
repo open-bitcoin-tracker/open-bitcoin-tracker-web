@@ -29,9 +29,11 @@ Prices use Kraken and bundled Coin Metrics history; currency conversions use ECB
 
 ### Video suggestions
 
-Edit `src/lib/video-suggestions.ts` to add or reorder Video Mode suggestions. Each entry needs a YouTube video ID and its original title; thumbnails use YouTube images, and selection uses the normal player and saved-video flow.
+Edit `src/lib/video-suggestions.ts` to add or reorder Video Mode suggestions. Each entry needs a YouTube video ID, its original title, and verified `isLive` status; thumbnails use YouTube images, and selection uses the normal player and saved-video flow. Check the broadcast status rather than inferring it from the title or URL.
 
-Recent videos stay in browser storage. Titles use the suggestion catalog when available; other titles come from YouTube's oEmbed endpoint and are cached alongside the saved URLs. Unavailable metadata does not prevent playback or removal.
+Recent videos stay in browser storage. Submitted URLs are saved immediately; suggestions join Recent when playback starts. Titles use the suggestion catalog when available; other titles come from YouTube's oEmbed endpoint and are cached alongside the saved URLs. Unavailable metadata does not prevent playback or removal.
+
+Live badges start with the suggestion catalog or previously saved playback metadata. The player updates the selected video's status in both tabs and caches it for Recent; videos outside the catalog gain a badge once playback confirms they are live. Missing player metadata does not overwrite a known status.
 
 ### Price history
 

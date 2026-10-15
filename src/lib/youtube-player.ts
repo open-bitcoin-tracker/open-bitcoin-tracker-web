@@ -88,6 +88,7 @@ type YouTubeCallbacks = {
   onReady?(): void;
   onBlocked?(): void;
   onCaptions?(state: YouTubeCaptions): void;
+  onLiveStatus?(id: string, isLive: boolean): void;
   title?: string;
 };
 
@@ -160,6 +161,7 @@ export function createYouTubePlayer(container: HTMLElement, callbacks: YouTubeCa
   let lastCaptions: YouTubeCaptions | undefined;
   let readyTimeout: ReturnType<typeof setTimeout> | undefined;
   let generation = 0;
+  let lastLiveStatus: { id: string; isLive: boolean } | undefined;
 
   function readProgress(): YouTubeProgress {
     if (!ready || !player || !selected || destroyed) return { currentTime: 0, duration: 0, isLive: false };
@@ -168,6 +170,11 @@ export function createYouTubePlayer(container: HTMLElement, callbacks: YouTubeCa
       // Optional player metadata: live streams can report a finite duration too.
       const data = player.getVideoData?.();
       isLive = data?.video_id === selected.id && data.isLive === true;
+      if (data?.video_id === selected.id && typeof data.isLive === 'boolean'
+        && (lastLiveStatus?.id !== selected.id || lastLiveStatus.isLive !== data.isLive)) {
+        lastLiveStatus = { id: selected.id, isLive: data.isLive };
+        callbacks.onLiveStatus?.(selected.id, data.isLive);
+      }
     } catch { /* Missing metadata must not interrupt progress or playback. */ }
     try {
       const rawDuration = player.getDuration();
@@ -375,6 +382,7 @@ export function createYouTubePlayer(container: HTMLElement, callbacks: YouTubeCa
     load(video: YouTubeVideo) {
       if (destroyed || !VIDEO_ID.test(video.id) || !Number.isFinite(video.startSeconds) || video.startSeconds < 0) return;
       selected = { id: video.id, startSeconds: Math.floor(video.startSeconds) };
+      lastLiveStatus = undefined;
       pendingSeek = undefined;
       captionsAvailable = false;
       captionCommand = undefined;

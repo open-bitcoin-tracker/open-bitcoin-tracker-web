@@ -6,6 +6,7 @@ import { setImmediate } from 'node:timers/promises';
 import ts from 'typescript';
 import { parseYouTubeVideo } from '../src/lib/youtube-player.ts';
 import { video } from '../src/i18n/video.ts';
+import { party } from '../src/i18n/party.ts';
 import type { createVideoPickerTabs } from '../src/lib/video-picker-tabs.ts';
 import { videoSuggestions } from '../src/lib/video-suggestions.ts';
 
@@ -35,6 +36,15 @@ class Element extends EventTarget {
     if (!this.controls.has(selector)) this.controls.set(selector, new Element());
     return this.controls.get(selector)!;
   }
+  querySelectorAll(selector: string) {
+    assert.equal(selector, '[data-video-suggestion]');
+    return videoSuggestions.map(suggestion => {
+      const button = this.querySelector(`[data-video-suggestion="${suggestion.id}"]`);
+      button.dataset.videoSuggestion = suggestion.id;
+      button.title = suggestion.title;
+      return button;
+    });
+  }
   setAttribute(name: string, value: string) { this.attributes.set(name, value); }
   append(...children: Element[]) { this.children.push(...children); }
   replaceChildren() { this.children = []; }
@@ -63,7 +73,7 @@ function harness({ saved, blocked = false, deferMetadata = false }: { saved?: st
     } },
   });
   const controller = exports.createVideoPickerTabs!(root as unknown as HTMLElement, {
-    copy: video.en, onSelect: value => selected.push({ ...value }),
+    copy: { ...video.en, live: party.en.live }, onSelect: value => selected.push({ ...value }),
   });
   const recent = root.querySelector('[data-video-tab="recent"]');
   const suggestions = root.querySelector('[data-video-tab="suggestions"]');
@@ -279,4 +289,65 @@ test('late metadata cannot restore deleted entries or update a destroyed picker'
   await destroyed.title(0, 'Late title');
   assert.equal(title.textContent, video.en.recentTitleLoading);
   assert.deepEqual(destroyed.writes, []);
+});
+
+test('live suggestions show badges in both tabs without inferring status from titles', () => {
+  const live = videoSuggestions.find(video => video.isLive)!;
+  const recorded = videoSuggestions.find(video => video.id === '784dsKVrdjQ')!;
+  const h = harness({ saved: JSON.stringify({ version: 1, urls: [
+    `https://www.youtube.com/watch?v=${live.id}`, `https://www.youtube.com/watch?v=${recorded.id}`,
+  ] }) });
+  for (const [suggestion, hidden] of [[live, false], [recorded, true]] as const) {
+    const button = h.root.querySelector(`[data-video-suggestion="${suggestion.id}"]`);
+    assert.equal(button.querySelector('[data-video-live]').hidden, hidden);
+    assert.equal(button.attributes.get('aria-label'), `${video.en.load}: ${suggestion.title}${hidden ? '' : ` (${party.en.live})`}`);
+  }
+  const [liveCard, recordedCard] = h.list.children.map(row => row.children[0]);
+  assert.equal(liveCard.children[2].hidden, false);
+  assert.equal(liveCard.children[2].textContent, party.en.live);
+  assert.equal(recordedCard.children[2].hidden, true, 'Live Wallpaper is a recording, not a broadcast');
+  h.controller.setLiveStatus(live.id, false);
+  assert.equal(liveCard.children[2].hidden, true);
+  assert.equal(h.root.querySelector(`[data-video-suggestion="${live.id}"]`).querySelector('[data-video-live]').hidden, true);
+  const restored = harness({ saved: h.storage.get(storageKey) });
+  assert.equal(restored.list.children[0].children[0].children[2].hidden, true, 'confirmed playback metadata overrides the catalog across reloads');
+  h.controller.destroy();
+  restored.controller.destroy();
+});
+
+test('playback live status updates matching Recent entries, persists, and ignores duplicates and removed entries', () => {
+  const h = harness();
+  h.controller.remember(first);
+  h.controller.remember(`${first}&t=30s`);
+  assert.equal(h.list.children[0].children[0].children[2].hidden, true, 'unknown metadata must not claim a video is live');
+  h.controller.setLiveStatus('abcdefghijk', true);
+  for (const row of h.list.children) {
+    assert.equal(row.children[0].children[2].hidden, false);
+    assert.ok(row.children[0].attributes.get('aria-label')!.endsWith(` (${party.en.live})`));
+  }
+  assert.equal(h.writes.length, 3);
+  h.controller.setLiveStatus('abcdefghijk', true);
+  assert.equal(h.writes.length, 3, 'repeated progress polls must not rewrite storage');
+  const restored = harness({ saved: h.storage.get(storageKey) });
+  assert.equal(restored.list.children[0].children[0].children[2].hidden, false);
+  h.controller.setLiveStatus('abcdefghijk', false);
+  assert.equal(h.list.children[0].children[0].children[2].hidden, true);
+  h.remove(0);
+  h.remove(0);
+  const writes = h.writes.length;
+  h.controller.setLiveStatus('abcdefghijk', true);
+  assert.equal(h.writes.length, writes, 'late metadata must not restore a deleted URL');
+  assert.deepEqual(JSON.parse(h.storage.get(storageKey)!), { version: 1, urls: [] });
+  h.controller.destroy();
+  h.controller.setLiveStatus('abcdefghijk', false);
+  assert.equal(h.writes.length, writes);
+  restored.controller.destroy();
+});
+
+test('malformed saved live status cannot mark a Recent video live', () => {
+  for (const value of ['true', 1, {}, null]) {
+    const h = harness({ saved: JSON.stringify({ version: 1, urls: [first], live: { abcdefghijk: value } }) });
+    assert.equal(h.list.children[0].children[0].children[2].hidden, true);
+    h.controller.destroy();
+  }
 });

@@ -1,11 +1,12 @@
 import { parseYouTubeVideo, type YouTubeVideo } from './youtube-player';
 import type { VideoCopy } from '../i18n/video';
+import type { PartyCopy } from '../i18n/party';
 import { videoSuggestions } from './video-suggestions';
 
 const RECENTS_KEY = 'obt-video-recents';
 
 type PickerOptions = {
-  copy: Pick<VideoCopy, 'load' | 'removeRecent' | 'recentTitleLoading' | 'recentTitleUnavailable'>;
+  copy: Pick<VideoCopy, 'load' | 'removeRecent' | 'recentTitleLoading' | 'recentTitleUnavailable'> & Pick<PartyCopy, 'live'>;
   onSelect(video: YouTubeVideo): void;
 };
 
@@ -36,6 +37,11 @@ export function createVideoPickerTabs(root: HTMLElement, { copy, onSelect }: Pic
   let renderPending = false;
   let opened = false;
   const titles = new Map<string, string>(videoSuggestions.map(video => [video.id, video.title]));
+  const liveStatus = new Map<string, boolean>(videoSuggestions.map(video => [video.id, video.isLive]));
+  const suggestionBadges = new Map([...root.querySelectorAll<HTMLButtonElement>('[data-video-suggestion]')].map(button => [
+    button.dataset.videoSuggestion!, { button, badge: button.querySelector<HTMLElement>('[data-video-live]')! },
+  ]));
+  const recentBadges = new Map<string, { button: HTMLButtonElement; badge: HTMLElement }[]>();
   const titleRequests = new Map<string, Promise<string | undefined>>();
   const titleController = new AbortController();
   let hydrateTitles: (() => void)[] = [];
@@ -48,6 +54,7 @@ export function createVideoPickerTabs(root: HTMLElement, { copy, onSelect }: Pic
         const id = parseYouTubeVideo(url)!.id;
         const title = validTitle(saved.titles?.[id]);
         if (title) titles.set(id, title);
+        if (typeof saved.live?.[id] === 'boolean') liveStatus.set(id, saved.live[id]);
       }
     }
   } catch { /* A missing or unreadable history leaves the picker usable. */ }
@@ -71,7 +78,14 @@ export function createVideoPickerTabs(root: HTMLElement, { copy, onSelect }: Pic
       const title = titles.get(id);
       return title ? [[id, title]] : [];
     }));
-    try { window.localStorage.setItem(RECENTS_KEY, JSON.stringify({ version: 1, urls, ...(Object.keys(cachedTitles).length ? { titles: cachedTitles } : {}) })); }
+    const cachedLive = Object.fromEntries(urls.flatMap(url => {
+      const id = parseYouTubeVideo(url)!.id;
+      return liveStatus.has(id) ? [[id, liveStatus.get(id)]] : [];
+    }));
+    try { window.localStorage.setItem(RECENTS_KEY, JSON.stringify({ version: 1, urls,
+      ...(Object.keys(cachedTitles).length ? { titles: cachedTitles } : {}),
+      ...(Object.keys(cachedLive).length ? { live: cachedLive } : {}),
+    })); }
     catch { /* History remains available for this visit when storage is blocked. */ }
   }
 
@@ -97,9 +111,16 @@ export function createVideoPickerTabs(root: HTMLElement, { copy, onSelect }: Pic
     return request;
   }
 
+  function paintLiveStatus(id: string, button: HTMLButtonElement, badge: HTMLElement) {
+    const isLive = liveStatus.get(id) === true;
+    badge.hidden = !isLive;
+    button.setAttribute('aria-label', `${copy.load}: ${button.title}${isLive ? ` (${copy.live})` : ''}`);
+  }
+
   function render() {
     renderPending = false;
     list.replaceChildren();
+    recentBadges.clear();
     hydrateTitles = [];
     tabs[0].hidden = urls.length === 0;
     if (!urls.length && activeTab === 0) selectTab(1);
@@ -122,7 +143,12 @@ export function createVideoPickerTabs(root: HTMLElement, { copy, onSelect }: Pic
       thumbnail.referrerPolicy = 'no-referrer';
       const title = document.createElement('span');
       title.className = 'video-recent-title';
-      load.append(thumbnail, title);
+      const badge = document.createElement('span');
+      badge.className = 'video-live-badge';
+      badge.textContent = copy.live;
+      badge.setAttribute('aria-hidden', 'true');
+      recentBadges.set(id, [...recentBadges.get(id) ?? [], { button: load, badge }]);
+      load.append(thumbnail, title, badge);
       load.addEventListener('click', () => {
         if (destroyed) return;
         const video = parseYouTubeVideo(url);
@@ -138,7 +164,7 @@ export function createVideoPickerTabs(root: HTMLElement, { copy, onSelect }: Pic
       const showTitle = (value?: string) => {
         title.textContent = value ?? copy.recentTitleLoading;
         load.title = value ?? url;
-        load.setAttribute('aria-label', `${copy.load}: ${value ?? url}`);
+        paintLiveStatus(id, load, badge);
         remove.setAttribute('aria-label', `${copy.removeRecent}: ${value ?? url}`);
       };
       showTitle(titles.get(id));
@@ -191,6 +217,17 @@ export function createVideoPickerTabs(root: HTMLElement, { copy, onSelect }: Pic
     if (!deferRender) refresh();
   }
 
+  function setLiveStatus(id: string, isLive: boolean) {
+    if (destroyed || !/^[A-Za-z0-9_-]{11}$/.test(id) || typeof isLive !== 'boolean' || liveStatus.get(id) === isLive) return;
+    liveStatus.set(id, isLive);
+    const suggestion = suggestionBadges.get(id);
+    if (suggestion) paintLiveStatus(id, suggestion.button, suggestion.badge);
+    recentBadges.get(id)?.forEach(({ button, badge }) => paintLiveStatus(id, button, badge));
+    if (urls.some(url => parseYouTubeVideo(url)!.id === id)) save();
+  }
+
+  suggestionBadges.forEach(({ button, badge }, id) => paintLiveStatus(id, button, badge));
+
   const handlers = tabs.map((tab, index) => {
     const onClick = () => selectTab(index);
     const onKeyDown = (event: KeyboardEvent) => {
@@ -214,6 +251,7 @@ export function createVideoPickerTabs(root: HTMLElement, { copy, onSelect }: Pic
 
   return {
     remember,
+    setLiveStatus,
     refresh,
     destroy() {
       if (destroyed) return;

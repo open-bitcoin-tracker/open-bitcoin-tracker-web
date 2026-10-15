@@ -118,6 +118,7 @@ function startVideoMode(root: HTMLElement) {
   let pickerCloseTimer: ReturnType<typeof setTimeout> | undefined;
   let restorePickerFocus = false;
   let pendingVideo: YouTubeVideo | undefined;
+  let recentOnPlayback: string | undefined;
 
   try {
     const saved = JSON.parse(window.localStorage.getItem(VIDEO_PLAYBACK_KEY) ?? 'null');
@@ -294,10 +295,15 @@ function startVideoMode(root: HTMLElement) {
     onState(value) {
       if (destroyed || pendingVideo) return;
       setPlaying(value);
+      if (value && recentOnPlayback) {
+        pickerTabs.remember(recentOnPlayback, { deferRender: true });
+        recentOnPlayback = undefined;
+      }
     },
     onError(code) {
       if (destroyed || pendingVideo) return;
       hasVideo = false;
+      recentOnPlayback = undefined;
       scrubbing = false;
       adjustingVolume = false;
       stopProgressRefresh();
@@ -320,6 +326,9 @@ function startVideoMode(root: HTMLElement) {
     },
     onCaptions({ enabled, available }) {
       if (!destroyed) updateCaptions(enabled, available);
+    },
+    onLiveStatus(id, isLive) {
+      if (!destroyed) pickerTabs.setLiveStatus(id, isLive);
     },
   });
   // Queue saved settings before a restored video can initialize or autoplay.
@@ -346,10 +355,11 @@ function startVideoMode(root: HTMLElement) {
   }
   mobileAudio.addEventListener('change', updateAudioMode);
 
-  function loadSelectedVideo(video: YouTubeVideo, { focus = true, persist = true, remember = false } = {}) {
+  function loadSelectedVideo(video: YouTubeVideo, { focus = true, persist = true, remember = false, rememberOnPlayback = false } = {}) {
     if (destroyed) return;
     // Store only the validated ID and requested start time, without share tracking.
     const url = `https://www.youtube.com/watch?v=${video.id}${video.startSeconds > 0 ? `&t=${video.startSeconds}s` : ''}`;
+    recentOnPlayback = rememberOnPlayback ? url : undefined;
     // Persist history on acceptance; redraw only when the picker opens again.
     if (remember) pickerTabs.remember(url, { deferRender: true });
     if (persist) {
@@ -397,7 +407,7 @@ function startVideoMode(root: HTMLElement) {
     button.addEventListener('click', () => {
       if (destroyed) return;
       const video = parseYouTubeVideo(`https://www.youtube.com/watch?v=${button.dataset.videoSuggestion}`);
-      if (video) loadSelectedVideo(video);
+      if (video) loadSelectedVideo(video, { rememberOnPlayback: true });
     });
   }
   input.disabled = loadButton.disabled = changeButton.disabled = false;

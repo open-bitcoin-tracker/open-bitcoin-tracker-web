@@ -132,18 +132,20 @@ function harness({ apiAvailable = false, constructorFails = false } = {}) {
   const errors: string[] = [];
   const errorCodes: (number | undefined)[] = [];
   const captions: { enabled: boolean; available: boolean }[] = [];
+  const liveStatuses: { id: string; isLive: boolean }[] = [];
   const container = new Element();
   const controller = module.createYouTubePlayer!(container as unknown as HTMLElement, {
     title: 'Video background',
     onState: playing => states.push(playing), onError: code => { errors.push('error'); errorCodes.push(code); },
     onReady: () => errors.push('ready'), onBlocked: () => errors.push('blocked'),
     onCaptions: state => captions.push({ ...state }),
+    onLiveStatus: (id, isLive) => liveStatuses.push({ id, isLive }),
   });
   const makeController = () => module.createYouTubePlayer!(new Element() as unknown as HTMLElement, {
     onState() {}, onError() {},
   });
   return {
-    controller, container, states, errors, errorCodes, captions, head, players, timers, window, makeController,
+    controller, container, states, errors, errorCodes, captions, liveStatuses, head, players, timers, window, makeController,
     readyApi() { window.YT = { Player }; window.onYouTubeIframeAPIReady?.(); },
     failScript() { head.children[0].dispatchEvent(new Event('error')); },
     expireTimers() { for (const [id, callback] of [...timers]) { timers.delete(id); callback(); } },
@@ -427,15 +429,24 @@ test('live metadata follows the selected video and safely handles unavailable pl
   const player = await readyPlayer(h);
   player.videoData = { video_id: VIDEO, isLive: true };
   assert.equal(h.controller.getProgress().isLive, true, 'a live stream can have a finite duration');
+  assert.deepEqual(h.liveStatuses, [{ id: VIDEO, isLive: true }]);
+  h.controller.getProgress();
+  assert.equal(h.liveStatuses.length, 1, 'repeated reads emit no duplicate metadata');
   h.controller.load(second);
   assert.equal(h.controller.getProgress().isLive, false, 'metadata from the previous video must not mark the replacement live');
+  assert.equal(h.liveStatuses.length, 1, 'stale metadata must not clear a known badge');
   player.videoData = { video_id: SECOND, isLive: true };
   assert.equal(h.controller.getProgress().isLive, true);
   player.videoData = { video_id: SECOND, isLive: false };
   assert.equal(h.controller.getProgress().isLive, false, 'a finished broadcast can return to normal timing');
+  assert.deepEqual(h.liveStatuses, [{ id: VIDEO, isLive: true }, { id: SECOND, isLive: true }, { id: SECOND, isLive: false }]);
+  player.videoData = { video_id: SECOND };
+  h.controller.getProgress();
+  assert.equal(h.liveStatuses.length, 3, 'missing status must not emit a false update');
   player.getVideoData = () => { throw new Error('Metadata unavailable'); };
   assert.equal(h.controller.getProgress().isLive, false);
   assert.equal(h.controller.getProgress().duration, 300);
+  assert.equal(h.liveStatuses.length, 3);
   Object.defineProperty(player, 'getVideoData', { value: undefined });
   assert.equal(h.controller.getProgress().isLive, false);
   assert.equal(h.controller.getProgress().duration, 300);

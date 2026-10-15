@@ -209,7 +209,7 @@ function harness(options: Options = {}) {
   let priceLayoutDestroys = 0;
   let revealCalls = 0;
   const idleStates: boolean[] = [];
-  let callbacks: { title: string; onState(playing: boolean): void; onError(code?: number): void; onBlocked(): void; onCaptions?(state: Captions): void };
+  let callbacks: { title: string; onState(playing: boolean): void; onError(code?: number): void; onBlocked(): void; onCaptions?(state: Captions): void; onLiveStatus?(id: string, isLive: boolean): void };
   class Rates {
     current(currency: Currency) {
       const rate = currency === 'USD' ? 1 : rates.get(currency);
@@ -274,6 +274,7 @@ function harness(options: Options = {}) {
       return {
         remember(url: string, rememberOptions?: { deferRender?: boolean }) { rememberedUrls.push(url); picker?.remember(url, rememberOptions); },
         refresh() { picker?.refresh(); },
+        setLiveStatus(id: string, isLive: boolean) { picker?.setLiveStatus(id, isLive); },
         destroy() { pickerTabDestroys++; picker?.destroy(); },
       };
     },
@@ -351,6 +352,7 @@ function harness(options: Options = {}) {
     emitError: (code?: number) => callbacks.onError(code),
     emitBlocked: () => callbacks.onBlocked(),
     emitCaptions: (state: Captions) => callbacks.onCaptions?.(state),
+    emitLiveStatus: (id: string, isLive: boolean) => callbacks.onLiveStatus?.(id, isLive),
     playerTitle: () => callbacks.title,
     playCalls: () => playCalls,
     pauseCalls: () => pauseCalls,
@@ -1475,6 +1477,55 @@ test('the initial drawer shows suggestions and loads every curated video through
     assert.equal(h.control('[data-video-suggestions]').hidden, false, 'Change video immediately shows suggestions again');
     h.close();
   }
+});
+
+test('played suggestions join Recent with titles and live status, and resuming playback preserves history', () => {
+  const suggestion = videoSuggestions.find(video => video.isLive)!;
+  const url = `https://www.youtube.com/watch?v=${suggestion.id}`;
+  const h = harness({ realPicker: true });
+  h.click(`[data-video-suggestion="${suggestion.id}"]`);
+  assert.equal(h.storage.has('obt-video-recents'), false, 'selection alone is not successful playback');
+  h.emitLiveStatus(suggestion.id, true);
+  h.emitPlaying(true);
+  assert.deepEqual(JSON.parse(h.storage.get('obt-video-recents')!), {
+    version: 1, urls: [url], titles: { [suggestion.id]: suggestion.title }, live: { [suggestion.id]: true },
+  });
+  assert.deepEqual(h.rememberedUrls, [url]);
+  h.emitPlaying(false);
+  h.emitPlaying(true);
+  assert.deepEqual(h.rememberedUrls, [url], 'pause and resume must not save or reorder a second time');
+  h.click('[data-change-video]');
+  assert.equal(h.control('[data-video-tab="recent"]').hidden, false);
+  const [load, remove] = h.control('[data-video-recents]').children[0].children;
+  assert.equal(load.children[1].textContent, suggestion.title);
+  assert.equal(load.children[2].hidden, false);
+  h.emitLiveStatus(suggestion.id, false);
+  assert.equal(load.children[2].hidden, true, 'the player updates a broadcast that has ended');
+  const saved = h.storage.get('obt-video-recents');
+  const restored = harness({ realPicker: true, storedRecents: saved });
+  assert.equal(restored.control('[data-video-recents]').children[0].children[0].children[2].hidden, true);
+  remove.dispatchEvent(new Event('click'));
+  h.emitPlaying(false);
+  h.emitPlaying(true);
+  assert.deepEqual(JSON.parse(h.storage.get('obt-video-recents')!).urls, [], 'resuming a deleted suggestion must not restore it');
+  h.close();
+  restored.close();
+});
+
+test('blocked, failed, and replaced suggestions do not enter Recent before successful playback', () => {
+  const h = harness({ realPicker: true });
+  h.click(`[data-video-suggestion="${videoSuggestions[0].id}"]`);
+  h.emitBlocked();
+  assert.equal(h.storage.has('obt-video-recents'), false);
+  h.click('[data-change-video]');
+  h.click(`[data-video-suggestion="${videoSuggestions[1].id}"]`);
+  h.emitError(150);
+  h.emitPlaying(true);
+  assert.equal(h.storage.has('obt-video-recents'), false, 'a failed suggestion must not survive as pending history');
+  h.submit(firstUrl);
+  h.emitPlaying(true);
+  assert.deepEqual(JSON.parse(h.storage.get('obt-video-recents')!).urls, [firstUrl]);
+  h.close();
 });
 
 test('URL submission, suggestions, and the initial close button keep the drawer rendered until its exit completes', () => {

@@ -129,9 +129,10 @@ const locale = htmlLang(Astro.currentLocale);
           <ul class="video-suggestions" data-video-suggestions aria-label={t.suggestionsLabel}>
             {videoSuggestions.map(suggestion => (
               <li>
-                <button type="button" class="video-suggestion" data-video-suggestion={suggestion.id} aria-label={`${t.load}: ${suggestion.title}`} title={suggestion.title} disabled>
+                <button type="button" class="video-suggestion" data-video-suggestion={suggestion.id} aria-label={`${t.load}: ${suggestion.title}${suggestion.isLive ? ` (${t.live})` : ''}`} title={suggestion.title} disabled>
                   <img src={`https://i.ytimg.com/vi/${suggestion.id}/hqdefault.jpg`} width="480" height="360" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" />
-                  <span>{suggestion.title}</span>
+                  <span class="video-suggestion-title">{suggestion.title}</span>
+                  <span class="video-live-badge" data-video-live hidden={!suggestion.isLive} aria-hidden="true">{t.live}</span>
                 </button>
               </li>
             ))}
@@ -313,7 +314,7 @@ const locale = htmlLang(Astro.currentLocale);
   .video-picker-content:focus-visible { outline: 2px solid #ffc477; outline-offset: 4px; }
   .video-recents { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; margin: 0; padding: 0; list-style: none; }
   .video-recents :global(.video-recent) { position: relative; min-width: 0; }
-  .video-recents :global(.video-recent-load) { display: block; width: 100%; height: 100%; padding: 0; overflow: hidden; border: 0; border-radius: 10px; background: rgb(20 20 20 / .95); color: #fff; text-align: left; }
+  .video-recents :global(.video-recent-load) { position: relative; display: block; width: 100%; height: 100%; padding: 0; overflow: hidden; border: 0; border-radius: 10px; background: rgb(20 20 20 / .95); color: #fff; text-align: left; }
   .video-recents :global(.video-recent-load img) { display: block; width: 100%; height: auto; aspect-ratio: 16 / 9; object-fit: cover; background: #242424; }
   .video-recents :global(.video-recent-title) { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; min-height: 2.8em; overflow: hidden; margin: .65rem .75rem; font-size: .8rem; line-height: 1.4; overflow-wrap: anywhere; }
   .video-recents :global(.video-recent-delete) { position: absolute; top: .35rem; right: .35rem; display: grid; place-items: center; width: 2.5rem; height: 2.5rem; padding: 0; border: 0; border-radius: 50%; background: #000b; backdrop-filter: blur(8px); color: #eee; }
@@ -321,10 +322,13 @@ const locale = htmlLang(Astro.currentLocale);
   .video-recents :global(.video-recent-delete:hover) { background: #191919; color: #fff; }
   .video-recents :global(button:focus-visible) { outline: 2px solid #ffc477; outline-offset: 2px; }
   .video-suggestions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; margin: 0; padding: 0; list-style: none; text-align: left; }
-  .video-suggestion { display: block; width: 100%; height: 100%; padding: 0; overflow: hidden; border: 0; border-radius: 10px; background: rgb(20 20 20 / .95); color: #fff; text-align: left; }
+  .video-suggestion { position: relative; display: block; width: 100%; height: 100%; padding: 0; overflow: hidden; border: 0; border-radius: 10px; background: rgb(20 20 20 / .95); color: #fff; text-align: left; }
   .video-suggestion:hover { background: #303030; }
   .video-suggestion img { display: block; width: 100%; height: auto; aspect-ratio: 16 / 9; object-fit: cover; }
-  .video-suggestion span { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; margin: .65rem .75rem; font-size: .8rem; line-height: 1.4; }
+  .video-suggestion-title { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; margin: .65rem .75rem; font-size: .8rem; line-height: 1.4; }
+  .video-page :global(.video-live-badge) { position: absolute; top: .5rem; left: .5rem; display: inline-flex; align-items: center; gap: .3rem; margin: 0; padding: .2rem .4rem; border-radius: .35rem; background: #b91c1c; color: #fff; font-size: .65rem; font-weight: 700; line-height: 1.4; box-shadow: 0 1px 4px #0005; }
+  .video-page :global(.video-live-badge)::before { content: ''; width: .4rem; height: .4rem; border-radius: 50%; background: currentColor; }
+  .video-page :global(.video-live-badge[hidden]) { display: none !important; }
   .video-playback { display: flex; flex-direction: column; align-items: center; gap: .75rem; }
   .video-playback:not([hidden]) { animation: video-controls-in .3s ease; }
   @keyframes video-controls-in {
