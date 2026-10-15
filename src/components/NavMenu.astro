@@ -11,7 +11,7 @@ const isHome = stripLocale(Astro.url.pathname) === '';
 
 <details class="nav-menu">
   <summary class="nav-menu-trigger" aria-label={t.nav.menuLabel} aria-haspopup="dialog" aria-controls="site-navigation-dialog">
-    <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" aria-hidden="true">
+    <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" aria-hidden="true">
       <path class="menu-bar menu-bar--top" d="M2 12h20" />
       <path class="menu-bar menu-bar--middle" d="M2 12h20" />
       <path class="menu-bar menu-bar--bottom" d="M2 12h20" />
@@ -20,7 +20,7 @@ const isHome = stripLocale(Astro.url.pathname) === '';
   <!-- Open inside details preserves navigation when JavaScript is unavailable. -->
   <dialog open id="site-navigation-dialog" class="nav-menu-dialog" aria-label={t.nav.mainAria}>
     <button class="nav-menu-close" type="button" aria-label={t.nav.closeMenu} autofocus>
-      <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" aria-hidden="true">
+      <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" aria-hidden="true">
         <path class="menu-bar menu-bar--top" d="M2 12h20" />
         <path class="menu-bar menu-bar--middle" d="M2 12h20" />
         <path class="menu-bar menu-bar--bottom" d="M2 12h20" />
@@ -273,7 +273,7 @@ const isHome = stripLocale(Astro.url.pathname) === '';
     .nav-menu-dialog[open] .nav-menu-panel { opacity: 0; transform: translateX(100%); }
   }
   @media (max-width: 700px) {
-    .nav-menu-trigger svg, .nav-menu-close svg { width: 24px; height: 24px; }
+    .nav-menu-trigger svg, .nav-menu-close svg { width: 20px; height: 20px; }
     .nav-menu-dialog { width: 100vw; }
     .nav-menu-panel { padding: var(--menu-panel-top) 1.5rem max(1.5rem, env(safe-area-inset-bottom)); }
     .nav-menu-settings { flex-direction: column; align-items: flex-start; gap: .25rem; }
