@@ -31,6 +31,8 @@ export function createVideoPriceLayout(root: HTMLElement) {
   let destroyed = false;
   let frame = false;
   let dismissed = false;
+  let hovered = false;
+  let touchEditing = false;
   let lastInput: 'keyboard' | 'pointer' | undefined;
   let operation: Operation | undefined;
   let suppressClick = false;
@@ -118,7 +120,7 @@ export function createVideoPriceLayout(root: HTMLElement) {
   }
   function keyboardFocus() {
     const active = document.activeElement;
-    return lastInput !== 'pointer' && !!active && (position.contains(active) || inStyle(active)) && active.matches(':focus-visible');
+    return lastInput !== 'pointer' && !!active && position.contains(active) && active.matches(':focus-visible');
   }
   const inStyle = (target: EventTarget | null) => !!(target as Element | null)?.closest?.('[data-price-style]');
   function setFrame(visible: boolean) {
@@ -128,8 +130,8 @@ export function createVideoPriceLayout(root: HTMLElement) {
     for (const handle of handles) handle.tabIndex = visible ? 0 : -1;
   }
   function revealFrame() {
-    if (destroyed || dismissed || document.hidden) return;
-    setFrame(true);
+    if (destroyed) return;
+    setFrame(!dismissed && !document.hidden && (hovered || touchEditing || !!operation || keyboardFocus()));
   }
   function resizeGeometry(corner: Corner, centered = false): Resize {
     const { viewport, box } = geometry();
@@ -163,6 +165,7 @@ export function createVideoPriceLayout(root: HTMLElement) {
     setSnapping(false, false);
     notify();
     if (persist) save();
+    revealFrame();
   }
   function move(event: PointerEvent) {
     if (destroyed || !operation || operation.pointerId !== event.pointerId) return;
@@ -191,6 +194,7 @@ export function createVideoPriceLayout(root: HTMLElement) {
     }
   }
   function stopForInactivePage() {
+    hovered = touchEditing = false;
     finish();
     setFrame(false);
   }
@@ -210,16 +214,33 @@ export function createVideoPriceLayout(root: HTMLElement) {
   listen(root, 'videouidismiss', () => {
     finish();
     dismissed = true;
+    hovered = touchEditing = false;
     setFrame(false);
   });
   listen(root, 'videouireveal', () => {
     dismissed = false;
     revealFrame();
   });
+  const hover = (event: PointerEvent) => {
+    if (event.pointerType === 'touch') return;
+    hovered = true;
+    touchEditing = false;
+    lastInput = 'pointer';
+    dismissed = false;
+    revealFrame();
+  };
+  listen(position, 'pointerenter', hover as EventListener);
+  listen(position, 'pointermove', hover as EventListener);
+  listen(position, 'pointerleave', () => {
+    hovered = false;
+    revealFrame();
+  });
   listen(position, 'pointerdown', ((event: PointerEvent) => {
     if (inStyle(event.target)) return;
     if (operation || !event.isPrimary || event.button !== 0) return;
     lastInput = 'pointer';
+    touchEditing = event.pointerType === 'touch';
+    hovered = !touchEditing;
     dismissed = false;
     event.preventDefault();
     const handle = (event.target as Element | null)?.closest<HTMLElement>('[data-price-resize]');
@@ -246,10 +267,23 @@ export function createVideoPriceLayout(root: HTMLElement) {
     if (suppressClick) event.preventDefault();
     suppressClick = false;
   });
-  listen(window, 'pointermove', move as EventListener);
+  listen(window, 'pointermove', ((event: PointerEvent) => {
+    if (event.pointerType !== 'touch') {
+      lastInput = 'pointer';
+      touchEditing = false;
+      if (!position.contains(event.target as Node | null)) hovered = false;
+      revealFrame();
+    }
+    move(event);
+  }) as EventListener);
   listen(window, 'pointerup', ((event: PointerEvent) => {
     if (operation?.pointerId !== event.pointerId) return;
     move(event);
+    if (event.pointerType !== 'touch') {
+      const box = position.getBoundingClientRect();
+      hovered = event.clientX >= box.left && event.clientX <= box.left + box.width
+        && event.clientY >= box.top && event.clientY <= box.top + box.height;
+    }
     finish();
   }) as EventListener);
   const cancel = (event: PointerEvent) => { if (operation?.pointerId === event.pointerId) finish(); };
@@ -277,6 +311,9 @@ export function createVideoPriceLayout(root: HTMLElement) {
     if (keyboardFocus()) revealFrame();
   }) as EventListener);
   listen(position, 'focusin', () => { if (keyboardFocus()) revealFrame(); });
+  listen(position, 'focusout', ((event: FocusEvent) => {
+    if (!position.contains(event.relatedTarget as Node | null) && !hovered && !touchEditing && !operation) setFrame(false);
+  }) as EventListener);
   listen(position, 'keydown', ((event: KeyboardEvent) => {
     if (inStyle(event.target)) return;
     if (event.key === 'Escape') return;

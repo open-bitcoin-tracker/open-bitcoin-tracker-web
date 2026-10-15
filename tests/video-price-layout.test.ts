@@ -144,7 +144,7 @@ function harness(options: Options = {}) {
       const event = Object.assign(targetEvent(type, target), { pointerId: 1, isPrimary: true, button: 0, clientX: 0, clientY: 0, ...coordinates });
       const surface = position.contains(target) ? position : target;
       surface.dispatchEvent(event);
-      if (surface === position && type === 'pointermove') window.dispatchEvent(event);
+      if (surface !== window && type === 'pointermove') window.dispatchEvent(event);
       return event.defaultPrevented;
     },
     key(target: Element, key: string, modifiers: Partial<KeyboardEvent> = {}) {
@@ -178,8 +178,8 @@ test('price layout stays centered and restores validated bounded preferences ind
   assert.equal(h.position.tabIndex, 0);
   assert.equal(h.reset.disabled, true);
   assert.equal(h.root.attributes.has('data-price-default'), true);
-  assert.equal(Object.values(h.handles).every(handle => handle.tabIndex === 0), true);
-  assert.equal(h.frame(), true);
+  assert.equal(Object.values(h.handles).every(handle => handle.tabIndex === -1), true);
+  assert.equal(h.frame(), false);
   h.layout.destroy();
   const restored = harness({ saved: JSON.stringify({ version: 1, x: -20, y: 130, size: 300 }) });
   assert.equal(restored.left(), 16);
@@ -200,64 +200,89 @@ test('price layout stays centered and restores validated bounded preferences ind
   blocked.layout.destroy();
 });
 
-test('the frame starts visible and follows page UI dismissal and reveal without its own timeout', () => {
+test('the frame follows price hover rather than general page UI visibility', () => {
   const h = harness();
+  assert.equal(h.frame(), false);
+  h.root.dispatchEvent(new Event('videouireveal'));
+  h.pointer('pointermove', h.outside);
+  assert.equal(h.frame(), false, 'revealing page controls away from the price keeps its frame hidden');
+  h.pointer('pointerenter', h.position, { pointerType: 'mouse' });
   assert.equal(h.frame(), true);
   assert.equal(Object.values(h.handles).every(handle => handle.tabIndex === 0), true);
   h.advance(10000);
-  assert.equal(h.frame(), true, 'the frame stays visible as long as the page UI does');
-  assert.equal(h.timers.size, 0);
-  h.root.dispatchEvent(new Event('videouidismiss'));
+  assert.equal(h.frame(), true, 'hover needs no independent timeout');
+  h.pointer('pointerleave', h.position);
   assert.equal(h.frame(), false);
   assert.equal(Object.values(h.handles).every(handle => handle.tabIndex === -1), true);
   h.root.dispatchEvent(new Event('videouireveal'));
-  assert.equal(h.frame(), true);
-  assert.equal(Object.values(h.handles).every(handle => handle.tabIndex === 0), true);
-  assert.equal(h.notifications(), 0, 'frame show/hide must not restart the page idle timer');
+  assert.equal(h.frame(), false);
+  assert.equal(h.notifications(), 0, 'hover must not restart the page idle timer');
   h.layout.destroy();
 });
 
-test('UI dismissal closes the price frame without reopening it on hover or stale focus', () => {
+test('UI dismissal hides the frame until the next price hover or keyboard interaction', () => {
   const h = harness();
   h.focus(h.position);
-  assert.equal(h.frame(), true);
   h.root.dispatchEvent(new Event('videouidismiss'));
   assert.equal(h.frame(), false);
-  h.pointer('pointermove', h.position);
   h.window.dispatchEvent(new Event('focus'));
   assert.equal(h.frame(), false);
-  h.position.click();
+  h.pointer('pointermove', h.position, { pointerType: 'mouse' });
   assert.equal(h.frame(), true);
+  h.pointer('pointerleave', h.position);
   h.root.setAttribute('data-price-style-open', '');
   h.root.dispatchEvent(new Event('pricestyletoggle'));
-  h.advance(10000);
-  assert.equal(h.frame(), true, 'style controls must remain available while their panel is open');
+  assert.equal(h.frame(), false, 'the style panel does not reveal position handles');
   h.layout.destroy();
 });
 
-test('keyboard focus and blur leave the frame following page UI visibility', () => {
+test('keyboard focus reveals handles and leaving the price hides them', () => {
   const h = harness();
   h.focus(h.position);
-  h.advance(10000);
   assert.equal(h.frame(), true);
-  assert.equal(h.timers.size, 0);
   h.focus(h.handles.ne);
-  h.advance(10000);
   assert.equal(h.frame(), true);
   h.focus(h.outside, false);
-  h.advance(1499);
+  assert.equal(h.frame(), false);
+  h.focus(h.position);
   assert.equal(h.frame(), true);
-  h.advance(1);
+  h.pointer('pointermove', h.outside, { pointerType: 'mouse' });
+  assert.equal(h.frame(), false, 'switching back to a mouse away from the price clears keyboard editing');
+  h.layout.destroy();
+});
+
+test('touch reveals editing controls on the price without requiring hover', () => {
+  const h = harness();
+  h.pointer('pointerenter', h.position, { pointerType: 'touch' });
+  assert.equal(h.frame(), false);
+  const box = h.position.getBoundingClientRect();
+  const point = { pointerType: 'touch', clientX: box.left + 20, clientY: box.top + 20 };
+  h.pointer('pointerdown', h.position, point);
+  h.pointer('pointerup', h.window, point);
+  h.pointer('pointerleave', h.position, { pointerType: 'touch' });
   assert.equal(h.frame(), true);
   h.root.dispatchEvent(new Event('videouidismiss'));
   assert.equal(h.frame(), false);
+  h.layout.destroy();
+});
+
+test('dragging keeps the frame until release even after the pointer leaves the price', () => {
+  const h = harness();
+  const box = h.position.getBoundingClientRect();
+  h.pointer('pointerdown', h.position, { clientX: box.left + 20, clientY: box.top + 20 });
+  h.pointer('pointerleave', h.position);
+  assert.equal(h.frame(), true);
+  h.pointer('pointerup', h.window, { clientX: -100, clientY: -100 });
+  assert.equal(h.frame(), false);
+  h.position.click();
+  assert.equal(h.frame(), false, 'the click after a captured drag must not reopen its frame');
   h.layout.destroy();
 });
 
 test('Escape hides focused handles without reopening and safely ends an active resize', () => {
   const h = harness();
   assert.equal(h.key(h.outside, 'Escape'), false, 'navigation outside the page root keeps its own Escape behavior');
-  assert.equal(h.frame(), true);
+  assert.equal(h.frame(), false);
   let dismissals = 0;
   h.root.addEventListener('videouihide', () => { dismissals++; });
   h.focus(h.position);
@@ -282,7 +307,7 @@ test('Escape hides focused handles without reopening and safely ends an active r
   assert.equal(h.position.captures.size, 0);
   assert.equal(h.frame(), false);
   assert.equal(h.timers.size, 0);
-  h.position.click();
+  h.pointer('pointerenter', h.position);
   assert.equal(h.frame(), true);
   h.layout.destroy();
 });
@@ -352,9 +377,7 @@ test('dragging preserves the grab offset, clamps edges, and keeps its frame with
   assert.equal(h.saved.length, 1);
   assert.equal(h.notifications(), 2);
   h.advance(1500);
-  assert.equal(h.frame(), true);
-  h.root.dispatchEvent(new Event('videouidismiss'));
-  assert.equal(h.frame(), false);
+  assert.equal(h.frame(), false, 'releasing outside the price hides the frame');
   h.layout.destroy();
 });
 
@@ -694,9 +717,9 @@ test('Reset price restores centered default size from saved placement and persis
   assert.deepEqual(h.saved, [{ version: 1, x: 50, y: 50, size: 100 }]);
   assert.equal(h.root.attributes.has('data-price-default'), true);
   assert.equal(h.reset.disabled, true);
-  assert.equal(h.frame(), true, 'reset reveals the frame even after Escape dismissal');
+  assert.equal(h.frame(), false, 'resetting from outside the price does not reveal the frame');
   h.advance(1500);
-  assert.equal(h.frame(), true);
+  assert.equal(h.frame(), false);
   h.root.dispatchEvent(new Event('videouidismiss'));
   assert.equal(h.frame(), false);
   h.layout.destroy();
@@ -811,7 +834,7 @@ test('cancel, lost capture, blur, and hiding release interaction without indepen
     close(h.left(), left);
     assert.equal(h.saved.length, 1, ending);
     if (ending === 'hidden' || ending === 'blur') { assert.equal(h.timers.size, 0); assert.equal(h.frame(), false); }
-    else { h.advance(1500); assert.equal(h.frame(), true); }
+    else { h.advance(1500); assert.equal(h.frame(), false, 'moving away from the price hides the frame'); }
     h.layout.destroy();
   }
 });
