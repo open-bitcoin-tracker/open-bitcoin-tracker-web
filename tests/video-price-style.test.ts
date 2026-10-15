@@ -187,7 +187,7 @@ test('digital font and optional stroke settings persist with valid bounds and no
   h.strokeColour.value = '#AABBCC'; h.strokeColour.dispatchEvent(new Event('input'));
   const restored = harness({ saved: h.saved() });
   assert.equal(restored.font.value, 'digital');
-  assert.match(restored.root.style.values.get('--video-price-font')!, /DSEG7/);
+  assert.match(restored.root.style.values.get('--video-price-font')!, /OBT Digital/);
   assert.equal(restored.stroke.checked, true);
   assert.equal(restored.strokeOptions.hidden, false);
   assert.equal(restored.strokeWidth.value, '3.5');

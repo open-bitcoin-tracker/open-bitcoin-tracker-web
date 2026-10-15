@@ -1,6 +1,5 @@
-Copyright (c) 2017, keshikan (http://www.keshikan.net),
-with Reserved Font Name "DSEG".
-
+Copyright (c) 6 April 2011, Lars Berggren (lars@punktlars.se),
+with Reserved Font Name Wallpoet.
 
 This Font Software is licensed under the SIL Open Font License, Version 1.1.
 This license is copied below, and is also available with a FAQ at:
@@ -93,3 +92,8 @@ INCLUDING ANY GENERAL, SPECIAL, INDIRECT, INCIDENTAL, OR CONSEQUENTIAL
 DAMAGES, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 FROM, OUT OF THE USE OR INABILITY TO USE THE FONT SOFTWARE OR FROM
 OTHER DEALINGS IN THE FONT SOFTWARE.
+
+OBT Digital is derived from Wallpoet (Google Fonts, Version 1.000).
+Modifications: renamed the family and mapped U+FFE5 FULLWIDTH YEN SIGN to
+the existing U+00A5 YEN SIGN glyph for Japanese currency formatting.
+Source: https://github.com/google/fonts/tree/main/ofl/wallpoet

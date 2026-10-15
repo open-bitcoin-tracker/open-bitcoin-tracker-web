@@ -5,7 +5,7 @@ const FONTS: Record<string, string> = {
   condensed: '"Barlow Condensed", var(--font-sans)',
   serif: 'Georgia, "Times New Roman", serif',
   mono: 'ui-monospace, "Cascadia Code", "Source Code Pro", Menlo, Consolas, monospace',
-  digital: '"DSEG7 Classic", var(--font-sans)',
+  digital: '"OBT Digital", var(--font-sans)',
 };
 const isColour = (value: unknown): value is string => typeof value === 'string' && /^#[\da-f]{6}$/i.test(value);
 const isFont = (value: unknown): value is string => typeof value === 'string' && Object.hasOwn(FONTS, value);
@@ -49,6 +49,7 @@ export function createVideoPriceStyle(root: HTMLElement, refreshLayout: () => vo
   function paint() {
     root.style.setProperty('--video-price-colour', state.colour);
     root.style.setProperty('--video-price-font', FONTS[state.font]);
+    root.style.setProperty('--video-price-weight', state.font === 'digital' ? '400' : '750');
     root.style.setProperty('--video-price-spacing', state.font === 'digital' ? '.04em' : '-.065em');
     root.style.setProperty('--video-price-padding', state.font === 'digital' ? '.1em' : '0');
     root.style.setProperty('--video-price-stroke-width', state.stroke ? `${state.strokeWidth}px` : '0px');
