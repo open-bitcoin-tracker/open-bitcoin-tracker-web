@@ -234,8 +234,8 @@ const locale = htmlLang(Astro.currentLocale);
   .video-price-editing { position: absolute; inset: 0; opacity: 0; visibility: hidden; pointer-events: none; transition: opacity var(--video-ui-fade) ease, visibility 0s linear var(--video-ui-fade); }
   .video-price-editing::after { content: ''; position: absolute; inset: 0; border: 1px solid rgb(255 255 255 / .8); border-radius: 3px; pointer-events: none; }
   .video-page[data-price-layout-open] .video-price-editing { opacity: 1; visibility: visible; transition-delay: 0s; }
-  .video-price-resize { position: absolute; width: 32px; height: 32px; display: grid; place-items: center; border: 0; padding: 0; background: transparent; transform: translate(-50%, -50%); touch-action: none; pointer-events: none; }
-  .video-price-resize::after { content: ''; width: 11px; height: 11px; border: 1px solid #fff; border-radius: 2px; background: #ff981e; box-shadow: 0 1px 5px #0008; }
+  .video-price-resize { position: absolute; z-index: 1; width: 32px; height: 32px; display: grid; place-items: center; border: 0; padding: 0; background: transparent; transform: translate(-50%, -50%); touch-action: none; pointer-events: none; }
+  .video-price-resize::after { content: ''; width: 16px; height: 16px; border-radius: 50%; background: #ff981e; box-shadow: 0 1px 5px #0008; }
   .video-page[data-price-layout-open] .video-price-resize { pointer-events: auto; }
   .video-price-resize-nw { top: 0; left: 0; cursor: nwse-resize; }
   .video-price-resize-ne { top: 0; left: 100%; cursor: nesw-resize; }
@@ -244,7 +244,7 @@ const locale = htmlLang(Astro.currentLocale);
   .video-price-position:focus-visible { outline: none; }
   .video-price-position:focus-visible .video-price-editing::after { border-color: #ffc477; }
   .video-price-resize:focus-visible { outline: none; }
-  .video-price-resize:focus-visible::after { background: #fff; border-color: #ff981e; }
+  .video-price-resize:focus-visible::after { outline: 2px solid #ffc477; outline-offset: 3px; }
   .video-page[data-price-dragging] .video-price-position { cursor: grabbing; }
   .video-page[data-price-resizing="nw"] .video-price-position, .video-page[data-price-resizing="se"] .video-price-position { cursor: nwse-resize; }
   .video-page[data-price-resizing="ne"] .video-price-position, .video-page[data-price-resizing="sw"] .video-price-position { cursor: nesw-resize; }
