@@ -119,7 +119,7 @@ const lastDate = new Intl.DateTimeFormat(lang, { year: 'numeric', month: 'short'
   .price-header > div { flex: 1; min-width: 0; container-type: inline-size; }
   .current-price { font-size: min(var(--live-price-font-size), calc(170cqw / var(--price-chars, 1))); font-weight: 700; line-height: 1.1; letter-spacing: -.06em; font-variant-numeric: tabular-nums; white-space: nowrap; }
   .price-change { min-height: 1.5em; margin-top: .375rem; color: var(--color-ink-muted); font-size: clamp(.9375rem, 1.5vw, 1.125rem); font-variant-numeric: tabular-nums; }
-  .price-history { position: relative; z-index: 0; display: flex; flex-direction: column; flex: 1; margin: .25rem 0 0; }
+  .price-history { position: relative; z-index: 0; display: flex; flex-direction: column; flex: 1; margin: .25rem 0 0; padding-bottom: calc(5.5rem + env(safe-area-inset-bottom, 0px)); }
   /* Fill all remaining viewport space; keep a usable plot on short screens. */
   .chart-plot { position: relative; flex: 1; min-height: 180px; }
   /* Let zooming curves rise behind the price; the tracker clips at the page edges. */
@@ -142,7 +142,7 @@ const lastDate = new Intl.DateTimeFormat(lang, { year: 'numeric', month: 'short'
   .loading-spinner { width: clamp(7rem, 16vw, 11rem); aspect-ratio: 1; border: 20px solid rgb(247 147 26 / .18); border-top-color: var(--color-accent); border-right-color: var(--color-accent); border-radius: 50%; animation: chart-loading-spin 1.1s linear infinite; will-change: transform; }
   .loading-description { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
   @keyframes chart-loading-spin { to { transform: rotate(360deg); } }
-  /* Overlay the plot without reserving space beneath the price line. */
+  /* Keep the controls in the space reserved beneath the plot. */
   .chart-controls { position: absolute; z-index: 1; left: 50%; bottom: calc(1rem + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); display: flex; align-items: stretch; gap: .5rem; width: calc(100% - 2 * var(--tracker-gutter, 1rem)); max-width: 48rem; }
   .chart-controls[hidden] { display: none; }
   .range-bar, .chart-settings-trigger { padding: .25rem; border-radius: 999px; background: rgb(var(--color-ink-rgb) / .055); }
