@@ -327,6 +327,85 @@ test('dragging preserves the grab offset, clamps edges, and keeps its frame with
   h.layout.destroy();
 });
 
+test('dragging snaps the price center to either screen axis and saves the centered placement', () => {
+  const h = harness();
+  const box = h.position.getBoundingClientRect();
+  const x = box.left + 30, y = box.top + 20;
+  const guides = () => [h.root.hasAttribute('data-price-snap-x'), h.root.hasAttribute('data-price-snap-y')];
+  h.pointer('pointerdown', h.position, { clientX: x, clientY: y });
+  assert.deepEqual(guides(), [false, false]);
+  h.pointer('pointermove', h.window, { clientX: x + 6, clientY: y + 70 });
+  close(h.left(), 400); close(h.top(), 320);
+  assert.deepEqual(guides(), [true, false]);
+  h.pointer('pointermove', h.window, { clientX: x + 70, clientY: y - 7 });
+  close(h.left(), 470); close(h.top(), 250);
+  assert.deepEqual(guides(), [false, true]);
+  h.pointer('pointermove', h.window, { clientX: x - 5, clientY: y + 6 });
+  close(h.left(), 400); close(h.top(), 250);
+  assert.deepEqual(guides(), [true, true]);
+  h.pointer('pointerup', h.window, { clientX: x - 5, clientY: y + 6 });
+  assert.deepEqual(guides(), [false, false]);
+  assert.deepEqual(h.saved.at(-1), { version: 1, x: 50, y: 50, size: 100 });
+  assert.equal(h.frame(), true);
+  h.layout.destroy();
+});
+
+test('each center snap resists small pointer jitter and releases when dragged farther away', () => {
+  for (const axis of ['x', 'y'] as const) {
+    const h = harness();
+    const box = h.position.getBoundingClientRect();
+    const x = box.left + 30, y = box.top + 20;
+    h.pointer('pointerdown', h.position, { clientX: x, clientY: y });
+    for (const [offset, snapped] of [[9, false], [7, true], [12, true], [17, false], [12, false], [-7, true]] as const) {
+      h.pointer('pointermove', h.window, {
+        clientX: x + (axis === 'x' ? offset : 80), clientY: y + (axis === 'y' ? offset : 80),
+      });
+      assert.equal(h.root.hasAttribute(`data-price-snap-${axis}`), snapped);
+      close(axis === 'x' ? h.left() : h.top(), (axis === 'x' ? 400 : 250) + (snapped ? 0 : offset));
+    }
+    h.layout.destroy();
+  }
+});
+
+test('snapping uses current price dimensions and viewport geometry after resizing', () => {
+  const h = harness({ width: 300, height: 120, saved: JSON.stringify({ version: 1, x: 20, y: 80, size: 150 }) });
+  h.resize({ width: 900, height: 700, left: 40, top: 25 });
+  const box = h.position.getBoundingClientRect();
+  h.pointer('pointerdown', h.position, { clientX: box.left + 40, clientY: box.top + 30, pointerType: 'touch' });
+  const target = { clientX: 40 + (900 - box.width) / 2 + 40 + 5, clientY: 25 + (700 - box.height) / 2 + 30 - 5, pointerType: 'touch' };
+  h.pointer('pointerup', h.window, target);
+  close(h.left() + box.width / 2, 450);
+  close(h.top() + box.height / 2, 350);
+  assert.deepEqual(h.saved.at(-1), { version: 1, x: 50, y: 50, size: 150 });
+  h.key(h.position, 'ArrowRight');
+  assert.ok(h.left() > (900 - box.width) / 2, 'keyboard movement remains precise near a centerline');
+  assert.equal(h.root.hasAttribute('data-price-snap-x'), false);
+  h.layout.destroy();
+});
+
+test('snap guides clear on cancellation, capture loss, dismissal, reset, hidden pages, and cleanup', () => {
+  for (const ending of ['cancel', 'capture', 'dismiss', 'reset', 'hidden', 'blur', 'escape', 'destroy']) {
+    const h = harness();
+    const box = h.position.getBoundingClientRect();
+    h.pointer('pointerdown', h.position, { clientX: box.left + 30, clientY: box.top + 20 });
+    h.pointer('pointermove', h.window, { clientX: box.left + 35, clientY: box.top + 25 });
+    assert.equal(h.root.hasAttribute('data-price-snap-x'), true);
+    assert.equal(h.root.hasAttribute('data-price-snap-y'), true);
+    if (ending === 'cancel') h.pointer('pointercancel', h.window);
+    if (ending === 'capture') h.position.releasePointerCapture(1);
+    if (ending === 'dismiss') h.root.dispatchEvent(new Event('videouidismiss'));
+    if (ending === 'reset') h.reset.click();
+    if (ending === 'hidden') h.visibility(true);
+    if (ending === 'blur') h.window.dispatchEvent(new Event('blur'));
+    if (ending === 'escape') h.key(h.position, 'Escape');
+    if (ending === 'destroy') h.layout.destroy();
+    assert.equal(h.root.hasAttribute('data-price-snap-x'), false, ending);
+    assert.equal(h.root.hasAttribute('data-price-snap-y'), false, ending);
+    assert.equal(h.root.hasAttribute('data-price-dragging'), false, ending);
+    h.layout.destroy();
+  }
+});
+
 test('the video dock follows the opposite half during price dragging and keyboard movement', () => {
   const h = harness();
   const atTop = () => h.root.attributes.has('data-video-dock-top');

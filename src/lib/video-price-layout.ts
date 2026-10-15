@@ -1,5 +1,7 @@
 const STORAGE_KEY = 'obt-video-price-layout';
 const PADDING = 16;
+const SNAP_DISTANCE = 8;
+const SNAP_RELEASE_DISTANCE = 16;
 const DEFAULTS = { version: 1, x: 50, y: 50, size: 100 };
 const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value));
 type Corner = 'nw' | 'ne' | 'sw' | 'se';
@@ -30,6 +32,8 @@ export function createVideoPriceLayout(root: HTMLElement) {
   let dismissed = false;
   let lastInput: 'keyboard' | 'pointer' | undefined;
   let operation: Operation | undefined;
+  let snappedX = false;
+  let snappedY = false;
 
   try {
     const saved = JSON.parse(window.localStorage.getItem(STORAGE_KEY) ?? 'null');
@@ -95,6 +99,21 @@ export function createVideoPriceLayout(root: HTMLElement) {
     writePosition(startX + travelX * state.x / 100, startY + travelY * state.y / 100);
     updateDefault();
   }
+  function setSnapping(x: boolean, y: boolean) {
+    snappedX = x;
+    snappedY = y;
+    root.toggleAttribute('data-price-snap-x', x);
+    root.toggleAttribute('data-price-snap-y', y);
+  }
+  function drag(left: number, top: number) {
+    const { startX, startY, travelX, travelY } = geometry();
+    const centerX = startX + travelX / 2, centerY = startY + travelY / 2;
+    // A wider release distance keeps the guides steady with small hand movements.
+    const x = travelX > 0 && Math.abs(left - centerX) <= (snappedX ? SNAP_RELEASE_DISTANCE : SNAP_DISTANCE);
+    const y = travelY > 0 && Math.abs(top - centerY) <= (snappedY ? SNAP_RELEASE_DISTANCE : SNAP_DISTANCE);
+    setSnapping(x, y);
+    place(x ? centerX : left, y ? centerY : top);
+  }
   function keyboardFocus() {
     const active = document.activeElement;
     return lastInput !== 'pointer' && !!active && (position.contains(active) || inStyle(active)) && active.matches(':focus-visible');
@@ -136,6 +155,7 @@ export function createVideoPriceLayout(root: HTMLElement) {
     try { if (capture.hasPointerCapture(pointerId)) capture.releasePointerCapture(pointerId); } catch { /* Capture may already be released. */ }
     root.removeAttribute('data-price-dragging');
     root.removeAttribute('data-price-resizing');
+    setSnapping(false, false);
     notify();
     if (persist) save();
   }
@@ -148,7 +168,7 @@ export function createVideoPriceLayout(root: HTMLElement) {
     operation.moved ||= changed;
     if (operation.kind === 'move') {
       const { viewport } = geometry();
-      place(event.clientX - viewport.left - operation.grabX, event.clientY - viewport.top - operation.grabY);
+      drag(event.clientX - viewport.left - operation.grabX, event.clientY - viewport.top - operation.grabY);
     } else {
       const width = operation.width * (operation.corner.endsWith('w') ? -1 : 1);
       const height = operation.height * (operation.corner.startsWith('n') ? -1 : 1);

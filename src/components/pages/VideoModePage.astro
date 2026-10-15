@@ -47,6 +47,7 @@ const locale = htmlLang(Astro.currentLocale);
     </header>
     <main id="main-content" class="video-main">
       <section class="video-price-stage" data-price-stage aria-label={t.priceLabel}>
+        <div class="video-alignment-grid" aria-hidden="true"></div>
         <div class="video-price-position" data-price-position role="group" aria-label={t.movePrice} aria-describedby="video-price-keyboard-hint" tabindex="0">
           <p class="video-price" data-price aria-label={t.unavailable}>—</p>
           <span class="video-sr-only" data-price-status role="status">{t.loadingPrice}</span>
@@ -225,6 +226,12 @@ const locale = htmlLang(Astro.currentLocale);
   .video-currency-option:hover, .video-currency-option:focus-visible { color: #fff; background: rgb(255 255 255 / .14); }
   .video-currency-option:focus-visible { outline: 1px solid rgb(255 255 255 / .5); outline-offset: -1px; }
   .video-price-stage { position: absolute; inset: 0; width: 100%; text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 5.5rem 1.5rem 6.5rem; pointer-events: none; }
+  .video-alignment-grid { position: absolute; inset: 0; opacity: 0; pointer-events: none; }
+  .video-alignment-grid::before, .video-alignment-grid::after { content: ''; position: absolute; background: rgb(255 255 255 / .25); box-shadow: 0 0 2px #0008; }
+  .video-alignment-grid::before { top: 0; bottom: 0; left: 50%; width: 1px; }
+  .video-alignment-grid::after { left: 0; right: 0; top: 50%; height: 1px; }
+  .video-page[data-price-snap-x] .video-alignment-grid, .video-page[data-price-snap-y] .video-alignment-grid { opacity: 1; }
+  .video-page[data-price-snap-x] .video-alignment-grid::before, .video-page[data-price-snap-y] .video-alignment-grid::after { background: #ff981e; }
   .video-price-position { display: flex; flex-direction: column; align-items: center; width: max-content; }
   .video-page[data-price-layout-ready] .video-price-position { position: absolute; pointer-events: auto; cursor: grab; touch-action: none; user-select: none; }
   .video-price-position::after { content: ''; position: absolute; inset: 0; border: 1px solid rgb(255 255 255 / .8); border-radius: 3px; pointer-events: none; opacity: 0; transition: opacity .25s ease; }

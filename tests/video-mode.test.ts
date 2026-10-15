@@ -646,23 +646,38 @@ test('owner embedding restrictions explain the failure and successful selection 
   h.close();
 });
 
-test('hiding a tab pauses video, rejects delayed playback, and returning waits for an explicit play action', () => {
+test('switching tabs keeps video playing, including delayed playback, without restarting on return', () => {
   const h = harness();
   h.submit(firstUrl);
   h.click('[data-play-pause]');
   h.visibility(true);
   assert.equal(h.intervals.size, 0);
-  assert.equal(h.pauseCalls(), 1);
-  assert.equal(h.control('[data-play-pause]').attributes.get('aria-label'), copy.play);
+  assert.equal(h.pauseCalls(), 0);
+  assert.equal(h.control('[data-play-pause]').attributes.get('aria-label'), copy.pause);
   h.emitPlaying(true);
-  assert.equal(h.pauseCalls(), 2);
-  assert.equal(h.control('[data-play-pause]').attributes.get('aria-label'), copy.play);
+  assert.equal(h.pauseCalls(), 0);
+  assert.equal(h.control('[data-play-pause]').attributes.get('aria-label'), copy.pause);
   h.visibility(false);
   assert.equal(h.intervalCount(60_000), 1);
   assert.equal(h.intervalCount(500), 1);
-  assert.equal(h.playCalls(), 1, 'returning to the tab must not resume playback');
+  assert.equal(h.playCalls(), 1, 'returning to the tab must not restart playback');
+  assert.equal(h.loaded.length, 1);
   h.click('[data-play-pause]');
-  assert.equal(h.playCalls(), 2);
+  assert.equal(h.pauseCalls(), 1, 'explicit pause still works after switching tabs');
+  assert.equal(h.control('[data-play-pause]').attributes.get('aria-label'), copy.play);
+  h.close();
+});
+
+test('switching tabs leaves an explicitly paused video paused', () => {
+  const h = harness();
+  h.submit(firstUrl);
+  h.click('[data-play-pause]');
+  h.click('[data-play-pause]');
+  h.visibility(true);
+  h.visibility(false);
+  assert.equal(h.playCalls(), 1);
+  assert.equal(h.pauseCalls(), 1);
+  assert.equal(h.control('[data-play-pause]').attributes.get('aria-label'), copy.play);
   h.close();
 });
 
@@ -1249,21 +1264,22 @@ test('blocked local storage does not prevent entering a video, playing, or chang
   h.close();
 });
 
-test('a selection restored in a hidden tab stays paused until an explicit visible play action', () => {
+test('a selection restored in a hidden tab can play and keeps its state on return', () => {
   const h = harness({ hidden: true, storedSelection: JSON.stringify({ version: 1, url: canonicalSecondUrl }) });
   assert.deepEqual(h.loaded, [{ id: 'ZYXWVUTSRQP', startSeconds: 30 }]);
-  assert.equal(h.pauseCalls(), 1);
+  assert.equal(h.pauseCalls(), 0);
   assert.equal(h.intervals.size, 0);
   assert.equal(h.control('[data-change-video]').focusCount, 0);
   h.emitPlaying(true);
-  assert.equal(h.pauseCalls(), 2);
-  assert.equal(h.control('[data-play-pause]').attributes.get('aria-label'), copy.play);
+  assert.equal(h.pauseCalls(), 0);
+  assert.equal(h.control('[data-play-pause]').attributes.get('aria-label'), copy.pause);
   h.visibility(false);
   assert.equal(h.playCalls(), 0);
   assert.equal(h.intervalCount(500), 1);
   assert.equal(h.control('[data-video-url]').focusCount, 0);
   h.click('[data-play-pause]');
-  assert.equal(h.playCalls(), 1);
+  assert.equal(h.playCalls(), 0);
+  assert.equal(h.pauseCalls(), 1);
   h.close();
 });
 

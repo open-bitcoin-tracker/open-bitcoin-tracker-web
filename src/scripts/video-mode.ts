@@ -248,8 +248,6 @@ function startVideoMode(root: HTMLElement) {
     onState(value) {
       if (destroyed) return;
       setPlaying(value);
-      // A delayed ready event must not start playback in a hidden tab.
-      if (value && document.hidden) player.pause();
     },
     onError(code) {
       if (destroyed) return;
@@ -477,7 +475,6 @@ function startVideoMode(root: HTMLElement) {
     rateRefresh = undefined;
     stopProgressRefresh();
     if (document.hidden) { scrubbing = false; adjustingVolume = false; }
-    if (document.hidden) player.pause();
     if (!destroyed && !document.hidden) {
       void refreshRates();
       rateRefresh = setInterval(() => { void refreshRates(); }, 60_000);
