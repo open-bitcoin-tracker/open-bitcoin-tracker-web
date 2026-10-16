@@ -71,7 +71,7 @@ const repo = 'https://github.com/open-bitcoin-tracker/open-bitcoin-tracker-web';
           <span class="app-action">{home.openApp}<span aria-hidden="true">↗</span></span>
         </div>
         <div class="app-preview" aria-hidden="true">
-          <div class="phone-frame"><AppScreenshot name="paper" darkName="oled" alt="" /></div>
+          <div class="phone-frame"><AppScreenshot name="paper" darkName="deepsea" alt="" /></div>
         </div>
       </a>
     </section>
@@ -87,7 +87,8 @@ const repo = 'https://github.com/open-bitcoin-tracker/open-bitcoin-tracker-web';
 </Layout>
 
 <style>
-  :global(html:has(.landing-main)) {
+  /* Dark mode inherits the shared Android app palette and menu controls. */
+  :global(html:not(.dark):has(.landing-main)) {
     --color-paper: #f4f2eb;
     --color-surface: #fffef9;
     --color-ink: #252722;
@@ -98,17 +99,6 @@ const repo = 'https://github.com/open-bitcoin-tracker/open-bitcoin-tracker-web';
     --menu-control-bg: #e8e8df;
     --menu-control-ink: #252722;
     background: var(--color-paper);
-  }
-  :global(html.dark:has(.landing-main)) {
-    --color-paper: #171919;
-    --color-surface: #202323;
-    --color-ink: #efeee7;
-    --color-ink-muted: #a8afa6;
-    --color-divider: #3b403b;
-    --color-ink-rgb: 239 238 231;
-    --color-paper-rgb: 23 25 25;
-    --menu-control-bg: #282d2a;
-    --menu-control-ink: #efeee7;
   }
   .landing-main { max-width: 1280px; margin-inline: auto; padding: 0 clamp(1.25rem, 4.5vw, 4rem); }
   .masthead { min-height: 105px; display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding-right: 4.75rem; }
@@ -148,7 +138,7 @@ const repo = 'https://github.com/open-bitcoin-tracker/open-bitcoin-tracker-web';
   .app-action { display: inline-flex; align-items: center; gap: 1.2rem; margin-top: 1.7rem; padding: .9rem 1.15rem; background: var(--color-accent); color: #252722; font-size: .75rem; font-weight: 650; }
   .app-action > span { font-size: 1.1rem; }
   .app-preview { position: relative; min-height: 400px; display: flex; justify-content: center; align-items: start; overflow: hidden; background: #e4e5da; padding-top: 2.25rem; }
-  :global(html.dark) .app-preview { background: #2b332d; }
+  :global(html.dark) .app-preview { background: var(--color-accent-soft); }
   .phone-frame { position: absolute; top: 2.25rem; width: 235px; border: 5px solid #252722; border-radius: 30px; overflow: hidden; box-shadow: 0 20px 35px #0002; transform: rotate(5deg); }
   .phone-frame :global(img) { display: block; width: 100%; height: auto; }
   .landing-footer { display: flex; justify-content: flex-end; align-items: center; gap: 2rem; padding-block: 2.5rem; }
