@@ -10,7 +10,7 @@ const t = tracker[lang];
 const pageTitle = `${t.priceChart} — Open Bitcoin Tracker`;
 ---
 
-<Layout title={pageTitle} description={t.description}>
+<Layout title={pageTitle} description={t.description} viewportFit="cover">
   <div class="tracker-page">
     <Nav />
     <main id="main-content" class="tracker-main">
@@ -20,7 +20,7 @@ const pageTitle = `${t.priceChart} — Open Bitcoin Tracker`;
 </Layout>
 
 <style>
-  .tracker-page { display: flex; flex-direction: column; height: 100dvh; }
+  .tracker-page { --tracker-gutter: max(clamp(1rem, 3vw, 4rem), env(safe-area-inset-left, 0px), env(safe-area-inset-right, 0px)); display: flex; flex-direction: column; height: 100dvh; }
   .tracker-main { display: flex; flex-direction: column; flex: 1; min-height: 0; }
   :global(body:has(.tracker-page) .nav-menu-trigger) { transition: opacity .25s ease, visibility .25s; }
   :global(body:has(.tracker-page [data-chart-ui-idle]) .nav-menu-trigger) { opacity: 0; visibility: hidden; pointer-events: none; }
