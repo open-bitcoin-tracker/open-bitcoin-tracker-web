@@ -1,7 +1,7 @@
 import { parseYouTubeVideo, type YouTubeVideo } from './youtube-player';
 import type { VideoCopy } from '../i18n/video';
 import type { PartyCopy } from '../i18n/party';
-import { videoSuggestions } from './video-suggestions';
+import { videoSections, videoSuggestions } from './video-suggestions';
 
 const RECENTS_KEY = 'obt-video-recents';
 
@@ -22,14 +22,9 @@ function validTitle(value: unknown): string | undefined {
 
 /** Local URL history and keyboard-accessible tabs inside the video picker. */
 export function createVideoPickerTabs(root: HTMLElement, { copy, onSelect }: PickerOptions) {
-  const tabs = [
-    root.querySelector<HTMLButtonElement>('[data-video-tab="recent"]')!,
-    root.querySelector<HTMLButtonElement>('[data-video-tab="suggestions"]')!,
-  ];
-  const panels = [
-    root.querySelector<HTMLElement>('[data-video-panel="recent"]')!,
-    root.querySelector<HTMLElement>('[data-video-panel="suggestions"]')!,
-  ];
+  const tabIds = ['recent', ...videoSections.map(section => section.id)];
+  const tabs = tabIds.map(id => root.querySelector<HTMLButtonElement>(`[data-video-tab="${id}"]`)!);
+  const panels = tabIds.map(id => root.querySelector<HTMLElement>(`[data-video-panel="${id}"]`)!);
   const list = root.querySelector<HTMLUListElement>('[data-video-recents]')!;
   let destroyed = false;
   let activeTab = 1;

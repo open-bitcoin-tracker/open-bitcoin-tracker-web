@@ -5,7 +5,7 @@ import { resolveLang, htmlLang } from '../../i18n/utils';
 import { party } from '../../i18n/party';
 import { video } from '../../i18n/video';
 import { currencies } from '../../lib/bitcoin-currency';
-import { videoSuggestions } from '../../lib/video-suggestions';
+import { videoSections } from '../../lib/video-suggestions';
 
 const lang = resolveLang(Astro.currentLocale);
 const t = { ...party[lang], ...video[lang] };
@@ -121,24 +121,28 @@ const locale = htmlLang(Astro.currentLocale);
           <p id="video-error" class="video-message video-error" data-video-error role="alert" hidden></p>
           <div class="video-picker-tabs" role="tablist" aria-label={t.pickVideo}>
             <button id="video-recent-tab" class="video-picker-tab" type="button" role="tab" data-video-tab="recent" aria-controls="video-recent-panel" aria-selected="false" tabindex="-1" hidden disabled>{t.recentTab}</button>
-            <button id="video-suggestions-tab" class="video-picker-tab" type="button" role="tab" data-video-tab="suggestions" aria-controls="video-suggestions-panel" aria-selected="true" disabled>{t.suggestionsTab}</button>
+            {videoSections.map((section, index) => (
+              <button id={`video-${section.id}-tab`} class="video-picker-tab" type="button" role="tab" data-video-tab={section.id} aria-controls={`video-${section.id}-panel`} aria-selected={index === 0 ? 'true' : 'false'} tabindex={index === 0 ? 0 : -1} disabled>{t[section.labelKey]}</button>
+            ))}
           </div>
           <div id="video-recent-panel" class="video-picker-content" role="tabpanel" data-video-panel="recent" aria-labelledby="video-recent-tab" tabindex="0" hidden>
             <ul class="video-recents" data-video-recents></ul>
           </div>
-          <div id="video-suggestions-panel" class="video-picker-content" role="tabpanel" data-video-panel="suggestions" aria-labelledby="video-suggestions-tab" tabindex="0">
-          <ul class="video-suggestions" data-video-suggestions aria-label={t.suggestionsLabel}>
-            {videoSuggestions.map(suggestion => (
-              <li>
-                <button type="button" class="video-suggestion" data-video-suggestion={suggestion.id} aria-label={`${t.load}: ${suggestion.title}${suggestion.isLive ? ` (${t.live})` : ''}`} title={suggestion.title} disabled>
-                  <img src={`https://i.ytimg.com/vi/${suggestion.id}/hqdefault.jpg`} width="480" height="360" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" />
-                  <span class="video-suggestion-title">{suggestion.title}</span>
-                  <span class="video-live-badge" data-video-live hidden={!suggestion.isLive} aria-hidden="true">{t.live}</span>
-                </button>
-              </li>
-            ))}
-          </ul>
-          </div>
+          {videoSections.map((section, index) => (
+            <div id={`video-${section.id}-panel`} class="video-picker-content" role="tabpanel" data-video-panel={section.id} aria-labelledby={`video-${section.id}-tab`} tabindex="0" hidden={index !== 0}>
+              <ul class="video-suggestions" data-video-suggestions aria-label={t[section.labelKey]}>
+                {section.videos.map(suggestion => (
+                  <li>
+                    <button type="button" class="video-suggestion" data-video-suggestion={suggestion.id} aria-label={`${t.load}: ${suggestion.title}${suggestion.isLive ? ` (${t.live})` : ''}`} title={suggestion.title} disabled>
+                      <img src={`https://i.ytimg.com/vi/${suggestion.id}/hqdefault.jpg`} width="480" height="360" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" />
+                      <span class="video-suggestion-title">{suggestion.title}</span>
+                      <span class="video-live-badge" data-video-live hidden={!suggestion.isLive} aria-hidden="true">{t.live}</span>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))}
         </form>
       </dialog>
       <section class="video-dock" aria-label={t.controlsLabel}>
@@ -309,8 +313,8 @@ const locale = htmlLang(Astro.currentLocale);
   .video-url-field:hover, .video-url-field:has([data-video-url]:focus-visible) { background: rgb(50 50 50 / .9); }
   .video-submit { flex-shrink: 0; display: grid; place-items: center; width: 2.5rem; height: 2.5rem; border: 0; border-radius: 9px; background: #ff981e; color: #211000; }
   .video-submit:hover { background: #ffb047; }
-  .video-picker-tabs { display: flex; gap: .35rem; padding: .3rem; border-radius: 999px; background: #ffffff08; }
-  .video-picker-tab { flex: 1; min-height: 2.75rem; padding: .65rem 1rem; border: 0; border-radius: 999px; background: transparent; color: #aaa; font-size: .9rem; font-weight: 600; }
+  .video-picker-tabs { display: flex; gap: .35rem; padding: .3rem; overflow-x: auto; border-radius: 1.5rem; background: #ffffff08; }
+  .video-picker-tab { flex: 1 0 auto; white-space: nowrap; min-height: 2.75rem; padding: .65rem 1rem; border: 0; border-radius: 999px; background: transparent; color: #aaa; font-size: .9rem; font-weight: 600; }
   .video-picker-tab:hover { color: #fff; background: #ffffff08; }
   .video-picker-tab[aria-selected="true"] { color: #fff; background: #ffffff14; box-shadow: 0 1px 4px #0002; }
   .video-picker-content { margin-top: 1.25rem; }

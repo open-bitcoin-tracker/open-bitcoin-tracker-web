@@ -8,7 +8,7 @@ import { parseYouTubeVideo } from '../src/lib/youtube-player.ts';
 import { video } from '../src/i18n/video.ts';
 import { party } from '../src/i18n/party.ts';
 import type { createVideoPickerTabs } from '../src/lib/video-picker-tabs.ts';
-import { videoSuggestions } from '../src/lib/video-suggestions.ts';
+import { videoSections, videoSuggestions } from '../src/lib/video-suggestions.ts';
 
 const script = ts.transpileModule(readFileSync(new URL('../src/lib/video-picker-tabs.ts', import.meta.url), 'utf8'), {
   compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 },
@@ -61,7 +61,7 @@ function harness({ saved, blocked = false, deferMetadata = false }: { saved?: st
   const requests: { url: string; signal: AbortSignal; resolve(value: { ok: boolean; json(): Promise<unknown> }): void }[] = [];
   const exports: { createVideoPickerTabs?: typeof createVideoPickerTabs } = {};
   runInNewContext(script, {
-    exports, require: () => ({ parseYouTubeVideo, videoSuggestions }), AbortController, AbortSignal, URLSearchParams,
+    exports, require: () => ({ parseYouTubeVideo, videoSections, videoSuggestions }), AbortController, AbortSignal, URLSearchParams,
     fetch: (url: string, options: { signal: AbortSignal }) => new Promise(resolve => {
       requests.push({ url, signal: options.signal, resolve });
       if (!deferMetadata) resolve({ ok: false });
@@ -76,10 +76,10 @@ function harness({ saved, blocked = false, deferMetadata = false }: { saved?: st
     copy: { ...video.en, live: party.en.live }, onSelect: value => selected.push({ ...value }),
   });
   const recent = root.querySelector('[data-video-tab="recent"]');
-  const suggestions = root.querySelector('[data-video-tab="suggestions"]');
+  const partyTab = root.querySelector('[data-video-tab="party"]');
   const list = root.querySelector('[data-video-recents]');
   return {
-    controller, root, recent, suggestions, list, writes, selected, storage, requests,
+    controller, root, recent, partyTab, list, writes, selected, storage, requests,
     urls: () => list.children.map(row => row.children[0].dataset.recentVideo),
     async title(index: number, value: unknown, ok = true) {
       requests[index].resolve({ ok, json: async () => ({ title: value }) });
@@ -95,35 +95,59 @@ function harness({ saved, blocked = false, deferMetadata = false }: { saved?: st
   };
 }
 
-test('empty history opens Suggestions and tabs support click, arrows, Home, and End without changing playback', () => {
+test('all sections support click and keyboard navigation, skipping empty Recent without changing playback', () => {
   const h = harness();
-  assert.equal(h.suggestions.attributes.get('aria-selected'), 'true');
-  assert.equal(h.suggestions.tabIndex, 0);
-  assert.equal(h.recent.disabled, false);
-  assert.equal(h.suggestions.disabled, false);
+  const chill = h.root.querySelector('[data-video-tab="chill"]');
+  const silent = h.root.querySelector('[data-video-tab="without-sound"]');
+  const tabs = [h.recent, h.partyTab, chill, silent];
+  function selected(tab: Element, panel: string) {
+    for (const candidate of tabs) {
+      assert.equal(candidate.attributes.get('aria-selected'), String(candidate === tab));
+      assert.equal(candidate.tabIndex, candidate === tab ? 0 : -1);
+    }
+    for (const id of ['recent', 'party', 'chill', 'without-sound']) {
+      assert.equal(h.root.querySelector(`[data-video-panel="${id}"]`).hidden, id !== panel);
+    }
+  }
+  selected(h.partyTab, 'party');
+  assert.ok(tabs.every(tab => !tab.disabled));
   assert.equal(h.recent.hidden, true);
-  assert.equal(h.root.querySelector('[data-video-panel="recent"]').hidden, true);
-  assert.equal(h.key(h.suggestions, 'ArrowRight'), true);
-  assert.equal(h.suggestions.attributes.get('aria-selected'), 'true', 'arrows must skip the hidden Recent tab');
+  chill.click();
+  selected(chill, 'chill');
+  silent.click();
+  selected(silent, 'without-sound');
+  assert.equal(h.key(silent, 'ArrowRight'), true);
+  selected(h.partyTab, 'party');
+  assert.equal(h.key(h.partyTab, 'ArrowLeft'), true);
+  selected(silent, 'without-sound');
+  assert.equal(h.key(silent, 'Home'), true);
+  selected(h.partyTab, 'party');
+  assert.equal(h.key(h.partyTab, 'End'), true);
+  selected(silent, 'without-sound');
   h.controller.remember(first);
   assert.equal(h.recent.hidden, false);
-  h.recent.click();
-  assert.equal(h.root.querySelector('[data-video-panel="recent"]').hidden, false);
-  assert.equal(h.root.querySelector('[data-video-panel="suggestions"]').hidden, true);
+  selected(h.recent, 'recent');
   assert.equal(h.key(h.recent, 'ArrowRight'), true);
-  assert.equal(h.suggestions.focusCount, 2);
-  assert.equal(h.key(h.suggestions, 'ArrowRight'), true);
-  assert.equal(h.recent.focusCount, 1);
+  selected(h.partyTab, 'party');
+  assert.equal(h.key(h.partyTab, 'ArrowRight'), true);
+  selected(chill, 'chill');
+  assert.equal(h.key(chill, 'ArrowRight'), true);
+  selected(silent, 'without-sound');
+  assert.equal(h.key(silent, 'ArrowRight'), true);
+  selected(h.recent, 'recent');
   assert.equal(h.key(h.recent, 'ArrowLeft'), true);
-  assert.equal(h.suggestions.attributes.get('aria-selected'), 'true');
-  assert.equal(h.key(h.suggestions, 'Home'), true);
-  assert.equal(h.recent.tabIndex, 0);
+  selected(silent, 'without-sound');
+  assert.equal(h.key(silent, 'Home'), true);
+  selected(h.recent, 'recent');
   assert.equal(h.key(h.recent, 'End'), true);
-  assert.equal(h.suggestions.tabIndex, 0);
-  assert.equal(h.key(h.suggestions, 'Escape'), false, 'Escape belongs to the drawer');
+  selected(silent, 'without-sound');
+  assert.equal(h.key(silent, 'Escape'), false, 'Escape belongs to the drawer');
   assert.deepEqual(h.selected, []);
   assert.equal(h.writes.length, 1, 'tab changes must not add storage writes');
   h.controller.destroy();
+  h.partyTab.click();
+  assert.equal(h.key(silent, 'Home'), false, 'destroy removes handlers from every category');
+  selected(silent, 'without-sound');
 });
 
 test('submitted URLs are validated, canonicalized, deduplicated, ordered by use, and restored across visits', () => {
@@ -161,9 +185,9 @@ test('recent selections use validated playback and each delete only removes its 
   assert.equal(h.selected.length, 1, 'deleting a playing URL must not alter playback');
   h.remove(0);
   assert.deepEqual(h.urls(), []);
-  assert.equal(h.suggestions.focusCount, 1);
+  assert.equal(h.partyTab.focusCount, 1);
   assert.equal(h.recent.hidden, true);
-  assert.equal(h.suggestions.attributes.get('aria-selected'), 'true');
+  assert.equal(h.partyTab.attributes.get('aria-selected'), 'true');
   assert.equal(h.root.querySelector('[data-video-panel="recent"]').hidden, true);
   const saved = h.storage.get(storageKey)!;
   assert.deepEqual(JSON.parse(saved), { version: 1, urls: [] });
@@ -179,14 +203,14 @@ test('deferred rendering still saves immediately and refreshes Recent before the
   h.controller.remember(first, { deferRender: true });
   assert.deepEqual(JSON.parse(h.storage.get(storageKey)!), { version: 1, urls: [first] });
   assert.equal(h.recent.hidden, true, 'the outgoing panel must not change its visible tabs');
-  assert.equal(h.suggestions.attributes.get('aria-selected'), 'true');
+  assert.equal(h.partyTab.attributes.get('aria-selected'), 'true');
   h.controller.refresh();
   assert.deepEqual(h.urls(), [first]);
   assert.equal(h.recent.hidden, false);
   assert.equal(h.recent.attributes.get('aria-selected'), 'true');
-  h.suggestions.click();
+  h.partyTab.click();
   h.controller.refresh();
-  assert.equal(h.suggestions.attributes.get('aria-selected'), 'true', 'reopening without new history preserves the chosen tab');
+  assert.equal(h.partyTab.attributes.get('aria-selected'), 'true', 'reopening without new history preserves the chosen tab');
   assert.equal(h.writes.length, 1, 'rendering must not rewrite or lose the saved URL');
   h.controller.destroy();
 });

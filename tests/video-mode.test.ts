@@ -9,7 +9,7 @@ import type { Currency } from '../src/lib/bitcoin-currency.ts';
 import type { DisplayPreferences } from '../src/lib/bitcoin-display-preferences.ts';
 import type { PriceFeedState } from '../src/lib/bitcoin-live-price.ts';
 import { parseYouTubeVideo } from '../src/lib/youtube-player.ts';
-import { videoSuggestions } from '../src/lib/video-suggestions.ts';
+import { videoSections, videoSuggestions } from '../src/lib/video-suggestions.ts';
 import { video as videoCopy } from '../src/i18n/video.ts';
 import type { createVideoPickerTabs } from '../src/lib/video-picker-tabs.ts';
 
@@ -267,7 +267,7 @@ function harness(options: Options = {}) {
       if (options.realPicker) {
         const exports: { createVideoPickerTabs?: typeof createVideoPickerTabs } = {};
         runInNewContext(pickerScript, {
-          exports, require: () => ({ parseYouTubeVideo, videoSuggestions }), document, window,
+          exports, require: () => ({ parseYouTubeVideo, videoSections, videoSuggestions }), document, window,
           AbortController, AbortSignal, URLSearchParams, fetch: async () => ({ ok: false }),
         });
         picker = exports.createVideoPickerTabs!(pickerRoot, pickerOptions);
@@ -1683,6 +1683,22 @@ test('suggestions have unique validated video IDs and consistent translated cont
   const keys = Object.keys(videoCopy.en).sort();
   for (const translation of Object.values(videoCopy)) {
     assert.deepEqual(Object.keys(translation).sort(), keys);
-    for (const key of ['pickVideo', 'suggestionsLabel', 'recentTab', 'suggestionsTab', 'removeRecent', 'recentTitleLoading', 'recentTitleUnavailable'] as const) assert.ok(translation[key].trim());
+    for (const key of ['pickVideo', 'recentTab', 'partyTab', 'chillTab', 'withoutSoundTab', 'removeRecent', 'recentTitleLoading', 'recentTitleUnavailable'] as const) assert.ok(translation[key].trim());
+  }
+});
+
+
+test('curated sections preserve existing recordings, move live videos to Chill, and include every requested addition', () => {
+  const sections = Object.fromEntries(videoSections.map(section => [section.id, section.videos]));
+  assert.deepEqual(Object.keys(sections), ['party', 'chill', 'without-sound']);
+  assert.deepEqual(sections.party.map(video => video.id), ['EFDMum1vs7Q', 'mSX3OyW9Rao', 'ez8m4PXksQs', '784dsKVrdjQ', '_yRJsecDjjc']);
+  assert.deepEqual(sections.chill.map(video => video.id), ['2QWVZkuTU4s', 'vYIYIVmOo3Q', 'yf5NOyy1SXU', 'TGysUwc_LEc', 'zBRFf8gAsR8', 'vKG91INzLt0']);
+  assert.ok(sections.chill.slice(0, -1).every(video => video.isLive));
+  assert.equal(sections.chill.at(-1)!.isLive, false, 'the Zelda recording must not gain a Live badge when moved');
+  assert.ok(sections.party.every(video => !video.isLive));
+  assert.deepEqual(sections['without-sound'].map(video => video.id), ['vx5AZDbSY1g', 'mgqIPHwwfyM', 'X3BT2eCleOE', 'FwIHSDiFye8', 'kiNSWFEyDQM', '7d5pgfsSug0', '5mGuCdlCcNM', 'A07HjYnbAQQ', 'YIZkCUFU9Oc', '-sOAzvbWgnk']);
+  assert.ok(sections['without-sound'].every(video => !video.isLive));
+  for (const translation of Object.values(videoCopy)) {
+    for (const section of videoSections) assert.ok(translation[section.labelKey].trim());
   }
 });
