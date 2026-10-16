@@ -62,7 +62,7 @@ function page(stored: Map<string, string>, locale = 'en', blocked: 'read' | 'wri
     locale,
     copy: JSON.stringify({ all: 'All', price: 'Bitcoin price', scale: 'Log', linearScale: 'Linear', history: 'Unavailable' }),
     rangeCopy: JSON.stringify({ loading: 'Loading price history', unavailable: 'Price history unavailable', suffixes: { day: 'D', week: locale === 'es' ? 'S' : 'W', month: 'M', year: 'Y' } }),
-    settingsCopy: JSON.stringify({ fxLoading: 'Loading exchange rates', fxUnavailable: 'Exchange rates unavailable', fxHistoryUnavailable: 'Exchange-rate history unavailable' }),
+    settingsCopy: JSON.stringify({ logarithmic: 'Logarithmic', linear: 'Linear', fxLoading: 'Loading exchange rates', fxUnavailable: 'Exchange rates unavailable', fxHistoryUnavailable: 'Exchange-rate history unavailable' }),
     historyStart: String(Date.now() - 86_400_000),
   };
   const bar = root.querySelector('[data-range-bar]');
@@ -87,6 +87,7 @@ function page(stored: Map<string, string>, locale = 'en', blocked: 'read' | 'wri
   });
   bar.querySelectorAll = () => slots;
   const scaleOptions = ['logarithmic', 'linear'].map(value => Object.assign(new Control(), { value }));
+  root.querySelectorAll = () => scaleOptions;
 
   const currencySelect = root.querySelector('[data-currency]');
   const currencyPicker = root.querySelector('[data-currency-picker]');
@@ -96,7 +97,6 @@ function page(stored: Map<string, string>, locale = 'en', blocked: 'read' | 'wri
     dataset: { currencyOption: code }, parent: currencyList,
   }));
   currencyList.querySelectorAll = () => currencyOptions;
-  root.querySelectorAll = () => scaleOptions;
   const document = Object.assign(new EventTarget(), { hidden: false, querySelector: () => root });
   const window = Object.assign(new EventTarget(), {
     matchMedia: () => Object.assign(new EventTarget(), { matches: true }),
@@ -163,14 +163,14 @@ function page(stored: Map<string, string>, locale = 'en', blocked: 'read' | 'wri
     return event;
   }
   return {
-    root, slots, pill, requests, document, currencyOptions, currencySelect, currencyTrigger, currencyList, releaseRequests,
+    root, slots, pill, requests, document, scaleOptions, currencyOptions, currencySelect, currencyTrigger, currencyList, releaseRequests,
     currency(code: string) {
       if (currencyTrigger.attributes['aria-expanded'] !== 'true') currencyTrigger.dispatchEvent(new Event('click'));
       currencyOptions.find(option => option.dataset.currencyOption === code)!.dispatchEvent(new Event('click'));
     },
     scale(value: string) {
       const option = scaleOptions.find(option => option.value === value)!;
-      option.checked = true;
+      scaleOptions.forEach(option => { option.checked = option.value === value; });
       option.dispatchEvent(new Event('change'));
     },
     select: (unit: string) => event('click', slots[units.indexOf(unit)].querySelector('[data-range-select]')),
@@ -363,6 +363,30 @@ test('settings dismiss on Escape and outside interaction without changing range 
   p.close();
 });
 
+test('nested currency dismissal keeps settings open until Escape reaches the parent menu', () => {
+  const p = page(new Map());
+  const menu = p.root.querySelector('[data-chart-settings]');
+  menu.open = true;
+  p.currencyTrigger.dispatchEvent(new Event('click'));
+  assert.equal(p.currencyList.hidden, false);
+  const escape = Object.assign(new Event('keydown', { cancelable: true }), { key: 'Escape' });
+  p.root.querySelector('[data-currency-picker]').dispatchEvent(escape);
+  menu.dispatchEvent(escape);
+  assert.equal(p.currencyList.hidden, true);
+  assert.equal(menu.open, true);
+  menu.dispatchEvent(Object.assign(new Event('keydown', { cancelable: true }), { key: 'Escape' }));
+  assert.equal(menu.open, false);
+
+  menu.open = true;
+  p.currencyTrigger.dispatchEvent(new Event('click'));
+  assert.equal(p.root.hasAttribute('data-currency-open'), true);
+  menu.open = false;
+  menu.dispatchEvent(new Event('toggle'));
+  assert.equal(p.currencyList.hidden, true);
+  assert.equal(p.root.hasAttribute('data-currency-open'), false);
+  p.close();
+});
+
 test('the currency picker keeps one selection and ignores invalid native changes', () => {
   const storage = new Map<string, string>();
   const p = page(storage);
@@ -378,7 +402,7 @@ test('the currency picker keeps one selection and ignores invalid native changes
   p.close();
 });
 
-test('scale settings and the currency picker each close and return focus to their own trigger', async () => {
+test('scale selection keeps settings open and currency selection returns focus to its trigger', async () => {
   const storage = new Map<string, string>();
   const p = page(storage, 'en', undefined, false, 'fx');
   await p.ready();
@@ -388,8 +412,8 @@ test('scale settings and the currency picker each close and return focus to thei
   trigger.focus = () => { focused = true; };
   menu.open = true;
   p.scale('linear');
-  assert.equal(menu.open, false);
-  assert.equal(focused, true);
+  assert.equal(menu.open, true);
+  assert.equal(focused, false);
   focused = false;
   p.currencyTrigger.focus = () => { focused = true; };
   p.currency('EUR');
@@ -439,4 +463,23 @@ test('an uncached range shows the spinner while candles load and hides it when t
   await p.ready();
   assert.equal(p.root.querySelector('[data-chart-loading]').hidden, true);
   p.close();
+});
+
+test('explicit scale choices restore the saved mode and keep settings open when changed', () => {
+  const storage = new Map<string, string>();
+  const p = page(storage);
+  const menu = p.root.querySelector('[data-chart-settings]');
+  menu.open = true;
+  assert.equal(p.scaleOptions.find(option => option.checked)?.value, 'logarithmic');
+  p.scale('linear');
+  assert.equal(p.scaleOptions.find(option => option.checked)?.value, 'linear');
+  assert.equal(menu.open, true);
+  assert.equal(JSON.parse(storage.get('bitcoin-tracker-display')!).scale, 'linear');
+  p.close();
+
+  const restored = page(storage);
+  assert.equal(restored.scaleOptions.find(option => option.checked)?.value, 'linear');
+  restored.scale('logarithmic');
+  assert.equal(JSON.parse(storage.get('bitcoin-tracker-display')!).scale, 'logarithmic');
+  restored.close();
 });

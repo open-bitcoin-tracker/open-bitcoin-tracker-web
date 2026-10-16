@@ -306,12 +306,6 @@ function startTracker(root: HTMLElement) {
     settingsTrigger.focus({ preventScroll: true });
   }
   for (const option of scaleOptions) {
-    // A click on the current selection does not fire a change event.
-    option.addEventListener('click', () => {
-      if (option.checked) closeSettings();
-    });
-  }
-  for (const option of scaleOptions) {
     option.checked = option.value === scale;
     option.addEventListener('change', () => {
       if (!option.checked || (option.value !== 'logarithmic' && option.value !== 'linear')) return;
@@ -319,7 +313,6 @@ function startTracker(root: HTMLElement) {
       scale = option.value;
       saveDisplayPreferences({ scale, currency });
       scheduleDraw();
-      closeSettings();
     });
   }
   currencySelect.value = currency;
@@ -344,9 +337,15 @@ function startTracker(root: HTMLElement) {
     updateCurrencyStatus();
     scheduleDraw();
   });
-  const currencyPicker = createVideoCurrencyPicker(root, currencySelect);
+  const currencyPicker = createVideoCurrencyPicker(root, currencySelect, {
+    panel: root.querySelector<HTMLElement>('[data-currency-panel]')!,
+    back: root.querySelector<HTMLButtonElement>('[data-currency-back]')!,
+  });
+  settingsMenu.addEventListener('toggle', () => {
+    if (!settingsMenu.open) currencyPicker.close();
+  });
   settingsMenu.addEventListener('keydown', (event) => {
-    if (event.key === 'Escape' && settingsMenu.open) {
+    if (!event.defaultPrevented && event.key === 'Escape' && settingsMenu.open) {
       event.preventDefault();
       closeSettings();
     }
@@ -359,17 +358,20 @@ function startTracker(root: HTMLElement) {
   });
 
   const fullscreen = root.querySelector<HTMLButtonElement>('[data-fullscreen]')!;
+  const fullscreenLabel = root.querySelector<HTMLElement>('[data-fullscreen-label]')!;
   const controlStatus = root.querySelector<HTMLElement>('[data-control-status]')!;
   function updateFullscreen() {
     const label = document.fullscreenElement ? settingsCopy.exitFullscreen : settingsCopy.fullscreen;
     fullscreen.setAttribute('aria-label', label);
     fullscreen.title = label;
+    fullscreenLabel.textContent = label;
     controlStatus.hidden = true;
   }
   fullscreen.hidden = !document.fullscreenEnabled;
   fullscreen.disabled = !document.fullscreenEnabled;
   fullscreen.addEventListener('click', () => {
     const request = document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen();
+    closeSettings();
     void request.catch(() => { controlStatus.textContent = settingsCopy.fullscreenUnavailable; controlStatus.hidden = false; });
   });
   document.addEventListener('fullscreenchange', updateFullscreen);

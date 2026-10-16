@@ -9,7 +9,7 @@ const script = ts.transpileModule(readFileSync(new URL('../src/lib/video-currenc
   compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 },
 }).outputText;
 
-function harness({ currency = 'USD', disabled = false } = {}) {
+function harness({ currency = 'USD', disabled = false, standalone = false } = {}) {
   class Element extends EventTarget {
     attributes = new Map<string, string>();
     dataset: Record<string, string> = {};
@@ -57,7 +57,9 @@ function harness({ currency = 'USD', disabled = false } = {}) {
   const wrapper = root.append(new Element());
   const trigger = wrapper.append(new Element());
   const value = trigger.append(new Element());
-  const list = wrapper.append(new Element());
+  const panel = standalone ? wrapper.append(new Element()) : undefined;
+  const back = panel?.append(new Element());
+  const list = (panel ?? wrapper).append(new Element());
   const select = wrapper.append(new Element());
   const outside = new Element();
   const document = Object.assign(new Element(), { activeElement: null as Element | null });
@@ -81,10 +83,10 @@ function harness({ currency = 'USD', disabled = false } = {}) {
   root.addEventListener('currencytoggle', () => { toggles++; });
   const module: { createVideoCurrencyPicker?: typeof createVideoCurrencyPicker } = {};
   runInNewContext(script, { exports: module, document, Event, Date: { now: () => now } });
-  const picker = module.createVideoCurrencyPicker!(root as unknown as HTMLElement, select as unknown as HTMLSelectElement);
+  const picker = module.createVideoCurrencyPicker!(root as unknown as HTMLElement, select as unknown as HTMLSelectElement, { panel: panel as unknown as HTMLElement, back: back as unknown as HTMLButtonElement });
   const option = (currency: string) => options.find(option => option.dataset.currencyOption === currency)!;
   return {
-    root, wrapper, trigger, value, list, select, options, document, outside, changes, picker, option,
+    root, wrapper, trigger, value, list, select, options, document, outside, changes, picker, option, panel, back,
     toggles: () => toggles,
     advance(milliseconds: number) { now += milliseconds; },
     focused: () => document.activeElement?.dataset.currencyOption,
@@ -255,5 +257,43 @@ test('opening price styling closes the currency menu', () => {
   h.root.dispatchEvent(new Event('pricestyletoggle'));
   assert.equal(h.list.hidden, true);
   assert.equal(h.root.attributes.has('data-currency-open'), false);
+  h.picker.destroy();
+});
+
+test('a separate currency panel opens on the saved choice and returns to settings on back or selection', () => {
+  const h = harness({ currency: 'GBP', standalone: true });
+  assert.equal(h.panel!.hidden, true);
+  h.trigger.click();
+  assert.equal(h.panel!.hidden, false);
+  assert.equal(h.focused(), 'GBP');
+  h.back!.click();
+  assert.equal(h.panel!.hidden, true);
+  assert.equal(h.list.hidden, true);
+  assert.equal(h.root.hasAttribute('data-currency-open'), false);
+  assert.equal(h.document.activeElement, h.trigger);
+  assert.equal(h.changes.length, 0);
+
+  h.trigger.click();
+  h.option('EUR').click();
+  assert.equal(h.panel!.hidden, true);
+  assert.equal(h.document.activeElement, h.trigger);
+  assert.equal(h.value.textContent, 'EUR');
+  h.picker.destroy();
+  assert.equal(h.back!.listenerCount(), 0);
+});
+
+test('a shared settings wrapper ignores other controls and dismisses a separate panel on Escape or outside focus', () => {
+  const h = harness({ standalone: true });
+  assert.equal(h.key(h.select, 'ArrowDown'), false);
+  assert.equal(h.panel!.hidden, true);
+  h.trigger.click();
+  assert.equal(h.key(h.back!, 'Escape'), true);
+  assert.equal(h.panel!.hidden, true);
+  assert.equal(h.document.activeElement, h.trigger);
+  h.trigger.click();
+  h.outside.focus();
+  assert.equal(h.panel!.hidden, true);
+  assert.equal(h.document.activeElement, h.outside);
+  assert.equal(h.root.hasAttribute('data-currency-open'), false);
   h.picker.destroy();
 });

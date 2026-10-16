@@ -1,5 +1,5 @@
 /** A keyboard-accessible currency menu backed by the page's existing select. */
-export function createVideoCurrencyPicker(root: HTMLElement, select: HTMLSelectElement) {
+export function createVideoCurrencyPicker(root: HTMLElement, select: HTMLSelectElement, { panel, back }: { panel?: HTMLElement; back?: HTMLButtonElement } = {}) {
   const wrapper = root.querySelector<HTMLElement>('[data-currency-picker]')!;
   const trigger = wrapper.querySelector<HTMLButtonElement>('[data-currency-trigger]')!;
   const value = wrapper.querySelector<HTMLElement>('[data-currency-value]')!;
@@ -29,6 +29,7 @@ export function createVideoCurrencyPicker(root: HTMLElement, select: HTMLSelectE
     open = false;
     search = '';
     list.hidden = true;
+    if (panel) panel.hidden = true;
     trigger.setAttribute('aria-expanded', 'false');
     options.forEach(option => { option.tabIndex = -1; });
     root.removeAttribute('data-currency-open');
@@ -41,6 +42,7 @@ export function createVideoCurrencyPicker(root: HTMLElement, select: HTMLSelectE
     if (!open) {
       open = true;
       list.hidden = false;
+      if (panel) panel.hidden = false;
       trigger.setAttribute('aria-expanded', 'true');
       root.setAttribute('data-currency-open', '');
       root.dispatchEvent(new Event('currencytoggle'));
@@ -70,6 +72,8 @@ export function createVideoCurrencyPicker(root: HTMLElement, select: HTMLSelectE
       if (open) { event.preventDefault(); close(true); }
       return;
     }
+    // A standalone currency panel can share its wrapper with other settings.
+    if (!trigger.contains(event.target as Node) && !list.contains(event.target as Node)) return;
     if (open && !fromTrigger && (event.key === 'Enter' || event.key === ' ')) {
       const option = options.find(option => option === event.target);
       if (option) { event.preventDefault(); choose(option); }
@@ -116,6 +120,7 @@ export function createVideoCurrencyPicker(root: HTMLElement, select: HTMLSelectE
   const dismissOutside = (event: Event) => {
     if (!wrapper.contains(event.target as Node | null)) close();
   };
+  if (back) listen(back, 'click', () => close(true));
   listen(trigger, 'click', () => { if (open) close(); else show(); });
   listen(wrapper, 'keydown', onKeyDown as EventListener);
   for (const option of options) listen(option, 'click', () => choose(option));
@@ -125,12 +130,14 @@ export function createVideoCurrencyPicker(root: HTMLElement, select: HTMLSelectE
   listen(document, 'pointerdown', dismissOutside);
   listen(document, 'focusin', dismissOutside);
   list.hidden = true;
+  if (panel) panel.hidden = true;
   trigger.setAttribute('aria-expanded', 'false');
   options.forEach(option => { option.tabIndex = -1; });
   root.removeAttribute('data-currency-open');
   sync();
 
   return {
+    close,
     destroy() {
       if (destroyed) return;
       close();

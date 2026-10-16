@@ -18,6 +18,8 @@ function harness(hidden = false, fullscreenEnabled = false) {
     value = '';
     disabled = true;
     title = '';
+    open = false;
+    focus() {}
     attributes = new Map<string, string>();
     hidden = false;
     dataset: Record<string, string> = {};
@@ -82,7 +84,7 @@ function harness(hidden = false, fullscreenEnabled = false) {
     readRangePreferences: () => ({ selected: 'all', counts: {} }),
     readDisplayPreferences: () => ({ currency: 'USD', scale: 'logarithmic' }),
     createRangePill: () => ({ select() {}, destroy() {} }),
-    createVideoCurrencyPicker: () => ({ destroy() { pickerDestroyed = true; } }),
+    createVideoCurrencyPicker: () => ({ close() {}, destroy() { pickerDestroyed = true; } }),
     createChartControls: () => ({ destroy() {} }),
     isCurrency: (value: string) => ['USD', 'EUR', 'GBP', 'AUD', 'CAD', 'CHF', 'JPY'].includes(value),
     saveDisplayPreferences: (preferences: unknown) => savedPreferences.push(preferences),
@@ -194,9 +196,13 @@ test('the chart fullscreen button enters, exits, updates its label, and reports 
   assert.equal(button.hidden, false);
   assert.equal(button.disabled, false);
   assert.equal(button.attributes.get('aria-label'), 'Fullscreen');
+  assert.equal(h.controls.get('[data-fullscreen-label]')!.textContent, 'Fullscreen');
+  h.controls.get('[data-chart-settings]')!.open = true;
   button.dispatchEvent(new Event('click'));
   assert.equal(h.fullscreenRequests(), 1);
   assert.equal(button.title, 'Exit fullscreen');
+  assert.equal(h.controls.get('[data-fullscreen-label]')!.textContent, 'Exit fullscreen');
+  assert.equal(h.controls.get('[data-chart-settings]')!.open, false);
   assert.equal(button.attributes.get('aria-label'), 'Exit fullscreen');
   button.dispatchEvent(new Event('click'));
   assert.equal(h.fullscreenExits(), 1);
