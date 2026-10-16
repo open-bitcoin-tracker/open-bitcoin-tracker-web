@@ -77,8 +77,7 @@ function ModelDetails({ section }: { section: GuideSection }) {
           </p>
           <p>
             Side length is the square root of the unrounded area, expressed as
-            an equivalent flat square. Readouts round to the nearest displayed
-            decimal; the map uses the unrounded area.
+            an equivalent flat square. The map uses the unrounded area.
           </p>
           <p>
             This model describes scale. It does not describe land prices or
@@ -113,8 +112,8 @@ function ModelDetails({ section }: { section: GuideSection }) {
         <div className="detail-content">
           <p>
             Your Bitcoin amount stays in your browser. The app uses no
-            analytics, session recording or tracking cookies. Only theme and
-            measurement preferences are stored between visits.
+            analytics, session recording or tracking cookies. Your theme
+            preference is stored between visits.
           </p>
           <p>
             Submitted searches go to {locationSearchProvider}; maps load from{' '}

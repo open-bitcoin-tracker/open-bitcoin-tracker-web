@@ -9,7 +9,6 @@ import type { Map, StyleSpecification } from 'maplibre-gl';
 import mapStyle from '../map/style.json';
 import type { Location } from '../lib/locations';
 import type { Theme } from '../lib/siteTheme';
-import type { MeasurementSystem } from '../lib/measurements';
 import { DEFAULT_CENTER } from '../map/geo';
 import { followViewportCenter, viewportOverlay } from '../map/mapOverlay';
 import { applyMapTheme } from '../map/mapTheme';
@@ -20,19 +19,16 @@ const DEFAULT_ZOOM = 14;
 interface EarthMapOptions {
   km2: number | null;
   theme: Theme;
-  measurements: MeasurementSystem;
   onInteraction: () => void;
 }
 
 export function useEarthMap({
   km2,
   theme,
-  measurements,
   onInteraction,
 }: EarthMapOptions) {
   const containerRef = useRef<HTMLDivElement>(null);
   const overlayRef = useRef<SVGPathElement>(null);
-  const readoutRef = useRef<HTMLElement>(null);
   const mapRef = useRef<Map | null>(null);
   const loadedRef = useRef(false);
   const baseStyleRef = useRef<StyleSpecification | null>(null);
@@ -54,7 +50,7 @@ export function useEarthMap({
     const area = optionsRef.current.km2 ?? 0;
     if (!map || !path || !baseStyleRef.current || !loadedRef.current) return;
     const projected = viewportOverlay(map, area);
-    renderOverlay(path, readoutRef.current, projected);
+    renderOverlay(path, projected);
   }, []);
 
   useEffect(() => {
@@ -68,7 +64,6 @@ export function useEarthMap({
 
     function cleanup() {
       loadedRef.current = false;
-      if (readoutRef.current) readoutRef.current.style.visibility = 'hidden';
       overlayRef.current?.removeAttribute('d');
       clearTimeout(timer);
       observer?.disconnect();
@@ -168,7 +163,7 @@ export function useEarthMap({
 
   useLayoutEffect(() => {
     syncOverlay();
-  }, [km2, measurements, ready, syncOverlay]);
+  }, [km2, ready, syncOverlay]);
 
   useEffect(() => {
     if (mapRef.current && baseStyleRef.current) {
@@ -194,7 +189,6 @@ export function useEarthMap({
   return {
     containerRef,
     overlayRef,
-    readoutRef,
     ready,
     error,
     goToLocation,

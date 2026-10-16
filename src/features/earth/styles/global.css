@@ -1,18 +1,3 @@
-@font-face {
-  font-family: 'Titillium Web';
-  font-style: normal;
-  font-weight: 400;
-  font-display: swap;
-  src: url('/earth/fonts/TitilliumWeb-Regular.woff2') format('woff2');
-}
-@font-face {
-  font-family: 'Titillium Web';
-  font-style: normal;
-  font-weight: 600;
-  font-display: swap;
-  src: url('/earth/fonts/TitilliumWeb-SemiBold.woff2') format('woff2');
-}
-
 .earth-feature {
   font-family: var(--font-sans);
   color: var(--ink);
@@ -42,10 +27,8 @@
   --text-body: 1rem;
   --text-intro: 1.0625rem;
   --text-heading: 1.5rem;
-  /* Keep map accents on the shared brand color, with legible readout text. */
+  /* Keep map accents on the shared brand color. */
   --map-orange: var(--orange);
-  --readout-ink: #b45309;
-  --readout-halo: #fff7ec;
   color-scheme: light;
   --error: #a4372e;
   --overlay-opacity: 0.3;

@@ -172,8 +172,12 @@ describe('projected globe overlay', () => {
             expect(
               points.every((p) => Number.isFinite(p.x) && Number.isFinite(p.y)),
             ).toBe(true);
-            expect(result.width).toBeGreaterThan(0);
-            expect(result.height).toBeGreaterThan(0);
+            expect(
+              Math.max(...points.map((p) => p.x)),
+            ).toBeGreaterThan(Math.min(...points.map((p) => p.x)));
+            expect(
+              Math.max(...points.map((p) => p.y)),
+            ).toBeGreaterThan(Math.min(...points.map((p) => p.y)));
             if (result.overlay.approximate) {
               expect(
                 (Math.min(...points.map((p) => p.x)) +
@@ -228,8 +232,11 @@ describe('projected globe overlay', () => {
       (6_371_008.8 * Math.cos((latitude * Math.PI) / 180));
     const expected = Math.sqrt(toArea(1)) * 1000 * pixelsPerMetre;
     expect(result.overlay.approximate).toBe(true);
-    expect(Math.abs(result.width / expected - 1)).toBeLessThan(0.0001);
-    expect(Math.abs(result.height / expected - 1)).toBeLessThan(0.0001);
+    const points = pathPoints(result.path);
+    const width = Math.max(...points.map((p) => p.x)) - Math.min(...points.map((p) => p.x));
+    const height = Math.max(...points.map((p) => p.y)) - Math.min(...points.map((p) => p.y));
+    expect(Math.abs(width / expected - 1)).toBeLessThan(0.0001);
+    expect(Math.abs(height / expected - 1)).toBeLessThan(0.0001);
   });
 
   it('clips the large scale fallback to the globe rim and clears it for small areas', () => {
@@ -379,23 +386,7 @@ describe('projected globe overlay', () => {
     zoom = 12;
     const closeUp = viewportOverlay(map, 100_000);
     expect(pathPoints(closeUp.path)).toHaveLength(4);
-    for (const projected of [closeUp, viewportOverlay(map, toArea(1))]) {
-      const points = pathPoints(projected.path);
-      expect(projected.width).toBe(
-        Math.max(...points.map((p) => p.x)) -
-          Math.min(...points.map((p) => p.x)),
-      );
-      expect(projected.height).toBe(
-        Math.max(...points.map((p) => p.y)) -
-          Math.min(...points.map((p) => p.y)),
-      );
-    }
-    expect(viewportOverlay(map, 0)).toMatchObject({
-      path: '',
-      width: 0,
-      height: 0,
-      bottomLeft: null,
-    });
+    expect(viewportOverlay(map, 0).path).toBe('');
     expect(map.project).toHaveBeenCalledWith([181, 60]);
   });
 });

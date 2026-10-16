@@ -73,9 +73,6 @@ function approximateOutline(
   }
   return {
     path: `M${left},${top} L${right},${top} L${right},${bottom} L${left},${bottom} Z`,
-    width,
-    height,
-    bottomLeft: { x: left, y: bottom },
     clip,
   };
 }
@@ -154,26 +151,19 @@ export function viewportOverlay(map: Map, areaKm2: number) {
     center,
     curved ? project : undefined,
   );
-  const outline = projectedOutline(overlay.bounds, project, curved);
+  const path = overlayPath(overlay.bounds, project, curved);
   // Keep the established geographic square and its screen centering wherever
   // it works. A valid amount always gets a visual scale square otherwise.
-  if (Number.isFinite(areaKm2) && areaKm2 > 0 && !outline.path) {
+  if (Number.isFinite(areaKm2) && areaKm2 > 0 && !path) {
     return {
       overlay: { ...overlay, approximate: true },
       ...approximateOutline(areaKm2, center, project, curved),
-      viewportWidth: canvas.clientWidth,
-      viewportHeight: canvas.clientHeight,
     };
   }
-  const bottomLeft =
-    outline.path && overlay.bounds ? project(overlay.bounds[0]) : null;
   return {
     overlay,
-    ...outline,
-    bottomLeft,
+    path,
     clip: null as Clip,
-    viewportWidth: canvas.clientWidth,
-    viewportHeight: canvas.clientHeight,
   };
 }
 
@@ -182,16 +172,7 @@ export function overlayPath(
   project: Project,
   curved: boolean,
 ) {
-  return projectedOutline(bounds, project, curved).path;
-}
-
-function projectedOutline(
-  bounds: Overlay['bounds'],
-  project: Project,
-  curved: boolean,
-) {
-  const empty = { path: '', width: 0, height: 0 };
-  if (!bounds) return empty;
+  if (!bounds) return '';
   const [[west, south], [east, north]] = bounds;
   // Sampling all four edges lets both parallels and meridians follow the sphere.
   // Unwrapped bounds avoid a stroke along the artificial date-line split.
@@ -202,10 +183,6 @@ function projectedOutline(
     [west, south],
   ];
   const commands: string[] = [];
-  let minX = Infinity,
-    maxX = -Infinity,
-    minY = Infinity,
-    maxY = -Infinity;
   for (let edge = 0; edge < 4; edge++) {
     const from = corners[edge];
     const to = corners[(edge + 1) % 4];
@@ -224,19 +201,11 @@ function projectedOutline(
         from[0] + (to[0] - from[0]) * fraction,
         from[1] + (to[1] - from[1]) * fraction,
       ]);
-      if (!Number.isFinite(x) || !Number.isFinite(y)) return empty;
-      minX = Math.min(minX, x);
-      maxX = Math.max(maxX, x);
-      minY = Math.min(minY, y);
-      maxY = Math.max(maxY, y);
+      if (!Number.isFinite(x) || !Number.isFinite(y)) return '';
       commands.push(`${commands.length === 0 ? 'M' : 'L'}${x},${y}`);
     }
   }
-  return {
-    path: commands.join(' ') + ' Z',
-    width: maxX - minX,
-    height: maxY - minY,
-  };
+  return commands.join(' ') + ' Z';
 }
 
 export function followViewportCenter(

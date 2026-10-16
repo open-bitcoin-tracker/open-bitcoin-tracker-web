@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest';
 import { convertAmount, toArea, parseAmount, LAND_KM2 } from './bitcoin';
-import { formatArea, formatSide } from './measurements';
 
 describe('fixed proportional model', () => {
   it('converts one BTC, one satoshi and the full cap', () => {
@@ -31,7 +30,6 @@ describe('fixed proportional model', () => {
     ])
       expect(parseAmount(text).error).toBeNull();
     expect(parseAmount('0').value).toBe(0);
-    expect(formatArea(toArea(0.00000001)).unit).toBe('m²');
   });
 });
 
@@ -83,40 +81,5 @@ describe('Bitcoin and sats units', () => {
     }
     expect(parseAmount('', 'sats')).toEqual({ value: null, error: null });
     expect(convertAmount('1.', 'BTC', 'BTC')).toBe('1.');
-  });
-});
-
-describe('kilometre display precision', () => {
-  it('rounds to nearest while retaining side-length precision', () => {
-    expect(formatArea(toArea(1))).toEqual({ number: '7.1', unit: 'km²' });
-    expect(formatSide(toArea(1))).toBe('2.66 km');
-    expect(formatArea(7.11).number).toBe('7.1');
-    expect(formatSide(2.01 ** 2)).toBe('2.01 km');
-  });
-  it.each([
-    ['10.6', 'BTC'],
-    ['1060000000', 'sats'],
-  ] as const)('displays consistent area and side length for %s %s', (raw, unit) => {
-    const area = toArea(parseAmount(raw, unit).value!);
-    expect(area).toBeCloseTo(75.17923809523809, 10);
-    expect(Math.sqrt(area)).toBeCloseTo(8.670596178766376, 10);
-    expect(formatArea(area)).toEqual({ number: '75.2', unit: 'km²' });
-    expect(formatSide(area)).toBe('8.67 km');
-    expect(formatArea(area, 'imperial')).toEqual({ number: '29.0', unit: 'mi²' });
-    expect(formatSide(area, 'imperial')).toBe('5.39 mi');
-  });
-  it('keeps one decimal for exact values and zero', () => {
-    expect(formatArea(10).number).toBe('10.0');
-    expect(formatArea(0).number).toBe('0.0');
-    expect(formatSide(4)).toBe('2 km');
-    expect(formatArea(LAND_KM2).number).toBe('148,940,000.0');
-  });
-  it('preserves small-area and sub-metre precision', () => {
-    expect(formatArea(toArea(0.00000001))).toEqual({
-      number: '0.0709',
-      unit: 'm²',
-    });
-    expect(formatSide(0.000001)).toBe('1 m');
-    expect(formatSide(toArea(0.00000001))).toBe('0.266 m');
   });
 });
