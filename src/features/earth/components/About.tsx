@@ -302,7 +302,7 @@ export default function About({ onClose }: AboutProps) {
               id="guide-title"
               className="eyebrow"
             >
-              HOW IT WORKS
+              A BIT OF EARTH
             </h2>
             <button
               type="button"
@@ -368,7 +368,7 @@ export default function About({ onClose }: AboutProps) {
             <button
               type="button"
               className="guide-back"
-              aria-label="Back to How it works"
+              aria-label="Back to A Bit of Earth"
               onClick={closeDetail}
             >
               <ArrowLeft size={18} aria-hidden="true" />
@@ -384,7 +384,7 @@ export default function About({ onClose }: AboutProps) {
             </button>
           </header>
           <div ref={detailContentRef} className="guide-content model-details">
-            <p className="guide-detail-eyebrow eyebrow">HOW IT WORKS</p>
+            <p className="guide-detail-eyebrow eyebrow">A BIT OF EARTH</p>
             <h2 ref={detailHeadingRef} tabIndex={-1} id="guide-detail-title">
               {activeTitle}
             </h2>

@@ -45,7 +45,7 @@
   border-color: var(--error);
 }
 .earth-feature .bitcoin-symbol {
-  color: var(--muted);
+  color: var(--control-ink);
 }
 .earth-feature .amount-input input {
   min-width: 0;

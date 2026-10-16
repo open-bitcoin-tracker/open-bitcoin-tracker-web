@@ -1,4 +1,5 @@
 .earth-feature .about-help {
+  position: relative;
   display: grid;
   place-items: center;
   width: 44px;
@@ -8,11 +9,43 @@
   border-radius: 50%;
   background: var(--panel);
   box-shadow: var(--panel-shadow);
-  color: var(--muted);
+  color: var(--control-ink);
+  font-size: var(--text-heading);
+  font-weight: 600;
+  line-height: 1;
 }
 .earth-feature .about-help:hover {
   background: var(--panel);
-  color: var(--ink);
+}
+.earth-feature .about-help-tooltip {
+  position: absolute;
+  top: 50%;
+  left: calc(100% + 8px);
+  z-index: 1;
+  transform: translateY(-50%);
+  width: max-content;
+  padding: 8px 12px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--panel);
+  box-shadow: var(--panel-shadow);
+  color: var(--control-ink);
+  font-size: var(--text-label);
+  font-weight: 400;
+  line-height: 1.5;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 120ms ease, visibility 0s 120ms;
+}
+.earth-feature .about-help-tooltip::before {
+  content: '';
+  position: absolute;
+  inset: 0 -8px;
+}
+.earth-feature .about-help:is(:hover, :focus-visible):not([data-tooltip-dismissed]) .about-help-tooltip {
+  opacity: 1;
+  visibility: visible;
+  transition-delay: 150ms;
 }
 @media (max-width: 800px) {
   .earth-feature .about-help {
@@ -21,5 +54,14 @@
     right: var(--menu-control-right);
     width: var(--menu-control-size);
     height: var(--menu-control-size);
+  }
+  .earth-feature .about-help-tooltip {
+    left: auto;
+    right: calc(100% + 8px);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .earth-feature .about-help-tooltip {
+    transition: none;
   }
 }

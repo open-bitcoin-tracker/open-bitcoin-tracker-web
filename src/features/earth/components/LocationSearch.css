@@ -6,7 +6,7 @@
   padding: 0 6px 0 20px;
   border: 1px solid var(--border);
   border-radius: 12px;
-  color: var(--muted);
+  color: var(--control-ink);
   background: var(--panel);
   box-shadow: var(--panel-shadow);
 }
@@ -16,7 +16,7 @@
   min-width: 0;
   border: 0;
   background: transparent;
-  color: var(--ink);
+  color: var(--control-ink);
   font-size: var(--text-body);
   padding: 0;
 }
@@ -27,7 +27,8 @@
   display: none;
 }
 .earth-feature .place-search input::placeholder {
-  color: var(--muted);
+  color: var(--control-ink);
+  opacity: 1;
 }
 .earth-feature .place-search button {
   flex-shrink: 0;
@@ -39,7 +40,7 @@
   border: 0;
   border-radius: 10px;
   background: transparent;
-  color: var(--muted);
+  color: var(--control-ink);
 }
 .earth-feature .place-search button:disabled {
   opacity: 1;

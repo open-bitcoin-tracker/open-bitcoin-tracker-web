@@ -23,6 +23,7 @@
   /* Use the Android page's semantic palette and compact text roles. */
   --page-background: var(--color-paper);
   --ink: var(--color-ink);
+  --control-ink: var(--ink);
   --orange: var(--color-accent);
   --orange-soft: var(--color-accent-soft);
   --border: var(--color-divider);
@@ -93,6 +94,7 @@
 
 .earth-feature[data-theme='dark'] {
   color-scheme: dark;
+  --control-ink: #fff;
   --error: #ff9c90;
   --overlay-opacity: 0.2;
   --globe-sky: radial-gradient(

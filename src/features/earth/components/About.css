@@ -57,7 +57,11 @@
   padding: max(20px, env(safe-area-inset-top)) 24px 20px 28px;
   flex-shrink: 0;
 }
-.earth-feature .guide-header .eyebrow,
+.earth-feature .guide-header .eyebrow {
+  font-size: 1.25rem;
+  font-weight: 600;
+  letter-spacing: .08em;
+}
 .earth-feature .guide-detail-panel .guide-detail-eyebrow {
   font-size: var(--text-eyebrow);
   font-weight: 500;

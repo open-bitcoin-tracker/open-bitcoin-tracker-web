@@ -16,7 +16,7 @@
 .earth-feature .input-unit:hover,
 .earth-feature .input-unit[aria-expanded='true'] {
   background: var(--hover);
-  color: var(--ink);
+  color: var(--control-ink);
 }
 .earth-feature .input-unit:focus-visible {
   outline-offset: 2px;
@@ -68,6 +68,6 @@
 }
 .earth-feature .input-unit {
   font-size: var(--text-label);
-  color: var(--muted);
+  color: var(--control-ink);
   font-weight: 600;
 }

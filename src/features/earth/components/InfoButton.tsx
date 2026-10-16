@@ -1,4 +1,4 @@
-import { Info } from 'lucide-react';
+import { useState } from 'react';
 import './InfoButton.css';
 
 interface InfoButtonProps {
@@ -6,16 +6,29 @@ interface InfoButtonProps {
 }
 
 export default function InfoButton({ onAbout }: InfoButtonProps) {
+  const [tooltipDismissed, setTooltipDismissed] = useState(false);
+
   return (
     <button
       className="about-help"
       type="button"
-      onClick={onAbout}
+      onClick={() => {
+        setTooltipDismissed(true);
+        onAbout();
+      }}
+      onMouseEnter={() => setTooltipDismissed(false)}
+      onFocus={() => setTooltipDismissed(false)}
+      onKeyDown={(event) => {
+        if (event.key === 'Escape') setTooltipDismissed(true);
+      }}
+      data-tooltip-dismissed={tooltipDismissed || undefined}
       aria-label="How does this work?"
-      title="How does this work?"
       aria-haspopup="dialog"
     >
-      <Info size={20} aria-hidden="true" />
+      <span aria-hidden="true">?</span>
+      <span className="about-help-tooltip" aria-hidden="true">
+        How does this work?
+      </span>
     </button>
   );
 }
