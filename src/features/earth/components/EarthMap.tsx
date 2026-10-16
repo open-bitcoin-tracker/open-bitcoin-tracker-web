@@ -25,9 +25,12 @@ export default function EarthMap({
       <svg className="bitcoin-overlay" aria-hidden="true">
         <path ref={overlayRef} />
       </svg>
-      {!ready && !error && (
-        <div className="map-loading" role="status" aria-label="Loading map" />
-      )}
+      <div
+        className={`map-loading${ready || error ? ' map-loading-hidden' : ''}`}
+        role={!ready && !error ? 'status' : undefined}
+        aria-label={!ready && !error ? 'Loading map' : undefined}
+        aria-hidden={ready || !!error}
+      />
       {error && (
         <div className="map-error" role="alert">
           <Info size={19} />
