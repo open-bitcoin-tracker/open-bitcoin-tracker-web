@@ -85,7 +85,6 @@ function harness(hidden = false, fullscreenEnabled = false) {
     readDisplayPreferences: () => ({ currency: 'USD', scale: 'logarithmic' }),
     createRangePill: () => ({ select() {}, destroy() {} }),
     createVideoCurrencyPicker: () => ({ close() {}, destroy() { pickerDestroyed = true; } }),
-    createChartControls: () => ({ destroy() {} }),
     isCurrency: (value: string) => ['USD', 'EUR', 'GBP', 'AUD', 'CAD', 'CHF', 'JPY'].includes(value),
     saveDisplayPreferences: (preferences: unknown) => savedPreferences.push(preferences),
     createPriceChangeFormatter: () => () => '',

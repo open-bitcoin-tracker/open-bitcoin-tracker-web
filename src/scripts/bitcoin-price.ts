@@ -12,7 +12,6 @@ import type { ChartSettingsCopy } from '../i18n/chart-settings';
 import { subscribeBitcoinPrice } from '../lib/bitcoin-live-price';
 import { createVideoCurrencyPicker } from '../lib/video-currency-picker';
 import type { PartyCopy } from '../i18n/party';
-import { createChartControls } from '../lib/chart-controls';
 
 const root = document.querySelector<HTMLElement>('[data-bitcoin-tracker]');
 if (root) startTracker(root);
@@ -376,7 +375,6 @@ function startTracker(root: HTMLElement) {
   });
   document.addEventListener('fullscreenchange', updateFullscreen);
   updateFullscreen();
-  const controlVisibility = createChartControls(root);
 
   function updateCurrencyStatus() {
     const rate = exchangeRates.current(currency);
@@ -523,7 +521,6 @@ function startTracker(root: HTMLElement) {
     reduceMotion.removeEventListener('change', onMotionPreferenceChange);
     rangePill.destroy();
     currencyPicker.destroy();
-    controlVisibility.destroy();
     document.removeEventListener('fullscreenchange', updateFullscreen);
     stopTimers();
     stopPriceFeed();
