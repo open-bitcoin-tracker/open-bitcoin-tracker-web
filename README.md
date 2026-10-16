@@ -52,6 +52,10 @@ Refresh updates seasonally adjusted US M2 only. Use `-- --file downloaded-h6.htm
 
 Review population annually or after a UN WPP revision: World / Medium / both-sexes **Total Population, as of 1 July**, converting thousands to people. Update `points`, fallback `persons`/`date`, and `checkedAt` together. Keep `scenarioPoints` covering today's UTC date through 15 years ahead with adjacent interpolation endpoints, using one revision and source. Run the checks above and rebuild; monetary refreshes leave population untouched.
 
+### Homepage previews
+
+Homepage product captures live in `src/assets/previews/` and are optimized at build time. These static captures link to each tool. Recapture the actual chart, Earth map, and Video Mode when their appearance changes; exclude browser chrome and development controls. Preview sources: Earth map © [OpenMapTiles](https://openmaptiles.org/) and © [OpenStreetMap](https://www.openstreetmap.org/copyright); Video Mode [Fireplace 4K on YouTube](https://www.youtube.com/watch?v=mSX3OyW9Rao). Android uses the existing theme-aware app screenshots.
+
 ### Languages and social images
 
 Keep all `src/i18n/` dictionaries consistent. English uses root URLs; Portuguese uses `/pt/` and dictionary code `pt-BR`. Earth and supply content remains English.

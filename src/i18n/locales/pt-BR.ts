@@ -26,6 +26,12 @@ export const ptBR: Dict = {
   },
 
   landing: {
+    toolsLabel: 'Explore as ferramentas',
+    openChart: 'Abrir o gráfico',
+    openEarth: 'Explorar o mapa',
+    openVideo: 'Entre no clima',
+    openApp: 'Baixar o app para Android',
+    appDescription: 'Trackeie seu portfólio de Bitcoin. Sem contas. Seus stacks ficam no seu celular.',
     priceTracker: 'Trackeador de preço',
     priceDescription: 'Preço do Bitcoin ao vivo e histórico desde 2010.',
     videoDescription: 'O preço do Bitcoin ao vivo sobre vídeos do YouTube',

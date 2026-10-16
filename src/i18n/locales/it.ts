@@ -26,6 +26,12 @@ export const it: Dict = {
   },
 
   landing: {
+    toolsLabel: 'Esplora gli strumenti',
+    openChart: 'Apri il grafico',
+    openEarth: 'Esplora la mappa',
+    openVideo: 'Crea l’atmosfera',
+    openApp: 'Scarica l’app Android',
+    appDescription: 'Monitora il tuo portfolio Bitcoin. Nessun account. I tuoi stack restano sul tuo telefono.',
     priceTracker: 'Tracker del prezzo',
     priceDescription: 'Prezzo di Bitcoin in tempo reale e storico dal 2010.',
     videoDescription: 'Il prezzo di Bitcoin in tempo reale sui video di YouTube',

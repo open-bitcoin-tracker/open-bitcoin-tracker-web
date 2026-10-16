@@ -1,4 +1,5 @@
 ---
+import { Image } from 'astro:assets';
 import { getRelativeLocaleUrl } from 'astro:i18n';
 import Layout from '../../layouts/Layout.astro';
 import Nav from '../Nav.astro';
@@ -6,229 +7,201 @@ import AppScreenshot from '../AppScreenshot.astro';
 import { resolveLang, useTranslations } from '../../i18n/utils';
 import { tracker } from '../../i18n/tracker';
 import { aBitOfEarth } from '../../lib/projects';
+import chartPreview from '../../assets/previews/chart.jpg';
+import earthPreview from '../../assets/previews/earth.jpg';
+import videoPreview from '../../assets/previews/video.jpg';
 
 const lang = resolveLang(Astro.currentLocale);
 const t = useTranslations(Astro.currentLocale);
+const home = t.landing;
+const href = (path: string) => getRelativeLocaleUrl(lang, path);
+const repo = 'https://github.com/open-bitcoin-tracker/open-bitcoin-tracker-web';
 ---
 
 <Layout page="landing">
   <Nav />
   <main id="main-content" class="landing-main">
-    <div class="landing-content">
-      <header class="landing-brand">
-        <h1 lang="en" class="brand-name" aria-label="Open Bitcoin Tracker">
-          <button class="brand-trigger" type="button" data-brand-toggle aria-label="Open Bitcoin Tracker" aria-expanded="false">
-            <img class="brand-icon" src="/app-icon.png" width="96" height="96" alt="" />
-            <span class="brand-wordmark" aria-hidden="true"><span class="brand-word">O<span class="brand-reveal"><span>pen&nbsp;</span></span></span><span class="brand-word">B<span class="brand-reveal"><span>itcoin&nbsp;</span></span></span><span class="brand-word">T<span class="brand-reveal"><span>racker</span></span></span></span>
-          </button>
-        </h1>
-      </header>
-      <div class="landing-options">
-        <a class="landing-option" href={getRelativeLocaleUrl(lang, 'price-tracker')}>
-          <div class="option-preview preview-chart" aria-hidden="true">
-            <svg viewBox="0 0 360 240" fill="none">
-              <defs><clipPath id="landing-chart-clip"><rect x="30" y="40" width="300" height="170" rx="16" /></clipPath></defs>
-              <rect class="chart-window" x="30" y="40" width="300" height="170" rx="16" />
-              <g clip-path="url(#landing-chart-clip)">
-                <path class="chart-fill" d="M30 185l22-8 27-17 18 9 27-36 21 10 24-28 22 9 28-37 20 12 31-43 60-9V210H30Z" />
-                <path class="chart-line" d="m30 185 22-8 27-17 18 9 27-36 21 10 24-28 22 9 28-37 20 12 31-43 60-9" />
-              </g>
-            </svg>
-          </div>
-          <div class="option-copy">
-            <div class="option-title">
-              <h2>{tracker[lang].priceChart}</h2>
-            </div>
-            <p>{t.landing.priceDescription}</p>
-          </div>
-        </a>
-        <a class="landing-option" href={getRelativeLocaleUrl(lang, 'video-mode')}>
-          <div class="option-preview preview-video" aria-hidden="true">
-            <svg viewBox="0 0 360 240" fill="none">
-              <defs><clipPath id="landing-video-clip"><rect x="30" y="40" width="300" height="170" rx="16" /></clipPath></defs>
-              <rect class="video-window" x="30" y="40" width="300" height="170" rx="16" />
-              <g clip-path="url(#landing-video-clip)">
-                <g class="video-music-notes">
-                  {[
-                    'translate(50 61) rotate(-12 12 12) scale(1.5)',
-                    'translate(110 43) rotate(10 12 12) scale(1.1)',
-                    'translate(167 65) rotate(-8 12 12) scale(1.4)',
-                    'translate(226 46) rotate(14 12 12) scale(1.2)',
-                    'translate(281 72) rotate(-10 12 12) scale(1.5)',
-                  ].map(transform => <path transform={transform} d="M12 3v10.55A4 4 0 1 0 14 17V7h4V3Z" />)}
-                </g>
-                <path class="video-landscape" d="m30 162 76-58 65 48 47-25 112 48v35H30Z" />
-                <path class="video-landscape video-foreground" d="m30 181 57-28 89 27 75-33 79 40v23H30Z" />
-                <text class="video-preview-price" x="180" y="132" text-anchor="middle">$100,000</text>
-                <rect class="video-controls" x="30" y="165" width="300" height="45" />
-                <path class="video-play" d="m49 180 13 8-13 8z" />
-                <path class="video-progress" d="M81 188h228" />
-                <path class="video-progress-played" d="M81 188h81" />
-                <circle class="video-play" cx="162" cy="188" r="4" />
-              </g>
-            </svg>
-          </div>
-          <div class="option-copy">
-            <div class="option-title"><h2>{t.nav.videoMode}</h2></div>
-            <p>{t.landing.videoDescription}</p>
-          </div>
-        </a>
-        <a class="landing-option" href={getRelativeLocaleUrl(lang, aBitOfEarth.path)}>
-          <div class="option-preview preview-earth" aria-hidden="true">
-            <svg viewBox="80 25 200 190" fill="none">
-              <defs><clipPath id="landing-earth-clip"><circle cx="180" cy="120" r="76" /></clipPath></defs>
-              <circle class="earth-water" cx="180" cy="120" r="76" />
-              <g class="earth-land" clip-path="url(#landing-earth-clip)">
-                <path d="m123 56 24-11 19 8 4 15-19 16-3 16-17 8-20-20-10-9Zm34 56 22 5 14 19-11 24-13 24-11-10 2-25-13-18Zm43-63 20 10 22 15 16 21-11 15-15-10-14-14-18 8-12-13 4-20Zm0 58 25-5 16 21-9 30-20 12-13-27-8-15Zm40 63 19-6 13 17-15 12-20-7ZM141 187l38 8 42-7 21 12-47 6-46-4Z" />
-              </g>
-              <g class="earth-grid">
-                <circle cx="180" cy="120" r="76" />
-                <ellipse cx="180" cy="120" rx="34" ry="76" />
-                <path d="M104 120h152M114 82q66 26 132 0M114 158q66-26 132 0" />
-              </g>
-              <rect class="earth-share" x="180" y="117" width="27" height="27" />
-            </svg>
-          </div>
-          <div class="option-copy">
-            <div class="option-title">
-              <h2 lang="en">{aBitOfEarth.title}</h2>
-            </div>
-            <p>{t.landing.earthDescription}</p>
-          </div>
-        </a>
-        <a class="landing-option" href={getRelativeLocaleUrl(lang, 'android-app')}>
-          <div class="option-preview preview-app" aria-hidden="true">
-            <div class="preview-phone">
-              <AppScreenshot name="paper" darkName="deepsea" alt="" preview />
-            </div>
-          </div>
-          <div class="option-copy">
-            <div class="option-title">
-              <h2>{tracker[lang].app}</h2>
-            </div>
-            <p>{t.hero.tagline}</p>
-          </div>
-        </a>
+    <header class="masthead">
+      <a href={href('')} class="masthead-brand" aria-label="Open Bitcoin Tracker" aria-current="page">
+        <img src="/app-icon.png" width="40" height="40" alt="" />
+        <h1 lang="en" class="brand-name">Open Bitcoin Tracker</h1>
+      </a>
+    </header>
+
+    <section id="tools" class="tools" aria-label={home.toolsLabel}>
+      <a class="chart-feature tool-link" href={href('price-tracker')}>
+        <div class="chart-copy">
+          <h2>{tracker[lang].priceChart}</h2>
+          <p>{home.priceDescription}</p>
+          <span class="text-action">{home.openChart}<span aria-hidden="true">↗</span></span>
+        </div>
+        <figure class="chart-preview">
+          <Image src={chartPreview} alt="" widths={[640, 960, 1264]} sizes="(max-width: 700px) 100vw, 66vw" format="webp" quality={85} loading="eager" fetchpriority="high" />
+
+        </figure>
+      </a>
+
+      <div class="explore-grid">
+        <article class="earth-tool">
+          <a class="tool-link secondary-tool" href={href(aBitOfEarth.path)}>
+            <div class="tool-heading"><h2 lang="en">{aBitOfEarth.title}</h2></div>
+            <figure class="secondary-preview earth-preview">
+              <Image src={earthPreview} alt="" widths={[480, 800, 1280]} sizes="(max-width: 700px) 100vw, 55vw" format="webp" quality={85} loading="lazy" />
+
+            </figure>
+            <div class="tool-description"><p>{home.earthDescription}</p><span class="text-action">{home.openEarth}<span aria-hidden="true">↗</span></span></div>
+          </a>
+        </article>
+        <article class="video-tool">
+          <a class="tool-link secondary-tool" href={href('video-mode')}>
+            <div class="tool-heading"><h2>{t.nav.videoMode}</h2></div>
+            <figure class="secondary-preview video-preview">
+              <Image src={videoPreview} alt="" widths={[480, 800, 1280]} sizes="(max-width: 700px) 100vw, 40vw" format="webp" quality={85} loading="lazy" />
+
+            </figure>
+            <div class="tool-description"><p>{home.videoDescription}</p><span class="text-action">{home.openVideo}<span aria-hidden="true">↗</span></span></div>
+          </a>
+        </article>
       </div>
-    </div>
+
+      <a class="app-feature tool-link" href={href('android-app')}>
+        <div class="app-copy">
+          <h2>{tracker[lang].app}</h2>
+          <p class="app-description">{home.appDescription}</p>
+          <span class="app-action">{home.openApp}<span aria-hidden="true">↗</span></span>
+        </div>
+        <div class="app-preview" aria-hidden="true">
+          <div class="phone-frame"><AppScreenshot name="paper" darkName="oled" alt="" /></div>
+        </div>
+      </a>
+    </section>
+
+    <footer class="landing-footer">
+      <div class="footer-links">
+        <a href={repo} target="_blank" rel="noopener noreferrer">{t.footer.github}<span aria-hidden="true">↗</span></a>
+        <a href={href('about')}>{t.footer.about}</a>
+        <span>{t.footer.copyright}</span>
+      </div>
+    </footer>
   </main>
 </Layout>
 
-<script>
-  const brand = document.querySelector<HTMLButtonElement>('[data-brand-toggle]');
-  if (brand) {
-    const mobile = window.matchMedia('(max-width: 700px)');
-    const hover = window.matchMedia('(hover: hover)');
-    const usesHover = () => !mobile.matches && hover.matches;
-    const expand = (expanded: boolean) => brand.setAttribute('aria-expanded', String(expanded));
-    brand.addEventListener('pointerenter', () => { if (usesHover()) expand(true); });
-    brand.addEventListener('pointerleave', () => { if (usesHover() && !brand.matches(':focus-visible')) expand(false); });
-    brand.addEventListener('focus', () => { if (usesHover() && brand.matches(':focus-visible')) expand(true); });
-    brand.addEventListener('blur', () => expand(usesHover() && brand.matches(':hover')));
-    brand.addEventListener('click', () => {
-      if (!usesHover()) expand(brand.getAttribute('aria-expanded') !== 'true');
-    });
-    brand.addEventListener('keydown', (event) => { if (event.key === 'Escape') expand(false); });
-    mobile.addEventListener('change', () => expand(false));
-    hover.addEventListener('change', () => expand(false));
-  }
-</script>
-
 <style>
-  .landing-main {
-    --landing-glow: rgb(247 147 26 / .16);
-    display: grid;
-    place-items: center;
-    min-height: 100dvh;
-    padding: max(7rem, env(safe-area-inset-top, 0px)) clamp(1.25rem, 4vw, 3rem) max(7rem, env(safe-area-inset-bottom, 0px));
-    background: radial-gradient(ellipse at center, var(--landing-glow), transparent 62%);
+  :global(html:has(.landing-main)) {
+    --color-paper: #f4f2eb;
+    --color-surface: #fffef9;
+    --color-ink: #252722;
+    --color-ink-muted: #65675e;
+    --color-divider: #d5d6cc;
+    --color-ink-rgb: 37 39 34;
+    --color-paper-rgb: 244 242 235;
+    --menu-control-bg: #e8e8df;
+    --menu-control-ink: #252722;
+    background: var(--color-paper);
   }
-  :global(html.dark) .landing-main { --landing-glow: rgb(247 147 26 / .23); }
-  .landing-content { width: 100%; max-width: 72rem; }
-  .landing-brand { container-type: inline-size; margin-bottom: clamp(2rem, 4vw, 3rem); text-align: center; }
-  h1 { display: inline-flex; min-width: 0; max-width: 100%; font-size: clamp(2rem, 8.4cqi, 6.5rem); line-height: 1.06; letter-spacing: -.015em; white-space: nowrap; }
-  .brand-trigger { display: inline-flex; align-items: center; gap: .22em; border-radius: .1em; font: inherit; letter-spacing: inherit; text-transform: inherit; cursor: default; }
-  .brand-icon { flex: none; width: .8em; height: .8em; }
-  .brand-wordmark, .brand-word { display: inline-flex; flex-shrink: 0; }
-  /* Center the visible capitals, accounting for the wordmark font's descent. */
-  .brand-wordmark { transform: translateY(-.05em); }
-  .brand-reveal { display: inline-grid; grid-template-columns: 0fr; opacity: 0; transition: grid-template-columns 550ms cubic-bezier(.22, 1, .36, 1), opacity 350ms ease; }
-  .brand-reveal > span { min-width: 0; overflow: hidden; }
-  .brand-trigger[aria-expanded="true"] .brand-reveal { grid-template-columns: 1fr; opacity: 1; }
-  .landing-options { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1.25rem; }
-  .landing-option {
-    position: relative;
-    display: flex;
-    flex-direction: column;
-    border: 1px solid var(--color-divider);
-    border-radius: var(--radius-xl);
-    background: var(--color-surface);
-    color: var(--color-ink);
-    min-width: 0;
-    transition: border-color .2s, transform .2s var(--ease-out), box-shadow .2s;
+  :global(html.dark:has(.landing-main)) {
+    --color-paper: #171919;
+    --color-surface: #202323;
+    --color-ink: #efeee7;
+    --color-ink-muted: #a8afa6;
+    --color-divider: #3b403b;
+    --color-ink-rgb: 239 238 231;
+    --color-paper-rgb: 23 25 25;
+    --menu-control-bg: #282d2a;
+    --menu-control-ink: #efeee7;
   }
-  .landing-option:hover, .landing-option:focus-visible { border-color: var(--color-accent); box-shadow: var(--shadow-card-hover); }
-  @media (hover: hover) {
-    .landing-option:hover { transform: translateY(-4px); }
+  .landing-main { max-width: 1280px; margin-inline: auto; padding: 0 clamp(1.25rem, 4.5vw, 4rem); }
+  .masthead { min-height: 105px; display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding-right: 4.75rem; }
+  .masthead-brand { display: inline-flex; align-items: center; gap: .7rem; }
+  .masthead-brand img { width: 32px; height: 32px; border-radius: 8px; }
+  .masthead-brand h1 { font-size: 1.5rem; line-height: 1; letter-spacing: -.02em; }
+  h2 { overflow-wrap: anywhere; font-family: 'Barlow Condensed', var(--font-sans); font-weight: 700; text-transform: uppercase; }
+  .app-feature > * { min-width: 0; }
+  .text-action { display: inline-flex; align-items: center; gap: .8rem; font-size: .8125rem; font-weight: 600; line-height: 1.4; }
+  .text-action > span { font-size: 1.1rem; }
+  .tools { padding-top: clamp(1.5rem, 3vw, 2.5rem); }
+  .tool-link { display: block; }
+  .chart-feature { display: grid; grid-template-columns: 1fr 2.15fr; border: 1px solid var(--color-divider); background: var(--color-surface); }
+  .chart-copy { display: flex; flex-direction: column; align-items: start; padding: clamp(1.5rem, 3vw, 2.5rem); }
+  .chart-copy h2 { font-size: clamp(2.5rem, 3.8vw, 3.75rem); line-height: 1; letter-spacing: -.015em; }
+  .chart-copy > p { margin-top: 1rem; max-width: 20ch; color: var(--color-ink-muted); font-size: .875rem; line-height: 1.65; }
+  .chart-copy .text-action { margin-top: auto; padding-top: 2rem; }
+  .chart-preview { position: relative; min-width: 0; align-self: stretch; background: #0f1e3a; overflow: hidden; }
+  .chart-preview img { display: block; width: 100%; height: 100%; min-height: 340px; object-fit: cover; object-position: left top; }
+  .explore-grid { display: grid; grid-template-columns: 1.25fr 1fr; gap: 2.5rem; padding-block: 3rem; }
+  .tool-heading { display: flex; align-items: center; gap: .75rem; padding-block: 0 1.2rem; }
+  .tool-heading h2 { font-size: clamp(1.75rem, 2.6vw, 2.5rem); line-height: 1.1; }
+  .secondary-preview { position: relative; height: clamp(200px, 23vw, 280px); background: #202629; overflow: hidden; }
+  .secondary-preview img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .earth-preview img { object-fit: contain; object-position: center; }
+  .video-preview img { object-position: center; }
+  .tool-description { display: flex; justify-content: space-between; gap: 1.25rem; align-items: start; padding-top: 1.1rem; }
+  .tool-description p { color: var(--color-ink-muted); font-size: .8125rem; line-height: 1.7; max-width: 24ch; }
+  .tool-description .text-action { font-size: .75rem; margin-top: .15rem; }
+  .tool-link .text-action > span, .app-action > span { transition: transform 180ms ease; }
+  .tool-link:hover .text-action > span, .tool-link:hover .app-action > span { transform: translate(2px, -2px); }
+  .tool-link:hover h2 { text-decoration: underline; text-decoration-color: var(--color-accent); text-decoration-thickness: 2px; text-underline-offset: 7px; }
+  .app-feature { display: grid; grid-template-columns: 1.35fr 1fr; background: var(--color-surface); border-top: 1px solid var(--color-divider); border-bottom: 1px solid var(--color-divider); overflow: hidden; }
+  .app-copy { padding: clamp(2rem, 4vw, 3.5rem); }
+  .app-copy h2 { font-size: clamp(2.8rem, 4.6vw, 4.6rem); letter-spacing: -.02em; line-height: .98; max-width: 14ch; text-wrap: balance; }
+  .app-description { color: var(--color-ink-muted); font-size: .875rem; line-height: 1.75; max-width: 34ch; margin-top: 1.2rem; }
+  .app-action { display: inline-flex; align-items: center; gap: 1.2rem; margin-top: 1.7rem; padding: .9rem 1.15rem; background: var(--color-accent); color: #252722; font-size: .75rem; font-weight: 650; }
+  .app-action > span { font-size: 1.1rem; }
+  .app-preview { position: relative; min-height: 400px; display: flex; justify-content: center; align-items: start; overflow: hidden; background: #e4e5da; padding-top: 2.25rem; }
+  :global(html.dark) .app-preview { background: #2b332d; }
+  .phone-frame { position: absolute; top: 2.25rem; width: 235px; border: 5px solid #252722; border-radius: 30px; overflow: hidden; box-shadow: 0 20px 35px #0002; transform: rotate(5deg); }
+  .phone-frame :global(img) { display: block; width: 100%; height: auto; }
+  .landing-footer { display: flex; justify-content: flex-end; align-items: center; gap: 2rem; padding-block: 2.5rem; }
+  .footer-links { color: var(--color-ink-muted); font-size: .6875rem; }
+  .landing-footer .footer-links { display: flex; align-items: center; flex-wrap: wrap; gap: 1.5rem; padding: 0; border: 0; }
+  .footer-links a { display: inline-flex; align-items: center; gap: .4rem; min-height: 44px; }
+  .footer-links a:hover { color: var(--color-ink); text-decoration: underline; text-underline-offset: 4px; }
+  @media (min-width: 1450px) { .masthead { padding-right: 0; } }
+  @media (max-width: 1000px) {
+    .chart-feature { grid-template-columns: 1fr 1.8fr; }
+    .chart-preview img { min-height: 320px; }
+    .explore-grid { gap: 1.5rem; }
+    .tool-description { flex-direction: column; gap: .6rem; }
+    .tool-description p { max-width: 32ch; }
+    .landing-footer { align-items: start; }
   }
-  .option-preview { position: relative; aspect-ratio: 3 / 2; overflow: hidden; border-radius: calc(var(--radius-xl) - 1px) calc(var(--radius-xl) - 1px) 0 0; background: color-mix(in srgb, var(--color-paper) 80%, var(--color-surface)); }
-  .option-preview > svg { display: block; width: 100%; height: 100%; }
-  .preview-chart { background: linear-gradient(145deg, var(--color-accent-soft), var(--color-paper)); }
-  .chart-window { fill: var(--color-surface); stroke: var(--color-divider); }
-  .chart-fill { fill: var(--color-accent); fill-opacity: .13; }
-  .chart-line { stroke: var(--color-accent); stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
-  .preview-app { background: radial-gradient(ellipse at 50% 95%, var(--hero-glow), transparent 70%), var(--color-paper); }
-  .preview-phone { position: absolute; top: 12%; left: 50%; width: 52%; max-width: 180px; padding: 4px; border: 1px solid rgb(255 255 255 / .15); border-radius: 24px; background: #1F1B14; box-shadow: 12px 16px 32px var(--phone-shadow); transform: translateX(-50%) rotate(-8deg); }
-  .preview-phone :global(img) { display: block; width: 100%; border-radius: 20px; }
-  .preview-earth { background: linear-gradient(155deg, var(--color-paper), var(--color-accent-soft)); }
-  .earth-water { fill: var(--color-surface); }
-  .earth-land { fill: var(--color-ink); fill-opacity: .24; }
-  .earth-grid { stroke: var(--color-ink); stroke-opacity: .35; }
-  .earth-share { fill: var(--color-accent); fill-opacity: .6; stroke: var(--color-accent); stroke-width: 2; }
-  .preview-video { background: linear-gradient(145deg, var(--color-paper), var(--color-accent-soft)); }
-  .video-window { fill: #172636; stroke: var(--color-divider); }
-  .video-music-notes { fill: #ffb047; fill-opacity: .22; }
-  .video-landscape { fill: #43727b; }
-  .video-foreground { fill: #29464c; }
-  .video-preview-price { fill: #fff; font-family: var(--font-sans); font-size: 36px; font-weight: 750; letter-spacing: -2px; }
-  .video-controls { fill: #080808; fill-opacity: .6; }
-  .video-play { fill: #fff; }
-  .video-progress { stroke: #ffffff50; stroke-width: 3; stroke-linecap: round; }
-  .video-progress-played { stroke: #ff981e; stroke-width: 3; stroke-linecap: round; }
-  .option-copy { padding: 1.5rem; flex: 1; min-width: 0; border-top: 1px solid var(--color-divider); }
-  .option-title { display: flex; align-items: center; justify-content: space-between; gap: .75rem; }
-  h2 { font-size: 1.125rem; font-weight: 600; letter-spacing: -.025em; line-height: 1.3; }
-  p { margin-top: .75rem; color: var(--color-ink-muted); font-size: .875rem; line-height: 1.65; text-wrap: pretty; }
-  @media (min-width: 540px) and (max-width: 1100px) { .landing-options { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
   @media (max-width: 700px) {
-    :global(body:has(.landing-main)) {
-      --landing-gutter: 1.25rem;
-    }
-    .landing-main { align-items: start; padding: var(--menu-control-top) var(--landing-gutter) max(2rem, env(safe-area-inset-bottom, 0px)); }
-    .landing-brand { display: grid; grid-template-columns: minmax(0, 1fr) var(--menu-control-size); column-gap: .75rem; align-items: center; min-height: var(--menu-control-size); margin-bottom: 1.5rem; text-align: left; }
-    h1 { font-size: calc(var(--menu-control-size) * 1.25); transition: font-size 550ms cubic-bezier(.22, 1, .36, 1); }
-    /* Reserve the logo, menu button, and menu gap before sizing the full name. */
-    h1:has(.brand-trigger[aria-expanded="true"]) { font-size: clamp(1rem, calc((100cqi - 2 * var(--menu-control-size) - .75rem) / 8.5), 3.25rem); }
-    .brand-trigger { height: var(--menu-control-size); }
-    .brand-icon { width: var(--menu-control-size); height: var(--menu-control-size); }
-    .landing-options { gap: 1.25rem; }
-    .landing-option { border-radius: 20px; box-shadow: var(--shadow-card); }
-    /* Keep the whole illustration visible instead of cropping it into a strip. */
-    .option-preview { aspect-ratio: 8 / 5; border-radius: 19px 19px 0 0; }
-    .option-copy { padding: 1.25rem; }
-    h2 { font-size: 1.1875rem; }
-    p { font-size: .9375rem; line-height: 1.6; margin-top: .625rem; }
+    .masthead { min-height: 88px; padding-right: 3.75rem; }
+    .masthead-brand { gap: .5rem; }
+    .masthead-brand img { width: 28px; height: 28px; }
+    .masthead-brand h1 { font-size: 1.2rem; max-width: 10rem; }
+    .chart-feature { grid-template-columns: 1fr; }
+    .chart-copy { display: grid; grid-template-columns: minmax(0, 1fr); align-items: center; gap: .6rem; padding: 1.25rem; }
+    .chart-copy h2 { margin: 0; font-size: 2rem; }
+    .chart-copy > p { grid-column: 1 / -1; margin: 0; max-width: none; font-size: .75rem; }
+    .chart-copy .text-action { grid-column: 1 / -1; padding-top: .4rem; margin: 0; font-size: .75rem; }
+    .chart-preview img { min-height: 0; height: auto; aspect-ratio: 1264 / 680; }
+    .explore-grid { grid-template-columns: 1fr; gap: 2rem; padding-block: 2rem; }
+    .tool-heading { padding-bottom: .8rem; }
+    .tool-heading h2 { font-size: 2rem; }
+    .secondary-preview { height: auto; aspect-ratio: 1.8; }
+    .tool-description { flex-direction: row; }
+    .tool-description p { max-width: 26ch; font-size: .75rem; }
+    .tool-description .text-action { font-size: .6875rem; }
+    .app-feature { grid-template-columns: 1.25fr 1fr; }
+    .app-copy { padding: 1.5rem 1rem; }
+    .app-copy h2 { font-size: clamp(2.2rem, 7vw, 3.25rem); }
+    .app-description { font-size: .75rem; }
+    .app-action { font-size: .6875rem; padding: .75rem; gap: .6rem; }
+    .app-preview { min-height: 320px; padding-top: 2.5rem; }
+    .phone-frame { width: 175px; flex-shrink: 0; margin-left: 2rem; border-radius: 23px; border-width: 4px; }
+    .landing-footer { flex-direction: column; gap: .75rem; padding-block: 2rem; }
+    .landing-footer .footer-links { gap: 1.25rem; }
   }
-  @media (max-width: 539px) {
-    .landing-options { grid-template-columns: 1fr; }
-  }
-  @media (max-width: 359px) {
-    :global(body:has(.landing-main)) { --landing-gutter: 1rem; }
-    .option-copy { padding: 1.125rem; }
+  @media (max-width: 420px) {
+    .app-feature { grid-template-columns: minmax(0, 1fr); }
+    .app-copy { padding: 1.5rem; }
+    .app-copy h2 { max-width: 15ch; }
+    .app-preview { min-height: 240px; }
+    .phone-frame { width: 200px; top: 1.5rem; margin-left: 0; }
   }
   @media (prefers-reduced-motion: reduce) {
-    h1, .brand-reveal { transition: none; }
-    .landing-option { transition: none; }
-    .landing-option:hover { transform: none; }
+    .tool-link .text-action > span, .app-action > span { transition: none; }
+    .tool-link:hover .text-action > span, .tool-link:hover .app-action > span { transform: none; }
   }
 </style>

@@ -26,6 +26,12 @@ export const tr: Dict = {
   },
 
   landing: {
+    toolsLabel: 'Araçları keşfet',
+    openChart: 'Grafiği aç',
+    openEarth: 'Haritayı keşfet',
+    openVideo: 'Ortamını oluştur',
+    openApp: 'Android uygulamasını edin',
+    appDescription: 'Bitcoin portföyünü takip et. Hesap yok. Stack’lerin telefonunda kalır.',
     priceTracker: 'Fiyat takibi',
     priceDescription: 'Canlı Bitcoin fiyatı ve 2010’dan bu yana fiyat geçmişi.',
     videoDescription: 'YouTube videolarının üzerinde canlı Bitcoin fiyatı',

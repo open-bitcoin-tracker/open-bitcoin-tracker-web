@@ -26,6 +26,12 @@ export const ja: Dict = {
   },
 
   landing: {
+    toolsLabel: 'ツールを使ってみる',
+    openChart: 'チャートを開く',
+    openEarth: '地図を探索',
+    openVideo: '雰囲気をつくる',
+    openApp: 'Androidアプリを入手',
+    appDescription: 'ビットコインのポートフォリオをチェック。アカウント不要。スタックの情報はスマホの中だけ。',
     priceTracker: '価格トラッカー',
     priceDescription: 'ビットコインのリアルタイム価格と2010年からの価格履歴。',
     videoDescription: 'YouTube動画にビットコインのリアルタイム価格を重ねて表示',

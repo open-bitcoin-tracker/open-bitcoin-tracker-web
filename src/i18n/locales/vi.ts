@@ -26,6 +26,12 @@ export const vi: Dict = {
   },
 
   landing: {
+    toolsLabel: 'Khám phá công cụ',
+    openChart: 'Mở biểu đồ',
+    openEarth: 'Khám phá bản đồ',
+    openVideo: 'Tạo không gian riêng',
+    openApp: 'Tải ứng dụng Android',
+    appDescription: 'Theo dõi danh mục Bitcoin của bạn. Không cần tài khoản. Dữ liệu stack chỉ nằm trên điện thoại của bạn.',
     priceTracker: 'Theo dõi giá',
     priceDescription: 'Giá Bitcoin trực tiếp và lịch sử giá từ năm 2010.',
     videoDescription: 'Giá Bitcoin trực tiếp trên video YouTube',

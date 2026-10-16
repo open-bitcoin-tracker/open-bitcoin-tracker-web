@@ -26,6 +26,12 @@ export const ru: Dict = {
   },
 
   landing: {
+    toolsLabel: 'Открой инструменты',
+    openChart: 'Открыть график',
+    openEarth: 'Изучить карту',
+    openVideo: 'Создать атмосферу',
+    openApp: 'Скачать приложение для Android',
+    appDescription: 'Отслеживай свой биткоин-портфель. Без аккаунтов. Твои стеки остаются на твоём телефоне.',
     priceTracker: 'Трекер цены',
     priceDescription: 'Курс биткоина в реальном времени и история с 2010 года.',
     videoDescription: 'Курс биткоина в реальном времени поверх видео на YouTube',

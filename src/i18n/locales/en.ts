@@ -33,6 +33,12 @@ export const en = {
   },
 
   landing: {
+    toolsLabel: 'Explore the tools',
+    openChart: 'Open the chart',
+    openEarth: 'Explore the map',
+    openVideo: 'Set the scene',
+    openApp: 'Get the Android app',
+    appDescription: 'Track your Bitcoin portfolio. No accounts. Your stacks stay on your phone.',
     priceTracker: 'Price Tracker',
     priceDescription: 'Live Bitcoin price and history since 2010.',
     videoDescription: 'Live Bitcoin price over YouTube videos',

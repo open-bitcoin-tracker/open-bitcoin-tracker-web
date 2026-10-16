@@ -26,6 +26,12 @@ export const fr: Dict = {
   },
 
   landing: {
+    toolsLabel: 'Explore les outils',
+    openChart: 'Ouvrir le graphique',
+    openEarth: 'Explorer la carte',
+    openVideo: 'Crée ton ambiance',
+    openApp: 'Obtenir l’appli Android',
+    appDescription: 'Tracke ton portfolio Bitcoin. Sans compte. Tes stacks restent sur ton téléphone.',
     priceTracker: 'Tracker de prix',
     priceDescription: 'Le cours du Bitcoin en direct et son historique depuis 2010.',
     videoDescription: 'Le cours du Bitcoin en direct sur des vidéos YouTube',
