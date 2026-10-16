@@ -97,7 +97,6 @@ function startVideoMode(root: HTMLElement) {
   const totalTime = root.querySelector<HTMLElement>('[data-video-duration]')!;
   const videoTime = root.querySelector<HTMLElement>('[data-video-time]')!;
   const videoTimeline = root.querySelector<HTMLElement>('[data-video-timeline]')!;
-  const subtitlesButton = root.querySelector<HTMLButtonElement>('[data-subtitles]')!;
   const loopButton = root.querySelector<HTMLButtonElement>('[data-loop]')!;
   const error = root.querySelector<HTMLElement>('[data-video-error]')!;
   const videoStatus = root.querySelector<HTMLElement>('[data-video-status]')!;
@@ -109,8 +108,6 @@ function startVideoMode(root: HTMLElement) {
   let volume = 100;
   let lastAudibleVolume = 100;
   let looping = false;
-  let subtitlesWanted = false;
-  let subtitlesEnabled = false;
   let scrubbing = false;
   let adjustingVolume = false;
   let duration = 0;
@@ -132,7 +129,6 @@ function startVideoMode(root: HTMLElement) {
       }
       muted = volume === 0 || saved.muted === true;
       looping = saved.looping === true;
-      subtitlesWanted = saved.subtitlesWanted === true;
     }
   } catch { /* Keep playback usable when saved settings are malformed or storage is blocked. */ }
   const mobileAudio = window.matchMedia('(hover: none) and (pointer: coarse)');
@@ -144,7 +140,7 @@ function startVideoMode(root: HTMLElement) {
     if (destroyed) return;
     try {
       window.localStorage.setItem(VIDEO_PLAYBACK_KEY, JSON.stringify({
-        version: 1, ...(phoneAudio ? desktopAudio : { volume, muted, lastAudibleVolume }), looping, subtitlesWanted,
+        version: 1, ...(phoneAudio ? desktopAudio : { volume, muted, lastAudibleVolume }), looping,
       }));
     } catch { /* Settings remain usable when storage is blocked or full. */ }
   }
@@ -257,14 +253,6 @@ function startVideoMode(root: HTMLElement) {
     progressRefresh = setInterval(paintProgress, 500);
   }
 
-  function updateCaptions(enabled: boolean, available: boolean) {
-    subtitlesEnabled = enabled && available;
-    root.toggleAttribute('data-subtitles-enabled', subtitlesEnabled);
-    subtitlesButton.disabled = !available;
-    subtitlesButton.setAttribute('aria-pressed', String(subtitlesEnabled));
-    subtitlesButton.title = available ? t.subtitles : t.subtitlesUnavailable;
-  }
-
   function paintAudio() {
     const label = muted ? t.unmute : t.mute;
     muteButton.setAttribute('aria-label', label);
@@ -324,9 +312,6 @@ function startVideoMode(root: HTMLElement) {
       videoStatus.textContent = '';
       videoStatus.hidden = true;
     },
-    onCaptions({ enabled, available }) {
-      if (!destroyed) updateCaptions(enabled, available);
-    },
     onLiveStatus(id, isLive) {
       if (!destroyed) pickerTabs.setLiveStatus(id, isLive);
     },
@@ -335,7 +320,8 @@ function startVideoMode(root: HTMLElement) {
   player.setVolume(volume);
   player.setMuted(muted);
   player.setLoop(looping);
-  player.setCaptions(subtitlesWanted);
+  // Ignore legacy subtitle preferences and keep YouTube-selected tracks off.
+  player.setCaptions(false);
   function updateAudioMode() {
     if (destroyed || phoneAudio === mobileAudio.matches) return;
     phoneAudio = mobileAudio.matches;
@@ -381,7 +367,6 @@ function startVideoMode(root: HTMLElement) {
     seek.value = seek.max = '0';
     seek.disabled = true;
     renderPosition(0);
-    updateCaptions(false, false);
     playButton.disabled = loopButton.disabled = false;
     muteButton.disabled = volumeInput.disabled = phoneAudio;
     setPlaying(false);
@@ -485,12 +470,6 @@ function startVideoMode(root: HTMLElement) {
     player.setLoop(looping);
     loopButton.setAttribute('aria-pressed', String(looping));
     savePlaybackPreferences();
-  });
-  subtitlesButton.addEventListener('click', () => {
-    // Unavailable tracks and delayed player callbacks must not erase the user's choice.
-    subtitlesWanted = !subtitlesEnabled;
-    savePlaybackPreferences();
-    player.setCaptions(subtitlesWanted);
   });
   seek.addEventListener('pointerdown', event => {
     if (seek.disabled) return;

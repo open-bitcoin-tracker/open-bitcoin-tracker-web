@@ -159,9 +159,6 @@ const locale = htmlLang(Astro.currentLocale);
           <div class="video-time" data-video-time aria-hidden="true">
             <span data-video-current>0:00</span><span>/</span><span data-video-duration>—</span>
           </div>
-          <button type="button" class="video-icon-button" data-subtitles aria-label={t.subtitles} title={t.subtitlesUnavailable} aria-pressed="false" disabled>
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="5" width="20" height="14" rx="3" /><path d="M10 9.5C8.5 8 6 9 6 12s2.5 4 4 2.5M18 9.5C16.5 8 14 9 14 12s2.5 4 4 2.5" /></svg>
-          </button>
           <button type="button" class="video-icon-button" data-loop aria-label={t.loop} title={t.loop} aria-pressed="false" disabled>
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m17 2 4 4-4 4M3 11V9a3 3 0 0 1 3-3h15M7 22l-4-4 4-4m14-1v2a3 3 0 0 1-3 3H3" /></svg>
           </button>
@@ -203,8 +200,6 @@ const locale = htmlLang(Astro.currentLocale);
   .video-background { z-index: -2; overflow: hidden; background: #080808; }
   /* Cover the viewport with a 16:9 player in either orientation. */
   .video-background :global(iframe) { position: absolute; top: 50%; left: 50%; width: max(100vw, 177.778vh); height: max(100vh, 56.25vw); min-width: 200px; min-height: 200px; transform: translate(-50%, -50%); border: 0; }
-  /* Keep YouTube's native captions inside the visible viewport. */
-  .video-page[data-subtitles-enabled] .video-background :global(iframe) { width: 100vw; height: 100vh; }
   .video-shade { z-index: -1; background: linear-gradient(rgb(0 0 0 / .3), transparent 30%, transparent 65%, rgb(0 0 0 / .45)); }
   .video-main { min-height: 100svh; }
   button, select { cursor: pointer; }
@@ -285,7 +280,6 @@ const locale = htmlLang(Astro.currentLocale);
   /* Compensate for the final negative letter spacing so the last glyph stays inside the frame. */
   .video-price { --price-chars: 8; --video-price-base-size: clamp(3rem, min(9.375vw, 16.6667vh, 207vw / var(--price-chars)), 22.5rem); color: var(--video-price-colour, #fff); font-family: var(--video-price-font, var(--font-sans)); font-size: calc(var(--video-price-base-size) * var(--video-price-scale, 1) * var(--video-price-fit, 1)); font-weight: var(--video-price-weight, 750); letter-spacing: var(--video-price-spacing, -.065em); padding-inline-end: .065em; padding-block: var(--video-price-padding, 0); -webkit-text-stroke: var(--video-price-stroke-width, 0px) var(--video-price-stroke-colour, #000); paint-order: stroke fill; line-height: 1.2; font-variant-numeric: tabular-nums; white-space: nowrap; text-shadow: 0 3px 30px #000, 0 0 80px #0009; }
   .video-dock { position: fixed; bottom: max(1rem, env(safe-area-inset-bottom)); left: 50%; transform: translateX(-50%); width: min(560px, calc(100% - 3rem)); z-index: 3; text-align: center; }
-  .video-page[data-subtitles-enabled] .video-dock { bottom: max(7rem, 16svh, env(safe-area-inset-bottom)); }
   .video-picker { position: fixed; inset: 0 auto 0 0; width: min(32rem, 100%); max-width: 100%; height: 100dvh; max-height: 100dvh; margin: 0; padding: max(1.75rem, env(safe-area-inset-top)) max(1.5rem, env(safe-area-inset-right)) max(1.75rem, env(safe-area-inset-bottom)) max(1.5rem, env(safe-area-inset-left)); overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; border: 0; border-right: 1px solid #ffffff14; background: #111; color: #fff; box-shadow: 12px 0 60px #0005; transform: translate3d(-100%, 0, 0); transition: transform .3s ease; will-change: transform; }
   .video-picker[open] { transform: translate3d(0, 0, 0); }
   .video-picker[open][data-closing] { transform: translate3d(-100%, 0, 0); pointer-events: none; }
@@ -343,7 +337,7 @@ const locale = htmlLang(Astro.currentLocale);
   .video-icon-button[aria-pressed="true"] { color: #ffb047; background: rgb(71 41 9 / .85); }
   .video-timeline { display: flex; align-items: center; padding: 0 .5rem; margin-top: .25rem; }
   .video-time { display: flex; align-items: center; gap: .25rem; flex-shrink: 0; margin-right: auto; font-size: .7rem; font-variant-numeric: tabular-nums; white-space: nowrap; }
-  .video-controls:has(.video-time[hidden]) [data-subtitles] { margin-left: auto; }
+  .video-controls:has(.video-time[hidden]) [data-fullscreen] { margin-left: auto; }
   .video-seek { --video-progress: 0%; height: 2.75rem; padding: 0; cursor: pointer; appearance: none; accent-color: #ff981e; }
   .video-seek:disabled { cursor: default; }
   .video-seek::-webkit-slider-runnable-track { height: 4px; border-radius: 4px; background: linear-gradient(to right, #ff981e var(--video-progress), #ffffff50 var(--video-progress)); }
@@ -380,7 +374,7 @@ const locale = htmlLang(Astro.currentLocale);
     .video-controls > .video-icon-button, .video-volume-control { flex: 1 1 0; min-width: 0; max-width: 4rem; }
     .video-controls .video-icon-button svg { width: 1.75rem; height: 1.75rem; }
     .video-time { flex: 1 0 100%; order: 1; justify-content: center; margin: 0; font-size: .8rem; }
-    .video-controls:has(.video-time[hidden]) [data-subtitles] { margin-left: 0; }
+    .video-controls:has(.video-time[hidden]) [data-fullscreen] { margin-left: 0; }
     .video-volume-control { position: relative; }
     .video-volume-reveal { position: absolute; bottom: 100%; left: 0; height: 3rem; padding: .25rem .5rem; border-radius: 999px; background: rgb(16 16 16 / .95); }
     .video-volume-control:is(:hover, :has(:focus-visible), :has(input:active)) .video-volume-reveal { width: 7rem; }
@@ -398,16 +392,13 @@ const locale = htmlLang(Astro.currentLocale);
   }
   @media (max-height: 480px) {
     .video-price-stage { padding-top: 3.5rem; padding-bottom: 11rem; }
-    .video-page[data-subtitles-enabled] .video-price-stage { padding-bottom: 14rem; }
     .video-price { line-height: 1.1; }
-    .video-page[data-subtitles-enabled] .video-dock { bottom: max(5rem, env(safe-area-inset-bottom)); }
   }
   @media (max-height: 480px) and (min-width: 600px) {
     .video-timeline .video-seek { height: 1.5rem; }
     .video-player-panel { padding: 1px .25rem; }
     .video-playback { gap: .375rem; }
     .video-change { min-height: 1.75rem; padding: .2rem .8rem; }
-    .video-page[data-subtitles-enabled] .video-dock { bottom: max(3rem, env(safe-area-inset-bottom)); }
   }
   @media (max-height: 360px) and (min-width: 600px) {
     .video-price-stage { justify-content: flex-start; padding-top: calc(var(--menu-control-top) + var(--menu-control-size) + .5rem); }

@@ -24,8 +24,6 @@ export interface VideoCopy {
   volume: string;
   seek: string;
   playbackPosition: string;
-  subtitles: string;
-  subtitlesUnavailable: string;
   loop: string;
   movePrice: string;
   resizePrice: string;
@@ -76,8 +74,6 @@ const en: VideoCopy = {
   volume: 'Volume',
   seek: 'Seek video',
   playbackPosition: '{current} of {duration}',
-  subtitles: 'Subtitles',
-  subtitlesUnavailable: 'Subtitles are unavailable for this video.',
   loop: 'Loop video',
   movePrice: 'Move price',
   resizePrice: 'Resize price (hold Shift to keep its center fixed)',
@@ -130,8 +126,6 @@ export const video: Record<Lang, VideoCopy> = {
     volume: 'Volumen',
     seek: 'Avanzar o retroceder en el vídeo',
     playbackPosition: '{current} de {duration}',
-    subtitles: 'Subtítulos',
-    subtitlesUnavailable: 'Este vídeo no tiene subtítulos disponibles.',
     loop: 'Repetir vídeo',
     movePrice: 'Mover precio',
     resizePrice: 'Cambiar tamaño del precio (mantén Shift para fijar el centro)',
@@ -181,8 +175,6 @@ export const video: Record<Lang, VideoCopy> = {
     volume: 'Volume',
     seek: 'Avançar ou retroceder no vídeo',
     playbackPosition: '{current} de {duration}',
-    subtitles: 'Legendas',
-    subtitlesUnavailable: 'Não há legendas disponíveis para este vídeo.',
     loop: 'Repetir vídeo',
     movePrice: 'Mover preço',
     resizePrice: 'Redimensionar preço (segure Shift para manter o centro fixo)',
@@ -232,8 +224,6 @@ export const video: Record<Lang, VideoCopy> = {
     volume: 'Volume',
     seek: 'Naviguer dans la vidéo',
     playbackPosition: '{current} sur {duration}',
-    subtitles: 'Sous-titres',
-    subtitlesUnavailable: 'Aucun sous-titre n’est disponible pour cette vidéo.',
     loop: 'Lire la vidéo en boucle',
     movePrice: 'Déplacer le cours',
     resizePrice: 'Redimensionner le cours (maintiens Shift pour garder le centre en place)',
@@ -283,8 +273,6 @@ export const video: Record<Lang, VideoCopy> = {
     volume: 'Lautstärke',
     seek: 'Videoposition ändern',
     playbackPosition: '{current} von {duration}',
-    subtitles: 'Untertitel',
-    subtitlesUnavailable: 'Für dieses Video sind keine Untertitel verfügbar.',
     loop: 'Video wiederholen',
     movePrice: 'Kurs verschieben',
     resizePrice: 'Größe der Kursanzeige ändern (Shift gedrückt halten, um den Mittelpunkt zu fixieren)',
@@ -334,8 +322,6 @@ export const video: Record<Lang, VideoCopy> = {
     volume: 'Volume',
     seek: 'Spostarsi nel video',
     playbackPosition: '{current} di {duration}',
-    subtitles: 'Sottotitoli',
-    subtitlesUnavailable: 'Non sono disponibili sottotitoli per questo video.',
     loop: 'Ripeti video',
     movePrice: 'Sposta il prezzo',
     resizePrice: 'Ridimensiona il prezzo (tieni premuto Shift per mantenere fisso il centro)',
@@ -385,8 +371,6 @@ export const video: Record<Lang, VideoCopy> = {
     volume: 'Громкость',
     seek: 'Перемотка видео',
     playbackPosition: '{current} из {duration}',
-    subtitles: 'Субтитры',
-    subtitlesUnavailable: 'Для этого видео нет доступных субтитров.',
     loop: 'Повтор видео',
     movePrice: 'Переместить курс',
     resizePrice: 'Изменить размер курса (удерживай Shift, чтобы центр оставался на месте)',
@@ -436,8 +420,6 @@ export const video: Record<Lang, VideoCopy> = {
     volume: 'Ses düzeyi',
     seek: 'Videoda ileri veya geri sar',
     playbackPosition: '{current} / {duration}',
-    subtitles: 'Altyazılar',
-    subtitlesUnavailable: 'Bu video için altyazı kullanılamıyor.',
     loop: 'Videoyu döngüye al',
     movePrice: 'Fiyatı taşı',
     resizePrice: 'Fiyat boyutunu değiştir (merkezini sabit tutmak için Shift tuşunu basılı tut)',
@@ -487,8 +469,6 @@ export const video: Record<Lang, VideoCopy> = {
     volume: 'Âm lượng',
     seek: 'Tua video',
     playbackPosition: '{current} trên {duration}',
-    subtitles: 'Phụ đề',
-    subtitlesUnavailable: 'Video này không có phụ đề.',
     loop: 'Lặp lại video',
     movePrice: 'Di chuyển giá',
     resizePrice: 'Thay đổi kích thước giá (giữ Shift để cố định tâm)',
@@ -538,8 +518,6 @@ export const video: Record<Lang, VideoCopy> = {
     volume: '音量',
     seek: '動画の再生位置',
     playbackPosition: '{duration}中{current}',
-    subtitles: '字幕',
-    subtitlesUnavailable: 'この動画では字幕を利用できません。',
     loop: '動画をループ再生',
     movePrice: '価格を移動',
     resizePrice: '価格のサイズを変更（Shiftキーを押しながら操作すると中心位置を固定）',
