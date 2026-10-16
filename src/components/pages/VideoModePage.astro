@@ -12,7 +12,7 @@ const t = { ...party[lang], ...video[lang] };
 const locale = htmlLang(Astro.currentLocale);
 ---
 
-<Layout title={`${t.title} — Open Bitcoin Tracker`} description={t.description}>
+<Layout title={`${t.title} — Open Bitcoin Tracker`} description={t.description} viewportFit="cover">
   <div class="video-page" data-video-mode data-copy={JSON.stringify(t)} data-locale={locale}>
     <div class="video-background" aria-hidden="true"><div data-video-player></div></div>
     <div class="video-shade" aria-hidden="true"></div>

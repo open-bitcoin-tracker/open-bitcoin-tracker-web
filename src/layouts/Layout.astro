@@ -10,9 +10,11 @@ interface Props {
   title?: string;
   description?: string;
   noReferrer?: boolean;
+  // Immersive pages can draw around camera cutouts while controls use safe-area insets.
+  viewportFit?: 'auto' | 'cover';
 }
 
-const { page = 'home', title: titleProp, description: descriptionProp, noReferrer = false } = Astro.props;
+const { page = 'home', title: titleProp, description: descriptionProp, noReferrer = false, viewportFit = 'auto' } = Astro.props;
 
 const t = useTranslations(Astro.currentLocale);
 const lang = htmlLang(Astro.currentLocale);
@@ -88,7 +90,7 @@ const jsonLd = {
 <html lang={lang}>
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="viewport" content={`width=device-width, initial-scale=1${viewportFit === 'cover' ? ', viewport-fit=cover' : ''}`} />
     {noReferrer && <meta name="referrer" content="no-referrer" />}
 
     <meta name="theme-color" content="#F8F7F3" media="(prefers-color-scheme: light)" />
