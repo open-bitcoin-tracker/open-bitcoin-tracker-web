@@ -4,7 +4,6 @@ export const videoSections = [
     id: 'party', labelKey: 'partyTab',
     videos: [
       { id: 'EFDMum1vs7Q', title: 'Pump It Up (Bitcoin Maximalist Remix) on a 10 Hour Loop', isLive: false },
-      { id: 'mSX3OyW9Rao', title: '🔥 Fireplace Evenings of Calm: Burning Logs, Crackling Sounds, and the Serenity of Pure Relaxation', isLive: false },
       { id: 'ez8m4PXksQs', title: 'Epic Sax Guy - 10 Hour Version - But when does the beat drop? 🤔', isLive: false },
       { id: '784dsKVrdjQ', title: 'Interstellar Gargantua Black Hole | 1 Hour Full HD Live Wallpaper', isLive: false },
       { id: '_yRJsecDjjc', title: 'Gypsy kid dancing at club cant be bothered 1997 [AI 4k 50fps]', isLive: false },
@@ -19,6 +18,7 @@ export const videoSections = [
       { id: 'TGysUwc_LEc', title: '🎵 Private Interstellar Suite in Deep Space | Ambient Music and Deep Space Sounds | HD | LIVE', isLive: true },
       { id: 'zBRFf8gAsR8', title: '24/7 Lofi Radio | Rainy Cafe & Cozy Ocean Beats ☕🌧️ Chill Beats to Study/Sleep/Relax', isLive: true },
       { id: 'vKG91INzLt0', title: '3 Hour of Relaxing Zelda Songs to chill/study/sleep', isLive: false },
+      { id: 'mSX3OyW9Rao', title: '🔥 Fireplace Evenings of Calm: Burning Logs, Crackling Sounds, and the Serenity of Pure Relaxation', isLive: false },
     ],
   },
   {

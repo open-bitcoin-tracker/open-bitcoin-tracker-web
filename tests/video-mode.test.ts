@@ -1691,10 +1691,10 @@ test('suggestions have unique validated video IDs and consistent translated cont
 test('curated sections preserve existing recordings, move live videos to Chill, and include every requested addition', () => {
   const sections = Object.fromEntries(videoSections.map(section => [section.id, section.videos]));
   assert.deepEqual(Object.keys(sections), ['party', 'chill', 'without-sound']);
-  assert.deepEqual(sections.party.map(video => video.id), ['EFDMum1vs7Q', 'mSX3OyW9Rao', 'ez8m4PXksQs', '784dsKVrdjQ', '_yRJsecDjjc']);
-  assert.deepEqual(sections.chill.map(video => video.id), ['2QWVZkuTU4s', 'vYIYIVmOo3Q', 'yf5NOyy1SXU', 'TGysUwc_LEc', 'zBRFf8gAsR8', 'vKG91INzLt0']);
-  assert.ok(sections.chill.slice(0, -1).every(video => video.isLive));
-  assert.equal(sections.chill.at(-1)!.isLive, false, 'the Zelda recording must not gain a Live badge when moved');
+  assert.deepEqual(sections.party.map(video => video.id), ['EFDMum1vs7Q', 'ez8m4PXksQs', '784dsKVrdjQ', '_yRJsecDjjc']);
+  assert.deepEqual(sections.chill.map(video => video.id), ['2QWVZkuTU4s', 'vYIYIVmOo3Q', 'yf5NOyy1SXU', 'TGysUwc_LEc', 'zBRFf8gAsR8', 'vKG91INzLt0', 'mSX3OyW9Rao']);
+  assert.ok(sections.chill.slice(0, -2).every(video => video.isLive));
+  assert.ok(sections.chill.slice(-2).every(video => !video.isLive), 'the Zelda and fireplace recordings must not gain Live badges when moved');
   assert.ok(sections.party.every(video => !video.isLive));
   assert.deepEqual(sections['without-sound'].map(video => video.id), ['vx5AZDbSY1g', 'mgqIPHwwfyM', 'X3BT2eCleOE', 'FwIHSDiFye8', 'kiNSWFEyDQM', '7d5pgfsSug0', '5mGuCdlCcNM', 'A07HjYnbAQQ', 'YIZkCUFU9Oc', '-sOAzvbWgnk']);
   assert.ok(sections['without-sound'].every(video => !video.isLive));
