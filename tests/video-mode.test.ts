@@ -53,6 +53,7 @@ class Control extends EventTarget {
   showModalCount = 0;
   showModal() { this.open = true; this.showModalCount++; }
   close() { this.open = false; }
+  getBoundingClientRect() { return { left: 0, top: 0, right: 512, bottom: 800 }; }
   disabled = false;
   value = '';
   min = '0';
@@ -1486,6 +1487,74 @@ test('blocked, failed, and replaced suggestions do not enter Recent before succe
   h.emitPlaying(true);
   assert.deepEqual(JSON.parse(h.storage.get('obt-video-recents')!).urls, [firstUrl]);
   h.close();
+});
+
+function pickerPointer(h: ReturnType<typeof harness>, type: string, x: number, target = h.control('[data-video-picker]')) {
+  const event = Object.assign(new Event(type, { cancelable: true }), { clientX: x, clientY: 200, button: 0 });
+  Object.defineProperty(event, 'target', { value: target });
+  let stopped = false;
+  event.stopPropagation = () => { stopped = true; };
+  h.control('[data-video-picker]').dispatchEvent(event);
+  // Mirror bubbling into the page's playback click handler.
+  if (type === 'click' && !stopped) h.videoClick(target, event.defaultPrevented);
+  return { prevented: event.defaultPrevented, stopped };
+}
+
+test('outside clicks slide the picker closed without changing playback, selection, or history', () => {
+  for (const reducedMotion of [false, true]) {
+    const h = harness({ reducedMotion });
+    h.submit(firstUrl);
+    h.emitPlaying(true);
+    h.click('[data-change-video]');
+    const picker = h.control('[data-video-picker]');
+    const savedSelection = h.storage.get(videoSelectionKey);
+    const writes = h.storageWrites.length;
+    const focusCount = h.control('[data-change-video]').focusCount;
+    pickerPointer(h, 'pointerdown', 800);
+    assert.deepEqual(pickerPointer(h, 'click', 800), { prevented: true, stopped: true });
+    assert.equal(picker.open, !reducedMotion);
+    assert.equal(picker.attributes.has('data-closing'), !reducedMotion);
+    assert.equal(h.control('[data-change-video]').attributes.get('aria-expanded'), 'false');
+    if (!reducedMotion) {
+      assert.equal(h.control('[data-change-video]').focusCount, focusCount);
+      h.finishPickerTransition();
+    }
+    assert.equal(picker.open, false);
+    assert.equal(h.control('[data-change-video]').focusCount, focusCount + 1);
+    assert.equal(h.idleEnabled(), true);
+    assert.equal(h.pauseCalls(), 0);
+    assert.equal(h.playCalls(), 0);
+    assert.equal(h.loaded.length, 1);
+    assert.equal(h.storage.get(videoSelectionKey), savedSelection);
+    assert.equal(h.storageWrites.length, writes);
+    h.close();
+  }
+});
+
+test('picker content and drags crossing its edge do not dismiss it; the initial picker also supports outside dismissal', () => {
+  const h = harness();
+  const picker = h.control('[data-video-picker]');
+  for (const [start, end, target] of [
+    [100, 100, picker], // Empty panel padding targets the dialog itself.
+    [100, 800, picker], // Dragging a selection out of the URL field.
+    [800, 100, picker],
+    [800, 800, h.control('[data-video-form]')],
+  ] as const) {
+    pickerPointer(h, 'pointerdown', start, target);
+    pickerPointer(h, 'click', end, target);
+    assert.equal(picker.open, true);
+    assert.equal(picker.attributes.has('data-closing'), false);
+  }
+  pickerPointer(h, 'pointerdown', 800);
+  pickerPointer(h, 'click', 800);
+  assert.equal(picker.attributes.has('data-closing'), true);
+  h.finishPickerTransition();
+  assert.equal(picker.open, false);
+  assert.equal(h.loaded.length, 0);
+  assert.equal(h.control('[data-playback-panel]').hidden, true);
+  h.close();
+  pickerPointer(h, 'pointerdown', 800);
+  assert.deepEqual(pickerPointer(h, 'click', 800), { prevented: false, stopped: false }, 'cleanup removes backdrop listeners');
 });
 
 test('URL submission, suggestions, and the initial close button keep the drawer rendered until its exit completes', () => {

@@ -433,6 +433,26 @@ function startVideoMode(root: HTMLElement) {
     cancelEdit();
   };
   picker.addEventListener('cancel', dismissPicker);
+  let pickerPointerStartedOutside = false;
+  function isPickerBackdrop(event: MouseEvent) {
+    if (event.target !== picker) return false;
+    const bounds = picker.getBoundingClientRect();
+    return event.clientX < bounds.left || event.clientX > bounds.right
+      || event.clientY < bounds.top || event.clientY > bounds.bottom;
+  }
+  function onPickerPointerDown(event: PointerEvent) {
+    pickerPointerStartedOutside = event.button === 0 && isPickerBackdrop(event);
+  }
+  function onPickerClick(event: MouseEvent) {
+    const dismiss = pickerPointerStartedOutside && isPickerBackdrop(event);
+    pickerPointerStartedOutside = false;
+    if (!dismiss || !picker.open || pickerCloseTimer !== undefined) return;
+    // Consume the dismissal so it cannot also toggle playback after closing.
+    event.stopPropagation();
+    dismissPicker(event);
+  }
+  picker.addEventListener('pointerdown', onPickerPointerDown);
+  picker.addEventListener('click', onPickerClick);
   function togglePlayback() {
     if (destroyed || !hasVideo) return;
     if (playing) player.pause();
@@ -562,6 +582,8 @@ function startVideoMode(root: HTMLElement) {
     pickerTabs.destroy();
     pendingVideo = undefined;
     picker.removeEventListener('cancel', dismissPicker);
+    picker.removeEventListener('pointerdown', onPickerPointerDown);
+    picker.removeEventListener('click', onPickerClick);
     picker.removeEventListener('transitionend', onPickerTransitionEnd);
     if (pickerCloseTimer !== undefined) clearTimeout(pickerCloseTimer);
     pickerCloseTimer = undefined;
