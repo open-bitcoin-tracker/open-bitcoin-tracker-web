@@ -5,40 +5,42 @@ import './About.css';
 
 function EarthIllustration() {
   return (
-    <svg viewBox="0 0 440 230" className="guide-art" aria-hidden="true">
+    <svg
+      viewBox="0 0 440 200"
+      className="guide-art"
+      role="img"
+      aria-label="1 BTC corresponds to approximately 7.1 square kilometres of Earth's land. Schematic, not to scale."
+    >
       <defs>
         <clipPath id="guide-earth-clip">
-          <circle cx="133" cy="106" r="70" />
+          <circle cx="110" cy="100" r="80" />
         </clipPath>
       </defs>
-      <circle className="art-orbit" cx="133" cy="106" r="87" />
-      <circle className="art-water" cx="133" cy="106" r="70" />
+      <circle className="art-water" cx="110" cy="100" r="80" />
       <g className="art-land" clipPath="url(#guide-earth-clip)">
-        <path d="M85 56l20-12 26 4 5 17-15 15-3 15-17 4-15-17-12-6zM117 103l21 5 12 19-9 19-13 20-8-10 2-24-12-15zM152 45l19 8 21 20 7 20-18 4-13-13-14 7-13-10 4-16z" />
-        <path d="M152 94l22-5 12 18-6 24-18 12-10-21-8-12zM175 143l17-6 7 16-11 10-19-5zM103 169l30 4 26-5 14 4-24 4-32-1z" />
+        {/* Simplified Atlantic-facing continents, including Antarctica. */}
+        <path d="M29 56Q43 36 65 30L79 35 83 43 96 45 100 54 91 62 83 64 79 75 70 78 65 88 68 98 78 105 82 112 76 114 68 104 60 99 55 88 44 83 39 72 29 68Z" />
+        <path d="M80 112L91 110 102 117 107 125 119 129 117 141 108 150 105 160 95 173 90 171 90 157 85 146 82 135 76 126Z" />
+        <path d="M99 25L112 21 126 26 122 37 114 48 106 44 102 35Z" />
+        <path d="M144 42L153 34 158 42 154 53 162 59 175 55 193 62 201 81 188 94 178 91 168 84 158 85 150 78 141 80 136 74 143 66 138 59Z" />
+        <path d="M141 88L155 86 166 94 168 106 177 111 169 122 163 125 157 144 149 153 141 146 138 132 132 122 124 113 124 100 131 91Z" />
+        <path d="M173 137L176 132 178 139 175 149 171 150Z" />
+        <path d="M52 171Q76 165 93 172L112 170 127 173 146 168 170 173 174 187H47Z" />
       </g>
       <g className="art-grid" fill="none">
-        <ellipse cx="133" cy="106" rx="32" ry="70" />
-        <path d="M69 80q64 24 128 0M63 106h140M69 132q64-24 128 0" />
-        <circle cx="133" cy="106" r="70" />
+        <ellipse cx="110" cy="100" rx="36" ry="80" />
+        <path d="M41 60Q110 83 179 60M30 100H190M41 140Q110 117 179 140" />
       </g>
+      <circle className="art-rim" cx="110" cy="100" r="80" />
       <path
         className="art-connector"
-        d="M232 106h29m-7-7 7 7-7 7"
+        d="M201 100H239L268 71"
         fill="none"
       />
-      {[0, 1, 2].map((index) => (
-        <g key={index} transform={`translate(0, ${-index * 14})`}>
-          <path
-            className="art-coin-edge"
-            d="M288 106v14c0 9 17 16 38 16s38-7 38-16v-14z"
-          />
-          <ellipse className="art-coin" cx="326" cy="106" rx="38" ry="16" />
-          <text className="art-coin-glyph" x="326" y="112" textAnchor="middle">
-            ₿
-          </text>
-        </g>
-      ))}
+      <rect className="art-area" x="280" y="42" width="102" height="102" />
+      <text className="art-area-label" x="331" y="177" textAnchor="middle">
+        <tspan className="art-bitcoin-label">1 BTC</tspan> ≈ 7.1 km²
+      </text>
     </svg>
   );
 }
