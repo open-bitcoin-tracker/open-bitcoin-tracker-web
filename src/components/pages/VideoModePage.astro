@@ -19,28 +19,6 @@ const locale = htmlLang(Astro.currentLocale);
     <Nav />
     <header>
       <h1 class="video-sr-only">{t.title}</h1>
-      <div class="video-appearance" role="group" aria-label={t.controlsLabel}>
-        <label class="video-sr-only" for="video-currency">{t.currency}</label>
-        <div class="video-currency" data-currency-picker>
-          <select id="video-currency" data-currency hidden disabled>{currencies.map(code => <option value={code}>{code}</option>)}</select>
-          <button type="button" class="video-currency-trigger" data-currency-trigger aria-haspopup="listbox" aria-expanded="false" aria-controls="video-currency-options" disabled>
-            <span class="video-sr-only">{t.currency}</span>
-            <span data-currency-value>USD</span>
-            <svg class="video-currency-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m6 9 6 6 6-6" /></svg>
-          </button>
-          <div id="video-currency-options" class="video-currency-menu" data-currency-list role="listbox" aria-label={t.currency} hidden>
-            {currencies.map(code => (
-              <button type="button" class="video-currency-option" data-currency-option={code} role="option" aria-selected={code === 'USD' ? 'true' : 'false'} tabindex="-1">
-                <span>{code}</span>
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m5 12 4 4L19 6" /></svg>
-              </button>
-            ))}
-          </div>
-        </div>
-        <button type="button" class="video-icon-button" data-fullscreen aria-label={t.fullscreen} title={t.fullscreen} disabled>
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M8 3H3v5m13-5h5v5M3 16v5h5m13-5v5h-5" /></svg>
-        </button>
-      </div>
     </header>
     <main id="main-content" class="video-main">
       <section class="video-price-stage" data-price-stage aria-label={t.priceLabel}>
@@ -56,46 +34,66 @@ const locale = htmlLang(Astro.currentLocale);
         </div>
         <div class="video-price-style" data-price-style>
           <button type="button" class="video-style-reset" data-reset-price-style title={t.resetPriceStyle} hidden disabled>{t.resetPriceStyle}</button>
-          <button type="button" class="video-style-trigger" data-price-style-trigger title={t.style} aria-expanded="false" aria-controls="video-price-style-panel" disabled>
-            <span>{t.style}</span>
-          </button>
           <button type="button" class="video-reset-price" data-reset-price data-reset-position-label={t.resetPrice} data-reset-size-label={t.resetPriceSize} title={t.resetPrice} hidden disabled>{t.resetPrice}</button>
-          <div id="video-price-style-panel" class="video-style-panel" data-price-style-panel role="group" aria-label={t.priceStyle} hidden>
-            <div class="video-colour-swatches" role="group" aria-label={t.priceColour}>
-              {['#ffffff', '#ff981e', '#ffd166', '#80ed99', '#90c7ff', '#ff99c8'].map(colour => (
-                <button type="button" class="video-colour-swatch" data-price-swatch={colour} style={`--swatch: ${colour}`} aria-label={`${t.priceColour}: ${colour}`} title={colour} aria-pressed={colour === '#ffffff' ? 'true' : 'false'} disabled></button>
-              ))}
-            </div>
-            <label class="video-custom-colour" for="video-price-colour">
-              <span>{t.customColour}</span>
-              <span class="video-custom-colour-control">
-                <input id="video-price-colour" class="video-colour-input" data-price-colour type="color" value="#ffffff" title={t.customColour} disabled />
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6" /></svg>
-              </span>
-            </label>
-            <div class="video-style-row video-font-row">
-              <label for="video-price-font">{t.priceFont}</label>
-              <select id="video-price-font" data-price-font disabled>
-                <option value="modern">{t.fontModern}</option>
-                <option value="condensed">{t.fontCondensed}</option>
-                <option value="serif">{t.fontSerif}</option>
-                <option value="mono">{t.fontMono}</option>
-                <option value="digital">{t.fontDigital}</option>
-              </select>
-            </div>
-            <div class="video-style-row video-stroke-row">
-              <label for="video-price-stroke">{t.priceStroke}</label>
-              <input id="video-price-stroke" class="video-stroke-toggle" data-price-stroke type="checkbox" disabled />
-            </div>
-            <div class="video-stroke-options" data-stroke-options hidden>
-              <div class="video-style-row">
-                <label for="video-price-stroke-width">{t.strokeWeight}</label>
-                <input id="video-price-stroke-width" class="video-stroke-width" data-price-stroke-width type="range" min="0.5" max="6" step="0.5" value="1" disabled />
-                <output for="video-price-stroke-width" data-stroke-width-value>1</output>
+          <div id="video-price-settings-panel" class="video-settings-panel" data-price-settings-panel role="group" aria-label={t.settings}>
+            <button type="button" class="video-settings-option" data-price-style-trigger aria-expanded="false" aria-controls="video-price-style-panel" disabled>
+              <span>{t.style}</span>
+              <svg class="video-style-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m6 9 6 6 6-6" /></svg>
+            </button>
+            <div id="video-price-style-panel" class="video-style-panel" data-price-style-panel role="group" aria-label={t.priceStyle} hidden>
+              <div class="video-colour-swatches" role="group" aria-label={t.priceColour}>
+                {['#ffffff', '#ff981e', '#ffd166', '#80ed99', '#90c7ff', '#ff99c8'].map(colour => (
+                  <button type="button" class="video-colour-swatch" data-price-swatch={colour} style={`--swatch: ${colour}`} aria-label={`${t.priceColour}: ${colour}`} title={colour} aria-pressed={colour === '#ffffff' ? 'true' : 'false'} disabled></button>
+                ))}
               </div>
-              <div class="video-style-row">
-                <label for="video-price-stroke-colour">{t.strokeColour}</label>
-                <input id="video-price-stroke-colour" class="video-colour-input" data-price-stroke-colour type="color" value="#000000" disabled />
+              <label class="video-custom-colour" for="video-price-colour">
+                <span>{t.customColour}</span>
+                <span class="video-custom-colour-control">
+                  <input id="video-price-colour" class="video-colour-input" data-price-colour type="color" value="#ffffff" title={t.customColour} disabled />
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6" /></svg>
+                </span>
+              </label>
+              <div class="video-style-row video-font-row">
+                <label for="video-price-font">{t.priceFont}</label>
+                <select id="video-price-font" data-price-font disabled>
+                  <option value="modern">{t.fontModern}</option>
+                  <option value="condensed">{t.fontCondensed}</option>
+                  <option value="serif">{t.fontSerif}</option>
+                  <option value="mono">{t.fontMono}</option>
+                  <option value="digital">{t.fontDigital}</option>
+                </select>
+              </div>
+              <div class="video-style-row video-stroke-row">
+                <label for="video-price-stroke">{t.priceStroke}</label>
+                <input id="video-price-stroke" class="video-stroke-toggle" data-price-stroke type="checkbox" disabled />
+              </div>
+              <div class="video-stroke-options" data-stroke-options hidden>
+                <div class="video-style-row">
+                  <label for="video-price-stroke-width">{t.strokeWeight}</label>
+                  <input id="video-price-stroke-width" class="video-stroke-width" data-price-stroke-width type="range" min="0.5" max="6" step="0.5" value="1" disabled />
+                  <output for="video-price-stroke-width" data-stroke-width-value>1</output>
+                </div>
+                <div class="video-style-row">
+                  <label for="video-price-stroke-colour">{t.strokeColour}</label>
+                  <input id="video-price-stroke-colour" class="video-colour-input" data-price-stroke-colour type="color" value="#000000" disabled />
+                </div>
+              </div>
+            </div>
+            <label class="video-sr-only" for="video-currency">{t.currency}</label>
+            <div class="video-currency" data-currency-picker>
+              <select id="video-currency" data-currency hidden disabled>{currencies.map(code => <option value={code}>{code}</option>)}</select>
+              <button type="button" class="video-currency-trigger video-settings-option" data-currency-trigger aria-haspopup="listbox" aria-expanded="false" aria-controls="video-currency-options" disabled>
+                <span>{t.currency}</span>
+                <span data-currency-value>USD</span>
+                <svg class="video-currency-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m6 9 6 6 6-6" /></svg>
+              </button>
+              <div id="video-currency-options" class="video-currency-menu" data-currency-list role="listbox" aria-label={t.currency} hidden>
+                {currencies.map(code => (
+                  <button type="button" class="video-currency-option" data-currency-option={code} role="option" aria-selected={code === 'USD' ? 'true' : 'false'} tabindex="-1">
+                    <span>{code}</span>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m5 12 4 4L19 6" /></svg>
+                  </button>
+                ))}
               </div>
             </div>
           </div>
@@ -167,6 +165,9 @@ const locale = htmlLang(Astro.currentLocale);
           <button type="button" class="video-icon-button" data-loop aria-label={t.loop} title={t.loop} aria-pressed="false" disabled>
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m17 2 4 4-4 4M3 11V9a3 3 0 0 1 3-3h15M7 22l-4-4 4-4m14-1v2a3 3 0 0 1-3 3H3" /></svg>
           </button>
+        <button type="button" class="video-icon-button" data-fullscreen aria-label={t.fullscreen} title={t.fullscreen} disabled>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M8 3H3v5m13-5h5v5M3 16v5h5m13-5v5h-5" /></svg>
+        </button>
           </div>
           <div class="video-timeline" data-video-timeline>
             <input class="video-seek" data-video-seek type="range" min="0" max="0" value="0" step="1" aria-label={t.seek} aria-valuetext={t.playbackPosition.replace('{current}', '0:00').replace('{duration}', '—')} disabled />
@@ -206,22 +207,22 @@ const locale = htmlLang(Astro.currentLocale);
   .video-page[data-subtitles-enabled] .video-background :global(iframe) { width: 100vw; height: 100vh; }
   .video-shade { z-index: -1; background: linear-gradient(rgb(0 0 0 / .3), transparent 30%, transparent 65%, rgb(0 0 0 / .45)); }
   .video-main { min-height: 100svh; }
-  .video-appearance { position: fixed; top: var(--menu-control-top); right: calc(var(--menu-control-right) + var(--menu-control-size) + .75rem); height: var(--menu-control-size); display: flex; align-items: center; gap: .65rem; z-index: 3; }
   button, select { cursor: pointer; }
   button:disabled, input:disabled, select:disabled { cursor: default; opacity: .35; }
   button, input, select { -webkit-tap-highlight-color: transparent; }
   button:focus-visible, input:focus-visible, select:focus-visible { outline: 2px solid #ffc477; outline-offset: 4px; }
   .video-icon-button { width: var(--menu-control-size); height: var(--menu-control-size); display: grid; place-items: center; border: 0; background: rgb(16 16 16 / .65); backdrop-filter: blur(12px); border-radius: 50%; color: #fff; }
   .video-icon-button:hover { background: rgb(50 50 50 / .85); }
-  .video-currency { position: relative; height: var(--menu-control-size); }
-  .video-price-style { position: fixed; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); align-items: start; gap: .65rem; width: min(30rem, calc(100vw - 2rem)); z-index: 4; opacity: 0; visibility: hidden; pointer-events: none; transition: opacity var(--video-ui-fade) ease, visibility 0s linear var(--video-ui-fade); text-align: left; }
+  .video-price-style { position: fixed; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; gap: .65rem; width: min(30rem, calc(100vw - 2rem)); z-index: 4; opacity: 0; visibility: hidden; pointer-events: none; transition: opacity var(--video-ui-fade) ease, visibility 0s linear var(--video-ui-fade); text-align: left; }
   .video-page[data-price-layout-open] .video-price-style { opacity: 1; visibility: visible; pointer-events: auto; transition-delay: 0s; }
-  .video-style-reset, .video-style-trigger, .video-reset-price { display: flex; align-items: center; justify-content: center; grid-row: 1; justify-self: center; min-width: 0; max-width: 100%; min-height: 3.25rem; line-height: 1.25; padding: .75rem 1.25rem; border: 0; border-radius: 999px; background: rgb(16 16 16 / .85); backdrop-filter: blur(12px); color: #fff; font-size: 1rem; font-weight: 600; overflow-wrap: anywhere; }
+  .video-style-reset, .video-reset-price { display: flex; align-items: center; justify-content: center; grid-row: 1; justify-self: center; min-width: 0; max-width: 100%; min-height: 3.25rem; line-height: 1.25; padding: .75rem 1.25rem; border: 0; border-radius: 999px; background: rgb(16 16 16 / .85); backdrop-filter: blur(12px); color: #fff; font-size: 1rem; font-weight: 600; overflow-wrap: anywhere; }
   .video-style-reset { grid-column: 1; }
-  .video-style-trigger { grid-column: 2; }
-  .video-reset-price { grid-column: 3; }
-  .video-style-reset:hover:enabled, .video-style-trigger:hover, .video-reset-price:hover, .video-style-trigger[aria-expanded="true"] { background: rgb(50 50 50 / .85); }
-  .video-style-panel { position: fixed; width: min(260px, calc(100vw - 2rem)); max-height: calc(100svh - 2rem); overflow-y: auto; padding: 1rem; border: 0; border-radius: 14px; background: rgb(16 16 16 / .95); backdrop-filter: blur(16px); box-shadow: 0 8px 40px #0005; font-size: .8rem; }
+  .video-reset-price { grid-column: 2; }
+  .video-style-reset:hover:enabled, .video-reset-price:hover { background: rgb(50 50 50 / .85); }
+  .video-settings-panel { position: fixed; width: min(260px, calc(100vw - 2rem)); max-height: calc(100svh - 2rem); overflow-y: auto; padding: 1rem; border: 0; border-radius: 14px; background: rgb(16 16 16 / .95); backdrop-filter: blur(16px); box-shadow: 0 8px 40px #0005; font-size: .8rem; }
+  .video-style-panel { padding: .75rem .25rem; }
+  .video-settings-option { display: flex; align-items: center; justify-content: space-between; gap: .5rem; width: 100%; min-height: 2.75rem; padding: .65rem .75rem; border: 0; border-radius: 8px; background: transparent; color: #fff; text-align: left; font-size: .9rem; font-weight: 600; }
+  .video-settings-option:hover, .video-settings-option[aria-expanded="true"] { background: #ffffff14; }
   .video-style-row { display: flex; align-items: center; justify-content: space-between; gap: .75rem; }
   .video-style-row label { color: #ddd; }
   .video-custom-colour { display: flex; align-items: center; justify-content: space-between; gap: .75rem; padding: .5rem .65rem; border-radius: 8px; background: #ffffff10; color: #fff; cursor: pointer; }
@@ -243,11 +244,10 @@ const locale = htmlLang(Astro.currentLocale);
   .video-stroke-options { display: grid; gap: .65rem; margin-top: .65rem; }
   .video-stroke-width { appearance: auto; width: 5rem; height: 2rem; padding: 0; accent-color: #ff981e; cursor: pointer; }
   .video-stroke-options output { min-width: 2.5rem; color: #ccc; font-size: .7rem; text-align: right; font-variant-numeric: tabular-nums; }
-  .video-currency-trigger { display: inline-flex; align-items: center; justify-content: center; gap: .4rem; height: var(--menu-control-size); padding: .5rem 1.1rem; border: 0; background: rgb(16 16 16 / .65); backdrop-filter: blur(12px); border-radius: 999px; color: #fff; letter-spacing: .08em; font-size: .85rem; font-weight: 600; }
-  .video-currency-trigger:hover, .video-currency-trigger[aria-expanded="true"] { background: rgb(50 50 50 / .85); }
-  .video-currency-chevron { flex-shrink: 0; transition: transform .15s ease; }
-  .video-currency-trigger[aria-expanded="true"] .video-currency-chevron { transform: rotate(180deg); }
-  .video-currency-menu { position: absolute; top: calc(100% + .5rem); right: 0; min-width: 8.5rem; max-height: calc(100svh - var(--menu-control-top) - var(--menu-control-size) - 1.5rem); overflow-y: auto; scrollbar-width: thin; scrollbar-color: rgb(255 255 255 / .25) transparent; padding: .35rem; border: 0; border-radius: 14px; background: rgb(16 16 16 / .9); backdrop-filter: blur(16px); box-shadow: 0 8px 40px #0005; }
+  .video-currency-trigger [data-currency-value] { margin-left: auto; color: #bbb; font-size: .8rem; }
+  .video-style-chevron, .video-currency-chevron { flex-shrink: 0; transition: transform .15s ease; }
+  [data-price-style-trigger][aria-expanded="true"] .video-style-chevron, .video-currency-trigger[aria-expanded="true"] .video-currency-chevron { transform: rotate(180deg); }
+  .video-currency-menu { padding: .35rem 0; }
   .video-currency-option { display: flex; align-items: center; justify-content: space-between; gap: 1.5rem; width: 100%; padding: .7rem .75rem; border: 0; border-radius: 9px; background: transparent; color: #ccc; letter-spacing: .08em; font-size: .8rem; font-weight: 600; }
   .video-currency-option svg { visibility: hidden; flex-shrink: 0; }
   .video-currency-option[aria-selected="true"] { color: #fff; background: rgb(255 255 255 / .09); }
@@ -360,10 +360,9 @@ const locale = htmlLang(Astro.currentLocale);
   .video-change:hover { background: rgb(50 50 50 / .9); }
   .video-message { margin-top: .75rem; padding: .4rem .7rem; font-size: .75rem; line-height: 1.5; color: #ddd; background: rgb(8 8 8 / .85); border-radius: 8px; }
   .video-error { color: #ffc2b2; }
-  .video-appearance, .video-dock, .video-page :global(.site-nav) { transition: opacity var(--video-ui-fade) ease; }
+  .video-dock, .video-page :global(.site-nav) { transition: opacity var(--video-ui-fade) ease; }
   .video-page[data-ui-idle] { cursor: none; }
   .video-page[data-ui-idle] .video-price-position { cursor: none; }
-  .video-page[data-ui-idle] .video-appearance,
   .video-page[data-ui-idle] .video-dock,
   .video-page[data-ui-idle] :global(.site-nav) { opacity: 0; pointer-events: none; }
   .video-page[data-ui-idle] .video-price-style { opacity: 0; visibility: hidden; pointer-events: none; }
@@ -377,9 +376,7 @@ const locale = htmlLang(Astro.currentLocale);
     .video-dock { width: calc(100% - 2rem); }
   }
   @media (max-width: 600px) {
-    .video-appearance { flex-wrap: wrap; justify-content: flex-end; width: 14.5rem; max-width: calc(100vw - var(--menu-control-right) - var(--menu-control-size) - 1.75rem); height: auto; gap: .5rem; }
-    .video-currency-trigger { padding-inline: .75rem; }
-    .video-style-reset, .video-style-trigger, .video-reset-price { padding-inline: 1rem; }
+    .video-style-reset, .video-reset-price { padding-inline: 1rem; }
   }
   @media (max-width: 600px) and (max-height: 640px) {
     .video-playback:not([hidden]) ~ [data-video-status] { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
@@ -412,6 +409,6 @@ const locale = htmlLang(Astro.currentLocale);
     .video-picker, .video-picker::backdrop { transition: none; }
     .video-playback:not([hidden]) { animation: none; }
     .video-price-style { transition: none; }
-    .video-appearance, .video-dock, .video-currency-chevron, .video-volume-reveal, .video-price-editing, .video-reset-price, .video-page :global(.site-nav) { transition: none; }
+    .video-dock, .video-style-chevron, .video-currency-chevron, .video-volume-reveal, .video-price-editing, .video-reset-price, .video-page :global(.site-nav) { transition: none; }
   }
 </style>

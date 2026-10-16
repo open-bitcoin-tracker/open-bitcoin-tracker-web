@@ -32,6 +32,7 @@ export interface VideoCopy {
   resetPrice: string;
   resetPriceSize: string;
   priceStyle: string;
+  settings: string;
   style: string;
   fontDigital: string;
   priceStroke: string;
@@ -83,6 +84,7 @@ const en: VideoCopy = {
   resetPrice: 'Reset position',
   resetPriceSize: 'Reset size',
   priceStyle: 'Price style',
+  settings: 'Settings',
   style: 'Edit style',
   fontDigital: 'Digital',
   priceStroke: 'Stroke',
@@ -136,6 +138,7 @@ export const video: Record<Lang, VideoCopy> = {
     resetPrice: 'Restablecer posición',
     resetPriceSize: 'Restablecer tamaño',
     priceStyle: 'Estilo del precio',
+    settings: 'Ajustes',
     style: 'Editar estilo',
     fontDigital: 'Digital',
     priceStroke: 'Contorno',
@@ -186,6 +189,7 @@ export const video: Record<Lang, VideoCopy> = {
     resetPrice: 'Redefinir posição',
     resetPriceSize: 'Redefinir tamanho',
     priceStyle: 'Estilo do preço',
+    settings: 'Configurações',
     style: 'Editar estilo',
     fontDigital: 'Digital',
     priceStroke: 'Contorno',
@@ -236,6 +240,7 @@ export const video: Record<Lang, VideoCopy> = {
     resetPrice: 'Réinitialiser la position',
     resetPriceSize: 'Réinitialiser la taille',
     priceStyle: 'Style du cours',
+    settings: 'Réglages',
     style: 'Modifier le style',
     fontDigital: 'Numérique',
     priceStroke: 'Contour',
@@ -286,6 +291,7 @@ export const video: Record<Lang, VideoCopy> = {
     resetPrice: 'Position zurücksetzen',
     resetPriceSize: 'Größe zurücksetzen',
     priceStyle: 'Kursdarstellung',
+    settings: 'Einstellungen',
     style: 'Stil bearbeiten',
     fontDigital: 'Digital',
     priceStroke: 'Kontur',
@@ -336,6 +342,7 @@ export const video: Record<Lang, VideoCopy> = {
     resetPrice: 'Ripristina posizione',
     resetPriceSize: 'Ripristina dimensione',
     priceStyle: 'Stile del prezzo',
+    settings: 'Impostazioni',
     style: 'Modifica stile',
     fontDigital: 'Digitale',
     priceStroke: 'Contorno',
@@ -386,6 +393,7 @@ export const video: Record<Lang, VideoCopy> = {
     resetPrice: 'Сбросить положение',
     resetPriceSize: 'Сбросить размер',
     priceStyle: 'Стиль курса',
+    settings: 'Настройки',
     style: 'Изменить стиль',
     fontDigital: 'Цифровой',
     priceStroke: 'Обводка',
@@ -436,6 +444,7 @@ export const video: Record<Lang, VideoCopy> = {
     resetPrice: 'Konumu sıfırla',
     resetPriceSize: 'Boyutu sıfırla',
     priceStyle: 'Fiyat stili',
+    settings: 'Ayarlar',
     style: 'Stili düzenle',
     fontDigital: 'Dijital',
     priceStroke: 'Kontur',
@@ -486,6 +495,7 @@ export const video: Record<Lang, VideoCopy> = {
     resetPrice: 'Đặt lại vị trí',
     resetPriceSize: 'Đặt lại kích thước',
     priceStyle: 'Kiểu hiển thị giá',
+    settings: 'Cài đặt',
     style: 'Chỉnh sửa kiểu',
     fontDigital: 'Kỹ thuật số',
     priceStroke: 'Viền',
@@ -536,6 +546,7 @@ export const video: Record<Lang, VideoCopy> = {
     resetPrice: '位置をリセット',
     resetPriceSize: 'サイズをリセット',
     priceStyle: '価格のスタイル',
+    settings: '設定',
     style: 'スタイルを編集',
     fontDigital: 'デジタル',
     priceStroke: '縁取り',

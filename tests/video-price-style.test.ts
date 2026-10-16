@@ -46,6 +46,9 @@ function harness({ saved, blocked = false }: { saved?: string; blocked?: boolean
   root.selectors.set('[data-price-position]', position);
   const wrapper = root.append(new Element());
   root.selectors.set('[data-price-style]', wrapper);
+  const menu = wrapper.append(new Element());
+  menu.offsetWidth = 260; menu.offsetHeight = 320;
+  wrapper.selectors.set('[data-price-settings-panel]', menu);
   const controls = ['trigger', 'panel', 'colour', 'font', 'reset', 'stroke', 'strokeWidth', 'strokeColour', 'strokeOptions', 'strokeValue'].map(() => wrapper.append(new Element()));
   const [trigger, panel, colour, font, reset, stroke, strokeWidth, strokeColour, strokeOptions, strokeValue] = controls;
   panel.offsetWidth = 260; panel.offsetHeight = 320;
@@ -74,7 +77,7 @@ function harness({ saved, blocked = false }: { saved?: string; blocked?: boolean
   runInNewContext(script, { exports: module, window, document, Event });
   const style = module.createVideoPriceStyle!(root as unknown as HTMLElement, () => { refreshes++; });
   return {
-    root, dock, wrapper, position, window, trigger, panel, colour, font, reset, stroke, strokeWidth, strokeColour, strokeOptions, strokeValue, swatches, document, style,
+    root, dock, wrapper, position, window, trigger, panel, menu, colour, font, reset, stroke, strokeWidth, strokeColour, strokeOptions, strokeValue, swatches, document, style,
     writes: () => writes, refreshes: () => refreshes, toggles: () => toggles,
     saved: () => storage.get('obt-video-price-style'),
     changeColour(value: string) { colour.value = value; colour.dispatchEvent(new Event('input')); },
@@ -264,40 +267,41 @@ test('style buttons stay above the price and switch below only when there is no 
   h.style.destroy();
 });
 
-test('the style panel opens beside the price, switching left for right-side placement or insufficient space', () => {
+test('the editing menu uses free space beside, below, or above the price', () => {
   const h = harness();
   h.trigger.click();
-  assert.equal(h.panel.style.values.get('left'), '710px');
-  assert.equal(h.panel.style.values.get('top'), '200px');
+  assert.equal(h.menu.style.values.get('left'), '710px');
+  assert.equal(h.menu.style.values.get('top'), '200px');
   h.window.innerWidth = 1200;
   h.position.box = { left: 650, top: 80, width: 100, height: 100, bottom: 180 };
   h.root.dispatchEvent(new Event('pricelayoutchange'));
-  assert.equal(h.panel.style.values.get('left'), '380px', 'a price on the right opens the panel on its left');
+  assert.equal(h.menu.style.values.get('left'), '380px', 'a price on the right opens the panel on its left');
   h.window.innerWidth = 1000;
   h.position.box = { left: 100, top: 200, width: 700, height: 100, bottom: 300 };
   h.root.dispatchEvent(new Event('pricelayoutchange'));
-  assert.equal(h.panel.style.values.get('left'), '16px', 'an oversized price keeps the panel within the viewport');
+  assert.equal(h.menu.style.values.get('left'), '320px', 'an oversized price centers the menu below the price');
+  assert.equal(h.menu.style.values.get('top'), '16px', 'a tall menu moves above when there is no space below');
   h.position.box = { left: 900, top: 450, width: 80, height: 120, bottom: 570 };
   h.root.dispatchEvent(new Event('pricelayoutchange'));
-  assert.equal(h.panel.style.values.get('left'), '630px');
-  assert.equal(h.panel.style.values.get('top'), '264px', 'bottom placement clamps the panel vertically');
+  assert.equal(h.menu.style.values.get('left'), '630px');
+  assert.equal(h.menu.style.values.get('top'), '264px', 'bottom placement clamps the panel vertically');
   h.root.dispatchEvent(new Event('videouidismiss'));
   assert.equal(h.panel.hidden, true);
   h.style.destroy();
 });
 
-test('the style panel remains reachable in narrow and short viewports after resize', () => {
+test('the editing menu remains reachable in narrow and short viewports after resize', () => {
   const h = harness();
   h.trigger.click();
   h.window.innerWidth = 390;
   h.window.innerHeight = 240;
-  h.panel.offsetHeight = 208;
+  h.menu.offsetHeight = 208;
   h.position.box = { left: 40, top: 20, width: 310, height: 150, bottom: 170 };
   h.window.dispatchEvent(new Event('resize'));
-  assert.equal(h.panel.style.values.get('max-height'), '208px');
-  assert.equal(h.panel.style.values.get('top'), '16px');
-  assert.ok(Number.parseFloat(h.panel.style.values.get('left')!) >= 16);
-  assert.ok(Number.parseFloat(h.panel.style.values.get('left')!) + h.panel.offsetWidth <= 374);
+  assert.equal(h.menu.style.values.get('max-height'), '208px');
+  assert.equal(h.menu.style.values.get('top'), '16px');
+  assert.ok(Number.parseFloat(h.menu.style.values.get('left')!) >= 16);
+  assert.ok(Number.parseFloat(h.menu.style.values.get('left')!) + h.menu.offsetWidth <= 374);
   assert.equal(h.root.hasAttribute('data-price-style-above'), false);
   h.style.destroy();
 });
@@ -354,5 +358,20 @@ test('outside pointer dismissal consumes exactly its following click before play
   const inside = h.documentClick(h.font);
   assert.equal(inside.defaultPrevented, false);
   assert.equal(h.panel.hidden, false, 'inside controls keep their normal click behavior');
+  h.style.destroy();
+});
+
+
+test('the editing menu is anchored before opening either dropdown', () => {
+  const h = harness();
+  assert.equal(h.panel.hidden, true);
+  assert.equal(h.menu.hidden, false);
+  assert.equal(h.menu.style.values.get('left'), '710px');
+  assert.equal(h.menu.style.values.get('top'), '200px');
+  h.trigger.click();
+  assert.equal(h.panel.hidden, false);
+  h.root.dispatchEvent(new Event('videouidismiss'));
+  assert.equal(h.panel.hidden, true);
+  assert.equal(h.menu.hidden, false, 'the price editing frame controls menu visibility');
   h.style.destroy();
 });

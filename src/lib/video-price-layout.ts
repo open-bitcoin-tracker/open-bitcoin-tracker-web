@@ -19,6 +19,7 @@ export function createVideoPriceLayout(root: HTMLElement) {
   const stage = root.querySelector<HTMLElement>('[data-price-stage]')!;
   const position = root.querySelector<HTMLElement>('[data-price-position]')!;
   const styleControls = root.querySelector<HTMLElement>('[data-price-style]')!;
+  const menu = root.querySelector<HTMLElement>('[data-price-settings-panel]');
   const resetButton = root.querySelector<HTMLButtonElement>('[data-reset-price]')!;
   const handles = [...position.querySelectorAll<HTMLButtonElement>('[data-price-resize]')];
   const original = {
@@ -139,15 +140,17 @@ export function createVideoPriceLayout(root: HTMLElement) {
   function withinHoverZone(event: PointerEvent) {
     const box = position.getBoundingClientRect();
     const controls = styleControls.getBoundingClientRect();
+    const menuBox = menu?.getBoundingClientRect();
     const inside = (left: number, top: number, width: number, height: number, verticalPadding: number) =>
       event.clientX >= left - HOVER_PADDING && event.clientX <= left + width + HOVER_PADDING
       && event.clientY >= top - verticalPadding && event.clientY <= top + height + verticalPadding;
     return inside(box.left, box.top, box.width, box.height, HOVER_VERTICAL_PADDING)
-      || inside(controls.left, controls.top, controls.width, controls.height, HOVER_PADDING);
+      || inside(controls.left, controls.top, controls.width, controls.height, HOVER_PADDING)
+      || !!menuBox && inside(menuBox.left, menuBox.top, menuBox.width, menuBox.height, HOVER_PADDING);
   }
   function revealFrame() {
     if (destroyed) return;
-    setFrame(!dismissed && !document.hidden && (hovered || touchEditing || !!operation || root.hasAttribute('data-price-style-open') || keyboardFocus()));
+    setFrame(!dismissed && !document.hidden && (hovered || touchEditing || !!operation || root.hasAttribute('data-price-style-open') || root.hasAttribute('data-currency-open') || keyboardFocus()));
   }
   function resizeGeometry(corner: Corner, centered = false): Resize {
     const { viewport, box } = geometry();
@@ -326,12 +329,13 @@ export function createVideoPriceLayout(root: HTMLElement) {
     if (keyboardFocus()) revealFrame();
   }) as EventListener);
   listen(root, 'pricestyletoggle', revealFrame);
+  listen(root, 'currencytoggle', revealFrame);
   const focusIn = () => { if (keyboardFocus()) revealFrame(); };
   listen(position, 'focusin', focusIn);
   listen(styleControls, 'focusin', focusIn);
   const focusOut = ((event: FocusEvent) => {
     if (!position.contains(event.relatedTarget as Node | null) && !styleControls.contains(event.relatedTarget as Node | null)
-      && !hovered && !touchEditing && !operation && !root.hasAttribute('data-price-style-open')) setFrame(false);
+      && !hovered && !touchEditing && !operation && !root.hasAttribute('data-price-style-open') && !root.hasAttribute('data-currency-open')) setFrame(false);
   }) as EventListener;
   listen(position, 'focusout', focusOut);
   listen(styleControls, 'focusout', focusOut);

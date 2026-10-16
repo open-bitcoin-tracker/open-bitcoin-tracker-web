@@ -297,3 +297,15 @@ test('a shared settings wrapper ignores other controls and dismisses a separate 
   assert.equal(h.root.hasAttribute('data-currency-open'), false);
   h.picker.destroy();
 });
+
+
+test('hiding the interface closes currency without moving focus into hidden controls', () => {
+  const h = harness();
+  h.trigger.click();
+  const focusCount = h.trigger.focusCount;
+  h.root.dispatchEvent(new Event('videouidismiss'));
+  assert.equal(h.list.hidden, true);
+  assert.equal(h.root.hasAttribute('data-currency-open'), false);
+  assert.equal(h.trigger.focusCount, focusCount);
+  h.picker.destroy();
+});

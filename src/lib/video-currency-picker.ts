@@ -69,7 +69,7 @@ export function createVideoCurrencyPicker(root: HTMLElement, select: HTMLSelectE
     if (destroyed || trigger.disabled) return;
     const fromTrigger = event.target === trigger;
     if (event.key === 'Escape') {
-      if (open) { event.preventDefault(); close(true); }
+      if (open) { event.preventDefault(); event.stopPropagation(); close(true); }
       return;
     }
     // A standalone currency panel can share its wrapper with other settings.

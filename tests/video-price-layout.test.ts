@@ -11,7 +11,7 @@ const script = ts.transpileModule(readFileSync(new URL('../src/lib/video-price-l
 const storageKey = 'obt-video-price-layout';
 type Corner = 'nw' | 'ne' | 'sw' | 'se';
 interface Rect { left: number; top: number; width: number; height: number }
-interface Options { saved?: string; blockedStorage?: boolean; viewport?: Partial<Rect>; width?: number; height?: number; observer?: boolean }
+interface Options { saved?: string; blockedStorage?: boolean; viewport?: Partial<Rect>; width?: number; height?: number; observer?: boolean; editingMenu?: boolean }
 const close = (actual: number, expected: number) => assert.ok(Math.abs(actual - expected) < .001, `${actual} should equal ${expected}`);
 
 function harness(options: Options = {}) {
@@ -87,6 +87,9 @@ function harness(options: Options = {}) {
   const position = stage.append(new Element());
   const style = stage.append(new Element());
   style.dataset.priceStyle = '';
+  const menu = style.append(new Element());
+  menu.rect = () => ({ left: 200, top: 450, width: 260, height: 120 });
+  if (options.editingMenu) root.selectors.set('[data-price-settings-panel]', menu);
   const reset = style.append(new Element());
   reset.hidden = true;
   reset.dataset.resetPositionLabel = 'Reset position';
@@ -140,7 +143,7 @@ function harness(options: Options = {}) {
   runInNewContext(script, { exports: module, window, document, Event, ResizeObserver: options.observer === false ? undefined : Observer });
   const layout = module.createVideoPriceLayout!(root as unknown as HTMLElement);
   return {
-    root, stage, position, style, reset, handles, document, window, outside, saved, layout, viewport, observed, timers,
+    root, stage, position, style, menu, reset, handles, document, window, outside, saved, layout, viewport, observed, timers,
     notifications: () => notifications,
     disconnects: () => disconnects,
     left: () => Number.parseFloat(position.style.left), top: () => Number.parseFloat(position.style.top),
@@ -1025,5 +1028,22 @@ test('switching from keyboard focus to the pointer over an editing button keeps 
   const row = h.style.getBoundingClientRect();
   h.pointer('pointermove', h.reset, { pointerType: 'mouse', clientX: row.left + 20, clientY: row.top + 20 });
   assert.equal(h.frame(), true, 'switching input methods must not hide the button under the cursor');
+  h.layout.destroy();
+});
+
+
+test('moving into the editing menu and opening currency keeps the price frame visible', () => {
+  const h = harness({ editingMenu: true });
+  h.pointer('pointerenter', h.position);
+  assert.equal(h.frame(), true);
+  h.pointer('pointermove', h.menu, { clientX: 220, clientY: 480, pointerType: 'mouse' });
+  assert.equal(h.frame(), true, 'the floating menu belongs to the price hover area');
+  h.root.setAttribute('data-currency-open', '');
+  h.root.dispatchEvent(new Event('currencytoggle'));
+  h.pointer('pointermove', h.outside, { clientX: 0, clientY: 0, pointerType: 'mouse' });
+  assert.equal(h.frame(), true, 'an open currency list stays reachable outside the price');
+  h.root.removeAttribute('data-currency-open');
+  h.root.dispatchEvent(new Event('currencytoggle'));
+  assert.equal(h.frame(), false);
   h.layout.destroy();
 });
