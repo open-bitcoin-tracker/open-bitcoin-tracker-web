@@ -20,6 +20,7 @@ export function createVideoPriceStyle(root: HTMLElement, refreshLayout: () => vo
   const font = wrapper.querySelector<HTMLSelectElement>('[data-price-font]')!;
   const reset = wrapper.querySelector<HTMLButtonElement>('[data-reset-price-style]')!;
   const position = root.querySelector<HTMLElement>('[data-price-position]')!;
+  const dock = root.querySelector<HTMLElement>('.video-dock');
   const stroke = wrapper.querySelector<HTMLInputElement>('[data-price-stroke]')!;
   const strokeWidth = wrapper.querySelector<HTMLInputElement>('[data-price-stroke-width]')!;
   const strokeColour = wrapper.querySelector<HTMLInputElement>('[data-price-stroke-colour]')!;
@@ -75,17 +76,9 @@ export function createVideoPriceStyle(root: HTMLElement, refreshLayout: () => vo
   function anchor() {
     if (destroyed) return;
     const box = position.getBoundingClientRect();
-    // Anchor reset controls above the price; the editing menu sits beside it.
-    const width = wrapper.offsetWidth, height = trigger.offsetHeight;
     const gap = 10, padding = 16;
     const clamp = (value: number, maximum: number) => Math.max(padding, Math.min(value, maximum));
     const centre = box.left + box.width / 2;
-    const left = clamp(centre - width / 2, window.innerWidth - width - padding);
-    const above = box.top - gap - height >= padding;
-    const top = clamp(above ? box.top - gap - height : box.bottom + gap, window.innerHeight - height - padding);
-    wrapper.style.setProperty('left', `${left}px`);
-    wrapper.style.setProperty('top', `${top}px`);
-    root.toggleAttribute('data-price-style-above', above);
     menu.style.setProperty('max-height', `${Math.max(0, window.innerHeight - padding * 2)}px`);
     const panelHeight = menu.offsetHeight, panelWidth = menu.offsetWidth;
     const panelOnLeft = centre > window.innerWidth / 2 || box.right + gap + panelWidth > window.innerWidth - padding;
@@ -93,8 +86,28 @@ export function createVideoPriceStyle(root: HTMLElement, refreshLayout: () => vo
     const panelLeft = beside ? (panelOnLeft ? box.left - gap - panelWidth : box.right + gap) : centre - panelWidth / 2;
     const panelTop = beside ? box.top : box.bottom + gap + panelHeight <= window.innerHeight - padding
       ? box.bottom + gap : box.top - gap - panelHeight;
-    menu.style.setProperty('top', `${clamp(panelTop, window.innerHeight - panelHeight - padding)}px`);
-    menu.style.setProperty('left', `${clamp(panelLeft, window.innerWidth - panelWidth - padding)}px`);
+    const top = clamp(panelTop, window.innerHeight - panelHeight - padding);
+    const left = clamp(panelLeft, window.innerWidth - panelWidth - padding);
+    wrapper.style.setProperty('top', `${top}px`);
+    wrapper.style.setProperty('left', `${left}px`);
+    if (dock) {
+      const controls = dock.getBoundingClientRect();
+      // Always compare against the bottom home, even while the controls are at the top.
+      const bottom = window.innerHeight - (Number.parseFloat(window.getComputedStyle(dock).marginBottom) || 0);
+      const controlsTop = bottom - controls.height;
+      // A wider release gap prevents jitter when an edge hovers around the threshold.
+      const atTop = root.hasAttribute('data-video-controls-top');
+      const gap = atTop ? 48 : 24;
+      const near = (x: number, y: number, width: number, height: number) =>
+        controls.width > 0 && controls.height > 0 && width > 0 && height > 0
+        && x < controls.right + gap && x + width > controls.left - gap
+        && y < bottom + gap && y + height > controlsTop - gap;
+      const collision = near(box.left, box.top, box.width, box.height)
+        || root.hasAttribute('data-price-layout-open') && near(left, top, panelWidth, panelHeight);
+      const active = document.activeElement;
+      const interacting = dock.matches(':hover') || !!active && dock.contains(active) && active.matches(':focus-visible');
+      root.toggleAttribute('data-video-controls-top', collision || atTop && controls.height > 0 && interacting);
+    }
   }
 
   function save() {
@@ -141,10 +154,13 @@ export function createVideoPriceStyle(root: HTMLElement, refreshLayout: () => vo
     event.stopPropagation();
   }, true);
   listen(document, 'focusin', dismissOutside);
+  listen(document, 'focusin', anchor);
+  if (dock) listen(dock, 'pointerleave', anchor);
   listen(root, 'currencytoggle', () => { if (root.hasAttribute('data-currency-open')) close(); });
   listen(root, 'videouidismiss', () => close());
   listen(root, 'currencytoggle', anchor);
   listen(root, 'pricelayoutchange', anchor);
+  listen(root, 'priceeditortoggle', anchor);
   listen(window, 'resize', anchor);
   listen(window, 'pointermove', () => { if (root.hasAttribute('data-price-layout-open')) anchor(); });
   listen(colour, 'input', () => {
@@ -192,6 +208,7 @@ export function createVideoPriceStyle(root: HTMLElement, refreshLayout: () => vo
     observer.observe(wrapper);
     observer.observe(position);
     observer.observe(menu);
+    if (dock) observer.observe(dock);
   }
 
   return {
@@ -201,6 +218,7 @@ export function createVideoPriceStyle(root: HTMLElement, refreshLayout: () => vo
       close();
       observer?.disconnect();
       for (const remove of removeListeners) remove();
+      root.removeAttribute('data-video-controls-top');
     },
   };
 }

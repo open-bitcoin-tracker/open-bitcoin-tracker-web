@@ -20,6 +20,9 @@ function harness({ saved, blocked = false }: { saved?: string; blocked?: boolean
     disabled = true;
     value = '';
     checked = false;
+    hovered = false;
+    focusVisible = false;
+    matches(selector: string) { return selector === ':hover' ? this.hovered : selector === ':focus-visible' && this.focusVisible; }
     offsetWidth = 90;
     offsetHeight = 44;
     box = { left: 300, top: 200, width: 400, height: 100, bottom: 300 };
@@ -42,6 +45,8 @@ function harness({ saved, blocked = false }: { saved?: string; blocked?: boolean
   }
   const root = new Element();
   const dock = root.append(new Element());
+  dock.box = { left: 300, top: 484, width: 400, height: 100, bottom: 584 };
+  root.selectors.set('.video-dock', dock);
   const position = root.append(new Element());
   root.selectors.set('[data-price-position]', position);
   const wrapper = root.append(new Element());
@@ -68,6 +73,7 @@ function harness({ saved, blocked = false }: { saved?: string; blocked?: boolean
   let toggles = 0;
   root.addEventListener('pricestyletoggle', () => { toggles++; });
   const window = Object.assign(new EventTarget(), { innerWidth: 1000, innerHeight: 600,
+    getComputedStyle: () => ({ marginBottom: '16px' }),
     localStorage: {
       getItem(key: string) { if (blocked) throw Error('Storage blocked'); return storage.get(key) ?? null; },
       setItem(key: string, value: string) { if (blocked) throw Error('Storage blocked'); storage.set(key, value); writes++; },
@@ -248,43 +254,24 @@ test('Reset style works with the panel closed and returns focus to Edit style', 
   h.style.destroy();
 });
 
-test('style buttons stay above the price and switch below only when there is no room at the top', () => {
-  const h = harness();
-  assert.equal(h.root.hasAttribute('data-price-style-above'), true);
-  assert.equal(h.wrapper.style.values.get('top'), '146px');
-  for (const top of [0, 30, 69]) {
-    h.position.box = { left: 300, top, width: 400, height: 100, bottom: top + 100 };
-    h.root.dispatchEvent(new Event('pricelayoutchange'));
-    assert.equal(h.root.hasAttribute('data-price-style-above'), false);
-    assert.equal(h.wrapper.style.values.get('top'), `${top + 110}px`);
-  }
-  for (const top of [70, 200, 450]) {
-    h.position.box = { left: 300, top, width: 400, height: 100, bottom: top + 100 };
-    h.root.dispatchEvent(new Event('pricelayoutchange'));
-    assert.equal(h.root.hasAttribute('data-price-style-above'), true);
-    assert.equal(h.wrapper.style.values.get('top'), `${top - 54}px`);
-  }
-  h.style.destroy();
-});
-
 test('the editing menu uses free space beside, below, or above the price', () => {
   const h = harness();
   h.trigger.click();
-  assert.equal(h.menu.style.values.get('left'), '710px');
-  assert.equal(h.menu.style.values.get('top'), '200px');
+  assert.equal(h.wrapper.style.values.get('left'), '710px');
+  assert.equal(h.wrapper.style.values.get('top'), '200px');
   h.window.innerWidth = 1200;
   h.position.box = { left: 650, top: 80, width: 100, height: 100, bottom: 180 };
   h.root.dispatchEvent(new Event('pricelayoutchange'));
-  assert.equal(h.menu.style.values.get('left'), '380px', 'a price on the right opens the panel on its left');
+  assert.equal(h.wrapper.style.values.get('left'), '380px', 'a price on the right opens the panel on its left');
   h.window.innerWidth = 1000;
   h.position.box = { left: 100, top: 200, width: 700, height: 100, bottom: 300 };
   h.root.dispatchEvent(new Event('pricelayoutchange'));
-  assert.equal(h.menu.style.values.get('left'), '320px', 'an oversized price centers the menu below the price');
-  assert.equal(h.menu.style.values.get('top'), '16px', 'a tall menu moves above when there is no space below');
+  assert.equal(h.wrapper.style.values.get('left'), '320px', 'an oversized price centers the menu below the price');
+  assert.equal(h.wrapper.style.values.get('top'), '16px', 'a tall menu moves above when there is no space below');
   h.position.box = { left: 900, top: 450, width: 80, height: 120, bottom: 570 };
   h.root.dispatchEvent(new Event('pricelayoutchange'));
-  assert.equal(h.menu.style.values.get('left'), '630px');
-  assert.equal(h.menu.style.values.get('top'), '264px', 'bottom placement clamps the panel vertically');
+  assert.equal(h.wrapper.style.values.get('left'), '630px');
+  assert.equal(h.wrapper.style.values.get('top'), '264px', 'bottom placement clamps the panel vertically');
   h.root.dispatchEvent(new Event('videouidismiss'));
   assert.equal(h.panel.hidden, true);
   h.style.destroy();
@@ -299,31 +286,9 @@ test('the editing menu remains reachable in narrow and short viewports after res
   h.position.box = { left: 40, top: 20, width: 310, height: 150, bottom: 170 };
   h.window.dispatchEvent(new Event('resize'));
   assert.equal(h.menu.style.values.get('max-height'), '208px');
-  assert.equal(h.menu.style.values.get('top'), '16px');
-  assert.ok(Number.parseFloat(h.menu.style.values.get('left')!) >= 16);
-  assert.ok(Number.parseFloat(h.menu.style.values.get('left')!) + h.menu.offsetWidth <= 374);
-  assert.equal(h.root.hasAttribute('data-price-style-above'), false);
-  h.style.destroy();
-});
-
-test('side reset controls do not shift the Edit style anchor, including above the price', () => {
-  const h = harness();
-  h.wrapper.offsetWidth = 330;
-  h.wrapper.offsetHeight = 72;
-  h.position.box = { left: 900, top: 450, width: 80, height: 120, bottom: 570 };
-  h.root.dispatchEvent(new Event('pricelayoutchange'));
-  assert.equal(h.wrapper.style.values.get('left'), '654px');
-  assert.equal(h.wrapper.style.values.get('top'), '396px');
-  h.wrapper.offsetHeight = 100;
-  h.root.dispatchEvent(new Event('pricelayoutchange'));
-  assert.equal(h.wrapper.style.values.get('left'), '654px');
-  assert.equal(h.wrapper.style.values.get('top'), '396px', 'taller reset labels must not move Edit style');
-  h.position.box = { left: 300, top: 200, width: 400, height: 100, bottom: 300 };
-  h.dock.box = { left: 600, top: 310, width: 300, height: 160, bottom: 470 };
-  h.root.selectors.set('.video-dock', h.dock);
-  h.root.dispatchEvent(new Event('pricelayoutchange'));
-  assert.equal(h.root.hasAttribute('data-price-style-above'), true);
-  assert.equal(h.wrapper.style.values.get('top'), '146px');
+  assert.equal(h.wrapper.style.values.get('top'), '16px');
+  assert.ok(Number.parseFloat(h.wrapper.style.values.get('left')!) >= 16);
+  assert.ok(Number.parseFloat(h.wrapper.style.values.get('left')!) + h.menu.offsetWidth <= 374);
   h.style.destroy();
 });
 
@@ -366,12 +331,93 @@ test('the editing menu is anchored before opening either dropdown', () => {
   const h = harness();
   assert.equal(h.panel.hidden, true);
   assert.equal(h.menu.hidden, false);
-  assert.equal(h.menu.style.values.get('left'), '710px');
-  assert.equal(h.menu.style.values.get('top'), '200px');
+  assert.equal(h.wrapper.style.values.get('left'), '710px');
+  assert.equal(h.wrapper.style.values.get('top'), '200px');
   h.trigger.click();
   assert.equal(h.panel.hidden, false);
   h.root.dispatchEvent(new Event('videouidismiss'));
   assert.equal(h.panel.hidden, true);
   assert.equal(h.menu.hidden, false, 'the price editing frame controls menu visibility');
+  h.style.destroy();
+});
+
+
+test('video controls move to the top near the price and use a wider gap before returning home', () => {
+  const h = harness();
+  const moved = () => h.root.dispatchEvent(new Event('pricelayoutchange'));
+  assert.equal(h.root.hasAttribute('data-video-controls-top'), false);
+  h.position.box = { left: 300, top: 361, width: 400, height: 100, bottom: 461 };
+  moved();
+  assert.equal(h.root.hasAttribute('data-video-controls-top'), true);
+  // The actual controls have moved, but collision detection must still use their bottom home.
+  h.dock.box = { left: 300, top: 16, width: 400, height: 100, bottom: 116 };
+  moved();
+  assert.equal(h.root.hasAttribute('data-video-controls-top'), true);
+  h.position.box = { left: 300, top: 345, width: 400, height: 100, bottom: 445 };
+  moved();
+  assert.equal(h.root.hasAttribute('data-video-controls-top'), true, 'small movements must not bounce the controls back');
+  h.position.box = { left: 300, top: 336, width: 400, height: 100, bottom: 436 };
+  moved();
+  assert.equal(h.root.hasAttribute('data-video-controls-top'), false);
+  h.style.destroy();
+});
+
+test('only the visible settings panel displaces the controls, including expanded dropdowns', () => {
+  const h = harness();
+  h.menu.offsetHeight = 220;
+  const editing = (open: boolean) => {
+    h.root.toggleAttribute('data-price-layout-open', open);
+    h.root.dispatchEvent(new Event('priceeditortoggle'));
+  };
+  editing(true);
+  assert.equal(h.root.hasAttribute('data-video-controls-top'), false);
+  h.menu.offsetHeight = 320;
+  h.trigger.click();
+  assert.equal(h.root.hasAttribute('data-video-controls-top'), true, 'an expanded editor can approach the controls before the price does');
+  editing(false);
+  assert.equal(h.root.hasAttribute('data-video-controls-top'), false, 'an invisible editor must not reserve space');
+  editing(true);
+  assert.equal(h.root.hasAttribute('data-video-controls-top'), true);
+  h.style.destroy();
+  assert.equal(h.root.hasAttribute('data-video-controls-top'), false);
+});
+
+test('dock proximity tracks viewport, panel dimensions, and safe-area spacing without moving for hidden controls', () => {
+  const h = harness();
+  h.position.box = { left: 300, top: 300, width: 400, height: 100, bottom: 400 };
+  h.window.dispatchEvent(new Event('resize'));
+  assert.equal(h.root.hasAttribute('data-video-controls-top'), false);
+  h.dock.box.height = 180;
+  h.window.dispatchEvent(new Event('resize'));
+  assert.equal(h.root.hasAttribute('data-video-controls-top'), true);
+  h.dock.box.height = 100;
+  h.window.innerHeight = 550;
+  h.window.getComputedStyle = () => ({ marginBottom: '40px' });
+  h.window.dispatchEvent(new Event('resize'));
+  assert.equal(h.root.hasAttribute('data-video-controls-top'), true);
+  h.dock.box.height = 0;
+  h.window.dispatchEvent(new Event('resize'));
+  assert.equal(h.root.hasAttribute('data-video-controls-top'), false);
+  h.style.destroy();
+});
+
+
+test('displaced controls stay reachable while hovered or focused and return when interaction ends', () => {
+  const h = harness();
+  const moved = () => h.root.dispatchEvent(new Event('pricelayoutchange'));
+  h.position.box = { left: 300, top: 400, width: 400, height: 100, bottom: 500 };
+  moved();
+  h.dock.hovered = true;
+  h.position.box = { left: 300, top: 200, width: 400, height: 100, bottom: 300 };
+  moved();
+  assert.equal(h.root.hasAttribute('data-video-controls-top'), true);
+  h.dock.hovered = false;
+  h.dock.focusVisible = true;
+  h.dock.focus();
+  h.dock.dispatchEvent(new Event('pointerleave'));
+  assert.equal(h.root.hasAttribute('data-video-controls-top'), true);
+  h.dock.focusVisible = false;
+  h.trigger.focus();
+  assert.equal(h.root.hasAttribute('data-video-controls-top'), false);
   h.style.destroy();
 });

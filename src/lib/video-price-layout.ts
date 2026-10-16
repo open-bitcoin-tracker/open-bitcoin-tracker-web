@@ -27,7 +27,6 @@ export function createVideoPriceLayout(root: HTMLElement) {
     left: position.style.left, top: position.style.top, tabIndex: position.tabIndex,
     handleTabIndexes: handles.map(handle => handle.tabIndex),
     resetDisabled: resetButton.disabled, resetHidden: resetButton.hidden,
-    resetText: resetButton.textContent, resetTitle: resetButton.title,
   };
   const removeListeners: (() => void)[] = [];
   let state = { ...DEFAULTS };
@@ -65,9 +64,6 @@ export function createVideoPriceLayout(root: HTMLElement) {
     const isDefault = centered && Math.abs(state.size - 100) <= .01;
     root.toggleAttribute('data-price-default', isDefault);
     resetButton.disabled = resetButton.hidden = isDefault;
-    const label = centered ? resetButton.dataset.resetSizeLabel! : resetButton.dataset.resetPositionLabel!;
-    if (resetButton.textContent !== label) resetButton.textContent = label;
-    if (resetButton.title !== label) resetButton.title = label;
   }
   function geometry() {
     const viewport = stage.getBoundingClientRect();
@@ -136,6 +132,7 @@ export function createVideoPriceLayout(root: HTMLElement) {
     frame = visible;
     root.toggleAttribute('data-price-layout-open', visible);
     for (const handle of handles) handle.tabIndex = visible ? 0 : -1;
+    root.dispatchEvent(new Event('priceeditortoggle'));
   }
   function withinHoverZone(event: PointerEvent) {
     const box = position.getBoundingClientRect();
@@ -405,8 +402,6 @@ export function createVideoPriceLayout(root: HTMLElement) {
       position.tabIndex = original.tabIndex;
       resetButton.disabled = original.resetDisabled;
       resetButton.hidden = original.resetHidden;
-      resetButton.textContent = original.resetText;
-      resetButton.title = original.resetTitle;
       handles.forEach((handle, index) => { handle.tabIndex = original.handleTabIndexes[index]; });
     },
   };
