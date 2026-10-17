@@ -83,6 +83,7 @@ const locale = htmlLang(Astro.currentLocale);
                 </div>
               </div>
             </div>
+            <hr class="video-settings-divider" />
             <label class="sr-only" for="video-currency">{t.currency}</label>
             <div class="video-currency" data-currency-picker>
               <select id="video-currency" data-currency hidden disabled>{currencies.map(code => <option value={code}>{code}</option>)}</select>
