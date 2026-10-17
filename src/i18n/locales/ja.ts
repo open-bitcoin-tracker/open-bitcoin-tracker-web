@@ -31,6 +31,7 @@ export const ja: Dict = {
     openEarth: '地図を探索',
     openVideo: '雰囲気をつくる',
     nextAnimation: '次のアニメーション',
+    appTitle: 'Androidアプリ',
     openApp: 'Androidアプリを入手',
     appDescription: 'ビットコインのポートフォリオをチェック。アカウント不要。スタックの情報はスマホの中だけ。',
     priceTracker: '価格トラッカー',

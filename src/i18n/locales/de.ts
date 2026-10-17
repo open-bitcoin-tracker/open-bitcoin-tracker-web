@@ -31,6 +31,7 @@ export const de: Dict = {
     openEarth: 'Karte erkunden',
     openVideo: 'Stimmung wählen',
     nextAnimation: 'Nächste Animation',
+    appTitle: 'Android-App',
     openApp: 'Android-App holen',
     appDescription: 'Tracke dein Bitcoin-Portfolio. Ohne Konto. Deine Stacks bleiben auf deinem Handy.',
     priceTracker: 'Preis-Tracker',

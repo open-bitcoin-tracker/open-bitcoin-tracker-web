@@ -31,6 +31,7 @@ export const ru: Dict = {
     openEarth: 'Изучить карту',
     openVideo: 'Создать атмосферу',
     nextAnimation: 'Следующая анимация',
+    appTitle: 'Приложение Android',
     openApp: 'Скачать приложение для Android',
     appDescription: 'Отслеживай свой биткоин-портфель. Без аккаунтов. Твои стеки остаются на твоём телефоне.',
     priceTracker: 'Трекер цены',

@@ -31,6 +31,7 @@ export const tr: Dict = {
     openEarth: 'Haritayı keşfet',
     openVideo: 'Ortamını oluştur',
     nextAnimation: 'Sonraki animasyon',
+    appTitle: 'Android uygulaması',
     openApp: 'Android uygulamasını edin',
     appDescription: 'Bitcoin portföyünü takip et. Hesap yok. Stack’lerin telefonunda kalır.',
     priceTracker: 'Fiyat takibi',
