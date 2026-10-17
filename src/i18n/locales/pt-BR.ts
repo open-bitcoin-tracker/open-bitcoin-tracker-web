@@ -65,6 +65,11 @@ export const ptBR: Dict = {
     viewZapstore: 'Zapstore',
     altPrefix: 'Open Bitcoin Tracker — ',
     altSuffix: '',
+    highlights: {
+      fast: 'Rápido',
+      secure: 'Seguro',
+      openSource: 'Código aberto',
+    },
     reasons: [
       {
         title: 'Privacidade total',

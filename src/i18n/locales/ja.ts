@@ -65,6 +65,11 @@ export const ja: Dict = {
     viewZapstore: 'Zapstore',
     altPrefix: 'Open Bitcoin Tracker — ',
     altSuffix: ' の画面',
+    highlights: {
+      fast: '高速',
+      secure: '安全',
+      openSource: 'オープンソース',
+    },
     reasons: [
       {
         title: '完全なプライバシー',

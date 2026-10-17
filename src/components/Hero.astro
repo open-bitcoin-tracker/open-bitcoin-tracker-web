@@ -1,6 +1,7 @@
 ---
 import Phone from './Phone.astro';
 import DownloadButton from './DownloadButton.astro';
+import AppHighlights from './AppHighlights.astro';
 import { useTranslations } from '../i18n/utils';
 const t = useTranslations(Astro.currentLocale);
 const lightAlt = `${t.hero.altPrefix}${t.themes.labels[0]}${t.hero.altSuffix}`;
@@ -21,9 +22,7 @@ const darkAlt = `${t.hero.altPrefix}${t.themes.labels[2]}${t.hero.altSuffix}`;
       <div class="hero-actions" data-reveal>
         <DownloadButton />
         <div class="hero-trust">
-          <span><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="m5 12 4 4 10-10" /></svg>{t.privacy.cards[0].title}</span>
-          <span><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="m5 12 4 4 10-10" /></svg>{t.privacy.cards[1].title}</span>
-          <a href="https://github.com/Max-Hodler/open-bitcoin-tracker" target="_blank" rel="noopener noreferrer"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="m5 12 4 4 10-10" /></svg>{t.privacy.cards[3].title}</a>
+          <AppHighlights linkSource />
         </div>
       </div>
     </div>

@@ -4,6 +4,7 @@ import { getRelativeLocaleUrl } from 'astro:i18n';
 import Layout from '../../layouts/Layout.astro';
 import Nav from '../Nav.astro';
 import AppScreenshot from '../AppScreenshot.astro';
+import AppHighlights from '../AppHighlights.astro';
 import { resolveLang, useTranslations } from '../../i18n/utils';
 import { tracker } from '../../i18n/tracker';
 import { aBitOfEarth } from '../../lib/projects';
@@ -63,6 +64,7 @@ const repo = 'https://github.com/open-bitcoin-tracker/open-bitcoin-tracker-web';
         <div class="app-copy">
           <h2>{home.appTitle}</h2>
           <p class="app-description">{home.appDescription}</p>
+          <div class="app-trust"><AppHighlights /></div>
           <span class="app-action">{home.openApp}<span aria-hidden="true">↗</span></span>
         </div>
         <div class="app-preview" aria-hidden="true">
@@ -161,6 +163,7 @@ const repo = 'https://github.com/open-bitcoin-tracker/open-bitcoin-tracker-web';
   .app-copy { padding: clamp(2rem, 4vw, 3.5rem); }
   .app-copy h2 { font-size: clamp(2.8rem, 4.6vw, 4.6rem); letter-spacing: -.02em; line-height: .98; max-width: 14ch; text-wrap: balance; }
   .app-description { color: var(--color-ink-muted); font-size: .875rem; line-height: 1.75; max-width: 34ch; margin-top: 1.2rem; }
+  .app-trust { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem 1rem; margin-top: 1.25rem; color: var(--color-ink-muted); font-size: .8125rem; }
   .app-action { display: inline-flex; align-items: center; gap: 1.2rem; margin-top: 1.7rem; padding: .9rem 1.15rem; background: var(--color-accent); color: #252722; font-size: .75rem; font-weight: 650; }
   .app-action > span { font-size: 1.1rem; }
   .app-preview { position: relative; min-height: 400px; display: flex; justify-content: center; align-items: start; overflow: hidden; background: #e4e5da; padding-top: 2.25rem; }

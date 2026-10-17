@@ -76,6 +76,11 @@ export const en = {
     // prefix verbatim; only the surrounding words translate.
     altPrefix: 'Open Bitcoin Tracker — ',
     altSuffix: ' screen',
+    highlights: {
+      fast: 'Fast',
+      secure: 'Secure',
+      openSource: 'Open source',
+    },
     reasons: [
       {
         title: 'Total Privacy',

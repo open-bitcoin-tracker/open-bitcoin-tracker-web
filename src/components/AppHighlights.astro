@@ -1,0 +1,26 @@
+---
+import { useTranslations } from '../i18n/utils';
+
+interface Props {
+  linkSource?: boolean;
+}
+
+const { linkSource = false } = Astro.props;
+const t = useTranslations(Astro.currentLocale);
+const highlights = [t.hero.highlights.fast, t.hero.highlights.secure, t.hero.highlights.openSource];
+---
+
+{highlights.map((label, index) => {
+  const linked = linkSource && index === 2;
+  const Tag = linked ? 'a' : 'span';
+  return (
+    <Tag class="app-highlight" href={linked ? 'https://github.com/Max-Hodler/open-bitcoin-tracker' : undefined} target={linked ? '_blank' : undefined} rel={linked ? 'noopener noreferrer' : undefined}>
+      <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="m5 12 4 4 10-10" /></svg>{label}
+    </Tag>
+  );
+})}
+
+<style>
+  .app-highlight { display: inline-flex; align-items: center; gap: .35rem; }
+  .app-highlight svg { flex: none; color: var(--color-accent); }
+</style>
