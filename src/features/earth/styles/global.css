@@ -17,7 +17,6 @@
   --surface: var(--color-paper);
   --hover: var(--hover-tint);
   --panel-shadow: var(--shadow-card-hover);
-  --input-border: color-mix(in srgb, var(--ink) 16%, transparent);
   --focus-ring: var(--orange);
   --warning-border: var(--orange);
   --text-eyebrow: .75rem;
@@ -30,7 +29,6 @@
   /* Keep map accents on the shared brand color. */
   --map-orange: var(--orange);
   color-scheme: light;
-  --error: #a4372e;
   --overlay-opacity: 0.3;
   --globe-sky: radial-gradient(
     ellipse at 50% 50%,
@@ -78,7 +76,6 @@
 .earth-feature[data-theme='dark'] {
   color-scheme: dark;
   --control-ink: #fff;
-  --error: #ff9c90;
   --overlay-opacity: 0.2;
   --globe-sky: radial-gradient(
     ellipse at 50% 50%,
@@ -95,5 +92,51 @@
 @media (prefers-reduced-motion: reduce) {
   .earth-feature * {
     scroll-behavior: auto !important;
+  }
+}
+
+/* Programmatic menu focus follows the user's pointer/keyboard input mode. */
+.earth-feature[data-input-mode='pointer'] .dropdown-trigger:focus-visible,
+.earth-feature[data-input-mode='pointer'] .capital-trigger:focus-visible,
+.earth-feature[data-input-mode='pointer'] .capital-filter:focus-visible {
+  outline: none;
+}
+.earth-feature[data-input-mode='pointer'] .dropdown-options:focus-visible .dropdown-option[data-active='true'] {
+  border-color: transparent;
+}
+.earth-feature[data-input-mode='pointer'] .dropdown-options:focus-visible .dropdown-option[aria-selected='true'] {
+  border-color: var(--border);
+}
+
+/* Keep dropdown scrollbars quiet against either theme's panel surface. */
+.earth-feature :is(.dropdown-options, .capital-options) {
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in srgb, var(--muted) 55%, transparent) transparent;
+}
+@supports selector(::-webkit-scrollbar) {
+  .earth-feature :is(.dropdown-options, .capital-options) {
+    scrollbar-width: auto;
+    scrollbar-color: auto;
+  }
+  .earth-feature :is(.dropdown-options, .capital-options)::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  .earth-feature :is(.dropdown-options, .capital-options)::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .earth-feature :is(.dropdown-options, .capital-options)::-webkit-scrollbar-thumb {
+    border: 2px solid transparent;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--muted) 55%, transparent);
+    background-clip: padding-box;
+  }
+  .earth-feature :is(.dropdown-options, .capital-options)::-webkit-scrollbar-thumb:hover {
+    background-color: var(--muted);
+  }
+  .earth-feature :is(.dropdown-options, .capital-options)::-webkit-scrollbar-button {
+    display: none;
+    width: 0;
+    height: 0;
   }
 }

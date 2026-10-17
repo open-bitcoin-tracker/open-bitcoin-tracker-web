@@ -1,8 +1,8 @@
-.earth-feature .unit-select {
+.earth-feature .dropdown-select {
   position: relative;
   flex-shrink: 0;
 }
-.earth-feature .input-unit {
+.earth-feature .dropdown-trigger {
   display: flex;
   align-items: center;
   gap: 6px;
@@ -13,26 +13,29 @@
   cursor: pointer;
   border-radius: 7px;
 }
-.earth-feature .input-unit:hover,
-.earth-feature .input-unit[aria-expanded='true'] {
+.earth-feature .dropdown-trigger:hover,
+.earth-feature .dropdown-trigger[aria-expanded='true'] {
   background: var(--hover);
   color: var(--control-ink);
 }
-.earth-feature .input-unit:focus-visible {
+.earth-feature .dropdown-trigger:focus-visible {
   outline-offset: 2px;
 }
-.earth-feature .input-unit svg {
+.earth-feature .dropdown-trigger svg {
   flex-shrink: 0;
   transition: transform 0.15s ease;
 }
-.earth-feature .input-unit[aria-expanded='true'] svg {
+.earth-feature .dropdown-trigger[aria-expanded='true'] svg {
   transform: rotate(180deg);
 }
-.earth-feature .unit-options {
+.earth-feature .dropdown-options {
   position: absolute;
   top: calc(100% + 12px);
-  right: 0;
-  min-width: 120px;
+  left: 0;
+  min-width: max-content;
+  max-height: min(360px, calc(100dvh - 130px));
+  overflow-y: auto;
+  overscroll-behavior: contain;
   padding: 6px;
   background: var(--panel);
   border: 1px solid var(--border);
@@ -41,7 +44,7 @@
   color: var(--ink);
   outline: none;
 }
-.earth-feature .unit-option {
+.earth-feature .dropdown-option {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -54,20 +57,26 @@
   font-weight: 500;
   cursor: pointer;
 }
-.earth-feature .unit-option[aria-selected='true'] {
+.earth-feature .dropdown-option[aria-selected='true'] {
   background: var(--orange-soft);
   border-color: var(--border);
   color: var(--color-emphasis-ink);
 }
-.earth-feature .unit-option:hover:not([aria-selected='true']),
-.earth-feature .unit-option[data-active='true']:not([aria-selected='true']) {
+.earth-feature .dropdown-option:hover:not([aria-selected='true']),
+.earth-feature .dropdown-option[data-active='true']:not([aria-selected='true']) {
   background: var(--hover);
 }
-.earth-feature .unit-options:focus-visible .unit-option[data-active='true'] {
+.earth-feature .dropdown-options:focus-visible .dropdown-option[data-active='true'] {
   border-color: var(--orange);
 }
-.earth-feature .input-unit {
+.earth-feature .dropdown-trigger {
   font-size: var(--text-label);
   color: var(--control-ink);
   font-weight: 600;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .earth-feature .dropdown-trigger svg {
+    transition: none;
+  }
 }

@@ -11,7 +11,7 @@
   min-height: 44px;
   width: calc(100% - 56px);
 }
-.earth-feature .floating-search .location-search {
+.earth-feature .floating-search .country-select {
   position: absolute;
   top: 0;
   left: 0;

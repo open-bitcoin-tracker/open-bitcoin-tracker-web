@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
 import { ArrowLeft, ChevronRight, ExternalLink, X } from 'lucide-react';
-import { locationSearchProvider } from '../lib/locations';
 import './About.css';
 
 function EarthIllustration() {
@@ -111,12 +110,13 @@ function ModelDetails({ section }: { section: GuideSection }) {
       return (
         <div className="detail-content">
           <p>
-            Your Bitcoin amount stays in your browser. The app uses no
+            Amounts are fixed examples. Country filtering and selections stay in
+            this tab and are not saved. The app uses no
             analytics, session recording or tracking cookies. Your theme
             preference is stored between visits.
           </p>
           <p>
-            Submitted searches go to {locationSearchProvider}; maps load from{' '}
+            Maps load from{' '}
             <a
               href="https://openfreemap.org/privacy/"
               target="_blank"
@@ -124,8 +124,8 @@ function ModelDetails({ section }: { section: GuideSection }) {
             >
               OpenFreeMap
             </a>
-            . These services receive your IP address and can see searches or
-            viewed areas.
+            . This service receives your IP address and requests for viewed
+            areas. Country filtering does not contact an external search service.
           </p>
         </div>
       );
@@ -158,8 +158,14 @@ function ModelDetails({ section }: { section: GuideSection }) {
           >
             OpenFreeMap · map service <ExternalLink size={14} />
           </a>
-          <a href="https://photon.komoot.io/" target="_blank" rel="noreferrer">
-            Photon · location search <ExternalLink size={14} />
+          <a href="https://github.com/mledoze/countries" target="_blank" rel="noreferrer">
+            mledoze/countries · capital names (ODbL) <ExternalLink size={14} />
+          </a>
+          <a href="https://www.naturalearthdata.com/" target="_blank" rel="noreferrer">
+            Natural Earth · capital coordinates <ExternalLink size={14} />
+          </a>
+          <a href="https://www.geonames.org/" target="_blank" rel="noreferrer">
+            GeoNames · additional capital coordinates (CC BY 4.0) <ExternalLink size={14} />
           </a>
         </div>
       );

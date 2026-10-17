@@ -1,0 +1,102 @@
+.earth-feature .country-select {
+  position: relative;
+}
+.earth-feature .capital-trigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
+  min-height: 44px;
+  padding: 0 16px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--panel);
+  color: var(--control-ink);
+  box-shadow: var(--panel-shadow);
+  text-align: left;
+}
+.earth-feature .capital-trigger span {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.earth-feature .capital-trigger svg,
+.earth-feature .capital-option svg {
+  flex-shrink: 0;
+}
+.earth-feature .capital-menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  width: 100%;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--panel);
+  box-shadow: var(--panel-shadow);
+  color: var(--ink);
+}
+.earth-feature .capital-filter {
+  width: calc(100% - 16px);
+  min-height: 40px;
+  margin: 8px;
+  padding: 8px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--panel);
+  color: var(--ink);
+  font-size: var(--text-body);
+}
+.earth-feature .capital-filter::placeholder {
+  color: var(--muted);
+}
+.earth-feature .capital-filter:focus-visible {
+  outline-offset: 0;
+}
+.earth-feature .capital-options {
+  max-height: min(320px, max(88px, calc(100dvh - 240px)));
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 0 6px 6px;
+}
+.earth-feature .capital-option {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 6px 10px;
+  border: 1px solid transparent;
+  border-radius: 7px;
+  font-size: var(--text-label);
+  cursor: pointer;
+  overflow-wrap: anywhere;
+}
+.earth-feature .capital-option[aria-selected='true'] {
+  background: var(--orange-soft);
+  color: var(--color-emphasis-ink);
+}
+.earth-feature .capital-option:hover,
+.earth-feature .capital-option[data-active='true'] {
+  background: var(--hover);
+}
+.earth-feature[data-input-mode='keyboard'] .capital-option[data-active='true'] {
+  border-color: var(--orange);
+}
+.earth-feature .capital-empty {
+  margin: 0;
+  padding: 8px 16px 16px;
+  color: var(--muted);
+  font-size: var(--text-label);
+}
+.earth-feature .visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}

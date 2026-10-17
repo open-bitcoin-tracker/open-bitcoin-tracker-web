@@ -1,0 +1,41 @@
+.earth-feature .floating-amount {
+  position: relative;
+  z-index: 6;
+  min-width: 0;
+}
+.earth-feature .amount-control {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 44px;
+  padding: 0 16px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--panel);
+  box-shadow: var(--panel-shadow);
+}
+.earth-feature .bitcoin-symbol {
+  flex-shrink: 0;
+  color: var(--control-ink);
+  font-size: 26px;
+}
+.earth-feature .amount-choice {
+  flex: 1;
+  min-width: 0;
+  font-variant-numeric: tabular-nums;
+}
+.earth-feature .amount-choice .dropdown-select {
+  width: 100%;
+}
+.earth-feature .amount-choice .dropdown-trigger {
+  width: 100%;
+  justify-content: space-between;
+  padding: 0;
+  color: var(--orange);
+  font-size: var(--text-heading);
+  font-weight: 700;
+  line-height: 1;
+}
+.earth-feature .amount-choice .dropdown-trigger svg {
+  color: var(--control-ink);
+}

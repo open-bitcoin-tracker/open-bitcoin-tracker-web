@@ -3,7 +3,6 @@ import { Info } from 'lucide-react';
 import './EarthMap.css';
 
 interface EarthMapProps {
-  km2: number | null;
   ready: boolean;
   error: string | null;
   containerRef: Ref<HTMLDivElement>;
@@ -12,7 +11,6 @@ interface EarthMapProps {
 }
 
 export default function EarthMap({
-  km2,
   ready,
   error,
   containerRef,
@@ -36,11 +34,6 @@ export default function EarthMap({
           <Info size={19} />
           <p>{error}</p>
           <button onClick={onRetry}>Retry map</button>
-        </div>
-      )}
-      {ready && km2 !== null && km2 > 0 && km2 < 0.00001 && (
-        <div className="tiny-note">
-          Only the outlined fill represents area. Scroll or pinch to zoom in.
         </div>
       )}
     </section>

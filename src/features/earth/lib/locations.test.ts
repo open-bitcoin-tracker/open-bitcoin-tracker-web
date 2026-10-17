@@ -1,116 +1,74 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { parseLocations } from './locations';
+import { CAPITALS, COUNTRIES, filterCountries } from './locations';
+import { DEFAULT_CENTER } from '../map/geo';
 
-const berlin = {
-  geometry: { type: 'Point', coordinates: [13.4, 52.5] },
-  properties: {
-    name: 'Berlin',
-    city: 'Berlin',
-    state: 'Berlin',
-    country: 'Germany',
-  },
-};
+afterEach(() => vi.unstubAllGlobals());
 
-afterEach(() => {
-  vi.unstubAllGlobals();
-});
+describe('bundled country capitals', () => {
+  it('covers all 193 UN members, both observer states, Kosovo and Taiwan', () => {
+    expect(new Set(CAPITALS.map((capital) => capital.countryCode)).size).toBe(197);
+    for (const code of ['VAT', 'PSE', 'UNK', 'TWN', 'NRU', 'PLW', 'SSD']) {
+      expect(CAPITALS.some((capital) => capital.countryCode === code)).toBe(true);
+    }
+  });
 
-describe('location results', () => {
-  it('keeps longitude first, distinguishes the country, and removes duplicate labels/results', () => {
-    expect(parseLocations({ features: [berlin, berlin] })).toEqual([
-      { name: 'Berlin, Germany', center: [13.4, 52.5] },
+  it('starts in New York without adding it as a country destination', () => {
+    expect(DEFAULT_CENTER).toEqual([-74.006, 40.7128]);
+    expect(COUNTRIES.some((capital) => capital.name === 'New York')).toBe(false);
+    expect(filterCountries('United States')[0].name).toBe('Washington, D.C.');
+  });
+
+  it('uses valid, unique city coordinates in longitude-latitude order', () => {
+    expect(new Set(CAPITALS.map((capital) => capital.id)).size).toBe(CAPITALS.length);
+    for (const capital of CAPITALS) {
+      expect(capital.name.trim()).not.toBe('');
+      expect(capital.country.trim()).not.toBe('');
+      expect(capital.center).toHaveLength(2);
+      expect(Number.isFinite(capital.center[0])).toBe(true);
+      expect(Number.isFinite(capital.center[1])).toBe(true);
+      expect(Math.abs(capital.center[0])).toBeLessThanOrEqual(180);
+      expect(Math.abs(capital.center[1])).toBeLessThanOrEqual(90);
+    }
+    const london = filterCountries('United Kingdom')[0];
+    expect(london.center[0]).toBeCloseTo(-0.1187, 3);
+    expect(london.center[1]).toBeCloseTo(51.5019, 3);
+  });
+
+  it('includes multiple capitals and reviewed changes rather than superseded names', () => {
+    expect(CAPITALS.filter((capital) => capital.country === 'South Africa').map((capital) => capital.name))
+      .toEqual(expect.arrayContaining(['Bloemfontein', 'Cape Town', 'Pretoria']));
+    for (const [country, city] of [
+      ['Burundi', 'Gitega'], ['Tanzania', 'Dodoma'], ['Palau', 'Ngerulmud'],
+      ['Kazakhstan', 'Astana'], ['Equatorial Guinea', 'Ciudad de la Paz'],
+      ['Sri Lanka', 'Sri Jayawardenepura Kotte'],
+    ]) {
+      expect(CAPITALS.some((capital) => capital.country === country && capital.name === city)).toBe(true);
+    }
+    expect(CAPITALS.some((capital) => capital.name === 'Malabo')).toBe(false);
+  });
+
+  it('offers each country once in alphabetical order with a valid destination', () => {
+    expect(COUNTRIES).toHaveLength(197);
+    expect(new Set(COUNTRIES.map((country) => country.countryCode)).size).toBe(COUNTRIES.length);
+    expect(COUNTRIES[0].country).toBe('Afghanistan');
+    expect(COUNTRIES.at(-1)?.country).toBe('Zimbabwe');
+    expect(filterCountries('south').map((capital) => capital.country)).toEqual([
+      'South Africa', 'South Korea', 'South Sudan',
     ]);
+    expect(filterCountries('South Africa')[0].name).toBe('Pretoria');
+    expect(filterCountries('Sri Lanka')[0].name).toBe('Sri Jayawardenepura Kotte');
+    expect(COUNTRIES.every((country) => CAPITALS.includes(country))).toBe(true);
   });
-  it('labels address results without a name', () => {
-    expect(
-      parseLocations({
-        features: [
-          {
-            ...berlin,
-            properties: {
-              housenumber: '10',
-              street: 'Downing Street',
-              city: 'London',
-              country: 'United Kingdom',
-            },
-          },
-        ],
-      })[0].name,
-    ).toBe('10 Downing Street, London, United Kingdom');
-  });
-  it('ignores malformed features and coordinates instead of moving the map to an invalid point', () => {
-    expect(
-      parseLocations({
-        features: [
-          null,
-          {},
-          { ...berlin, geometry: { type: 'Point', coordinates: [181, 52] } },
-          { ...berlin, geometry: { type: 'Point', coordinates: [13, NaN] } },
-          { ...berlin, geometry: { type: 'Point', coordinates: ['13', '52'] } },
-          { ...berlin, properties: {} },
-        ],
-      }),
-    ).toEqual([]);
-  });
-  it('preserves polar locations as valid search results', () => {
-    expect(
-      parseLocations({
-        features: [
-          { ...berlin, geometry: { type: 'Point', coordinates: [0, 89] } },
-        ],
-      })[0].center,
-    ).toEqual([0, 89]);
-  });
-  it('rejects a broken response instead of reporting no matches', () => {
-    expect(() => parseLocations({ error: 'unavailable' })).toThrow();
-    expect(parseLocations({ features: [] })).toEqual([]);
-  });
-});
 
-describe('location lookup', () => {
-  it('encodes the query, passes cancellation, and reuses cached results', async () => {
-    vi.resetModules();
-    const fetch = vi.fn().mockResolvedValue({
-      ok: true,
-      json: async () => ({ features: [berlin] }),
-    });
-    vi.stubGlobal('fetch', fetch);
-    const { searchLocations } = await import('./locations');
-    const signal = new AbortController().signal;
-    const results = await searchLocations(' Berlin & Germany ', signal);
-    expect(new URL(fetch.mock.calls[0][0]).searchParams.get('q')).toBe(
-      'Berlin & Germany',
-    );
-    expect(fetch.mock.calls[0][1].signal).toBe(signal);
-    expect(await searchLocations('berlin & germany', signal)).toEqual(results);
-    expect(fetch).toHaveBeenCalledTimes(1);
-  });
-  it('does not send empty or one-character searches', async () => {
+  it('filters countries locally, ignoring case and accents without accepting city names', () => {
     const fetch = vi.fn();
     vi.stubGlobal('fetch', fetch);
-    const { searchLocations } = await import('./locations');
-    expect(await searchLocations('  ', new AbortController().signal)).toEqual(
-      [],
-    );
-    expect(await searchLocations('a', new AbortController().signal)).toEqual(
-      [],
-    );
+    expect(filterCountries('  ')).toBe(COUNTRIES);
+    expect(filterCountries(' SAO TOME ')[0].country).toBe('São Tomé and Príncipe');
+    expect(filterCountries('bRAZil')[0].country).toBe('Brazil');
+    expect(filterCountries('canada')[0].name).toBe('Ottawa');
+    expect(filterCountries('Paris')).toEqual([]);
+    expect(filterCountries('10 Example Street')).toEqual([]);
     expect(fetch).not.toHaveBeenCalled();
-  });
-  it('allows retrying failed requests without caching the failure', async () => {
-    vi.resetModules();
-    const fetch = vi
-      .fn()
-      .mockResolvedValueOnce({ ok: false })
-      .mockResolvedValueOnce({
-        ok: true,
-        json: async () => ({ features: [] }),
-      });
-    vi.stubGlobal('fetch', fetch);
-    const { searchLocations } = await import('./locations');
-    const signal = new AbortController().signal;
-    await expect(searchLocations('Unknown place', signal)).rejects.toThrow();
-    expect(await searchLocations('Unknown place', signal)).toEqual([]);
-    expect(fetch).toHaveBeenCalledTimes(2);
   });
 });

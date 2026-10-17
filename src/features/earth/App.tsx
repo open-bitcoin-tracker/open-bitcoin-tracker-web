@@ -1,53 +1,61 @@
 import { useCallback, useState } from 'react';
 import About from './components/About';
-import AmountInput from './components/AmountInput';
+import AmountSelect from './components/AmountSelect';
 import InfoButton from './components/InfoButton';
 import EarthMap from './components/EarthMap';
-import LocationSearch from './components/LocationSearch';
-import { useBitcoinAmount } from './hooks/useBitcoinAmount';
+import CountrySelect from './components/CountrySelect';
+import { toArea, type PresetAmount } from './lib/bitcoin';
 import { useEarthMap } from './hooks/useEarthMap';
 import { useTheme } from './hooks/useTheme';
-import type { Location } from './lib/locations';
+import type { Capital } from './lib/locations';
 import './styles/global.css';
 import './styles/app.css';
 
 export default function App() {
-  const amount = useBitcoinAmount();
+  const [btc, setBtc] = useState<PresetAmount>('0.1');
+  const km2 = toArea(Number(btc));
   const theme = useTheme();
-  const [place, setPlace] = useState('');
+  const [inputMode, setInputMode] = useState<'keyboard' | 'pointer'>('keyboard');
+  const [place, setPlace] = useState<Capital | null>(null);
   const [aboutOpen, setAboutOpen] = useState(false);
-  const clearPlace = useCallback(() => setPlace(''), []);
+  const clearPlace = useCallback(() => setPlace(null), []);
   const map = useEarthMap({
-    km2: amount.km2,
+    km2,
     theme,
     onInteraction: clearPlace,
   });
 
-  function choosePlace(location: Location) {
-    setPlace(location.name);
+  function choosePlace(location: Capital) {
+    setPlace(location);
     map.goToLocation(location);
   }
 
   return (
-    <div className="earth-feature app-shell" lang="en" data-theme={theme}>
+    <div
+      className="earth-feature app-shell"
+      lang="en"
+      data-theme={theme}
+      data-input-mode={inputMode}
+      onPointerDownCapture={() => setInputMode('pointer')}
+      onKeyDownCapture={() => setInputMode('keyboard')}
+      onBlurCapture={(event) => {
+        if (!event.currentTarget.contains(event.relatedTarget)) setInputMode('keyboard');
+      }}
+    >
       <div className="earth-workspace">
         <div className="floating-panels">
           <div className="amount-row">
-            <AmountInput
-              raw={amount.raw}
-              unit={amount.unit}
-              error={amount.error}
-              onChange={amount.setRaw}
-              onUnitChange={amount.chooseUnit}
+            <AmountSelect
+              btc={btc}
+              onChange={setBtc}
             />
             <InfoButton onAbout={() => setAboutOpen(true)} />
           </div>
           <section className="floating-search" aria-label="Comparison location">
-            <LocationSearch selectedName={place} onSelect={choosePlace} />
+            <CountrySelect selected={place} onSelect={choosePlace} />
           </section>
         </div>
         <EarthMap
-          km2={amount.km2}
           ready={map.ready}
           error={map.error}
           containerRef={map.containerRef}

@@ -131,19 +131,6 @@
   white-space: nowrap;
   font-size: var(--text-label);
 }
-.earth-feature .tiny-note {
-  position: absolute;
-  bottom: 113px;
-  left: 50%;
-  transform: translateX(-50%);
-  padding: 9px 12px;
-  border-radius: 6px;
-  background: var(--orange-soft);
-  font-size: var(--text-label);
-  max-width: 360px;
-  text-align: center;
-  width: max-content;
-}
 @media (max-width: 800px) {
   .earth-feature .map-error {
     top: auto;
@@ -151,11 +138,6 @@
     left: 12px;
     right: 12px;
     flex-wrap: wrap;
-  }
-  .earth-feature .tiny-note {
-    bottom: 155px;
-    width: calc(100% - 32px);
-    max-width: 340px;
   }
   .earth-feature .maplibregl-ctrl-attrib {
     font-size: 10px !important;

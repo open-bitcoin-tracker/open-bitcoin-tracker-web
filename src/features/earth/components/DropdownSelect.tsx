@@ -1,7 +1,7 @@
 import { useEffect, useId, useRef, useState } from 'react';
 import type { KeyboardEvent } from 'react';
 import { Check, ChevronDown } from 'lucide-react';
-import './UnitSelect.css';
+import './DropdownSelect.css';
 
 interface DropdownSelectProps<T extends string> {
   value: T;
@@ -16,7 +16,7 @@ export default function DropdownSelect<T extends string>({
   label,
   onChange,
 }: DropdownSelectProps<T>) {
-  const units = options.map((option) => option.value);
+  const values = options.map((option) => option.value);
   const selectedLabel = options.find((option) => option.value === value)!.label;
   const [open, setOpen] = useState(false);
   const [active, setActive] = useState(value);
@@ -35,26 +35,30 @@ export default function DropdownSelect<T extends string>({
     return () => document.removeEventListener('pointerdown', dismiss);
   }, [open]);
 
-  function choose(unit: T) {
-    onChange(unit);
+  useEffect(() => {
+    if (open) list.current?.querySelector('[data-active="true"]')?.scrollIntoView({ block: 'nearest' });
+  }, [open, active]);
+
+  function choose(nextValue: T) {
+    onChange(nextValue);
     setOpen(false);
     trigger.current?.focus();
   }
 
   function handleKey(event: KeyboardEvent<HTMLDivElement>) {
-    const index = units.indexOf(active);
+    const index = values.indexOf(active);
     switch (event.key) {
       case 'ArrowDown':
-        setActive(units[(index + 1) % units.length]);
+        setActive(values[(index + 1) % values.length]);
         break;
       case 'ArrowUp':
-        setActive(units[(index + units.length - 1) % units.length]);
+        setActive(values[(index + values.length - 1) % values.length]);
         break;
       case 'Home':
-        setActive(units[0]);
+        setActive(values[0]);
         break;
       case 'End':
-        setActive(units[units.length - 1]);
+        setActive(values[values.length - 1]);
         break;
       case 'Enter':
       case ' ':
@@ -78,7 +82,7 @@ export default function DropdownSelect<T extends string>({
   return (
     <div
       ref={container}
-      className="unit-select"
+      className="dropdown-select"
       onBlur={(event) => {
         if (!event.currentTarget.contains(event.relatedTarget)) setOpen(false);
       }}
@@ -86,7 +90,7 @@ export default function DropdownSelect<T extends string>({
       <button
         ref={trigger}
         type="button"
-        className="input-unit"
+        className="dropdown-trigger"
         aria-label={`${label}: ${selectedLabel}`}
         aria-haspopup="listbox"
         aria-expanded={open}
@@ -104,31 +108,31 @@ export default function DropdownSelect<T extends string>({
         }}
       >
         {selectedLabel}
-        <ChevronDown size={14} aria-hidden="true" />
+        <ChevronDown size={16} aria-hidden="true" />
       </button>
       {open && (
         <div
           ref={list}
           id={id}
-          className="unit-options"
+          className="dropdown-options"
           role="listbox"
           aria-label={label}
           aria-activedescendant={`${id}-${active}`}
           tabIndex={-1}
           onKeyDown={handleKey}
         >
-          {options.map(({ value: unit, label: optionLabel }) => (
+          {options.map(({ value: optionValue, label: optionLabel }) => (
             <div
-              key={unit}
-              id={`${id}-${unit}`}
-              className="unit-option"
+              key={optionValue}
+              id={`${id}-${optionValue}`}
+              className="dropdown-option"
               role="option"
-              aria-selected={unit === value}
-              data-active={unit === active}
-              onClick={() => choose(unit)}
+              aria-selected={optionValue === value}
+              data-active={optionValue === active}
+              onClick={() => choose(optionValue)}
             >
               <span>{optionLabel}</span>
-              {unit === value && <Check size={15} aria-hidden="true" />}
+              {optionValue === value && <Check size={15} aria-hidden="true" />}
             </div>
           ))}
         </div>

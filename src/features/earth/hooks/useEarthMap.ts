@@ -8,8 +8,8 @@ import {
 import type { Map, StyleSpecification } from 'maplibre-gl';
 import mapStyle from '../map/style.json';
 import type { Location } from '../lib/locations';
-import type { Theme } from '../lib/siteTheme';
 import { DEFAULT_CENTER } from '../map/geo';
+import type { Theme } from '../lib/siteTheme';
 import { followViewportCenter, viewportOverlay } from '../map/mapOverlay';
 import { applyMapTheme } from '../map/mapTheme';
 import { renderOverlay } from '../map/renderOverlay';

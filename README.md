@@ -23,7 +23,7 @@ Routes: `/`, `/price-tracker/`, `/party-mode/`, `/video-mode/`, `/android-app/`,
 
 Pages live in `src/pages/` and `src/components/pages/`; shared UI in `src/components/`, `src/layouts/`, and `src/styles/`; browser logic in `src/lib/` and `src/scripts/`; Earth and supply in `src/features/`; static assets in `public/`.
 
-Prices use Kraken and bundled Coin Metrics history; currency conversions use ECB reference rates through Frankfurter. Earth uses MapLibre and Photon search (`PUBLIC_EARTH_GEOCODER_URL` overrides the geocoder); keep map attribution visible. Supply definitions and official sources live in [snapshot.json](src/features/supply/snapshot.json).
+Prices use Kraken and bundled Coin Metrics history; currency conversions use ECB reference rates through Frankfurter. Earth uses MapLibre and OpenFreeMap tiles, with fixed BTC presets and a bundled country selector centered on capital coordinates. Country filtering runs locally without a geocoder; keep map attribution visible. Supply definitions and official sources live in [snapshot.json](src/features/supply/snapshot.json).
 
 ## Maintenance
 
@@ -52,6 +52,12 @@ Refresh updates seasonally adjusted US M2 only. Use `-- --file downloaded-h6.htm
 
 Review population annually or after a UN WPP revision: World / Medium / both-sexes **Total Population, as of 1 July**, converting thousands to people. Update `points`, fallback `persons`/`date`, and `checkedAt` together. Keep `scenarioPoints` covering today's UTC date through 15 years ahead with adjacent interpolation endpoints, using one revision and source. Run the checks above and rebuild; monetary refreshes leave population untouched.
 
+### Earth capital catalogue
+
+`src/features/earth/lib/capitals.json` bundles capitals for the 193 UN member states, the two UN observer states, Kosovo and Taiwan. Multiple capitals and selected seats of government are included; Nauru uses Yaren. The list was reviewed on 2026-10-17. Names and country coverage derive from [mledoze/countries](https://github.com/mledoze/countries) (ODbL); most coordinates come from [Natural Earth Populated Places](https://www.naturalearthdata.com/downloads/10m-cultural-vectors/10m-populated-places/) (public domain). [GeoNames](https://www.geonames.org/) ([CC BY 4.0](https://creativecommons.org/licenses/by/4.0/)) supplies Yaren, Ngerulmud and Ciudad de la Paz coordinates. This adapted catalogue retains the [ODbL 1.0](https://opendatacommons.org/licenses/odbl/1-0/) database license; application code remains MIT.
+
+Review capital changes and coordinates together before updating the catalogue. In particular, older source snapshots still list Bujumbura, Dar es Salaam, Melekeok, Nur-Sultan or Malabo; the bundled list uses Gitega, Dodoma, Ngerulmud, Astana and [Ciudad de la Paz](https://www.guineaecuatorialpress.com/noticias/el_presidente_de_la_republica_proclama_la_ciudad_de_la_paz_como_capital_de_la_republica_de_guinea_ecuatorial_con_la_firma_de_un_decreto_ley). Sri Jayawardenepura Kotte is included alongside Colombo; Jakarta remains listed while Nusantara's political-capital transition is planned for 2028. Source data is downloaded only for maintenance, never by visitors. After edits, run `npm run test:earth`, `npm run check:earth` and `npm run build`.
+
 ### Homepage previews
 
 Homepage product captures live in `src/assets/previews/` and are optimized at build time. These static captures link to each tool. Recapture the actual chart, Earth map, and Video Mode when their appearance changes; exclude browser chrome and development controls. Preview sources: Earth map © [OpenMapTiles](https://openmaptiles.org/) and © [OpenStreetMap](https://www.openstreetmap.org/copyright); Video Mode [Fireplace 4K on YouTube](https://www.youtube.com/watch?v=mSX3OyW9Rao). Android uses the existing theme-aware app screenshots.
@@ -68,4 +74,4 @@ After social copy or tool-label changes, run `npm run generate:social`, review a
 
 Cloudflare Pages: `npm run build`, output `dist/`, include `functions/`. Language redirects use the saved cookie or browser language; development and preview do not run the function. Configure runtime in `wrangler.toml`, site URL/locales/sitemap in `astro.config.mjs`. Forks must also review `public/robots.txt` and project/download links.
 
-[MIT](LICENSE). Preserve font licenses in `public/fonts/` and `public/earth/fonts/`.
+[MIT](LICENSE) for application code; see the Earth catalogue attribution above for data licensing. Preserve font licenses in `public/fonts/` and `public/earth/fonts/`.
