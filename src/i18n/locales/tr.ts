@@ -129,8 +129,6 @@ export const tr: Dict = {
 
   projectAbout: {
     h1: "OBT hakkında",
-    intro: "Ücretsiz, açık kaynaklı araçlar",
-    purpose: "Open Bitcoin Tracker; fiyat grafiklerini, görsel deneyleri ve Android için bir portföy uygulamasını bir araya getiriyor. Amaç basit: Bitcoin’i keşfetmeyi kolaylaştırmak ve stack’ini takip etmek için kullanışlı yollar sunmak.",
     dataHeading: "Veriler nereden geliyor?",
     livePrices: "Canlı Bitcoin fiyatı",
     history: "Geçmiş fiyatlar",

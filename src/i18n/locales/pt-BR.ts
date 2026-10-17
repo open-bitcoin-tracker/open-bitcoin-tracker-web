@@ -129,8 +129,6 @@ export const ptBR: Dict = {
 
   projectAbout: {
     h1: "Sobre o OBT",
-    intro: "Ferramentas gratuitas e de código aberto",
-    purpose: "O Open Bitcoin Tracker reúne gráficos de preço, experimentos visuais e um app de portfólio para Android. A ideia é simples: facilitar a exploração do Bitcoin e oferecer formas úteis de ficar de olho no seu stack.",
     dataHeading: "De onde vêm os dados",
     livePrices: "Preço do Bitcoin ao vivo",
     history: "Preços históricos",
