@@ -3,6 +3,7 @@ import test from 'node:test';
 import { readFileSync } from 'node:fs';
 import { createContext, runInContext } from 'node:vm';
 import ts from 'typescript';
+import { tracker } from '../src/i18n/tracker.ts';
 
 const names = ['bitcoin-price', 'bitcoin-live-price', 'bitcoin-chart', 'bitcoin-chart-motion', 'bitcoin-price-change', 'bitcoin-range', 'bitcoin-range-preferences', 'bitcoin-range-pill', 'bitcoin-currency', 'bitcoin-display-preferences', 'video-currency-picker'];
 const scripts = Object.fromEntries(names.map(name => [name, ts.transpileModule(
@@ -307,6 +308,35 @@ test('the marker point follows pointer and keyboard inspection and disappears on
   assert.equal(waves.hidden, true);
   p.close();
 });
+
+for (const locale of Object.keys(tracker)) {
+  test(`Price Tracker uses currency symbols for live prices, changes and inspection in ${locale}`, async () => {
+    const p = page(new Map([['bitcoin-tracker-display', JSON.stringify({ currency: 'AUD', scale: 'linear' })]]), locale);
+    await p.ready();
+    const symbols = {
+      USD: '$', EUR: '€', GBP: '£', AUD: '$', CAD: '$', CHF: 'CHF', JPY: locale === 'ja' ? '￥' : '¥',
+    };
+    const number = new Intl.NumberFormat(locale, { maximumFractionDigits: 0 });
+    const chart = p.root.querySelector('[data-chart]');
+    const checkMoney = (rendered: string, currency: keyof typeof symbols, amount: number) => {
+      assert.ok(rendered.includes(symbols[currency]), `${locale}/${currency}: ${rendered}`);
+      assert.equal(rendered.replace(symbols[currency], '').trim(), number.format(amount), `${locale}/${currency}`);
+    };
+    checkMoney(p.root.querySelector('[data-price]').textContent, 'AUD', 81);
+    for (const currency of Object.keys(symbols) as (keyof typeof symbols)[]) {
+      p.currency(currency);
+      await p.ready();
+      checkMoney(p.root.querySelector('[data-price]').textContent, currency, currency === 'USD' ? 101 : 81);
+      const change = p.root.querySelector('[data-price-change]').textContent;
+      assert.ok(change.startsWith('+'));
+      checkMoney(change.slice(1).split(' (')[0], currency, currency === 'USD' ? 1 : 31);
+      chart.dispatchEvent(Object.assign(new Event('keydown'), { key: 'Home' }));
+      checkMoney(p.root.querySelector('[data-price]').textContent, currency, currency === 'USD' ? 100 : 50);
+      chart.dispatchEvent(Object.assign(new Event('keydown'), { key: 'Escape' }));
+    }
+    p.close();
+  });
+}
 
 test('currency converts live and inspected prices and persists with scale across reloads', async () => {
   const storage = new Map<string, string>();
