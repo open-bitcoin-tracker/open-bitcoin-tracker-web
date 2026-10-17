@@ -30,7 +30,6 @@ export const tr: Dict = {
     openChart: 'Grafiği aç',
     openEarth: 'Haritayı keşfet',
     openVideo: 'Ortamını oluştur',
-    nextAnimation: 'Sonraki animasyon',
     appTitle: 'Android için OBT',
     openApp: 'Uygulama hakkında daha fazla bilgi',
     appDescription: 'Anahtar veya kurtarma ifadesi gerekmez. Bitcoin miktarlarını elle girersin. Uygulamayla işlem yapamazsın, ama biriktirdiğin bitcoinlerin değerini görmek için çok kullanışlıdır.',

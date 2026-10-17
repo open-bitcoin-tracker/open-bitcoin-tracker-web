@@ -30,7 +30,6 @@ export const fr: Dict = {
     openChart: 'Ouvrir le graphique',
     openEarth: 'Explorer la carte',
     openVideo: 'Crée ton ambiance',
-    nextAnimation: 'Animation suivante',
     appTitle: 'OBT pour Android',
     openApp: 'En savoir plus sur l’appli',
     appDescription: 'Pas besoin de clés ni de phrase de récupération. Tu saisis tes montants en bitcoin à la main. Tu ne peux pas faire de transactions avec l’appli, mais elle est bien pratique pour voir combien valent tes stacks de bitcoin.',

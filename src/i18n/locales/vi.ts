@@ -30,7 +30,6 @@ export const vi: Dict = {
     openChart: 'Mở biểu đồ',
     openEarth: 'Khám phá bản đồ',
     openVideo: 'Tạo không gian riêng',
-    nextAnimation: 'Hoạt ảnh tiếp theo',
     appTitle: 'OBT cho Android',
     openApp: 'Tìm hiểu thêm về ứng dụng',
     appDescription: 'Không cần khóa hay cụm từ khôi phục. Bạn tự nhập số lượng bitcoin. Ứng dụng không hỗ trợ giao dịch, nhưng rất tiện để xem số bitcoin bạn tích lũy có giá trị bao nhiêu.',

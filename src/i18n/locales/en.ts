@@ -37,7 +37,6 @@ export const en = {
     openChart: 'Open the chart',
     openEarth: 'Explore the map',
     openVideo: 'Set the scene',
-    nextAnimation: 'Next animation',
     appTitle: 'Android app',
     openApp: 'More about the app',
     appDescription: 'No keys or seed phrases needed. You enter your bitcoin amounts by hand. You can’t make transactions with the app, but it’s a very handy way to check what your bitcoin stacks are worth.',

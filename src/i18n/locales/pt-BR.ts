@@ -30,7 +30,6 @@ export const ptBR: Dict = {
     openChart: 'Abrir o gráfico',
     openEarth: 'Explorar o mapa',
     openVideo: 'Entre no clima',
-    nextAnimation: 'Próxima animação',
     appTitle: 'OBT para Android',
     openApp: 'Mais sobre o app',
     appDescription: 'Não precisa de chaves nem de uma seed. Você insere as quantidades de bitcoin à mão. Não dá para fazer transações pelo app, mas ele é bem prático para ver quanto valem seus stacks de bitcoin.',
