@@ -49,10 +49,10 @@ const links = {
       <section aria-labelledby="data-heading" class="about-prose">
         <h2 id="data-heading">{copy.dataHeading}</h2>
         <ul class="about-sources">
-          <li><strong>{copy.livePrices}:</strong> <a href="https://www.kraken.com" target="_blank" rel="noopener noreferrer">Kraken</a></li>
-          <li><strong>{copy.history}:</strong> <a href="https://coinmetrics.io" target="_blank" rel="noopener noreferrer">Coin Metrics</a> / <a href="https://www.kraken.com" target="_blank" rel="noopener noreferrer">Kraken</a></li>
-          <li><strong>{copy.fx}:</strong> <a href="https://www.ecb.europa.eu/stats/policy_and_exchange_rates/euro_reference_exchange_rates/html/index.en.html" target="_blank" rel="noopener noreferrer">{copy.ecb}</a> (<a href="https://www.frankfurter.dev" target="_blank" rel="noopener noreferrer">Frankfurter</a>)</li>
-          <li><strong lang="en">A Bit of Earth:</strong> <a href={earthHref}>{copy.earthSources}</a></li>
+          <li><span>{copy.livePrices}:</span> <a href="https://www.kraken.com" target="_blank" rel="noopener noreferrer">Kraken</a></li>
+          <li><span>{copy.history}:</span> <a href="https://coinmetrics.io" target="_blank" rel="noopener noreferrer">Coin Metrics</a> / <a href="https://www.kraken.com" target="_blank" rel="noopener noreferrer">Kraken</a></li>
+          <li><span>{copy.fx}:</span> <a href="https://www.ecb.europa.eu/stats/policy_and_exchange_rates/euro_reference_exchange_rates/html/index.en.html" target="_blank" rel="noopener noreferrer">{copy.ecb}</a> (<a href="https://www.frankfurter.dev" target="_blank" rel="noopener noreferrer">Frankfurter</a>)</li>
+          <li><span lang="en">A Bit of Earth:</span> <a href={earthHref}>{copy.earthSources}</a></li>
           <li><a href={appAboutHref}>{copy.appAboutLabel}</a></li>
         </ul>
       </section>
@@ -62,13 +62,22 @@ const links = {
 </Layout>
 
 <style>
+  .document-header {
+    --about-title-size: clamp(2.75rem, 6vw, 4.5rem);
+    padding-top: max(0px, calc(var(--menu-control-top) + (var(--menu-control-size) - var(--about-title-size) * 1.1) / 2));
+  }
+  .document-title { font-size: var(--about-title-size); margin-bottom: 0; overflow-wrap: anywhere; }
+  @media (max-width: 700px) {
+    .document-header { --about-title-size: clamp(2rem, 6vw, 2.75rem); }
+    .document-title { padding-right: calc(var(--menu-control-size) + .5rem); }
+  }
   .about-prose { color: var(--color-ink-muted); font-size: 1.0625rem; line-height: 1.85; }
   .about-prose p { margin: 0 0 1rem; }
   .about-content section + section { margin-top: 3rem; }
   h2 { color: var(--color-ink); font-size: 1.25rem; font-weight: 600; letter-spacing: -.01em; line-height: 1.4; margin: 0 0 1rem; }
   .about-sources { list-style: disc; padding-left: 1.25rem; margin: 0; }
   .about-sources li { padding-left: .25rem; margin-bottom: .625rem; }
-  .about-sources strong { font-weight: 700; color: var(--color-ink); }
+  .about-sources span { font-weight: 400; color: var(--color-ink-muted); }
   .about-creator { display: flex; align-items: center; gap: 1rem; }
   .about-profile-avatar { width: 4rem; height: 4rem; border-radius: 50%; object-fit: cover; flex-shrink: 0; }
   .about-profile-links { display: flex; flex-wrap: wrap; gap: .75rem; }
