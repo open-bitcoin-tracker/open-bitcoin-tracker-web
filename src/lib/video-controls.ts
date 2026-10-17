@@ -4,9 +4,7 @@ const EDITABLE_CONTROL = 'input:not([type="range"]), textarea, [contenteditable]
 
 /** Hide Video Mode's interface after inactivity, keeping active controls usable. */
 export function createVideoControls(root: HTMLElement) {
-  const dock = root.querySelector<HTMLElement>('.video-dock');
   const price = root.querySelector<HTMLElement>('[data-price-position]');
-  const originalInert = dock?.inert ?? false;
   const cursor = window.matchMedia('(hover: hover) and (pointer: fine)');
   let enabled = false;
   let destroyed = false;
@@ -23,17 +21,11 @@ export function createVideoControls(root: HTMLElement) {
   }
 
   function updatePlacement() {
-    if (destroyed || !dock || !price) return;
-    const controls = dock.getBoundingClientRect();
+    if (destroyed || !price) return;
     const box = price.getBoundingClientRect();
-    // Compare only the price with the dock's bottom home, even while docked at the top.
-    const bottom = window.innerHeight - (Number.parseFloat(window.getComputedStyle(dock).marginBottom) || 0);
-    // Require an overlap to move up; wait for a little clearance before returning.
-    const gap = root.hasAttribute('data-video-controls-top') ? 24 : 0;
-    const overlap = controls.width > 0 && controls.height > 0 && box.width > 0 && box.height > 0
-      && box.left < controls.right + gap && box.right > controls.left - gap
-      && box.top < bottom + gap && box.bottom > bottom - controls.height - gap;
-    root.toggleAttribute('data-video-controls-top', overlap);
+    // Use the price center, independent of its menu and the playback panel's size.
+    const inLowerScreen = box.height > 0 && box.top + box.height / 2 >= window.innerHeight * .6;
+    root.toggleAttribute('data-video-controls-top', inLowerScreen);
   }
 
   function handleLayoutChange() {
@@ -43,6 +35,7 @@ export function createVideoControls(root: HTMLElement) {
 
   function canFade() {
     if (!enabled || document.hidden) return false;
+    if (root.hasAttribute('data-price-layout-open')) return false;
     if (root.hasAttribute('data-currency-open')) return false;
     if (root.hasAttribute('data-price-style-open')) return false;
     if (root.hasAttribute('data-price-dragging')) return false;
@@ -80,9 +73,7 @@ export function createVideoControls(root: HTMLElement) {
   }
 
   function handleEditorToggle() {
-    const editing = root.hasAttribute('data-price-layout-open');
-    if (dock) dock.inert = editing;
-    if (!editing) restorePlayback();
+    restorePlayback();
   }
 
   function hide(manual = false) {
@@ -160,7 +151,6 @@ export function createVideoControls(root: HTMLElement) {
   if (typeof ResizeObserver !== 'undefined') {
     observer = new ResizeObserver(updatePlacement);
     if (price) observer.observe(price);
-    if (dock) observer.observe(dock);
   }
 
   return {
@@ -184,7 +174,6 @@ export function createVideoControls(root: HTMLElement) {
       root.removeEventListener('pricestyletoggle', reveal);
       root.removeEventListener('pricelayoutchange', handleLayoutChange);
       root.removeEventListener('priceeditortoggle', handleEditorToggle);
-      if (dock) dock.inert = originalInert;
       document.removeEventListener('visibilitychange', reveal);
       document.removeEventListener('fullscreenchange', reveal);
       document.removeEventListener('toggle', reveal, true);

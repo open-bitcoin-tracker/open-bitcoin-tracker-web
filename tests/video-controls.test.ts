@@ -79,8 +79,6 @@ function harness({ finePointer = true, hidden = false } = {}) {
   let nextId = 0;
   const window = Object.assign(new Surface(), {
     innerHeight: 600,
-    marginBottom: '16px',
-    getComputedStyle() { return { marginBottom: this.marginBottom }; },
     matchMedia(query: string) {
       assert.equal(query, '(hover: hover) and (pointer: fine)');
       return cursor;
@@ -211,12 +209,9 @@ test('editing dismissal restores playback while Style controls remain interactiv
   h.click(h.button);
   assert.equal(h.idle(), false, 'playback and currency controls must not dismiss the UI');
   assert.equal(h.root.hasAttribute('data-price-layout-open'), true);
-  h.tick(1200);
-  assert.equal(h.idle(), true);
-  assert.equal(h.root.hasAttribute('data-price-layout-open'), false);
-  h.pointer('pointermove');
-  assert.equal(h.idle(), false);
-  assert.equal(h.root.hasAttribute('data-price-layout-open'), true, 'moving the cursor restores the frame with the controls');
+  h.tick(10000);
+  assert.equal(h.idle(), false, 'editing keeps playback available');
+  assert.equal(h.root.hasAttribute('data-price-layout-open'), true);
   h.click();
   assert.equal(h.idle(), false, 'ending editing restores playback controls');
   assert.equal(h.root.hasAttribute('data-price-layout-open'), false);
@@ -239,11 +234,11 @@ test('clicking the navigation summary or its icon does not dismiss the video UI'
   h.controls.destroy();
 });
 
-test('editing makes playback controls inert until editing ends and cleanup restores them', () => {
+test('editing leaves playback controls interactive and keeps the interface awake', () => {
   const h = harness();
   h.root.setAttribute('data-price-layout-open', '');
   h.root.dispatchEvent(new Event('priceeditortoggle'));
-  assert.equal(h.dock.inert, true);
+  assert.equal(h.dock.inert, false);
   h.root.removeAttribute('data-price-layout-open');
   h.root.dispatchEvent(new Event('priceeditortoggle'));
   assert.equal(h.dock.inert, false);
@@ -453,12 +448,21 @@ test('dragging or resizing keeps the interface awake until the interaction ends'
   h.controls.destroy();
 });
 
-test('a visible price frame does not delay the normal idle timeout', () => {
+test('an open price editor prevents idle fading until editing ends', () => {
   const h = harness();
-  h.root.setAttribute('data-price-layout-open', '');
   h.controls.setEnabled(true);
-  h.tick(1200);
-  assert.equal(h.idle(), true);
+  h.tick(1000);
+  h.root.setAttribute('data-price-layout-open', '');
+  h.root.dispatchEvent(new Event('priceeditortoggle'));
+  h.tick(10000);
+  assert.equal(h.idle(), false);
+  assert.equal(h.timers.size, 0);
+  h.root.removeAttribute('data-price-layout-open');
+  h.root.dispatchEvent(new Event('priceeditortoggle'));
+  h.tick(1199);
+  assert.equal(h.idle(), false);
+  h.tick(1);
+  assert.equal(h.idle(), true, 'normal idle fading resumes after editing');
   h.controls.destroy();
 });
 
@@ -584,83 +588,77 @@ test('destroy clears listeners and timers, restores the UI, and guards stale cal
   h.controls.destroy();
 });
 
-test('only the price overlapping the bottom dock moves playback to the top', () => {
+test('the price center entering the lower 40 percent moves playback to the top', () => {
   const h = harness();
   const atTop = () => h.root.hasAttribute('data-video-controls-top');
   const moved = () => h.root.dispatchEvent(new Event('pricelayoutchange'));
   assert.equal(atTop(), false);
-  h.price.box.top = 384;
-  h.price.box.bottom = 484;
+  h.price.box.top = 309;
   moved();
-  assert.equal(atTop(), false, 'touching the bottom home does not count as overlap');
-  h.price.box.top = 385;
-  h.price.box.bottom = 485;
+  assert.equal(atTop(), false, 'a center just above 60 percent keeps controls at the bottom');
+  h.price.box.top = 310;
   moved();
-  assert.equal(atTop(), true);
+  assert.equal(atTop(), true, 'a center exactly at 60 percent moves controls up');
   Object.assign(h.dock.box, { top: 16, bottom: 116 });
   moved();
-  assert.equal(atTop(), true, 'the top position must not change the collision reference');
-  h.price.box.bottom = 470;
+  assert.equal(atTop(), true, 'dock position does not change the screen threshold');
+  h.price.box.top = 309;
   moved();
-  assert.equal(atTop(), true, 'small movements near the edge must not cause flicker');
-  h.price.box.bottom = 459;
+  assert.equal(atTop(), false, 'moving the center above the threshold restores the bottom dock');
+  Object.assign(h.price.box, { left: 800, right: 1000, top: 500 });
   moved();
-  assert.equal(atTop(), false, 'return once the price clears the bottom home and release margin');
-  Object.assign(h.price.box, { left: 720, right: 920, top: 500, bottom: 600 });
-  moved();
-  assert.equal(atTop(), false, 'vertical proximity alone must not move the dock');
+  assert.equal(atTop(), true, 'horizontal placement does not change the lower-screen rule');
   h.controls.destroy();
 });
 
-test('editing and expanded style or currency menus do not determine dock placement', () => {
+test('editing and expanded menus leave playback interactive without determining placement', () => {
   const h = harness();
+  h.controls.setEnabled(true);
   for (const attribute of ['data-price-layout-open', 'data-price-style-open', 'data-currency-open']) {
     h.root.setAttribute(attribute, '');
   }
   for (const event of ['priceeditortoggle', 'pricestyletoggle', 'currencytoggle']) h.root.dispatchEvent(new Event(event));
-  assert.equal(h.dock.inert, true, 'playback remains unavailable while editing');
   h.resizeObserved();
-  assert.equal(h.root.hasAttribute('data-video-controls-top'), false, 'menus never participate in the geometry check');
-  Object.assign(h.price.box, { top: 500, bottom: 600 });
+  h.tick(10000);
+  assert.equal(h.dock.inert, false);
+  assert.equal(h.idle(), false);
+  assert.equal(h.root.hasAttribute('data-video-controls-top'), false, 'menus never determine placement');
+  h.price.box.top = 500;
   h.root.dispatchEvent(new Event('pricelayoutchange'));
   assert.equal(h.root.hasAttribute('data-video-controls-top'), true);
+  assert.equal(h.dock.inert, false, 'moving the dock during editing keeps it interactive');
   for (const attribute of ['data-price-layout-open', 'data-price-style-open', 'data-currency-open']) h.root.removeAttribute(attribute);
   h.root.dispatchEvent(new Event('priceeditortoggle'));
-  assert.equal(h.dock.inert, false);
-  assert.equal(h.root.hasAttribute('data-video-controls-top'), true, 'restored controls stay above a bottom-positioned price');
+  assert.equal(h.root.hasAttribute('data-video-controls-top'), true);
   h.controls.destroy();
 });
 
-test('dock placement follows viewport, safe area, price size, and playback panel size changes', () => {
+test('placement follows viewport and price size changes while ignoring dock dimensions', () => {
   const h = harness();
-  assert.deepEqual(h.observed, [h.price, h.dock]);
-  h.price.box.bottom = 450;
-  h.window.innerHeight = 550;
+  assert.deepEqual(h.observed, [h.price]);
+  h.price.box.top = 310;
+  h.resizeObserved();
+  assert.equal(h.root.hasAttribute('data-video-controls-top'), true);
+  h.window.innerHeight = 700;
+  h.window.dispatchEvent(new Event('resize'));
+  assert.equal(h.root.hasAttribute('data-video-controls-top'), false);
+  h.window.innerHeight = 500;
   h.window.dispatchEvent(new Event('resize'));
   assert.equal(h.root.hasAttribute('data-video-controls-top'), true);
   h.window.innerHeight = 600;
-  h.window.dispatchEvent(new Event('resize'));
+  Object.assign(h.price.box, { top: 200, height: 240 });
+  h.resizeObserved();
   assert.equal(h.root.hasAttribute('data-video-controls-top'), false);
-  h.window.marginBottom = '60px';
-  h.window.dispatchEvent(new Event('resize'));
-  assert.equal(h.root.hasAttribute('data-video-controls-top'), true);
-  h.window.marginBottom = '16px';
-  h.window.dispatchEvent(new Event('resize'));
-  assert.equal(h.root.hasAttribute('data-video-controls-top'), false);
-  h.dock.box.height = 160;
+  h.price.box.height = 340;
   h.resizeObserved();
   assert.equal(h.root.hasAttribute('data-video-controls-top'), true);
   h.dock.box.height = 0;
   h.resizeObserved();
-  assert.equal(h.root.hasAttribute('data-video-controls-top'), false, 'a hidden playback panel has no collision area');
-  h.dock.box.height = 100;
-  h.price.box.bottom = 500;
-  h.resizeObserved();
-  assert.equal(h.root.hasAttribute('data-video-controls-top'), true);
+  assert.equal(h.root.hasAttribute('data-video-controls-top'), true, 'hidden playback has the same screen-based placement');
   h.controls.destroy();
   assert.equal(h.disconnected(), true);
   assert.equal(h.root.hasAttribute('data-video-controls-top'), false);
   h.resizeObserved();
   h.window.dispatchEvent(new Event('resize'));
-  assert.equal(h.root.hasAttribute('data-video-controls-top'), false, 'stale callbacks cannot reposition a destroyed controller');
+  assert.equal(h.root.hasAttribute('data-video-controls-top'), false);
 });
