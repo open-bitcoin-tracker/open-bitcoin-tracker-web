@@ -194,8 +194,7 @@ const lastDate = new Intl.DateTimeFormat(lang, { year: 'numeric', month: 'short'
   .price-currency-trigger:focus-visible .price-currency-chevron,
   .price-currency-trigger[aria-expanded="true"] .price-currency-chevron { opacity: 1; }
   .price-currency-trigger[aria-expanded="true"] .price-currency-chevron { transform: rotate(180deg); }
-  .price-currency-menu { --price-currency-menu-width: min(21rem, calc(100vw - 2 * var(--tracker-gutter, 1rem))); top: calc(100% + .5rem); bottom: auto; left: 0; right: auto; width: var(--price-currency-menu-width); max-height: min(30rem, calc(100dvh - var(--live-price-top) - var(--live-price-font-size) - 5rem)); }
-  .bitcoin-tracker[data-price-currency-position="end"] .price-currency-menu { left: max(0px, calc(100% - var(--price-currency-menu-width))); }
+  .price-currency-menu { top: calc(100% + .5rem); bottom: auto; left: 0; right: auto; max-height: min(30rem, calc(100dvh - var(--live-price-top) - var(--live-price-font-size) - 5rem)); }
   .current-price { font-size: min(var(--live-price-font-size), calc(170cqw / var(--price-chars, 1))); font-weight: 700; line-height: 1.1; letter-spacing: -.06em; font-variant-numeric: tabular-nums; white-space: nowrap; }
   .price-change { min-height: 1.5em; margin-top: .375rem; color: var(--color-ink-muted); font-size: clamp(.9375rem, 1.5vw, 1.125rem); font-variant-numeric: tabular-nums; }
   .price-history { position: relative; z-index: 0; display: flex; flex-direction: column; flex: 1; min-height: 0; margin: .25rem 0 0; padding-bottom: calc(5.5rem + env(safe-area-inset-bottom, 0px)); }
