@@ -30,17 +30,6 @@ const links = {
     </header>
 
     <div class="document-container about-content">
-      <section aria-labelledby="data-heading" class="about-prose">
-        <h2 id="data-heading">{copy.dataHeading}</h2>
-        <ul class="about-sources">
-          <li><strong>{copy.livePrices}:</strong> <a href="https://www.kraken.com" target="_blank" rel="noopener noreferrer">Kraken</a></li>
-          <li><strong>{copy.history}:</strong> <a href="https://coinmetrics.io" target="_blank" rel="noopener noreferrer">Coin Metrics</a> / <a href="https://www.kraken.com" target="_blank" rel="noopener noreferrer">Kraken</a></li>
-          <li><strong>{copy.fx}:</strong> <a href="https://www.ecb.europa.eu/stats/policy_and_exchange_rates/euro_reference_exchange_rates/html/index.en.html" target="_blank" rel="noopener noreferrer">{copy.ecb}</a> (<a href="https://www.frankfurter.dev" target="_blank" rel="noopener noreferrer">Frankfurter</a>)</li>
-          <li><strong lang="en">A Bit of Earth:</strong> <a href={earthHref}>{copy.earthSources}</a></li>
-          <li><strong>{copy.app}:</strong> <a href={appAboutHref}>{copy.appAboutLabel}</a></li>
-        </ul>
-      </section>
-
       <section aria-labelledby="creator-heading" class="about-prose">
         <h2 id="creator-heading">{t.about.profileHeader}</h2>
         <div class="about-creator">
@@ -56,6 +45,16 @@ const links = {
         <h2 id="contribute-heading">{copy.contributeHeading}</h2>
         <p>{copy.contributeIntro} <LinkedText text={copy.repositories} links={links} /> <LinkedText text={copy.issues} links={links} /></p>
         <p><LinkedText text={copy.license} links={links} /> {copy.credits}</p>
+      </section>
+      <section aria-labelledby="data-heading" class="about-prose">
+        <h2 id="data-heading">{copy.dataHeading}</h2>
+        <ul class="about-sources">
+          <li><strong>{copy.livePrices}:</strong> <a href="https://www.kraken.com" target="_blank" rel="noopener noreferrer">Kraken</a></li>
+          <li><strong>{copy.history}:</strong> <a href="https://coinmetrics.io" target="_blank" rel="noopener noreferrer">Coin Metrics</a> / <a href="https://www.kraken.com" target="_blank" rel="noopener noreferrer">Kraken</a></li>
+          <li><strong>{copy.fx}:</strong> <a href="https://www.ecb.europa.eu/stats/policy_and_exchange_rates/euro_reference_exchange_rates/html/index.en.html" target="_blank" rel="noopener noreferrer">{copy.ecb}</a> (<a href="https://www.frankfurter.dev" target="_blank" rel="noopener noreferrer">Frankfurter</a>)</li>
+          <li><strong lang="en">A Bit of Earth:</strong> <a href={earthHref}>{copy.earthSources}</a></li>
+          <li><a href={appAboutHref}>{copy.appAboutLabel}</a></li>
+        </ul>
       </section>
       <ProjectFooter />
     </div>
