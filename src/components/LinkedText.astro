@@ -1,0 +1,15 @@
+---
+// Translation placeholders allow links to follow each language's word order.
+interface Props {
+  text: string;
+  links: Record<string, { label: string; href: string }>;
+}
+const { text, links } = Astro.props;
+const parts = text.split(/(\{[a-zA-Z]+\})/g);
+---
+{parts.map((part) => {
+  const link = links[part.slice(1, -1)];
+  return part.startsWith('{') && link
+    ? <a href={link.href} target="_blank" rel="noopener noreferrer">{link.label}</a>
+    : part;
+})}

@@ -27,4 +27,5 @@ const pages = [
       {label}
     </a>
   ))}
+  <a href={getRelativeLocaleUrl(lang, 'about')} class="page-link" aria-current={currentPage === 'about' ? 'page' : undefined}>{t.about}</a>
 </div>

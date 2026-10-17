@@ -19,7 +19,9 @@ npm run dev
 
 ## Project map
 
-Routes: `/`, `/price-tracker/`, `/party-mode/`, `/video-mode/`, `/android-app/`, `/a-bit-of-earth/`, `/bitcoin-and-the-dollar/`, `/about/`, `/privacy/`. Money per Person is hidden from navigation pending further work.
+Routes: `/`, `/price-tracker/`, `/party-mode/`, `/video-mode/`, `/android-app/`, `/a-bit-of-earth/`, `/bitcoin-and-the-dollar/`, `/about/`, `/android-app/about/`, `/privacy/`. Money per Person is hidden from navigation pending further work.
+
+`/about/` describes the whole project; `/android-app/about/` retains the app-specific creator, sources, and license information and is linked from the Android app page. Both About routes are translated into all supported languages, with matching navigation, language switching, metadata, and language redirects.
 
 Pages live in `src/pages/` and `src/components/pages/`; shared UI in `src/components/`, `src/layouts/`, and `src/styles/`; browser logic in `src/lib/` and `src/scripts/`; Earth and supply in `src/features/`; static assets in `public/`.
 

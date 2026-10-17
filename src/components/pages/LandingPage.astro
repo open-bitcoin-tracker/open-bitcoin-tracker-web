@@ -10,6 +10,7 @@ import { tracker } from '../../i18n/tracker';
 import { aBitOfEarth } from '../../lib/projects';
 import BitcoinPreview from '../BitcoinPreview.astro';
 import VideoPreview from '../VideoPreview.astro';
+import ProjectFooter from '../ProjectFooter.astro';
 import earthLightPreview from '../../assets/previews/earth-light.png';
 import earthDarkPreview from '../../assets/previews/earth-dark.png';
 
@@ -17,7 +18,6 @@ const lang = resolveLang(Astro.currentLocale);
 const t = useTranslations(Astro.currentLocale);
 const home = t.landing;
 const href = (path: string) => getRelativeLocaleUrl(lang, path);
-const repo = 'https://github.com/open-bitcoin-tracker/open-bitcoin-tracker-web';
 ---
 
 <Layout page="landing">
@@ -73,13 +73,7 @@ const repo = 'https://github.com/open-bitcoin-tracker/open-bitcoin-tracker-web';
       </a>
     </section>
 
-    <footer class="landing-footer">
-      <div class="footer-links">
-        <a href={repo} target="_blank" rel="noopener noreferrer">{t.footer.github}<span aria-hidden="true">↗</span></a>
-        <a href={href('about')}>{t.footer.about}</a>
-        <span>{t.footer.copyright}</span>
-      </div>
-    </footer>
+    <ProjectFooter />
   </main>
 </Layout>
 
@@ -170,18 +164,12 @@ const repo = 'https://github.com/open-bitcoin-tracker/open-bitcoin-tracker-web';
   :global(html.dark) .app-preview { background: var(--color-accent-soft); }
   .phone-frame { position: absolute; top: 2.25rem; width: 235px; border: 5px solid #252722; border-radius: 30px; overflow: hidden; box-shadow: 0 20px 35px #0002; transform: rotate(5deg); }
   .phone-frame :global(img) { display: block; width: 100%; height: auto; }
-  .landing-footer { display: flex; justify-content: flex-end; align-items: center; gap: 2rem; padding-block: 2.5rem; }
-  .footer-links { color: var(--color-ink-muted); font-size: .6875rem; }
-  .landing-footer .footer-links { display: flex; align-items: center; flex-wrap: wrap; gap: 1.5rem; padding: 0; border: 0; }
-  .footer-links a { display: inline-flex; align-items: center; gap: .4rem; min-height: 44px; }
-  .footer-links a:hover { color: var(--color-ink); text-decoration: underline; text-underline-offset: 4px; }
   @media (min-width: 1450px) { .masthead { padding-right: 0; } }
   @media (max-width: 1000px) {
     .chart-feature { grid-template-columns: 1fr 1.8fr; }
     .explore-grid { gap: 1.5rem; }
     .tool-description { flex-direction: column; gap: .6rem; }
     .tool-description p { max-width: 32ch; }
-    .landing-footer { align-items: start; }
   }
   @media (max-width: 700px) {
     .masthead { min-height: 88px; padding-right: 3.75rem; }
@@ -205,8 +193,6 @@ const repo = 'https://github.com/open-bitcoin-tracker/open-bitcoin-tracker-web';
     .app-action { font-size: .6875rem; padding: .75rem; gap: .6rem; }
     .app-preview { min-height: 320px; padding-top: 2.5rem; }
     .phone-frame { width: 175px; flex-shrink: 0; margin-left: 2rem; border-radius: 23px; border-width: 4px; }
-    .landing-footer { flex-direction: column; gap: .75rem; padding-block: 2rem; }
-    .landing-footer .footer-links { gap: 1.25rem; }
   }
   @media (max-width: 420px) {
     .app-feature { grid-template-columns: minmax(0, 1fr); }

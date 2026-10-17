@@ -1,0 +1,227 @@
+---
+// Android app About, shared by the English and localized nested routes.
+import Layout from '../../layouts/Layout.astro';
+import Nav from '../Nav.astro';
+import Footer from '../Footer.astro';
+import { useTranslations } from '../../i18n/utils';
+
+const repoUrl = 'https://github.com/Max-Hodler/open-bitcoin-tracker';
+
+const t = useTranslations(Astro.currentLocale);
+
+// Provider names and URLs are fixed; only the row label is translated, zipped
+// against t.about.dataSourceLabels by index.
+const dataSourceMeta = [
+  { value: 'Kraken', url: 'https://www.kraken.com' },
+  { value: 'Coin Metrics', url: 'https://coinmetrics.io' },
+  {
+    value: 'European Central Bank',
+    url: 'https://www.ecb.europa.eu/stats/policy_and_exchange_rates/euro_reference_exchange_rates/html/index.en.html',
+  },
+  { value: 'mempool.space', url: 'https://mempool.space' },
+];
+const dataSources = dataSourceMeta.map((d, i) => ({ ...d, label: t.about.dataSourceLabels[i] }));
+---
+
+<Layout page="about"
+  title={t.projectAbout.appAboutTitle}
+  description={t.projectAbout.appAboutDescription}
+>
+  <Nav />
+  <main id="main-content" class="document-page">
+    <section>
+      <div class="document-container document-header">
+        <h1 class="document-title">{t.projectAbout.appAboutLabel}</h1>
+        <h2 class="about-profile-header">{t.about.profileHeader}</h2>
+        <div class="about-profile">
+          <img class="about-profile-avatar" src="/avatar.jpg" alt="" width="96" height="96" />
+          <div class="about-profile-links">
+            <a
+              href="https://primal.net/p/nprofile1qqstl0zduk7yrhpcg08mltjhpdmjfghr2lmkeu6qdtve27vrn72fwvqxhwm2z"
+              rel="noopener noreferrer" target="_blank"
+              class="about-profile-link"
+              aria-label={t.about.primalAria}
+            >
+              <img class="about-profile-icon" src="/primal.svg" alt="" width="24" height="24" />
+            </a>
+            <a
+              href="https://x.com/MaxHodler"
+              rel="noopener noreferrer" target="_blank"
+              class="about-profile-link"
+              aria-label={t.about.followAria}
+            >
+              <svg class="about-profile-icon" width="24" height="24" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24h-6.66l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+              </svg>
+            </a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <div class="document-container pb-24 md:pb-32">
+
+        <h2 class="about-section-header">{t.about.dataSourcesHeader}</h2>
+        <p class="about-note">
+          {t.about.note}
+        </p>
+        <div class="about-group">
+          {dataSources.map((item) => (
+            <a href={item.url} rel="noopener noreferrer" target="_blank" class="about-tile">
+              <span class="about-tile-label">{item.label}</span>
+              <span class="about-tile-trailing">
+                <span class="about-tile-value">{item.value}</span>
+                <svg class="about-tile-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
+                  <polyline points="15 3 21 3 21 9"/>
+                  <line x1="10" y1="14" x2="21" y2="3"/>
+                </svg>
+              </span>
+            </a>
+          ))}
+        </div>
+
+        <div class="about-group">
+          <a href={`${repoUrl}/blob/main/LICENSE`} rel="noopener noreferrer" target="_blank" class="about-tile">
+            <span class="about-tile-label">{t.about.licenses}</span>
+            <span class="about-tile-trailing">
+              <svg class="about-tile-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
+                <polyline points="15 3 21 3 21 9"/>
+                <line x1="10" y1="14" x2="21" y2="3"/>
+              </svg>
+            </span>
+          </a>
+        </div>
+
+        <div class="about-footer">
+          <p>{t.about.forGrandma}</p>
+        </div>
+
+      </div>
+    </section>
+  </main>
+
+  <Footer />
+</Layout>
+
+<style>
+  .about-profile {
+    display: inline-flex;
+    align-items: center;
+    gap: 1rem;
+    margin-top: 1.25rem;
+  }
+  .about-profile-avatar {
+    width: 6rem;
+    height: 6rem;
+    border-radius: 999px;
+    object-fit: cover;
+    flex-shrink: 0;
+  }
+  .about-profile-links {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .about-profile-link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.5rem;
+    height: 2.5rem;
+    border-radius: 999px;
+    transition: background-color 0.15s ease;
+  }
+  .about-profile-link:hover {
+    background: rgb(var(--color-ink-rgb) / 0.06);
+  }
+  .about-profile-icon {
+    width: 1.5rem;
+    height: 1.5rem;
+    color: var(--color-ink);
+    flex-shrink: 0;
+  }
+
+  .about-profile-header {
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: var(--color-ink);
+    margin: 1.5rem 0 0;
+    padding-left: 0;
+  }
+
+  .about-section-header {
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: var(--color-ink);
+    margin: 2rem 0 0.625rem;
+    padding-left: 0.25rem;
+  }
+  .about-section-header:first-of-type {
+    margin-top: 0;
+  }
+
+  .about-group {
+    border: 1px solid var(--color-divider);
+    border-radius: 0.875rem;
+    background: var(--color-surface);
+    overflow: hidden;
+    margin-bottom: 1.5rem;
+  }
+
+  .about-note {
+    margin: 0 0 0.875rem;
+    padding-left: 0.25rem;
+    font-size: 0.875rem;
+    line-height: 1.5;
+    color: var(--color-ink-muted);
+  }
+
+  .about-tile {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0.875rem 1rem;
+    color: var(--color-ink);
+    transition: background-color 0.15s ease;
+  }
+  .about-tile + .about-tile {
+    border-top: 1px solid var(--color-divider);
+  }
+  .about-tile:hover {
+    background: rgb(var(--color-ink-rgb) / 0.04);
+  }
+
+  .about-tile-label {
+    font-size: 1rem;
+  }
+
+  .about-tile-trailing {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: var(--color-ink-muted);
+    min-width: 0;
+  }
+  .about-tile-value {
+    font-size: 1rem;
+    text-align: right;
+  }
+  .about-tile-icon {
+    flex-shrink: 0;
+    opacity: 0.55;
+  }
+
+  .about-footer {
+    margin-top: 3rem;
+    text-align: center;
+  }
+  .about-footer p {
+    color: var(--color-ink-muted);
+    font-size: 1rem;
+    margin: 0;
+  }
+</style>

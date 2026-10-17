@@ -24,7 +24,7 @@ const LOCALE_MATCHERS = [
 const COOKIE_LOCALES = new Set(['en', ...LOCALE_MATCHERS.map((m) => m.path)]);
 const PAGE_PATHS = new Set([
   '', 'price-tracker', 'party-mode', 'video-mode', 'android-app', 'a-bit-of-earth',
-  'bitcoin-and-the-dollar', 'about', 'privacy',
+  'bitcoin-and-the-dollar', 'about', 'android-app/about', 'privacy',
 ]);
 const COOKIE_NAME = 'lang';
 const COOKIE_MAX_AGE = 60 * 60 * 24 * 180;

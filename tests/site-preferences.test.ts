@@ -5,7 +5,7 @@ import test from 'node:test';
 import ts from 'typescript';
 import { onRequest } from '../functions/_middleware.js';
 
-const pages = ['', 'price-tracker', 'party-mode', 'video-mode', 'android-app', 'a-bit-of-earth', 'bitcoin-and-the-dollar', 'about', 'privacy'];
+const pages = ['', 'price-tracker', 'party-mode', 'video-mode', 'android-app', 'a-bit-of-earth', 'bitcoin-and-the-dollar', 'about', 'android-app/about', 'privacy'];
 const locales = ['es', 'pt', 'ru', 'tr', 'vi', 'ja', 'fr', 'de', 'it'];
 function request(path: string, language = 'es-ES,es;q=0.9,en;q=0.8', cookie = '', method = 'GET') {
   let passed = false;

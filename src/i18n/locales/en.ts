@@ -141,16 +141,34 @@ export const en = {
     reportBug: 'Report a bug',
   },
 
+  projectAbout: {
+    h1: "About OBT",
+    intro: "Free, open-source tools for a Bitcoin world.",
+    purpose: "Open Bitcoin Tracker brings together price charts, visual experiments, and an Android portfolio app. The aim is simple: make Bitcoin easier to explore and give you useful ways to keep an eye on your stack.",
+    dataHeading: "Where the data comes from",
+    livePrices: "Live Bitcoin prices",
+    history: "Historical prices",
+    fx: "Currency conversions",
+    ecb: "European Central Bank reference rates",
+    earthSources: "Calculation and map sources in the tool’s About panel",
+    creatorText: "OBT is an independent project by Max Hodler.",
+    contributeHeading: "Open source. Open to contributions.",
+    contributeIntro: "Read the code, suggest a tool, report a bug, or help with translations.",
+    repositories: "The {website} and {app} have separate repositories.",
+    issues: "Get involved through {websiteIssues} or {appIssues}.",
+    license: "Application code is available under the MIT license ({websiteLicense}, {appLicense}).",
+    credits: "Third-party data, maps, fonts, and media retain their own licenses and credits.",
+    website: "website",
+    app: "Android app",
+    websiteIssues: "website issues",
+    appIssues: "app issues",
+    appAboutLabel: "About the Android app",
+    appAboutTitle: "About the Android app — Open Bitcoin Tracker",
+    appAboutDescription: "The Open Bitcoin Tracker Android app: creator, data sources, and open-source license.",
+  },
+
   about: {
     h1: 'About',
-    // Heading above the origin story. Voice string — transcreate freely.
-    storyHeader: 'Why I created OBT',
-    // Personal origin story shown under the H1. Voice string — transcreate
-    // freely (see TRANSLATING.md). Each array entry renders as its own paragraph.
-    story: [
-      'I built Open Bitcoin Tracker because I wanted a convenient way to keep track of multiple stacks. I don\'t need to transact, just to keep an eye on their value. Most wallets only allow one and can be slow because they connect to a node.',
-      'My family and friends ended up using it too, so I made it public in case more people find it useful.',
-    ],
     dataSourcesHeader: 'Data sources for the Android app',
     note: 'The app has no association with any of these providers.',
     licenses: 'MIT license on GitHub',
@@ -163,8 +181,8 @@ export const en = {
     // and URL stay literal in the page markup; only this label translates.
     followAria: 'Max Hodler on X',
     // Accessible label for the author's Primal (Nostr) profile link. The brand
-    // "Primal" and the profile URL stay literal; only this label translates.
-    primalAria: 'Max Hodler on Primal',
+    // "Nostr" and the profile URL stay literal; only this label translates.
+    primalAria: 'Max Hodler on Nostr',
     // Labels for the data-source rows; the provider names (Kraken, etc.) and
     // their URLs stay literal in the page, zipped against this array by index.
     dataSourceLabels: ['Current Prices', 'Historical Prices', 'Historical FX rates', 'Mempool and Hashrate'],

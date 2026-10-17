@@ -1,0 +1,27 @@
+---
+import { getRelativeLocaleUrl } from 'astro:i18n';
+import { resolveLang, useTranslations } from '../i18n/utils';
+
+const t = useTranslations(Astro.currentLocale);
+const aboutHref = getRelativeLocaleUrl(resolveLang(Astro.currentLocale), 'about');
+---
+
+<footer class="project-footer">
+  <div class="project-footer-links">
+    <a href="https://github.com/open-bitcoin-tracker/open-bitcoin-tracker-web" target="_blank" rel="noopener noreferrer">{t.footer.github}<span aria-hidden="true">↗</span></a>
+    <a href={aboutHref}>{t.footer.about}</a>
+    <span>{t.footer.copyright}</span>
+  </div>
+</footer>
+
+<style>
+  .project-footer { display: flex; justify-content: flex-end; align-items: center; gap: 2rem; padding-block: 2.5rem; }
+  .project-footer-links { display: flex; align-items: center; flex-wrap: wrap; gap: 1.5rem; color: var(--color-ink-muted); font-size: .6875rem; }
+  .project-footer-links a { display: inline-flex; align-items: center; gap: .4rem; min-height: 44px; }
+  .project-footer-links a:hover { color: var(--color-ink); text-decoration: underline; text-underline-offset: 4px; }
+  @media (max-width: 1000px) { .project-footer { align-items: start; } }
+  @media (max-width: 700px) {
+    .project-footer { flex-direction: column; gap: .75rem; padding-block: 2rem; }
+    .project-footer-links { gap: 1.25rem; }
+  }
+</style>
