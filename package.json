@@ -9,6 +9,7 @@
     "dev": "astro dev",
     "build": "astro build",
     "preview": "astro preview",
+    "check": "tsc --noEmit",
     "generate:social": "node --experimental-strip-types scripts/generate-social-images.ts",
     "test": "node --experimental-strip-types --test tests/*.test.ts",
     "astro": "astro",

@@ -26,15 +26,16 @@ function harness(reduced = false, locale = 'en') {
   const pause = new Element();
   const next = new Element();
   const toggle = Object.assign(new Element(), { querySelector: (s: string) => s === '[data-motion-play]' ? play : pause });
-  const video = Object.assign(new Element(), {
-    src: '', poster: '', paused: true, muted: false, blocked: false,
+  class Video extends Element {
+    src = ''; poster = ''; paused = true; muted = false; blocked = false;
     play() {
       if (this.blocked) return Promise.reject(new Error('Autoplay denied'));
       this.paused = false; this.dispatchEvent(new Event('play')); return Promise.resolve();
-    },
-    pause() { this.paused = true; this.dispatchEvent(new Event('pause')); },
-    load() { this.src = ''; this.pause(); },
-  });
+    }
+    pause() { this.paused = true; this.dispatchEvent(new Event('pause')); }
+    load() { this.src = ''; this.pause(); }
+  }
+  const video = new Video();
   const document = Object.assign(new EventTarget(), { hidden: false });
   const motion = Object.assign(new EventTarget(), { matches: reduced });
   const window = Object.assign(new EventTarget(), { matchMedia: () => motion });

@@ -1,8 +1,9 @@
 ---
 import VideoModePage from '../../components/pages/VideoModePage.astro';
+import { getLocalizedStaticPaths } from '../../i18n/languages';
 
 export function getStaticPaths() {
-  return ['es', 'pt', 'ru', 'tr', 'vi', 'ja', 'fr', 'de', 'it'].map((lang) => ({ params: { lang } }));
+  return getLocalizedStaticPaths();
 }
 ---
 

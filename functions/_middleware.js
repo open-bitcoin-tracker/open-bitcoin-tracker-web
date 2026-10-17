@@ -6,22 +6,9 @@
  * forwarded and no external services are called.
  */
 
-// URL path segment -> the BCP-47 prefixes that should resolve to it. English is
-// intentionally absent: it is the root and is never a redirect target. The `pt`
-// segment maps from both pt-BR and the bare pt, mirroring astro.config.mjs.
-const LOCALE_MATCHERS = [
-  { path: 'es', prefixes: ['es'] },
-  { path: 'pt', prefixes: ['pt'] }, // pt-BR, pt-PT, pt all start with "pt"
-  { path: 'ru', prefixes: ['ru'] },
-  { path: 'tr', prefixes: ['tr'] },
-  { path: 'vi', prefixes: ['vi'] },
-  { path: 'ja', prefixes: ['ja'] },
-  { path: 'fr', prefixes: ['fr'] },
-  { path: 'de', prefixes: ['de'] },
-  { path: 'it', prefixes: ['it'] },
-];
+import { languages, localizedLanguages } from '../src/i18n/languages.ts';
 
-const COOKIE_LOCALES = new Set(['en', ...LOCALE_MATCHERS.map((m) => m.path)]);
+const COOKIE_LOCALES = new Set(languages.map(({ loc }) => loc));
 const PAGE_PATHS = new Set([
   '', 'price-tracker', 'party-mode', 'video-mode', 'android-app', 'a-bit-of-earth',
   'bitcoin-and-the-dollar', 'about', 'android-app/about', 'privacy',
@@ -60,9 +47,8 @@ function matchLocalePath(acceptLanguage) {
   for (const tag of parseAcceptLanguage(acceptLanguage)) {
     const base = tag.split('-')[0];
     if (base === 'en') return null; // English -> stay at root.
-    for (const { path, prefixes } of LOCALE_MATCHERS) {
-      if (prefixes.some((p) => tag === p || base === p)) return path;
-    }
+    const locale = localizedLanguages.find(({ loc }) => base === loc);
+    if (locale) return locale.loc;
   }
   return null;
 }

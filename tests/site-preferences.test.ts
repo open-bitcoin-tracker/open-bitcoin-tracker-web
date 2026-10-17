@@ -110,7 +110,7 @@ function themePage(dark = false, saved: string | null = null, blocked = false) {
     open: false,
     hasAttribute: () => false,
     contains: (target: EventTarget) => target === themeSelector || toggles.includes(target as typeof toggles[number]),
-    querySelector: (query: string) => query === 'summary' ? summary : query === '[data-theme-current]' ? label : toggles.find(toggle => toggle.attributes.get('aria-pressed') === 'true'),
+    querySelector: (query: string): object | undefined => query === 'summary' ? summary : query === '[data-theme-current]' ? label : toggles.find(toggle => toggle.attributes.get('aria-pressed') === 'true'),
   });
   const root = { dataset: { themePreference: '' }, classList: {
     contains: (name: string) => classes.has(name), add: (name: string) => classes.add(name),

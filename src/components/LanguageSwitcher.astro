@@ -2,6 +2,7 @@
 import DisclosureMenu from './ui/DisclosureMenu.astro';
 import { getRelativeLocaleUrl } from 'astro:i18n';
 import { useTranslations, resolveLang, stripLocale } from '../i18n/utils';
+import { languages } from '../i18n/languages';
 import '../styles/preference-selectors.css';
 
 interface Props {
@@ -18,21 +19,8 @@ const current = resolveLang(Astro.currentLocale);
 // the SAME page in its language (e.g. /es/about -> /de/about, /about).
 const localePath = stripLocale(Astro.url.pathname);
 
-// `code` matches the keys of `ui` (and Astro.currentLocale); `loc` is the URL
-// path segment Astro routes on (pt for Portuguese); `label` is the autonym.
 // Sorted A–Z by autonym, matching the app's language list.
-const LANGS = [
-  { code: 'de', loc: 'de', label: 'Deutsch' },
-  { code: 'en', loc: 'en', label: 'English' },
-  { code: 'es', loc: 'es', label: 'Español' },
-  { code: 'fr', loc: 'fr', label: 'Français' },
-  { code: 'it', loc: 'it', label: 'Italiano' },
-  { code: 'pt-BR', loc: 'pt', label: 'Português (BR)' },
-  { code: 'vi', loc: 'vi', label: 'Tiếng Việt' },
-  { code: 'tr', loc: 'tr', label: 'Türkçe' },
-  { code: 'ru', loc: 'ru', label: 'Русский' },
-  { code: 'ja', loc: 'ja', label: '日本語' },
-] as const;
+const LANGS = [...languages].sort((a, b) => a.label.localeCompare(b.label, 'en'));
 
 const currentLabel = LANGS.find((l) => l.code === current)?.label ?? 'English';
 ---

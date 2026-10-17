@@ -1,13 +1,16 @@
-import { en } from './locales/en';
-import { es } from './locales/es';
-import { ptBR } from './locales/pt-BR';
-import { ru } from './locales/ru';
-import { tr } from './locales/tr';
-import { vi } from './locales/vi';
-import { ja } from './locales/ja';
-import { fr } from './locales/fr';
-import { de } from './locales/de';
-import { it } from './locales/it';
+import type { Lang } from './languages.ts';
+import { en } from './locales/en.ts';
+import { es } from './locales/es.ts';
+import { ptBR } from './locales/pt-BR.ts';
+import { ru } from './locales/ru.ts';
+import { tr } from './locales/tr.ts';
+import { vi } from './locales/vi.ts';
+import { ja } from './locales/ja.ts';
+import { fr } from './locales/fr.ts';
+import { de } from './locales/de.ts';
+import { it } from './locales/it.ts';
+
+export { defaultLang, type Lang } from './languages.ts';
 
 // Preserve the English keys while allowing translated strings and either
 // mutable locale arrays or the canonical dictionary's readonly arrays.
@@ -20,8 +23,6 @@ type DictionaryShape<T> = T extends string
       : T;
 
 export type Dict = DictionaryShape<typeof en>;
-
-export const defaultLang = 'en';
 
 // Keyed by BCP-47 code so the keys line up with what Astro.currentLocale
 // returns (the first entry of a locale's `codes`, e.g. 'pt-BR' for the /pt/
@@ -37,6 +38,4 @@ export const ui = {
   fr,
   de,
   it,
-} satisfies Record<string, Dict>;
-
-export type Lang = keyof typeof ui;
+} satisfies Record<Lang, Dict>;

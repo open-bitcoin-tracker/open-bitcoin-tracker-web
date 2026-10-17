@@ -12,6 +12,7 @@ npm run dev
 ```
 
 - `npm run build`: build to `dist/`; no full TypeScript check.
+- `npm run check`: check TypeScript across source, scripts, and tests (excludes Astro templates).
 - `npm run preview`: preview the build.
 - `npm test`: chart, currency, preferences, browser, and supply tests.
 - `npm run test:earth` and `npm run check:earth`: Earth tests and type checks.
@@ -78,7 +79,7 @@ The Earth captures live in `src/assets/previews/` and are optimized at build tim
 
 Keep all `src/i18n/` dictionaries consistent. English uses root URLs; Portuguese uses `/pt/` and dictionary code `pt-BR`. Earth controls, country search, map labels (where available), and guide content are translated through `earth.ts`; country names use the browser’s locale data. Supply content remains English.
 
-Adding a language requires its dictionary and `ui.ts` registration; `tracker.ts`, `ranges.ts`, `chart-settings.ts`, `party.ts`, `video.ts`, and `earth.ts`; every `src/pages/[lang]/` route's `getStaticPaths()`; Astro locales/sitemap, layout alternates, switcher entries, middleware matchers, and `scripts/generate-social-images.ts`. Build and review generated routes.
+Locale codes, URL segments, and autonyms live in `src/i18n/languages.ts`. Astro locales/sitemap, localized routes, layout alternates, the language switcher, and redirect middleware share that metadata. Adding a language requires an entry there, its dictionary and `ui.ts` registration, plus `tracker.ts`, `ranges.ts`, `chart-settings.ts`, `party.ts`, `video.ts`, and `earth.ts`. Social images use the registered dictionaries. Run `npm run check`, build, and review generated routes.
 
 After social copy or tool-label changes, run `npm run generate:social`, review all `public/og-bitcoin-tools*.png`, and rebuild. Generation requires **Noto Sans** and **Noto Sans CJK JP**; normal builds use checked-in images.
 

@@ -3,19 +3,9 @@
 import { writeFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import sharp from 'sharp';
-import { en } from '../src/i18n/locales/en.ts';
-import { es } from '../src/i18n/locales/es.ts';
-import { ptBR } from '../src/i18n/locales/pt-BR.ts';
-import { ru } from '../src/i18n/locales/ru.ts';
-import { tr } from '../src/i18n/locales/tr.ts';
-import { vi } from '../src/i18n/locales/vi.ts';
-import { ja } from '../src/i18n/locales/ja.ts';
-import { fr } from '../src/i18n/locales/fr.ts';
-import { de } from '../src/i18n/locales/de.ts';
-import { it } from '../src/i18n/locales/it.ts';
+import { ui as dictionaries } from '../src/i18n/ui.ts';
 import { tracker } from '../src/i18n/tracker.ts';
 
-const dictionaries = { en, es, 'pt-BR': ptBR, ru, tr, vi, ja, fr, de, it };
 const ink = '#1F1B14';
 const muted = '#706B61';
 const orange = '#F7931A';

@@ -3,7 +3,7 @@ import { ChartMotion } from '../lib/bitcoin-chart-motion';
 import { createPriceChangeFormatter } from '../lib/bitcoin-price-change';
 import type { TrackerCopy } from '../i18n/tracker';
 import type { RangeCopy } from '../i18n/ranges';
-import { candleWindow, historyForRange, parseCandles, stepRange, type BitcoinRange, type RangeUnit } from '../lib/bitcoin-range';
+import { candleWindow, historyForRange, parseCandles, stepRange, type BitcoinRange } from '../lib/bitcoin-range';
 import { createRangePill } from './bitcoin-range-pill';
 import { readRangePreferences, saveRangePreferences } from '../lib/bitcoin-range-preferences';
 import { CurrencyRates, isCurrency, type Currency } from '../lib/bitcoin-currency';

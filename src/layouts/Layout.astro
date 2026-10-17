@@ -2,6 +2,7 @@
 import { getAbsoluteLocaleUrl } from 'astro:i18n';
 import '../styles/global.css';
 import { useTranslations, htmlLang, stripLocale } from '../i18n/utils';
+import { languages } from '../i18n/languages';
 
 interface Props {
   // Which page's metadata to use for <title>/description. Pages pass this;
@@ -47,18 +48,7 @@ const websiteJsonLd = {
 // hreflang advertises every translation of the current page. The `loc` is the
 // URL path segment Astro routes on (pt), while `code` is the BCP-47 value
 // search engines expect (pt-BR). x-default points at the un-prefixed English.
-const alternates = [
-  { code: 'en', loc: 'en' },
-  { code: 'es', loc: 'es' },
-  { code: 'pt-BR', loc: 'pt' },
-  { code: 'ru', loc: 'ru' },
-  { code: 'tr', loc: 'tr' },
-  { code: 'vi', loc: 'vi' },
-  { code: 'ja', loc: 'ja' },
-  { code: 'fr', loc: 'fr' },
-  { code: 'de', loc: 'de' },
-  { code: 'it', loc: 'it' },
-];
+const alternates = languages;
 
 // The SoftwareApplication entity describes the app itself. It appears once per
 // Android app page and always points at the canonical app
