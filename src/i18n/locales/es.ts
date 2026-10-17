@@ -33,7 +33,7 @@ export const es: Dict = {
     nextAnimation: 'Siguiente animación',
     appTitle: 'OBT PARA ANDROID',
     openApp: 'Mas info sobre la app',
-    appDescription: 'No hacen falta llaves ni semillas, las cantidades se meten a mano y nunca salen de tu telefono. No pueden hacer transacciones, pero es conveniente para ver lo que valen tus stacks de bitcoin.',
+    appDescription: 'No le hacen falta llaves ni semillas, las cantidades se meten a mano. No puedes hacer transacciones, pero es muy conveniente para ver lo que valen tus stacks de bitcoin.',
     priceTracker: 'Trackeador de precio',
     priceDescription: 'Precio de Bitcoin en directo e historial desde 2010.',
     videoDescription: 'El precio de Bitcoin en directo sobre vídeos de YouTube',
