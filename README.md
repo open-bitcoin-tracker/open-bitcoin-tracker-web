@@ -39,6 +39,8 @@ Live badges start with the suggestion catalog or previously saved playback metad
 
 Synchronize `public/data/btc-history.csv` with the Android project's `assets/btc_history.csv`: `YYYY-MM-DD,USD_PRICE`, one daily point per line, no header. Preserve existing history and unavailable data; never invent prices across gaps.
 
+Run `npm run refresh:prices` to append completed UTC days from the Coin Metrics Community API (`btc`, `PriceUSD`, daily). The refresh preserves existing rows and stops without writing if new observations are invalid, missing, unordered, or paginated. For a reviewed API response, use `npm run refresh:prices -- --file coinmetrics-response.json`. Review the appended dates/prices, synchronize the same CSV with Android, then run `npm test` and `npm run build`. Coin Metrics [Community data](https://coinmetrics.io/community-data/) is licensed under [CC BY-NC 4.0](https://creativecommons.org/licenses/by-nc/4.0/).
+
 ### Supply
 
 ```sh
@@ -60,7 +62,9 @@ Review capital changes and coordinates together before updating the catalogue. I
 
 ### Homepage previews
 
-Homepage product captures live in `src/assets/previews/` and are optimized at build time. These static captures link to each tool. Recapture the actual chart, Earth map, and Video Mode when their appearance changes; exclude browser chrome and development controls. Preview sources: Earth map © [OpenMapTiles](https://openmaptiles.org/) and © [OpenStreetMap](https://www.openstreetmap.org/copyright); Video Mode [Fireplace 4K on YouTube](https://www.youtube.com/watch?v=mSX3OyW9Rao). Android uses the existing theme-aware app screenshots.
+The homepage price card renders an all-time logarithmic SVG at build time from the bundled history. Its compact samples retain time-bucket highs/lows and segment endpoints; missing days remain separate paths. The browser receives these samples rather than the full CSV or interactive tracker. A small script polls the USD ticker once a minute and overlapping daily history every 15 minutes while the page is visible and online. Failed requests retain the dated price/curve and show unavailable status; a ticker cannot bridge missing daily history. The card links to the localized tracker.
+
+Earth and Video Mode captures live in `src/assets/previews/` and are optimized at build time. Recapture these tools when their appearance changes; exclude browser chrome and development controls. Preview sources: Earth map © [OpenMapTiles](https://openmaptiles.org/) and © [OpenStreetMap](https://www.openstreetmap.org/copyright); Video Mode [Fireplace 4K on YouTube](https://www.youtube.com/watch?v=mSX3OyW9Rao). Android uses the existing theme-aware app screenshots.
 
 ### Languages and social images
 

@@ -15,7 +15,8 @@
     "test:earth": "vitest run src/features/earth",
     "check:earth": "tsc --project tsconfig.earth.json",
     "check:supply": "tsc --project tsconfig.supply.json",
-    "refresh:supply": "node --experimental-strip-types scripts/refresh-supply.ts"
+    "refresh:supply": "node --experimental-strip-types scripts/refresh-supply.ts",
+    "refresh:prices": "node --experimental-strip-types scripts/refresh-price-history.ts"
   },
   "dependencies": {
     "@astrojs/react": "^6.0.6",

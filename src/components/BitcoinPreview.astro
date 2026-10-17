@@ -1,0 +1,54 @@
+---
+import bundledHistory from '../../public/data/btc-history.csv?raw';
+import { parseHistory, DAY_MS } from '../lib/bitcoin-chart';
+import { compactPreviewHistory, splitPreviewHistory, previewPaths, PREVIEW_WIDTH, PREVIEW_HEIGHT } from '../lib/bitcoin-preview';
+import { resolveLang } from '../i18n/utils';
+import { tracker } from '../i18n/tracker';
+
+const lang = resolveLang(Astro.currentLocale);
+const t = tracker[lang];
+const history = parseHistory(bundledHistory);
+const compact = compactPreviewHistory(splitPreviewHistory(history));
+const paths = previewPaths(compact);
+const last = history.at(-1)!;
+const money = new Intl.NumberFormat(lang, { style: 'currency', currency: 'USD', currencyDisplay: 'narrowSymbol', maximumFractionDigits: 0 });
+const date = new Intl.DateTimeFormat(lang, { year: 'numeric', month: 'short', day: 'numeric', timeZone: 'UTC' });
+const packed = compact.map(segment => segment.map(point => [point.time / DAY_MS, point.price]));
+---
+
+<figure class="bitcoin-preview" data-bitcoin-preview data-locale={lang} data-history={JSON.stringify(packed)} data-copy={JSON.stringify({ price: t.price, updated: t.updated, unavailable: t.unavailable })}>
+  <div class="preview-header">
+    <span class="preview-price" data-preview-price title={`${t.updated}: ${date.format(last.time)}`} aria-label={`${t.price}: ${money.format(last.price)} USD. ${t.updated}: ${date.format(last.time)}`}>{money.format(last.price)}</span>
+  </div>
+  <div class="preview-plot">
+    <svg viewBox={`0 0 ${PREVIEW_WIDTH} ${PREVIEW_HEIGHT}`} preserveAspectRatio="none" role="img" aria-label={t.chart}>
+      <defs>
+        <linearGradient id="preview-price-fill" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="var(--color-accent)" stop-opacity="0.18" />
+          <stop offset="60%" stop-color="var(--color-accent)" stop-opacity="0.12" />
+          <stop offset="100%" stop-color="var(--color-accent)" stop-opacity="0" />
+        </linearGradient>
+      </defs>
+      <path data-preview-area d={paths.area} fill="url(#preview-price-fill)" />
+      <path data-preview-line d={paths.line} fill="none" stroke="var(--color-accent)" stroke-width="1.5" vector-effect="non-scaling-stroke" stroke-linejoin="round" />
+    </svg>
+  </div>
+  <figcaption class="preview-caption"><span data-preview-status hidden></span><span data-preview-history-status hidden>{t.history}</span></figcaption>
+</figure>
+
+<script>
+  import { startBitcoinPreview } from '../scripts/bitcoin-preview';
+  const root = document.querySelector<HTMLElement>('[data-bitcoin-preview]');
+  if (root) startBitcoinPreview(root);
+</script>
+
+<style>
+  .bitcoin-preview { container-type: inline-size; display: grid; grid-template-rows: auto minmax(160px, 1fr); position: relative; min-width: 0; min-height: 340px; height: 100%; margin: 0; background: var(--color-paper); overflow: hidden; }
+  .preview-header { min-width: 0; padding: clamp(1.25rem, 4cqi, 2rem) clamp(1.25rem, 4cqi, 2rem) 0; }
+  .preview-price { display: block; color: var(--color-ink); font-size: clamp(2rem, 10cqi, 4rem); font-weight: 700; line-height: 1.1; letter-spacing: -.06em; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .preview-plot { position: relative; min-height: 0; margin-top: .75rem; }
+  .preview-plot svg { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+  .preview-caption { position: absolute; bottom: .75rem; inset-inline: clamp(1.25rem, 4cqi, 2rem); display: flex; flex-wrap: wrap; gap: .25rem 1rem; color: var(--color-ink-muted); font-size: .625rem; }
+  [hidden] { display: none; }
+  @media (max-width: 700px) { .bitcoin-preview { min-height: 280px; } }
+</style>
