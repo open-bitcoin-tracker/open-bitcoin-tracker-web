@@ -98,6 +98,13 @@ function page(stored: Map<string, string>, locale = 'en', blocked: 'read' | 'wri
     dataset: { currencyOption: code }, parent: currencyList,
   }));
   currencyList.querySelectorAll = () => currencyOptions;
+  const priceCurrencyPicker = root.querySelector('[data-price-currency-picker]');
+  const priceCurrencyTrigger = priceCurrencyPicker.querySelector('[data-currency-trigger]');
+  const priceCurrencyList = priceCurrencyPicker.querySelector('[data-currency-list]');
+  const priceCurrencyOptions = currencyOptions.map(option => Object.assign(new Control(), {
+    dataset: { ...option.dataset }, parent: priceCurrencyList,
+  }));
+  priceCurrencyList.querySelectorAll = () => priceCurrencyOptions;
   const document = Object.assign(new EventTarget(), { hidden: false, querySelector: () => root });
   const window = Object.assign(new EventTarget(), {
     matchMedia: () => Object.assign(new EventTarget(), { matches: true }),
@@ -165,6 +172,7 @@ function page(stored: Map<string, string>, locale = 'en', blocked: 'read' | 'wri
   }
   return {
     root, slots, pill, requests, document, scaleOptions, currencyOptions, currencySelect, currencyTrigger, currencyList, releaseRequests,
+    priceCurrencyPicker, priceCurrencyTrigger, priceCurrencyList, priceCurrencyOptions,
     currency(code: string) {
       if (currencyTrigger.attributes['aria-expanded'] !== 'true') currencyTrigger.dispatchEvent(new Event('click'));
       currencyOptions.find(option => option.dataset.currencyOption === code)!.dispatchEvent(new Event('click'));
@@ -361,6 +369,38 @@ test('currency converts live and inspected prices and persists with scale across
   assert.match(restored.root.querySelector('[data-chart]').attributes['aria-label'], /EUR.*Linear/);
   assert.ok(restored.requests.some(url => url.includes('frankfurter')));
   restored.close();
+});
+
+test('the price currency picker shares selection with settings and dismisses with keyboard or outside interaction', async () => {
+  const storage = new Map([['bitcoin-tracker-display', JSON.stringify({ currency: 'AUD', scale: 'linear' })]]);
+  const p = page(storage);
+  await p.ready();
+  assert.equal(p.priceCurrencyTrigger.disabled, false);
+  p.priceCurrencyTrigger.dispatchEvent(new Event('click'));
+  assert.equal(p.priceCurrencyList.hidden, false);
+  assert.equal(p.priceCurrencyTrigger.attributes['aria-expanded'], 'true');
+  assert.equal(p.priceCurrencyOptions.find(option => option.dataset.currencyOption === 'AUD')!.tabIndex, 0);
+  const eur = p.priceCurrencyOptions.find(option => option.dataset.currencyOption === 'EUR')!;
+  eur.dispatchEvent(new Event('click'));
+  await p.ready();
+  assert.equal(p.priceCurrencyList.hidden, true);
+  assert.equal(p.currencySelect.value, 'EUR');
+  assert.match(p.root.querySelector('[data-price]').textContent, /€/);
+  assert.equal(p.currencyOptions.find(option => option.dataset.currencyOption === 'EUR')!.attributes['aria-selected'], 'true');
+  assert.deepEqual(JSON.parse(storage.get('bitcoin-tracker-display')!), { currency: 'EUR', scale: 'linear' });
+  p.currency('GBP');
+  assert.equal(p.priceCurrencyOptions.find(option => option.dataset.currencyOption === 'GBP')!.attributes['aria-selected'], 'true');
+  p.priceCurrencyTrigger.dispatchEvent(new Event('click'));
+  const escape = Object.assign(new Event('keydown', { cancelable: true }), { key: 'Escape' });
+  p.priceCurrencyPicker.dispatchEvent(escape);
+  assert.equal(escape.defaultPrevented, true);
+  assert.equal(p.priceCurrencyList.hidden, true);
+  p.priceCurrencyTrigger.dispatchEvent(new Event('click'));
+  p.document.dispatchEvent(new Event('pointerdown'));
+  assert.equal(p.priceCurrencyList.hidden, true);
+  p.close();
+  p.priceCurrencyTrigger.dispatchEvent(new Event('click'));
+  assert.equal(p.priceCurrencyList.hidden, true, 'page teardown removes the price picker listeners');
 });
 
 test('FX failures never relabel USD prices, and switching back to USD restores the chart', async () => {

@@ -1,6 +1,5 @@
 /** A keyboard-accessible currency menu backed by the page's existing select. */
-export function createVideoCurrencyPicker(root: HTMLElement, select: HTMLSelectElement, { panel, back }: { panel?: HTMLElement; back?: HTMLButtonElement } = {}) {
-  const wrapper = root.querySelector<HTMLElement>('[data-currency-picker]')!;
+export function createVideoCurrencyPicker(root: HTMLElement, select: HTMLSelectElement, { wrapper = root.querySelector<HTMLElement>('[data-currency-picker]')!, panel, back }: { wrapper?: HTMLElement; panel?: HTMLElement; back?: HTMLButtonElement } = {}) {
   const trigger = wrapper.querySelector<HTMLButtonElement>('[data-currency-trigger]')!;
   const value = wrapper.querySelector<HTMLElement>('[data-currency-value]')!;
   const list = wrapper.querySelector<HTMLElement>('[data-currency-list]')!;

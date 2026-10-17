@@ -340,6 +340,8 @@ function startTracker(root: HTMLElement) {
     panel: root.querySelector<HTMLElement>('[data-currency-panel]')!,
     back: root.querySelector<HTMLButtonElement>('[data-currency-back]')!,
   });
+  const priceCurrency = root.querySelector<HTMLElement>('[data-price-currency-picker]')!;
+  const priceCurrencyPicker = createVideoCurrencyPicker(priceCurrency, currencySelect, { wrapper: priceCurrency });
   settingsMenu.addEventListener('toggle', () => {
     if (!settingsMenu.open) currencyPicker.close();
   });
@@ -521,6 +523,7 @@ function startTracker(root: HTMLElement) {
     reduceMotion.removeEventListener('change', onMotionPreferenceChange);
     rangePill.destroy();
     currencyPicker.destroy();
+    priceCurrencyPicker.destroy();
     document.removeEventListener('fullscreenchange', updateFullscreen);
     stopTimers();
     stopPriceFeed();

@@ -9,7 +9,7 @@ const script = ts.transpileModule(readFileSync(new URL('../src/lib/video-currenc
   compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 },
 }).outputText;
 
-function harness({ currency = 'USD', disabled = false, standalone = false } = {}) {
+function harness({ currency = 'USD', disabled = false, standalone = false, explicitWrapper = false } = {}) {
   class Element extends EventTarget {
     attributes = new Map<string, string>();
     dataset: Record<string, string> = {};
@@ -68,7 +68,7 @@ function harness({ currency = 'USD', disabled = false, standalone = false } = {}
     option.dataset.currencyOption = currency;
     return option;
   });
-  root.selectors.set('[data-currency-picker]', wrapper);
+  if (!explicitWrapper) root.selectors.set('[data-currency-picker]', wrapper);
   wrapper.selectors.set('[data-currency-trigger]', trigger);
   wrapper.selectors.set('[data-currency-value]', value);
   wrapper.selectors.set('[data-currency-list]', list);
@@ -83,7 +83,7 @@ function harness({ currency = 'USD', disabled = false, standalone = false } = {}
   root.addEventListener('currencytoggle', () => { toggles++; });
   const module: { createVideoCurrencyPicker?: typeof createVideoCurrencyPicker } = {};
   runInNewContext(script, { exports: module, document, Event, Date: { now: () => now } });
-  const picker = module.createVideoCurrencyPicker!(root as unknown as HTMLElement, select as unknown as HTMLSelectElement, { panel: panel as unknown as HTMLElement, back: back as unknown as HTMLButtonElement });
+  const picker = module.createVideoCurrencyPicker!(root as unknown as HTMLElement, select as unknown as HTMLSelectElement, { wrapper: explicitWrapper ? wrapper as unknown as HTMLElement : undefined, panel: panel as unknown as HTMLElement, back: back as unknown as HTMLButtonElement });
   const option = (currency: string) => options.find(option => option.dataset.currencyOption === currency)!;
   return {
     root, wrapper, trigger, value, list, select, options, document, outside, changes, picker, option, panel, back,
@@ -127,6 +127,23 @@ test('the currency picker restores the native select and stays synchronized with
   assert.equal(disabled.trigger.disabled, true);
   assert.equal(disabled.list.hidden, true);
   disabled.picker.destroy();
+});
+
+test('an explicit wrapper supports a price trigger with the same keyboard and focus behavior', () => {
+  const h = harness({ currency: 'AUD', explicitWrapper: true });
+  assert.equal(h.key(h.trigger, 'ArrowDown'), true);
+  assert.equal(h.focused(), 'AUD');
+  h.key(h.option('AUD'), 'Home');
+  h.key(h.option('USD'), 'ArrowDown');
+  h.key(h.option('EUR'), 'Enter');
+  assert.equal(h.select.value, 'EUR');
+  assert.equal(h.list.hidden, true);
+  assert.equal(h.document.activeElement, h.trigger);
+  h.trigger.click();
+  h.key(h.option('EUR'), 'Escape');
+  assert.equal(h.list.hidden, true);
+  assert.equal(h.document.activeElement, h.trigger);
+  h.picker.destroy();
 });
 
 test('opening focuses the selected currency and clicking an option commits a bubbling native change', () => {
