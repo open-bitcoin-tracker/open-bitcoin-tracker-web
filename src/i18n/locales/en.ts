@@ -143,7 +143,7 @@ export const en = {
 
   projectAbout: {
     h1: "About OBT",
-    intro: "Free, open-source tools for a Bitcoin world.",
+    intro: "Free, open-source tools",
     purpose: "Open Bitcoin Tracker brings together price charts, visual experiments, and an Android portfolio app. The aim is simple: make Bitcoin easier to explore and give you useful ways to keep an eye on your stack.",
     dataHeading: "Where the data comes from",
     livePrices: "Live Bitcoin prices",

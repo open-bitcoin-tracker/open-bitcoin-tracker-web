@@ -129,7 +129,7 @@ export const vi: Dict = {
 
   projectAbout: {
     h1: "Về OBT",
-    intro: "Công cụ miễn phí, mã nguồn mở cho thế giới Bitcoin.",
+    intro: "Công cụ miễn phí, mã nguồn mở",
     purpose: "Open Bitcoin Tracker tập hợp biểu đồ giá, các thử nghiệm trực quan và ứng dụng danh mục Bitcoin cho Android. Mục tiêu rất đơn giản: giúp bạn khám phá Bitcoin dễ hơn và có những cách hữu ích để theo dõi stack của mình.",
     dataHeading: "Dữ liệu đến từ đâu",
     livePrices: "Giá Bitcoin trực tiếp",

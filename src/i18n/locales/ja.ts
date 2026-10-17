@@ -129,7 +129,7 @@ export const ja: Dict = {
 
   projectAbout: {
     h1: "OBTについて",
-    intro: "Bitcoinのある世界に、無料のオープンソースツールを。",
+    intro: "無料のオープンソースツール",
     purpose: "Open Bitcoin Trackerは、価格チャート、視覚的な実験、Android向けポートフォリオアプリをまとめたプロジェクトです。Bitcoinをもっと気軽に探求できて、自分のスタックを確認するのに役立つツールを目指しています。",
     dataHeading: "データの出典",
     livePrices: "Bitcoinのリアルタイム価格",
