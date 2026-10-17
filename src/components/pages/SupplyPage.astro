@@ -1,4 +1,6 @@
 ---
+import '../../styles/guide-drawer.css';
+import DisclosureMenu from '../ui/DisclosureMenu.astro';
 import Layout from '../../layouts/Layout.astro';
 import Nav from '../Nav.astro';
 import SupplyContainer from '../SupplyContainer.astro';
@@ -24,7 +26,7 @@ const clientCopy = Object.fromEntries(['projected', 'recorded', 'stale', 'reduce
 <Layout title={`${t.title} — Open Bitcoin Tracker`} description={t.intro}>
   <Nav />
   <main id="main-content" class="supply-page" lang="en" aria-labelledby="supply-page-title" data-supply data-motion="still">
-    <h1 id="supply-page-title" class="page-title">{t.title}</h1>
+    <h1 id="supply-page-title" class="page-title sr-only">{t.title}</h1>
 
     <div class="year-controls" data-year-controls hidden role="group" aria-label={t.yearControls}>
       <button type="button" data-year-previous disabled><svg class="year-arrow" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m15 18-6-6 6-6" /></svg><span class="year-label">{t.previousYear}</span></button>
@@ -55,19 +57,19 @@ const clientCopy = Object.fromEntries(['projected', 'recorded', 'stale', 'reduce
             const currency = currencies[money.id];
             return <article class="supply-column fiat-column" data-currency={money.id} data-selected={money.id === 'usd' ? 'true' : undefined} data-money-motion="still" data-direction={annualRate(money) < 0 ? 'down' : 'up'}>
               {money.id === 'usd' && <div class="column-heading selected-asset-heading" role="heading" aria-level="2" data-asset-picker hidden aria-label={currency.name}>
-                <span class="control-label" id="asset-picker-label">{t.compareBitcoinWith}</span>
-                <details class="asset-choice" data-asset-menu>
+                <span class="control-label sr-only" id="asset-picker-label">{t.compareBitcoinWith}</span>
+                <DisclosureMenu class="asset-choice" data-asset-menu keyboardNavigation manual>
                   <summary class="asset-trigger" id="comparison-asset" data-asset-trigger aria-labelledby="asset-picker-label asset-picker-name" aria-controls="asset-options" aria-expanded="false">
                     <span id="asset-picker-name" data-picker-name>{currency.name}</span>
-                    <svg class="asset-chevron" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9" /></svg>
+                    <svg class="asset-chevron" data-menu-caret width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9" /></svg>
                   </summary>
-                  <ul class="asset-options" id="asset-options" role="list" aria-label={t.compareBitcoinWith}>
-                    {snapshot.fiat.map((asset) => <li><button type="button" class="asset-option" data-asset-option={asset.id} aria-pressed={asset.id === 'usd' ? 'true' : 'false'}>{currencies[asset.id].name}</button></li>)}
+                  <ul class="asset-options menu-panel" id="asset-options" role="list" aria-label={t.compareBitcoinWith}>
+                    {snapshot.fiat.map((asset) => <li><button type="button" class="asset-option menu-option" data-menu-option data-asset-option={asset.id} aria-pressed={asset.id === 'usd' ? 'true' : 'false'}>{currencies[asset.id].name}</button></li>)}
                   </ul>
-                </details>
+                </DisclosureMenu>
               </div>}
               {money.id === 'usd' && <h2 data-static-asset-heading class="column-heading">{currency.name}</h2>}
-              <p class="total-number fiat-total" aria-live="off"><span aria-hidden="true">{currency.symbol}</span><span data-money-total>{n(money.latest.amount)}</span><span class="currency-name"> {currency.plural}</span></p>
+              <p class="total-number fiat-total" aria-live="off"><span aria-hidden="true">{currency.symbol}</span><span data-money-total>{n(money.latest.amount)}</span><span class="currency-name sr-only"> {currency.plural}</span></p>
               <SupplyContainer kind="fiat" symbol={currency.symbol} assetId={money.id} />
             </article>;
           })}
@@ -78,32 +80,32 @@ const clientCopy = Object.fromEntries(['projected', 'recorded', 'stale', 'reduce
           const currency = currencies[money.id];
           return <section class="share fiat-share" data-share-asset={money.id} data-selected={money.id === 'usd' ? 'true' : undefined} aria-labelledby={`${money.id}-share-heading`}>
             <h3 id={`${money.id}-share-heading`} class="column-heading share-heading">{interpolate(t.perPersonTitle, { asset: currency.name })}</h3>
-            <p class="share-number" aria-live="off"><span aria-hidden="true">{currency.symbol}</span><span data-money-share={money.id}>{n(equalShare(money.latest.amount, snapshot.population.persons))}</span><span class="currency-name"> {currency.plural}</span></p>
+            <p class="share-number" aria-live="off"><span aria-hidden="true">{currency.symbol}</span><span data-money-share={money.id}>{n(equalShare(money.latest.amount, snapshot.population.persons))}</span><span class="currency-name sr-only"> {currency.plural}</span></p>
           </section>;
         })}
       </div>
     </div>
     <section class="method" id="sources">
       <button class="method-trigger" type="button" data-method-trigger aria-haspopup="dialog" aria-controls="supply-method-dialog" hidden><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10" /><path d="M12 16v-4M12 8h.01" /></svg><span>{t.methodTitle}</span></button>
-      <dialog id="supply-method-dialog" class="method-dialog" data-method-dialog aria-labelledby="supply-method-title">
-        <div class="method-panels">
-          <section class="method-panel" data-method-overview>
-            <header class="method-header">
+      <dialog id="supply-method-dialog" class="method-dialog guide-drawer" data-method-dialog aria-labelledby="supply-method-title">
+        <div class="method-panels guide-drawer-panels">
+          <section class="method-panel guide-drawer-overview" data-method-overview>
+            <header class="method-header guide-drawer-header">
               <h2 id="supply-method-title" data-method-title tabindex="-1">{t.methodTitle}</h2>
-              <button type="button" class="method-close" data-method-close aria-label={t.closeMethod}><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18" /></svg></button>
+              <button type="button" class="method-close guide-drawer-close" data-method-close aria-label={t.closeMethod}><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18" /></svg></button>
             </header>
-            <div class="method-overview-body" data-method-overview-body>
+            <div class="method-overview-body guide-drawer-scroll" data-method-overview-body>
               <nav class="method-sections" aria-label={t.methodSections}>
-                {methodSections.map((section) => <button type="button" class="method-section-trigger" data-method-section-trigger={section.id} aria-controls="supply-method-detail" aria-expanded="false"><span>{section.title}</span><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="m9 6 6 6-6 6" /></svg></button>)}
+                {methodSections.map((section) => <button type="button" class="method-section-trigger guide-drawer-section" data-method-section-trigger={section.id} aria-controls="supply-method-detail" aria-expanded="false"><span>{section.title}</span><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="m9 6 6 6-6 6" /></svg></button>)}
               </nav>
             </div>
           </section>
-          <section id="supply-method-detail" class="method-detail" data-method-detail aria-labelledby="supply-method-detail-title" aria-hidden="true" inert>
-            <header class="method-header method-detail-header">
-              <button type="button" class="method-back" data-method-back aria-label={t.backToMethod}><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="m15 18-6-6 6-6M9 12h12" /></svg><span>{t.methodBack}</span></button>
-              <button type="button" class="method-close" data-method-close aria-label={t.closeMethod}><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18" /></svg></button>
+          <section id="supply-method-detail" class="method-detail guide-drawer-detail" data-method-detail aria-labelledby="supply-method-detail-title" aria-hidden="true" inert>
+            <header class="method-header method-detail-header guide-drawer-header guide-drawer-detail-header">
+              <button type="button" class="method-back guide-drawer-back" data-method-back aria-label={t.backToMethod}><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="m15 18-6-6 6-6M9 12h12" /></svg><span>{t.methodBack}</span></button>
+              <button type="button" class="method-close guide-drawer-close" data-method-close aria-label={t.closeMethod}><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18" /></svg></button>
             </header>
-            <div class="method-body" data-method-body><h2 id="supply-method-detail-title" data-method-detail-title tabindex="-1"></h2></div>
+            <div class="method-body guide-drawer-scroll" data-method-body><h2 id="supply-method-detail-title" data-method-detail-title tabindex="-1"></h2></div>
           </section>
         </div>
       </dialog>
@@ -224,10 +226,7 @@ const clientCopy = Object.fromEntries(['projected', 'recorded', 'stale', 'reduce
   .asset-trigger { display: inline-flex; align-items: center; justify-content: flex-start; gap: .5em; min-height: 44px; padding: 0; color: var(--color-ink-muted); font-size: var(--supply-heading-size); font-weight: 650; white-space: nowrap; list-style: none; user-select: none; }
   .asset-trigger::-webkit-details-marker { display: none; }
   .asset-chevron { width: .75em; height: .75em; flex-shrink: 0; opacity: .7; transition: transform .2s ease; }
-  .asset-choice[open] .asset-chevron { transform: rotate(180deg); }
-  .asset-options { position: absolute; top: calc(100% + .5rem); left: 0; z-index: 60; margin: 0; padding: .375rem; list-style: none; min-width: 11rem; max-height: min(50dvh, 24rem); overflow-y: auto; background: var(--menu-dropdown-bg, var(--color-surface)); border: 1px solid var(--menu-dropdown-border, var(--color-divider)); border-radius: var(--radius-md); box-shadow: var(--menu-dropdown-shadow, var(--shadow-card-hover)); }
-  .asset-option { display: block; width: 100%; min-height: 44px; padding: .6em .85em; border: 0; border-radius: .5rem; background: transparent; color: var(--menu-link-ink, var(--color-ink-muted)); font-size: var(--supply-control-size); font-weight: 400; text-align: left; white-space: nowrap; cursor: pointer; transition: background-color .15s ease, color .15s ease; }
-  .asset-option:hover, .asset-option[aria-pressed='true'] { color: var(--menu-primary-ink, var(--color-ink)); background: var(--menu-option-hover, var(--hover-tint)); }
+  .asset-option { min-height: 44px; padding: .6em .85em; border: 0; background: transparent; font-size: var(--supply-control-size); font-weight: 400; }
   .asset-option[aria-pressed='true'] { font-weight: 600; }
   .asset-option:focus-visible { outline-offset: -2px; }
   @media (prefers-reduced-motion: reduce) { .asset-chevron, .asset-option { transition: none; } }
@@ -250,7 +249,6 @@ const clientCopy = Object.fromEntries(['projected', 'recorded', 'stale', 'reduce
   .sats-tooltip[data-positioned] { position: fixed; transform: none; }
   .sats-tooltip::before { content: ''; position: absolute; inset: -.5rem; z-index: -1; }
   .bitcoin-unit:is(:hover, :focus-within):not([data-tooltip-dismissed]) .sats-tooltip { visibility: visible; }
-  .page-title, .currency-name, .control-label { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; border: 0; }
   .share { min-width: 0; padding: var(--supply-padding); border: 1px solid var(--color-divider); border-radius: var(--supply-radius); background: var(--color-surface); text-align: left; }
   .share-number { color: var(--color-ink); font-size: var(--supply-share-size); font-weight: 600; letter-spacing: -.045em; line-height: 1.2; margin-top: .2em; font-variant-numeric: tabular-nums; white-space: nowrap; }
   .method { width: 100%; max-width: 90rem; margin: var(--supply-gap) auto 0; }
@@ -259,52 +257,20 @@ const clientCopy = Object.fromEntries(['projected', 'recorded', 'stale', 'reduce
   .method-trigger:hover, .method-trigger:focus-visible { border-color: var(--color-ink-muted); color: var(--color-ink); }
   .method-trigger[hidden], .currency-method[hidden] { display: none; }
   :global(html:has(.method-dialog[open])) { overflow: hidden; }
-  .method-dialog { --method-width: 400px; --detail-width: 440px; position: fixed; inset: 0; width: var(--method-width); max-width: 100%; height: 100dvh; max-height: 100dvh; margin: 0; padding: 0; overflow: hidden; border: 0; background: var(--color-paper); color: var(--color-ink); box-shadow: 12px 0 64px #0003; transition: width 300ms cubic-bezier(.64, 0, .78, 0); }
-  .method-dialog[open] { animation: method-slide-in 300ms cubic-bezier(.22, 1, .36, 1); }
-  .method-dialog[open][data-closing] { animation: method-slide-out 300ms cubic-bezier(.64, 0, .78, 0) forwards; }
-  .method-dialog[data-detail-open] { width: calc(var(--method-width) + var(--detail-width)); transition-timing-function: cubic-bezier(.22, 1, .36, 1); }
-  .method-dialog::backdrop { background: #10182060; }
-  .method-panels { position: relative; height: 100%; }
-  .method-panel, .method-detail { display: flex; flex-direction: column; height: 100%; background: var(--color-paper); }
-  .method-panel { position: relative; z-index: 1; width: var(--method-width); border-right: 1px solid var(--color-divider); }
-  .method-header { display: flex; align-items: center; justify-content: space-between; gap: 1rem; min-height: 88px; padding: max(20px, env(safe-area-inset-top)) 24px 20px 28px; flex-shrink: 0; }
+  .method-header { gap: 1rem; }
   .method-header h2 { color: var(--color-ink-muted); font-size: 1.5rem; line-height: 1.2; font-weight: 600; }
-  .method-close { display: grid; place-items: center; width: 40px; height: 40px; border-radius: 50%; flex-shrink: 0; background: var(--color-surface); color: var(--color-ink-muted); }
-  .method-close:hover, .method-back:hover, .method-section-trigger:hover { background: var(--hover-tint); color: var(--color-ink); }
-  .method-overview-body, .method-body { min-height: 0; flex: 1; overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; }
+  .method-section-trigger { font-size: 1rem; }
+  .method-section-trigger:hover { color: var(--color-ink); }
   .method-sections { padding: 8px 28px max(28px, env(safe-area-inset-bottom)); }
-  .method-section-trigger { display: flex; align-items: center; justify-content: space-between; gap: 1rem; width: 100%; min-height: 60px; padding: 16px 8px; border-top: 1px solid var(--color-divider); font-size: 1rem; font-weight: 600; text-align: left; transition: background 150ms, color 150ms; }
-  .method-section-trigger:last-child { border-bottom: 1px solid var(--color-divider); }
-  .method-section-trigger svg { flex-shrink: 0; color: var(--color-ink-muted); }
-  .method-section-trigger[aria-expanded='true'] { background: var(--color-accent-soft); color: var(--color-emphasis-ink); }
-  .method-section-trigger[aria-expanded='true'] svg { color: var(--color-accent); }
-  .method-section-trigger:focus-visible { outline-offset: -3px; }
-  .method-detail { position: absolute; top: 0; left: var(--method-width); width: var(--detail-width); visibility: hidden; transform: translateX(-100%); transition: transform 300ms cubic-bezier(.64, 0, .78, 0), visibility 0s 300ms; }
-  .method-dialog[data-detail-open] .method-detail { visibility: visible; transform: translateX(0); transition-delay: 0s; transition-timing-function: cubic-bezier(.22, 1, .36, 1), linear; }
-  .method-back { display: inline-flex; align-items: center; gap: 8px; min-height: 40px; padding: 0 8px; margin-left: -8px; border-radius: 8px; color: var(--color-ink-muted); font-size: .875rem; }
   .method-body { padding: 12px 28px max(28px, env(safe-area-inset-bottom)); }
   .method-body > h2 { margin-bottom: 24px; font-size: 1.5rem; line-height: 1.2; font-weight: 600; }
   .method-dialog h2:focus { outline: none; }
   .method-body .method-content { padding: 0; font-size: 1rem; line-height: 1.75; }
   .method-body .method-content h3 { display: none; }
   [data-method-section][hidden] { display: none; }
-  @keyframes method-slide-in { from { transform: translateX(-100%); } to { transform: translateX(0); } }
-  @keyframes method-slide-out { from { transform: translateX(0); } to { transform: translateX(-100%); } }
-  @media (min-width: 900px) { .method-detail-header { display: none; } .method-body { padding-top: max(36px, env(safe-area-inset-top)); } }
-  @media (max-width: 899px) {
-    .method-dialog, .method-dialog[data-detail-open] { --method-width: min(440px, 100vw); --detail-width: var(--method-width); width: var(--method-width); }
-    .method-detail { left: 0; z-index: 2; transform: translateX(100%); }
-  }
-  @media (max-width: 540px) {
-    .method-dialog, .method-dialog[data-detail-open] { --method-width: 100vw; }
-    .method-header { padding-inline: max(24px, env(safe-area-inset-left)) max(20px, env(safe-area-inset-right)); }
-    .method-panel { border-right: 0; }
-    .method-sections, .method-body { padding-inline: 24px; }
-  }
-  @media (prefers-reduced-motion: reduce) {
-    .method-dialog[open], .method-dialog[open][data-closing] { animation: none; }
-    .method-dialog, .method-detail, .method-section-trigger, .method-trigger { transition: none; }
-  }
+  @media (min-width: 900px) { .method-body { padding-top: max(36px, env(safe-area-inset-top)); } }
+  @media (max-width: 540px) { .method-sections, .method-body { padding-inline: 24px; } }
+  @media (prefers-reduced-motion: reduce) { .method-trigger { transition: none; } }
   summary { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: 1rem .125rem; cursor: pointer; list-style: none; font-size: .875rem; color: var(--color-ink-muted); }
   summary::-webkit-details-marker { display: none; }
   .details-plus { font-size: 1.25rem; }

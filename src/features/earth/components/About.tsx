@@ -1,3 +1,5 @@
+import { createGuideDrawer } from '../../../lib/guide-drawer';
+import '../../../styles/guide-drawer.css';
 import { useEffect, useRef, useState } from 'react';
 import { ArrowLeft, ChevronRight, ExternalLink, X } from 'lucide-react';
 import './About.css';
@@ -181,128 +183,36 @@ export default function About({ onClose }: AboutProps) {
   const headingRef = useRef<HTMLHeadingElement>(null);
   const detailHeadingRef = useRef<HTMLHeadingElement>(null);
   const detailContentRef = useRef<HTMLDivElement>(null);
-  const sectionTriggers = useRef(new Map<GuideSection, HTMLButtonElement>());
   const [section, setSection] = useState<GuideSection>('calculation');
-  const [detailOpen, setDetailOpen] = useState(false);
-  const [closing, setClosing] = useState(false);
-  const [narrow, setNarrow] = useState(
-    () => window.matchMedia('(max-width: 899px)').matches,
-  );
   const activeTitle = guideSections.find((item) => item.id === section)!.title;
+  const closeRef = useRef(onClose);
+  useEffect(() => { closeRef.current = onClose; }, [onClose]);
 
   useEffect(() => {
     const dialog = dialogRef.current!;
-    const prior = document.activeElement as HTMLElement | null;
-    dialog.showModal();
-    headingRef.current?.focus({ preventScroll: true });
-    return () => {
-      dialog.close();
-      prior?.focus({ preventScroll: true });
-    };
-  }, []);
-
-  useEffect(() => {
-    const media = window.matchMedia('(max-width: 899px)');
-    const update = () => setNarrow(media.matches);
-    media.addEventListener('change', update);
-    return () => media.removeEventListener('change', update);
-  }, []);
-
-  useEffect(() => {
-    if (!detailOpen) return;
-    const frame = requestAnimationFrame(() => {
-      detailContentRef.current?.scrollTo(0, 0);
-      detailHeadingRef.current?.focus({ preventScroll: true });
+    const triggers = [...dialog.querySelectorAll<HTMLButtonElement>('.guide-section-trigger')];
+    const drawer = createGuideDrawer({
+      dialog,
+      overview: dialog.querySelector<HTMLElement>('.guide-shell')!,
+      detail: dialog.querySelector<HTMLElement>('.guide-detail-panel')!,
+      heading: headingRef.current,
+      detailHeading: detailHeadingRef.current!,
+      detailBody: detailContentRef.current!,
+      back: dialog.querySelector<HTMLButtonElement>('.guide-back'),
+      closeButtons: [...dialog.querySelectorAll<HTMLButtonElement>('.guide-close')],
+      sections: guideSections.map((item, index) => ({ trigger: triggers[index], select: () => setSection(item.id) })),
+      onClose: () => closeRef.current(),
+      deferDetailFocus: true,
     });
-    return () => cancelAnimationFrame(frame);
-  }, [detailOpen, section, narrow]);
-
-  useEffect(() => {
-    if (!closing) return;
-    // Finish closing even if an animation is interrupted or disabled mid-flight.
-    const timeout = window.setTimeout(onClose, 350);
-    return () => window.clearTimeout(timeout);
-  }, [closing, onClose]);
-
-  function closeGuide() {
-    if (closing) return;
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-      onClose();
-    } else {
-      setClosing(true);
-    }
-  }
-
-  function closeDetail() {
-    if (closing) return;
-    setDetailOpen(false);
-    // The overview becomes interactive again before restoring focus on mobile.
-    requestAnimationFrame(() => sectionTriggers.current.get(section)?.focus());
-  }
+    drawer.open();
+    return () => drawer.destroy();
+  }, []);
 
   return (
-    <dialog
-      ref={dialogRef}
-      className={`about-dialog${detailOpen ? ' about-dialog-detail-open' : ''}${closing ? ' about-dialog-closing' : ''}`}
-      aria-labelledby="guide-title"
-      onCancel={(event) => {
-        event.preventDefault();
-        if (closing) return;
-        if (detailOpen) closeDetail();
-        else closeGuide();
-      }}
-      onClick={(event) => {
-        if (event.target === event.currentTarget) closeGuide();
-      }}
-      onAnimationEnd={(event) => {
-        if (
-          closing &&
-          event.target === event.currentTarget &&
-          event.animationName === 'guide-slide-out'
-        ) {
-          onClose();
-        }
-      }}
-      onKeyDown={(event) => {
-        if (event.key !== 'Tab') return;
-        const controls = Array.from(
-          event.currentTarget.querySelectorAll<HTMLElement>(
-            'button:not(:disabled), a[href]',
-          ),
-        ).filter(
-          (control) =>
-            !control.closest('[inert]') && control.getClientRects().length > 0,
-        );
-        const first = controls[0];
-        const last = controls[controls.length - 1];
-        if (
-          event.shiftKey &&
-          (document.activeElement === first ||
-            document.activeElement === headingRef.current ||
-            document.activeElement === detailHeadingRef.current)
-        ) {
-          event.preventDefault();
-          last?.focus();
-        } else if (!event.shiftKey) {
-          if (document.activeElement === detailHeadingRef.current) {
-            event.preventDefault();
-            (
-              controls.find((control) => control.closest('#guide-detail')) ??
-              first
-            )?.focus();
-          } else if (
-            document.activeElement === last ||
-            document.activeElement === headingRef.current
-          ) {
-            event.preventDefault();
-            first?.focus();
-          }
-        }
-      }}
-    >
-      <div className="guide-panels">
-        <section className="guide-shell" inert={narrow && detailOpen}>
-          <header className="guide-header">
+    <dialog ref={dialogRef} className="about-dialog guide-drawer" aria-labelledby="guide-title">
+      <div className="guide-panels guide-drawer-panels">
+        <section className="guide-shell guide-drawer-overview">
+          <header className="guide-header guide-drawer-header">
             <h2
               ref={headingRef}
               tabIndex={-1}
@@ -313,14 +223,13 @@ export default function About({ onClose }: AboutProps) {
             </h2>
             <button
               type="button"
-              className="guide-close"
+              className="guide-close guide-drawer-close"
               aria-label="Close guide"
-              onClick={closeGuide}
             >
               <X size={20} aria-hidden="true" />
             </button>
           </header>
-          <div className="guide-content">
+          <div className="guide-content guide-drawer-scroll">
             <div className="guide-intro">
               <div className="guide-illustration">
                 <EarthIllustration />
@@ -339,23 +248,10 @@ export default function About({ onClose }: AboutProps) {
               {guideSections.map((item) => (
                 <button
                   key={item.id}
-                  ref={(element) => {
-                    if (element) sectionTriggers.current.set(item.id, element);
-                    else sectionTriggers.current.delete(item.id);
-                  }}
                   type="button"
-                  className="guide-section-trigger"
+                  className="guide-section-trigger guide-drawer-section"
                   aria-controls="guide-detail"
-                  aria-expanded={detailOpen && section === item.id}
-                  onClick={() => {
-                    if (closing) return;
-                    if (detailOpen && section === item.id) {
-                      closeDetail();
-                    } else {
-                      setSection(item.id);
-                      setDetailOpen(true);
-                    }
-                  }}
+                  aria-expanded="false"
                 >
                   <span>{item.title}</span>
                   <ChevronRight size={18} aria-hidden="true" />
@@ -366,31 +262,29 @@ export default function About({ onClose }: AboutProps) {
         </section>
         <section
           id="guide-detail"
-          className="guide-detail-panel"
+          className="guide-detail-panel guide-drawer-detail"
           aria-labelledby="guide-detail-title"
-          aria-hidden={!detailOpen}
-          inert={!detailOpen}
+          aria-hidden="true"
+          inert
         >
-          <header className="guide-header guide-detail-header">
+          <header className="guide-header guide-detail-header guide-drawer-header guide-drawer-detail-header">
             <button
               type="button"
-              className="guide-back"
+              className="guide-back guide-drawer-back"
               aria-label="Back to A Bit of Earth"
-              onClick={closeDetail}
             >
               <ArrowLeft size={18} aria-hidden="true" />
               <span>Back</span>
             </button>
             <button
               type="button"
-              className="guide-close"
+              className="guide-close guide-drawer-close"
               aria-label="Close guide"
-              onClick={closeGuide}
             >
               <X size={20} aria-hidden="true" />
             </button>
           </header>
-          <div ref={detailContentRef} className="guide-content model-details">
+          <div ref={detailContentRef} className="guide-content model-details guide-drawer-scroll">
             <p className="guide-detail-eyebrow eyebrow">A BIT OF EARTH</p>
             <h2 ref={detailHeadingRef} tabIndex={-1} id="guide-detail-title">
               {activeTitle}

@@ -1,3 +1,4 @@
+import { browserModule } from './support/browser-module.ts';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { setImmediate } from 'node:timers/promises';
@@ -140,11 +141,13 @@ function harness(options: Options = {}) {
     createPartyControls: () => ({ setPlaying: (value: boolean) => controlPlaying.push(value), destroy: () => { controlDestroys++; } }),
     createPartyVisualizer: () => ({ setPlaying: (value: boolean) => playing.push(value), setAnalyser: (value: unknown) => analysers.push(value), destroy: () => { visualizerDestroys++; } }),
   };
-  runInNewContext(script, {
+  const globals = {
     require: () => modules, exports: {}, document, window, navigator, Intl,
     setInterval: (callback: () => void) => { intervals.set(++timerId, callback); return timerId; },
     clearInterval: (id: number) => intervals.delete(id),
-  });
+  };
+  Object.assign(modules, browserModule('lib/live-price-display', globals, modules));
+  runInNewContext(script, globals);
   return {
     root, requests, intervals, playing, analysers, controlPlaying, window, selected,
     control: (selector: string) => root.querySelector(selector),

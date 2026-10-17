@@ -1,3 +1,4 @@
+import { browserModule } from './support/browser-module.ts';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { runInNewContext } from 'node:vm';
@@ -104,9 +105,10 @@ function themePage(dark = false, saved: string | null = null, blocked = false) {
     setAttribute(name: string, value: string) { this.attributes.set(name, value); },
   }));
   const label = { textContent: '' };
-  const summary = { focused: false, focus() { this.focused = true; } };
+  const summary = { hasAttribute: () => false, focused: false, focus() { this.focused = true; } };
   const themeSelector = Object.assign(new EventTarget(), {
     open: false,
+    hasAttribute: () => false,
     contains: (target: EventTarget) => target === themeSelector || toggles.includes(target as typeof toggles[number]),
     querySelector: (query: string) => query === 'summary' ? summary : query === '[data-theme-current]' ? label : toggles.find(toggle => toggle.attributes.get('aria-pressed') === 'true'),
   });
@@ -136,6 +138,7 @@ function themePage(dark = false, saved: string | null = null, blocked = false) {
   runInNewContext(themeInit, globals);
   const initialDark = classes.has('dark');
   runInNewContext(themeToggle, globals);
+  browserModule('lib/disclosure-menu', globals).createDisclosureMenu(themeSelector);
   return {
     classes, metas, toggles, selector: themeSelector, label, summary, initialDark, saved: () => saved,
     selected: () => toggles.filter(toggle => toggle.attributes.get('aria-pressed') === 'true').map(toggle => toggle.dataset.themePreference),

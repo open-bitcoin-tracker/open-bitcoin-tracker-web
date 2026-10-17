@@ -26,6 +26,7 @@ export function createVideoPickerTabs(root: HTMLElement, { copy, onSelect }: Pic
   const tabs = tabIds.map(id => root.querySelector<HTMLButtonElement>(`[data-video-tab="${id}"]`)!);
   const panels = tabIds.map(id => root.querySelector<HTMLElement>(`[data-video-panel="${id}"]`)!);
   const list = root.querySelector<HTMLUListElement>('[data-video-recents]')!;
+  const cardTemplate = root.querySelector<HTMLTemplateElement>('[data-video-card-template]')!;
   let destroyed = false;
   let activeTab = 1;
   let urls: string[] = [];
@@ -124,26 +125,13 @@ export function createVideoPickerTabs(root: HTMLElement, { copy, onSelect }: Pic
       const id = parseYouTubeVideo(url)!.id;
       const row = document.createElement('li');
       row.className = 'video-recent';
-      const load = document.createElement('button');
-      load.type = 'button';
-      load.className = 'video-recent-load';
+      const load = cardTemplate.content.firstElementChild!.cloneNode(true) as HTMLButtonElement;
       load.dataset.recentVideo = url;
-      const thumbnail = document.createElement('img');
+      const thumbnail = load.querySelector<HTMLImageElement>('img')!;
       thumbnail.src = `https://i.ytimg.com/vi/${id}/hqdefault.jpg`;
-      thumbnail.width = 480;
-      thumbnail.height = 360;
-      thumbnail.alt = '';
-      thumbnail.loading = 'lazy';
-      thumbnail.decoding = 'async';
-      thumbnail.referrerPolicy = 'no-referrer';
-      const title = document.createElement('span');
-      title.className = 'video-recent-title';
-      const badge = document.createElement('span');
-      badge.className = 'video-live-badge';
-      badge.textContent = copy.live;
-      badge.setAttribute('aria-hidden', 'true');
+      const title = load.querySelector<HTMLElement>('.video-card-title')!;
+      const badge = load.querySelector<HTMLElement>('[data-video-live]')!;
       recentBadges.set(id, [...recentBadges.get(id) ?? [], { button: load, badge }]);
-      load.append(thumbnail, title, badge);
       load.addEventListener('click', () => {
         if (destroyed) return;
         const video = parseYouTubeVideo(url);

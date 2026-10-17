@@ -84,7 +84,7 @@ function harness(hidden = false, fullscreenEnabled = false) {
     readRangePreferences: () => ({ selected: 'all', counts: {} }),
     readDisplayPreferences: () => ({ currency: 'USD', scale: 'logarithmic' }),
     createRangePill: () => ({ select() {}, destroy() {} }),
-    createVideoCurrencyPicker: () => ({ close() {}, destroy() { pickerDestroyed = true; } }),
+    createCurrencyPicker: () => ({ close() {}, destroy() { pickerDestroyed = true; } }),
     isCurrency: (value: string) => ['USD', 'EUR', 'GBP', 'AUD', 'CAD', 'CHF', 'JPY'].includes(value),
     saveDisplayPreferences: (preferences: unknown) => savedPreferences.push(preferences),
     createPriceChangeFormatter: () => () => '',

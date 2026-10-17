@@ -1,0 +1,7 @@
+---
+import type { HTMLAttributes } from 'astro/types';
+import '../../styles/icon-button.css';
+interface Props extends HTMLAttributes<'button'> {}
+const { class: className, type = 'button', ...attributes } = Astro.props;
+---
+<button {...attributes} type={type} class:list={['icon-button', className]}><slot /></button>

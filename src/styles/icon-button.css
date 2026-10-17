@@ -1,0 +1,1 @@
+.icon-button { display: grid; place-items: center; width: var(--menu-control-size); height: var(--menu-control-size); border-radius: 50%; }

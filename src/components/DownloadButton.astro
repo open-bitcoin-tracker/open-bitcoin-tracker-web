@@ -1,4 +1,5 @@
 ---
+import DisclosureMenu from './ui/DisclosureMenu.astro';
 import { useTranslations } from '../i18n/utils';
 
 interface Props {
@@ -12,15 +13,15 @@ const releasesUrl = 'https://github.com/Max-Hodler/open-bitcoin-tracker/releases
 const zapstoreUrl = 'https://zapstore.dev/apps/com.openbitcointracker.app';
 ---
 
-<details class:list={['download-dropdown', `download-dropdown--${placement}`, `download-dropdown--${variant}`]}>
+<DisclosureMenu placement={placement} closeOnSelect class:list={['download-dropdown', `download-dropdown--${placement}`, `download-dropdown--${variant}`]}>
   <summary class:list={['download-trigger button cta-primary', { 'nav-download': variant === 'nav' }]}>
     {variant !== 'nav' && (
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12m-5-5 5 5 5-5M5 16v4a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-4" /></svg>
     )}
     <span>{t.nav.download}</span>
-    <svg class="download-caret" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6" /></svg>
+    <svg class="download-caret" data-menu-caret width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6" /></svg>
   </summary>
-  <ul class="download-menu">
+  <ul class="download-menu menu-panel">
     <li>
       <a href={releasesUrl} rel="noopener noreferrer" target="_blank">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m8 5-7 7 7 7m8-14 7 7-7 7" /></svg>
@@ -34,67 +35,17 @@ const zapstoreUrl = 'https://zapstore.dev/apps/com.openbitcointracker.app';
       </a>
     </li>
   </ul>
-</details>
+</DisclosureMenu>
 
-<script>
-  const dropdowns = document.querySelectorAll<HTMLDetailsElement>('.download-dropdown');
 
-  document.addEventListener('click', (event) => {
-    dropdowns.forEach((dropdown) => {
-      if (!dropdown.contains(event.target as Node)) dropdown.open = false;
-    });
-  });
-
-  dropdowns.forEach((dropdown) => {
-    const trigger = dropdown.querySelector<HTMLElement>('summary');
-
-    dropdown.addEventListener('keydown', (event) => {
-      if (event.key === 'Escape' && dropdown.open) {
-        event.preventDefault();
-        dropdown.open = false;
-        trigger?.focus();
-      }
-    });
-
-    dropdown.addEventListener('focusout', (event) => {
-      if (!dropdown.contains(event.relatedTarget as Node | null)) dropdown.open = false;
-    });
-
-    dropdown.querySelectorAll('a').forEach((link) => {
-      link.addEventListener('click', () => {
-        dropdown.open = false;
-        trigger?.focus();
-      });
-    });
-  });
-</script>
 
 <style>
   .download-dropdown { position: relative; width: fit-content; }
   .download-dropdown[open] { z-index: 60; }
-  .download-trigger { cursor: pointer; list-style: none; user-select: none; }
-  .download-trigger::-webkit-details-marker { display: none; }
   .download-trigger > svg { flex-shrink: 0; }
-  .download-caret { transition: transform .2s ease; }
-  .download-dropdown[open] .download-caret { transform: rotate(180deg); }
-  .download-dropdown--up .download-caret { transform: rotate(180deg); }
-  .download-dropdown--up[open] .download-caret { transform: rotate(0deg); }
   .download-dropdown--footer .download-trigger { min-height: 44px; padding: .625rem 1.25rem; border-radius: 12px; font-size: .875rem; }
-  .download-menu {
-    position: absolute;
-    left: 0;
-    z-index: 60;
-    min-width: max(100%, 11rem);
-    margin: 0;
-    padding: .375rem;
-    list-style: none;
-    background: var(--color-surface);
-    border: 1px solid var(--color-divider);
-    border-radius: var(--radius-md);
-    box-shadow: var(--shadow-card-hover);
-  }
-  .download-dropdown--down .download-menu { top: calc(100% + .5rem); }
-  .download-dropdown--up .download-menu { bottom: calc(100% + .5rem); }
+  .download-menu { min-width: max(100%, 11rem); max-height: none; overflow: visible; }
+  .download-dropdown { --disclosure-bg: var(--color-surface); --disclosure-border: var(--color-divider); --disclosure-shadow: var(--shadow-card-hover); }
   .download-dropdown--nav .download-menu { left: auto; right: 0; }
   .download-menu a {
     display: flex;

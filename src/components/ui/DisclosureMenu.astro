@@ -1,0 +1,18 @@
+---
+import type { HTMLAttributes } from 'astro/types';
+import '../../styles/disclosure-menu.css';
+interface Props extends HTMLAttributes<'details'> {
+  placement?: 'up' | 'down';
+  keyboardNavigation?: boolean;
+  closeOnSelect?: boolean;
+  manual?: boolean;
+}
+const { placement = 'down', keyboardNavigation = false, closeOnSelect = false, manual = false, class: className, ...attributes } = Astro.props;
+---
+<details {...attributes} class:list={['disclosure-menu', className]} data-disclosure-menu data-placement={placement} data-menu-navigation={keyboardNavigation || undefined} data-menu-close-on-select={closeOnSelect || undefined} data-menu-manual={manual || undefined}>
+  <slot />
+</details>
+<script>
+  import { createDisclosureMenu } from '../../lib/disclosure-menu';
+  document.querySelectorAll<HTMLDetailsElement>('[data-disclosure-menu]:not([data-menu-manual])').forEach(createDisclosureMenu);
+</script>

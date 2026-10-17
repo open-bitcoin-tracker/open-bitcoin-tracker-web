@@ -1,3 +1,4 @@
+import { browserModule } from './support/browser-module.ts';
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { readFileSync } from 'node:fs';
@@ -19,6 +20,8 @@ class Control extends EventTarget {
   dataset: Record<string, string> = {};
   attributes: Record<string, string> = {};
   inert = false;
+  hasAttribute(name: string) { return name in this.attributes; }
+  matches(_selector: string) { return this.attributes['aria-pressed'] === 'true'; }
   removeAttribute(name: string) { delete this.attributes[name]; }
   getClientRects() { return this.hidden ? [] : [{}]; }
   closest(selector: string): Control | null {
@@ -67,6 +70,12 @@ function harness(reduced = false, when = Date.parse('2026-10-10T12:00:00Z'), dat
     dataset: { assetOption: String(id) },
     parentElement: controls['asset-menu'],
   }));
+  Object.assign(controls['asset-menu'], {
+    querySelector: () => controls['asset-trigger'],
+    querySelectorAll: () => options,
+  });
+  controls['asset-menu'].setAttribute('data-menu-navigation', '');
+  controls['asset-trigger'].setAttribute('aria-expanded', 'false');
   controls['asset-menu'].parentElement = controls['asset-picker'];
   controls['asset-trigger'].parentElement = controls['asset-menu'];
   const shares = data.fiat.map(() => new Control());
@@ -106,7 +115,9 @@ function harness(reduced = false, when = Date.parse('2026-10-10T12:00:00Z'), dat
     setInterval: (fn: () => void) => { callback = fn; return 1; }, clearInterval: () => { callback = undefined; },
   });
   class ClockDate extends Date { static now() { return now; } }
-  runInNewContext(script, { require: () => model, exports: {}, document, window, Date: ClockDate });
+  const globals = { document, window, Date: ClockDate };
+  const modules = { ...model, ...browserModule('lib/disclosure-menu', globals), ...browserModule('lib/guide-drawer', globals) };
+  runInNewContext(script, { ...globals, require: () => modules, exports: {} });
   return { controls, panels, shares, shareCards, options, methodCurrencies, root, document, media, narrow, sectionTriggers, sections, detailLink,
     finishClose: () => closeCallback?.(),
     key: (key: string) => controls['asset-menu'].dispatchEvent(Object.assign(new Event('keydown', { cancelable: true }), { key })),

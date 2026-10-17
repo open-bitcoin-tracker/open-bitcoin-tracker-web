@@ -111,20 +111,13 @@ const isHome = stripLocale(Astro.url.pathname) === '';
     });
     dialog.addEventListener('cancel', (event) => {
       event.preventDefault();
-      const dropdown = dialog.querySelector<HTMLDetailsElement>('.lang-switcher[open], .theme-selector[open]');
+      const dropdown = dialog.querySelector<HTMLDetailsElement>('[data-disclosure-menu][open]');
       if (dropdown) {
         dropdown.open = false;
         dropdown.querySelector<HTMLElement>('summary')?.focus();
       } else void dismiss();
     });
     dialog.addEventListener('keydown', (event) => {
-      const dropdown = dialog.querySelector<HTMLDetailsElement>('.lang-switcher[open], .theme-selector[open]');
-      if (event.key === 'Escape' && dropdown) {
-        event.preventDefault();
-        event.stopPropagation();
-        dropdown.open = false;
-        dropdown.querySelector<HTMLElement>('summary')?.focus();
-      }
       if (event.key === 'Tab') {
         const controls = Array.from(dialog.querySelectorAll<HTMLElement>('a[href], button:not([disabled]), summary, [tabindex="0"]'))
           .filter((control) => control.checkVisibility());
@@ -174,31 +167,6 @@ const isHome = stripLocale(Astro.url.pathname) === '';
 
 <style>
   :global(html.nav-menu-open) { overflow: hidden; scrollbar-gutter: auto; }
-  /* Share the page theme even after the modal is moved into body. */
-  :global(:root) {
-    --menu-ink: var(--color-ink);
-    --menu-panel-bg: linear-gradient(165deg, var(--color-surface), var(--color-paper) 80%);
-    --menu-panel-shadow: -12px 0 32px rgb(0 0 0 / .12);
-    --menu-link-ink: var(--color-ink-muted);
-    --menu-primary-ink: var(--color-ink);
-    --menu-brand-ink: var(--color-ink);
-    --menu-dropdown-bg: var(--color-surface);
-    --menu-dropdown-border: var(--color-divider);
-    --menu-dropdown-shadow: var(--shadow-card-hover);
-    --menu-option-hover: var(--hover-tint);
-  }
-  :global(html.dark) {
-    --menu-ink: #E9E6DF;
-    --menu-panel-bg: linear-gradient(165deg, #14213D, #0B1428 80%);
-    --menu-panel-shadow: -12px 0 32px rgb(0 0 0 / .3);
-    --menu-link-ink: #CBD3E6;
-    --menu-primary-ink: #FFF3D9;
-    --menu-brand-ink: #FFFFFF;
-    --menu-dropdown-bg: #14213D;
-    --menu-dropdown-border: rgb(255 255 255 / .12);
-    --menu-dropdown-shadow: 0 12px 40px rgb(0 0 0 / .4);
-    --menu-option-hover: rgb(255 255 255 / .06);
-  }
   .nav-menu { position: relative; flex-shrink: 0; }
   .nav-menu-trigger, .nav-menu-close {
     display: flex; align-items: center; justify-content: center;

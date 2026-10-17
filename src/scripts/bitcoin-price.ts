@@ -10,7 +10,7 @@ import { CurrencyRates, isCurrency, type Currency } from '../lib/bitcoin-currenc
 import { readDisplayPreferences, saveDisplayPreferences } from '../lib/bitcoin-display-preferences';
 import type { ChartSettingsCopy } from '../i18n/chart-settings';
 import { subscribeBitcoinPrice } from '../lib/bitcoin-live-price';
-import { createVideoCurrencyPicker } from '../lib/video-currency-picker';
+import { createCurrencyPicker } from '../lib/currency-picker';
 import type { PartyCopy } from '../i18n/party';
 
 const root = document.querySelector<HTMLElement>('[data-bitcoin-tracker]');
@@ -336,12 +336,12 @@ function startTracker(root: HTMLElement) {
     updateCurrencyStatus();
     scheduleDraw();
   });
-  const currencyPicker = createVideoCurrencyPicker(root, currencySelect, {
+  const currencyPicker = createCurrencyPicker(root, currencySelect, {
     panel: root.querySelector<HTMLElement>('[data-currency-panel]')!,
     back: root.querySelector<HTMLButtonElement>('[data-currency-back]')!,
   });
   const priceCurrency = root.querySelector<HTMLElement>('[data-price-currency-picker]')!;
-  const priceCurrencyPicker = createVideoCurrencyPicker(priceCurrency, currencySelect, { wrapper: priceCurrency });
+  const priceCurrencyPicker = createCurrencyPicker(priceCurrency, currencySelect, { wrapper: priceCurrency });
   settingsMenu.addEventListener('toggle', () => {
     if (!settingsMenu.open) currencyPicker.close();
   });

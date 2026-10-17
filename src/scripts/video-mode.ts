@@ -1,10 +1,7 @@
-import { CurrencyRates, isCurrency, type Currency } from '../lib/bitcoin-currency';
-import { readDisplayPreferences, saveDisplayPreferences } from '../lib/bitcoin-display-preferences';
-import { subscribeBitcoinPrice, type PriceFeedState } from '../lib/bitcoin-live-price';
-import type { HistoryPoint } from '../lib/bitcoin-chart';
+import { createLivePriceDisplay } from '../lib/live-price-display';
 import { createYouTubePlayer, parseYouTubeVideo, type YouTubeVideo } from '../lib/youtube-player';
 import { createVideoControls } from '../lib/video-controls';
-import { createVideoCurrencyPicker } from '../lib/video-currency-picker';
+import { createCurrencyPicker } from '../lib/currency-picker';
 import { createVideoPriceLayout } from '../lib/video-price-layout';
 import { createVideoPriceStyle } from '../lib/video-price-style';
 import { createVideoPickerTabs } from '../lib/video-picker-tabs';
@@ -20,65 +17,17 @@ if (root) startVideoMode(root);
 function startVideoMode(root: HTMLElement) {
   const t: PartyCopy & VideoCopy = JSON.parse(root.dataset.copy!);
   const locale = root.dataset.locale || 'en';
-  const price = root.querySelector<HTMLElement>('[data-price]')!;
-  const status = root.querySelector<HTMLElement>('[data-price-status]')!;
-  const currencySelect = root.querySelector<HTMLSelectElement>('[data-currency]')!;
-  const rates = new CurrencyRates();
-  let currency: Currency = readDisplayPreferences().currency;
-  const formatMoney = () => new Intl.NumberFormat(locale, { style: 'currency', currency, currencyDisplay: 'narrowSymbol', useGrouping: true, minimumFractionDigits: 0, maximumFractionDigits: 0 });
-  let money = formatMoney();
-  let livePoint: HistoryPoint | undefined;
-  let state: PriceFeedState = 'connecting';
-  let loadingRates = false;
   let destroyed = false;
-  let rateRefresh: ReturnType<typeof setInterval> | undefined;
-  let rateRequest: Promise<void> | undefined;
   let priceLayout: ReturnType<typeof createVideoPriceLayout> | undefined;
-
-  function paintPrice() {
-    if (destroyed || document.hidden) return;
-    const rate = rates.current(currency);
-    const value = livePoint && rate ? money.format(livePoint.price * rate.rate) : '—';
-    price.textContent = value;
-    price.style.setProperty('--price-chars', String([...value].length));
-    if (livePoint && rate) price.removeAttribute('aria-label');
-    else price.setAttribute('aria-label', t.unavailable);
-    status.textContent = !navigator.onLine || state === 'offline' ? t.offline
-      : currency !== 'USD' && !rate ? (loadingRates ? t.fxLoading : t.fxUnavailable)
-      : !livePoint ? (state === 'connecting' ? t.loadingPrice : t.unavailable)
-      : t[state];
-    priceLayout?.refresh();
-  }
-
-  async function refreshRates() {
-    if (destroyed || document.hidden || currency === 'USD' || !navigator.onLine) { paintPrice(); return; }
-    if (rateRequest) { await rateRequest; paintPrice(); return; }
-    loadingRates = true;
-    paintPrice();
-    rateRequest = rates.refreshLatest().catch(() => {
-      // Expired or unavailable exchange rates must not produce a guessed price.
-    }).finally(() => { loadingRates = false; rateRequest = undefined; });
-    await rateRequest;
-    paintPrice();
-  }
-
-  currencySelect.value = currency;
-  currencySelect.disabled = false;
-  currencySelect.addEventListener('change', () => {
-    if (!isCurrency(currencySelect.value)) return;
-    currency = currencySelect.value;
-    money = formatMoney();
-    saveDisplayPreferences({ ...readDisplayPreferences(), currency });
-    paintPrice();
-    void refreshRates();
-  });
-  const currencyPicker = createVideoCurrencyPicker(root, currencySelect);
+  const currencySelect = root.querySelector<HTMLSelectElement>('[data-currency]')!;
+  const priceDisplay = createLivePriceDisplay(root, { copy: t, locale, onPaint: () => priceLayout?.refresh() });
+  const currencyPicker = createCurrencyPicker(root, currencySelect);
+  const dismissCurrency = () => currencyPicker.close();
+  const onStyleToggle = () => { if (root.hasAttribute('data-price-style-open')) currencyPicker.close(); };
+  root.addEventListener('pricestyletoggle', onStyleToggle);
+  root.addEventListener('videouidismiss', dismissCurrency);
   priceLayout = createVideoPriceLayout(root);
   const priceStyle = createVideoPriceStyle(root, () => priceLayout?.refresh());
-  const stopPrice = subscribeBitcoinPrice({
-    onPrice(point) { livePoint = point; paintPrice(); },
-    onState(value) { state = value; paintPrice(); },
-  });
 
   const form = root.querySelector<HTMLFormElement>('[data-video-form]')!;
   const picker = root.querySelector<HTMLDialogElement>('[data-video-picker]')!;
@@ -552,29 +501,25 @@ function startVideoMode(root: HTMLElement) {
   updateFullscreen();
 
   function onVisibility() {
-    if (rateRefresh !== undefined) clearInterval(rateRefresh);
-    rateRefresh = undefined;
     stopProgressRefresh();
     if (document.hidden) { scrubbing = false; adjustingVolume = false; }
     if (!destroyed && !document.hidden) {
-      void refreshRates();
-      rateRefresh = setInterval(() => { void refreshRates(); }, 60_000);
-      paintPrice();
       startProgressRefresh();
       updateIdle();
     }
   }
-  const onOnline = () => { void refreshRates(); };
   document.addEventListener('visibilitychange', onVisibility);
-  window.addEventListener('online', onOnline);
   restoreSelectedVideo();
   if (!hasVideo) showForm(true, false);
   onVisibility();
+  priceDisplay.start();
   window.addEventListener('pagehide', () => {
     if (destroyed) return;
     destroyed = true;
-    stopPrice();
+    priceDisplay.destroy();
     currencyPicker.destroy();
+    root.removeEventListener('pricestyletoggle', onStyleToggle);
+    root.removeEventListener('videouidismiss', dismissCurrency);
     priceStyle.destroy();
     priceLayout?.destroy();
     uiVisibility.destroy();
@@ -590,10 +535,8 @@ function startVideoMode(root: HTMLElement) {
     if (picker.open) picker.close();
     stopProgressRefresh();
     player.destroy();
-    if (rateRefresh !== undefined) clearInterval(rateRefresh);
     document.removeEventListener('visibilitychange', onVisibility);
     document.removeEventListener('fullscreenchange', updateFullscreen);
-    window.removeEventListener('online', onOnline);
     mobileAudio.removeEventListener('change', updateAudioMode);
     window.removeEventListener('pointerup', releaseSeek);
     window.removeEventListener('pointercancel', cancelSeek);

@@ -1,3 +1,5 @@
+import { createGuideDrawer } from '../lib/guide-drawer';
+import { createDisclosureMenu } from '../lib/disclosure-menu';
 import { BITCOIN_MAX, SATOSHIS_PER_BTC, equalShare, formatDate, formatNumber, interpolate, projectMoney, projectPopulation, annualRate, MAX_SCENARIO_YEARS, scenarioDate, projectScenarioPopulation, scenarioMoney, type SupplySnapshot } from '../features/supply/model';
 import type { SupplyCopy } from '../i18n/supply';
 
@@ -97,40 +99,8 @@ if (root && json) {
     updateSelectedAsset();
     assetTrigger?.focus({ preventScroll: true });
   }));
-  // Match the language switcher's native disclosure and dismissal behavior.
-  // Option buttons retain ordinary Tab/Enter/Space controls; arrows, endpoints
-  // and first-letter navigation also work without changing the model clock.
-  const closeAssetMenu = (restoreFocus = false) => {
-    if (assetMenu) assetMenu.open = false;
-    assetTrigger?.setAttribute('aria-expanded', 'false');
-    if (restoreFocus) assetTrigger?.focus({ preventScroll: true });
-  };
-  assetMenu?.addEventListener('toggle', () => assetTrigger?.setAttribute('aria-expanded', String(assetMenu.open)));
-  assetMenu?.addEventListener('keydown', (event) => {
-    if (event.key === 'Escape' && assetMenu.open) {
-      event.preventDefault(); event.stopPropagation(); closeAssetMenu(true); return;
-    }
-    const active = assetOptions.findIndex(option => option === document.activeElement);
-    const selected = assetOptions.findIndex(option => option.dataset.assetOption === selectedAsset);
-    let next = -1;
-    if (event.key === 'Home') next = 0;
-    else if (event.key === 'End') next = assetOptions.length - 1;
-    else if (event.key === 'ArrowDown') next = active < 0 ? selected : (active + 1) % assetOptions.length;
-    else if (event.key === 'ArrowUp') next = active < 0 ? selected : (active + assetOptions.length - 1) % assetOptions.length;
-    else if (event.key.length === 1 && event.key !== ' ' && !event.altKey && !event.ctrlKey && !event.metaKey) {
-      for (let step = 1; step <= assetOptions.length; step++) {
-        const index = (active + step) % assetOptions.length;
-        if (assetOptions[index].textContent?.trim().toLowerCase().startsWith(event.key.toLowerCase())) { next = index; break; }
-      }
-    }
-    if (next >= 0) {
-      event.preventDefault(); assetMenu.open = true;
-      assetTrigger?.setAttribute('aria-expanded', 'true');
-      assetOptions[next]?.focus({ preventScroll: true });
-    }
-  });
-  document.addEventListener('click', (event) => { if (assetMenu?.open && !assetMenu.contains(event.target as Node)) closeAssetMenu(); });
-  document.addEventListener('focusin', () => { if (assetMenu?.open && !assetMenu.contains(document.activeElement)) closeAssetMenu(); });
+  const assetDisclosure = assetMenu ? createDisclosureMenu(assetMenu) : undefined;
+  const closeAssetMenu = () => assetDisclosure?.close();
   // Move the existing content instead of duplicating its live status elements.
   // The native disclosure remains usable when JavaScript or dialog support is absent.
   const methodTrigger = root.querySelector<HTMLButtonElement>('[data-method-trigger]');
@@ -151,98 +121,26 @@ if (root && json) {
     methodBody.append(methodContent);
     methodFallback.hidden = true;
     methodTrigger.hidden = false;
-    const narrow = window.matchMedia('(max-width: 899px)');
-    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)');
-    let activeSection: HTMLButtonElement | null = null;
-    let closing = false;
-    let closeTimeout: number | undefined;
-    const updatePanels = () => {
-      methodOverview.inert = narrow.matches && activeSection !== null;
-      methodDetail.inert = activeSection === null;
-      methodDetail.setAttribute('aria-hidden', String(activeSection === null));
-      for (const trigger of sectionTriggers) trigger.setAttribute('aria-expanded', String(trigger === activeSection));
-    };
-    const closeDetail = () => {
-      const prior = activeSection;
-      activeSection = null;
-      methodDialog.removeAttribute('data-detail-open');
-      updatePanels();
-      prior?.focus({ preventScroll: true });
-    };
-    const finishClose = () => {
-      window.clearTimeout(closeTimeout);
-      methodDialog.close();
-    };
-    const closeMethod = () => {
-      if (closing) return;
-      closing = true;
-      if (reduced.matches) finishClose();
-      else {
-        methodDialog.setAttribute('data-closing', '');
-        // Also finish if an animation is interrupted or disabled mid-flight.
-        closeTimeout = window.setTimeout(finishClose, 350);
-      }
-    };
-    sectionTriggers.forEach(trigger => trigger.addEventListener('click', () => {
-      if (closing) return;
-      if (activeSection === trigger) { closeDetail(); return; }
-      activeSection = trigger;
-      for (const section of sections) section.hidden = section.dataset.methodSection !== trigger.dataset.methodSectionTrigger;
-      methodDetailTitle.textContent = trigger.textContent?.trim() ?? '';
-      methodDialog.setAttribute('data-detail-open', '');
-      updatePanels();
-      methodBody.scrollTop = 0;
-      methodDetailTitle.focus({ preventScroll: true });
-    }));
-    methodBack?.addEventListener('click', () => { if (!closing) closeDetail(); });
-    narrow.addEventListener('change', () => {
-      updatePanels();
-      if (methodDialog.open && activeSection) methodDetailTitle.focus({ preventScroll: true });
+    const drawer = createGuideDrawer({
+      dialog: methodDialog,
+      overview: methodOverview,
+      detail: methodDetail,
+      heading: methodTitle,
+      detailHeading: methodDetailTitle,
+      detailBody: methodBody,
+      overviewBody: methodOverviewBody,
+      back: methodBack,
+      closeButtons: methodCloses,
+      trigger: methodTrigger,
+      sections: sectionTriggers.map(trigger => ({ trigger, select() {
+        for (const section of sections) section.hidden = section.dataset.methodSection !== trigger.dataset.methodSectionTrigger;
+        methodDetailTitle.textContent = trigger.textContent?.trim() ?? '';
+      } })),
     });
-    updatePanels();
     methodTrigger.addEventListener('click', () => {
       updateSelectedAsset();
       closeAssetMenu();
-      closing = false;
-      methodDialog.removeAttribute('data-closing');
-      closeDetail();
-      if (!methodDialog.open) methodDialog.showModal();
-      if (methodOverviewBody) methodOverviewBody.scrollTop = 0;
-      methodTitle?.focus({ preventScroll: true });
-    });
-    methodCloses.forEach(control => control.addEventListener('click', closeMethod));
-    methodDialog.addEventListener('cancel', event => {
-      event.preventDefault();
-      if (closing) return;
-      if (activeSection) closeDetail();
-      else closeMethod();
-    });
-    methodDialog.addEventListener('click', event => { if (event.target === methodDialog) closeMethod(); });
-    methodDialog.addEventListener('animationend', event => {
-      if (closing && event.target === methodDialog && event.animationName === 'method-slide-out') finishClose();
-    });
-    methodDialog.addEventListener('close', () => {
-      window.clearTimeout(closeTimeout);
-      closing = false;
-      methodDialog.removeAttribute('data-closing');
-      activeSection = null;
-      methodDialog.removeAttribute('data-detail-open');
-      updatePanels();
-      methodTrigger.focus({ preventScroll: true });
-    });
-    methodDialog.addEventListener('keydown', event => {
-      if (event.key !== 'Tab') return;
-      const controls = Array.from(methodDialog.querySelectorAll<HTMLElement>('button:not([disabled]), a[href]')).filter(element => !element.closest('[inert]') && element.getClientRects().length > 0);
-      const first = controls[0], last = controls.at(-1);
-      const focused = document.activeElement;
-      if (event.shiftKey && (focused === first || focused === methodTitle || focused === methodDetailTitle)) {
-        event.preventDefault(); last?.focus();
-      } else if (!event.shiftKey && focused === methodDetailTitle) {
-        event.preventDefault();
-        (controls.find(control => methodDetail.contains(control)) ?? first)?.focus();
-      } else if (!event.shiftKey && (focused === last || focused === methodTitle)) {
-        event.preventDefault(); first?.focus();
-      }
+      drawer.open();
     });
   }
   const reduce = window.matchMedia('(prefers-reduced-motion: reduce)');

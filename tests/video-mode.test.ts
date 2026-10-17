@@ -1,3 +1,4 @@
+import { browserModule, videoCardTemplate } from './support/browser-module.ts';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { setImmediate } from 'node:timers/promises';
@@ -81,6 +82,7 @@ class Control extends EventTarget {
     });
   }
   setAttribute(name: string, value: string) { this.attributes.set(name, value); }
+  hasAttribute(name: string) { return this.attributes.has(name); }
   removeAttribute(name: string) { this.attributes.delete(name); }
   toggleAttribute(name: string, force: boolean) { if (force) this.attributes.set(name, ''); else this.attributes.delete(name); }
   focus() { this.focusCount++; }
@@ -110,6 +112,7 @@ interface Options {
 
 function harness(options: Options = {}) {
   const root = new Control();
+  Object.assign(root.querySelector('[data-video-card-template]'), videoCardTemplate(Control));
   root.dataset = { copy: JSON.stringify(copy), locale: options.locale ?? 'en-US' };
   for (const selector of ['[data-video-controls]', '[data-video-error]', '[data-video-status]', '[data-control-status]']) {
     root.querySelector(selector).hidden = true;
@@ -203,6 +206,7 @@ function harness(options: Options = {}) {
   let idleEnabled = false;
   let controlsDestroys = 0;
   let currencyPickerDestroys = 0;
+  let currencyPickerCloses = 0;
   const initializations: string[] = [];
   const rememberedUrls: string[] = [];
   let pickerTabDestroys = 0;
@@ -242,9 +246,9 @@ function harness(options: Options = {}) {
       reveal() { revealCalls++; },
       destroy() { controlsDestroys++; },
     }),
-    createVideoCurrencyPicker: () => {
+    createCurrencyPicker: () => {
       initializations.push('currencyPicker');
-      return { destroy() { currencyPickerDestroys++; } };
+      return { close() { currencyPickerCloses++; }, destroy() { currencyPickerDestroys++; } };
     },
     createVideoPriceLayout: (input: unknown) => {
       initializations.push('priceLayout');
@@ -303,13 +307,15 @@ function harness(options: Options = {}) {
       };
     },
   };
-  runInNewContext(script, {
+  const globals = {
     require: () => modules, exports: {}, document, window, navigator, Intl,
     setInterval: (callback: () => void, duration: number) => { intervals.set(++timerId, callback); intervalDurations.set(timerId, duration); return timerId; },
     clearInterval: (id: number) => { intervals.delete(id); intervalDurations.delete(id); },
     setTimeout: (callback: () => void) => { timeouts.set(++timerId, callback); return timerId; },
     clearTimeout: (id: number) => { timeouts.delete(id); },
-  });
+  };
+  Object.assign(modules, browserModule('lib/live-price-display', globals, modules));
+  runInNewContext(script, globals);
   const control = (selector: string) => root.querySelector(selector);
   const finishPickerTransition = () => control('[data-video-picker]').dispatchEvent(Object.assign(new Event('transitionend'), { propertyName: 'transform' }));
   return {
@@ -363,6 +369,7 @@ function harness(options: Options = {}) {
     idleStates: () => idleStates,
     controlsDestroys: () => controlsDestroys,
     currencyPickerDestroys: () => currencyPickerDestroys,
+    currencyPickerCloses: () => currencyPickerCloses,
     feedStops: () => feedStops,
     reloads: () => reloads,
     saved: () => saved,
@@ -1752,4 +1759,19 @@ test('curated sections preserve existing recordings, move live videos to Chill, 
   for (const translation of Object.values(videoCopy)) {
     for (const section of videoSections) assert.ok(translation[section.labelKey].trim());
   }
+});
+
+
+test('Video Mode owns currency dismissal when styling opens or the UI hides', () => {
+  const h = harness();
+  h.root.dispatchEvent(new Event('pricestyletoggle'));
+  assert.equal(h.currencyPickerCloses(), 0);
+  h.root.setAttribute('data-price-style-open', '');
+  h.root.dispatchEvent(new Event('pricestyletoggle'));
+  assert.equal(h.currencyPickerCloses(), 1);
+  h.root.dispatchEvent(new Event('videouidismiss'));
+  assert.equal(h.currencyPickerCloses(), 2);
+  h.window.dispatchEvent(new Event('pagehide'));
+  h.root.dispatchEvent(new Event('videouidismiss'));
+  assert.equal(h.currencyPickerCloses(), 2, 'page cleanup removes its adapters');
 });

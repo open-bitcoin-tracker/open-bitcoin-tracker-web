@@ -1,5 +1,5 @@
 /** A keyboard-accessible currency menu backed by the page's existing select. */
-export function createVideoCurrencyPicker(root: HTMLElement, select: HTMLSelectElement, { wrapper = root.querySelector<HTMLElement>('[data-currency-picker]')!, panel, back }: { wrapper?: HTMLElement; panel?: HTMLElement; back?: HTMLButtonElement } = {}) {
+export function createCurrencyPicker(root: HTMLElement, select: HTMLSelectElement, { wrapper = root.querySelector<HTMLElement>('[data-currency-picker]')!, panel, back }: { wrapper?: HTMLElement; panel?: HTMLElement; back?: HTMLButtonElement } = {}) {
   const trigger = wrapper.querySelector<HTMLButtonElement>('[data-currency-trigger]')!;
   const value = wrapper.querySelector<HTMLElement>('[data-currency-value]')!;
   const list = wrapper.querySelector<HTMLElement>('[data-currency-list]')!;
@@ -124,8 +124,6 @@ export function createVideoCurrencyPicker(root: HTMLElement, select: HTMLSelectE
   listen(wrapper, 'keydown', onKeyDown as EventListener);
   for (const option of options) listen(option, 'click', () => choose(option));
   listen(select, 'change', sync);
-  listen(root, 'pricestyletoggle', () => { if (root.hasAttribute('data-price-style-open')) close(); });
-  listen(root, 'videouidismiss', () => close());
   listen(document, 'pointerdown', dismissOutside);
   listen(document, 'focusin', dismissOutside);
   list.hidden = true;

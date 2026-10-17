@@ -1,0 +1,103 @@
+@theme static {
+  --color-paper: #F8F7F3;
+  --color-surface: #FFFFFF;
+  --color-ink: #1F1B14;
+  --color-ink-muted: #6E6A60;
+  --color-divider: rgb(31 27 20 / 0.08);
+  --color-accent: #F7931A;
+  --color-emphasis-ink: var(--color-ink);
+  --color-accent-soft: #FFF3E0;
+
+  /* Channel triplets — the same color as --color-ink / --color-paper but as
+     bare "r g b" so component <style> blocks can apply their own alpha via
+     rgb(var(--color-ink-rgb) / α) and have it flip with the theme. */
+  --color-ink-rgb: 31 27 20;
+  --color-paper-rgb: 248 247 243;
+
+  /* Semantic surface vars for the hardcoded tints in component <style> blocks
+     (nav backdrop/border, hover tints, hero glow + grounding shadow). */
+  --nav-bg: rgb(248 247 243 / 0.9);
+  --nav-border: rgb(31 27 20 / 0.07);
+  --hover-tint: rgb(31 27 20 / 0.04);
+  --hero-glow: rgb(247 147 26 / 0.10);
+  --phone-shadow: rgb(31 27 20 / 0.28);
+
+  --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-display: var(--font-sans);
+
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 24px;
+
+  --shadow-card: 0 1px 2px rgb(31 27 20 / 0.04), 0 4px 12px rgb(31 27 20 / 0.06);
+  --shadow-card-hover: 0 2px 4px rgb(31 27 20 / 0.05), 0 8px 24px rgb(31 27 20 / 0.10);
+}
+
+/*
+ * Dark mode — the companion app's "deepsea blue" theme. Applied by toggling
+ * `.dark` on <html> (see the no-FOUC init in Layout.astro and the toggle in
+ * the footer). Overriding the custom properties here re-themes every Tailwind
+ * utility (bg-paper, text-ink, bg-accent, bg-accent-soft, border-divider, …)
+ * and every component <style> that reads them — no markup changes needed.
+ */
+html.dark {
+  --color-paper: #0F1E3A;        /* app background */
+  --color-surface: #1A3055;      /* app surface (cards, dropdowns) */
+  --color-ink: #E6E3DD;          /* text primary */
+  --color-ink-muted: #A49E94;    /* warm gray, with readable contrast on both navy surfaces */
+  --color-divider: rgb(255 255 255 / 0.14);
+  --color-emphasis-ink: var(--color-accent);
+  --color-accent-soft: #16294A;  /* navy-tinted chip bg (app "muted surface") */
+
+  --color-ink-rgb: 230 227 221;  /* white-ish, so ink-alpha overlays read on navy */
+  --color-paper-rgb: 15 30 58;
+
+  --nav-bg: rgb(15 30 58 / 0.9);
+  --nav-border: rgb(255 255 255 / 0.10);
+  --hover-tint: rgb(255 255 255 / 0.06);
+  --hero-glow: rgb(247 147 26 / 0.16);
+  --phone-shadow: rgb(0 0 0 / 0.55);
+
+  /* Soft ink shadows vanish on dark navy; use denser blacks to keep depth. */
+  --shadow-card: 0 1px 2px rgb(0 0 0 / 0.30), 0 4px 12px rgb(0 0 0 / 0.40);
+  --shadow-card-hover: 0 2px 4px rgb(0 0 0 / 0.35), 0 8px 24px rgb(0 0 0 / 0.50);
+
+  color-scheme: dark;
+}
+
+/* Shared menu surfaces also apply to controls outside navigation. */
+  :root {
+    --menu-ink: var(--color-ink);
+    --menu-panel-bg: linear-gradient(165deg, var(--color-surface), var(--color-paper) 80%);
+    --menu-panel-shadow: -12px 0 32px rgb(0 0 0 / .12);
+    --menu-link-ink: var(--color-ink-muted);
+    --menu-primary-ink: var(--color-ink);
+    --menu-brand-ink: var(--color-ink);
+    --menu-dropdown-bg: var(--color-surface);
+    --menu-dropdown-border: var(--color-divider);
+    --menu-dropdown-shadow: var(--shadow-card-hover);
+    --menu-option-hover: var(--hover-tint);
+  }
+  html.dark {
+    --menu-ink: #E9E6DF;
+    --menu-panel-bg: linear-gradient(165deg, #14213D, #0B1428 80%);
+    --menu-panel-shadow: -12px 0 32px rgb(0 0 0 / .3);
+    --menu-link-ink: #CBD3E6;
+    --menu-primary-ink: #FFF3D9;
+    --menu-brand-ink: #FFFFFF;
+    --menu-dropdown-bg: #14213D;
+    --menu-dropdown-border: rgb(255 255 255 / .12);
+    --menu-dropdown-shadow: 0 12px 40px rgb(0 0 0 / .4);
+    --menu-option-hover: rgb(255 255 255 / .06);
+  }
+
+:root {
+  --color-media-accent: #ff981e;
+  --color-media-focus: #ffc477;
+  --radius-control: 14px;
+  --radius-control-small: 9px;
+  --radius-option: .5rem;
+  --duration-drawer: 300ms;
+  --ease-drawer-in: cubic-bezier(.22, 1, .36, 1);
+  --ease-drawer-out: cubic-bezier(.64, 0, .78, 0);
+}

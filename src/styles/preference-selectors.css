@@ -1,62 +1,13 @@
-/* Language and theme controls share the theme selector's appearance. */
-:is(.lang-switcher, .theme-selector) { position: relative; }
-
 :is(.lang-summary, .theme-summary) {
   display: inline-flex;
   align-items: center;
   gap: .5rem;
   color: var(--color-ink-muted);
   font-size: .875rem;
-  list-style: none;
-  cursor: pointer;
-  user-select: none;
   transition: color .2s;
 }
-:is(.lang-summary, .theme-summary)::-webkit-details-marker { display: none; }
-:is(.lang-caret, .theme-caret) { opacity: .7; transition: transform .2s; }
-:is(.lang-switcher--up, .lang-switcher--down[open]) .lang-caret,
-:is(.theme-selector--up, .theme-selector--down[open]) .theme-caret { transform: rotate(180deg); }
-.lang-switcher--up[open] .lang-caret,
-.theme-selector--up[open] .theme-caret { transform: rotate(0deg); }
 
-:is(.lang-menu, .theme-menu) {
-  position: absolute;
-  left: 0;
-  z-index: 60;
-  min-width: 11rem;
-  max-height: min(50dvh, 24rem);
-  overflow-y: auto;
-  margin: 0;
-  padding: .375rem;
-  list-style: none;
-  background: var(--menu-dropdown-bg);
-  border: 1px solid var(--menu-dropdown-border);
-  border-radius: var(--radius-md);
-  box-shadow: var(--menu-dropdown-shadow);
-}
-.lang-switcher--up .lang-menu,
-.theme-selector--up .theme-menu { bottom: calc(100% + .5rem); }
-.lang-switcher--down .lang-menu,
-.theme-selector--down .theme-menu { top: calc(100% + .5rem); }
-
-:is(.lang-option, .theme-toggle) {
-  display: block;
-  width: 100%;
-  padding: .5rem .75rem;
-  border-radius: .5rem;
-  color: var(--menu-link-ink);
-  font-size: .875rem;
-  text-align: left;
-  white-space: nowrap;
-  cursor: pointer;
-  transition: color .15s, background-color .15s;
-}
-:is(.lang-option:hover, .lang-option.is-current, .theme-toggle:hover, .theme-toggle[aria-pressed='true']) {
-  color: var(--menu-primary-ink);
-  background: var(--menu-option-hover);
-}
-:is(.lang-option.is-current, .theme-toggle[aria-pressed='true']) { font-weight: 600; }
-
+:is(.lang-caret, .theme-caret) { opacity: .7; }
 @media (prefers-reduced-motion: reduce) {
-  :is(.lang-summary, .theme-summary, .lang-option, .theme-toggle, .lang-caret, .theme-caret) { transition: none; }
+  :is(.lang-summary, .theme-summary) { transition: none; }
 }

@@ -3,9 +3,9 @@ import { readFileSync } from 'node:fs';
 import { runInNewContext } from 'node:vm';
 import test from 'node:test';
 import ts from 'typescript';
-import type { createVideoCurrencyPicker } from '../src/lib/video-currency-picker.ts';
+import type { createCurrencyPicker } from '../src/lib/currency-picker.ts';
 
-const script = ts.transpileModule(readFileSync(new URL('../src/lib/video-currency-picker.ts', import.meta.url), 'utf8'), {
+const script = ts.transpileModule(readFileSync(new URL('../src/lib/currency-picker.ts', import.meta.url), 'utf8'), {
   compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 },
 }).outputText;
 
@@ -81,9 +81,9 @@ function harness({ currency = 'USD', disabled = false, standalone = false, expli
   let now = 1000;
   select.addEventListener('change', event => changes.push({ currency: select.value, bubbles: event.bubbles }));
   root.addEventListener('currencytoggle', () => { toggles++; });
-  const module: { createVideoCurrencyPicker?: typeof createVideoCurrencyPicker } = {};
+  const module: { createCurrencyPicker?: typeof createCurrencyPicker } = {};
   runInNewContext(script, { exports: module, document, Event, Date: { now: () => now } });
-  const picker = module.createVideoCurrencyPicker!(root as unknown as HTMLElement, select as unknown as HTMLSelectElement, { wrapper: explicitWrapper ? wrapper as unknown as HTMLElement : undefined, panel: panel as unknown as HTMLElement, back: back as unknown as HTMLButtonElement });
+  const picker = module.createCurrencyPicker!(root as unknown as HTMLElement, select as unknown as HTMLSelectElement, { wrapper: explicitWrapper ? wrapper as unknown as HTMLElement : undefined, panel: panel as unknown as HTMLElement, back: back as unknown as HTMLButtonElement });
   const option = (currency: string) => options.find(option => option.dataset.currencyOption === currency)!;
   return {
     root, wrapper, trigger, value, list, select, options, document, outside, changes, picker, option, panel, back,
@@ -267,11 +267,10 @@ test('destroy closes an open currency menu once and removes all helper listeners
   assert.equal(h.value.textContent, 'USD');
 });
 
-test('opening price styling closes the currency menu', () => {
+test('a consumer can close the currency menu', () => {
   const h = harness();
   h.trigger.click();
-  h.root.setAttribute('data-price-style-open', '');
-  h.root.dispatchEvent(new Event('pricestyletoggle'));
+  h.picker.close();
   assert.equal(h.list.hidden, true);
   assert.equal(h.root.attributes.has('data-currency-open'), false);
   h.picker.destroy();
@@ -316,11 +315,11 @@ test('a shared settings wrapper ignores other controls and dismisses a separate 
 });
 
 
-test('hiding the interface closes currency without moving focus into hidden controls', () => {
+test('closing without focus restoration keeps focus out of hidden controls', () => {
   const h = harness();
   h.trigger.click();
   const focusCount = h.trigger.focusCount;
-  h.root.dispatchEvent(new Event('videouidismiss'));
+  h.picker.close();
   assert.equal(h.list.hidden, true);
   assert.equal(h.root.hasAttribute('data-currency-open'), false);
   assert.equal(h.trigger.focusCount, focusCount);

@@ -1,3 +1,4 @@
+import { videoCardTemplate } from './support/browser-module.ts';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { runInNewContext } from 'node:vm';
@@ -54,6 +55,7 @@ class Element extends EventTarget {
 
 function harness({ saved, blocked = false, deferMetadata = false }: { saved?: string; blocked?: boolean; deferMetadata?: boolean } = {}) {
   const root = new Element();
+  Object.assign(root.querySelector('[data-video-card-template]'), videoCardTemplate(Element));
   const storage = new Map<string, string>();
   if (saved !== undefined) storage.set(storageKey, saved);
   const writes: string[] = [];

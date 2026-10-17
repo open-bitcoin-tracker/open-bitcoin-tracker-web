@@ -1,4 +1,5 @@
 ---
+import DisclosureMenu from './ui/DisclosureMenu.astro';
 import { getRelativeLocaleUrl } from 'astro:i18n';
 import { useTranslations, resolveLang, stripLocale } from '../i18n/utils';
 import '../styles/preference-selectors.css';
@@ -36,7 +37,7 @@ const LANGS = [
 const currentLabel = LANGS.find((l) => l.code === current)?.label ?? 'English';
 ---
 
-<details class:list={['lang-switcher', `lang-switcher--${placement}`]}>
+<DisclosureMenu placement={placement} class:list={['lang-switcher', `lang-switcher--${placement}`]}>
   <summary aria-label={t.nav.langLabel} class="lang-summary">
     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
       <circle cx="12" cy="12" r="10" />
@@ -44,11 +45,11 @@ const currentLabel = LANGS.find((l) => l.code === current)?.label ?? 'English';
       <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
     </svg>
     <span class="lang-current">{currentLabel}</span>
-    <svg class="lang-caret" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+    <svg class="lang-caret" data-menu-caret width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
       <polyline points="6 9 12 15 18 9" />
     </svg>
   </summary>
-  <ul class="lang-menu" role="list">
+  <ul class="lang-menu menu-panel" role="list">
     {LANGS.map((l) => (
       <li>
         <a
@@ -56,7 +57,7 @@ const currentLabel = LANGS.find((l) => l.code === current)?.label ?? 'English';
           data-language={l.loc}
           hreflang={l.code}
           lang={l.code}
-          class:list={['lang-option', { 'is-current': l.code === current }]}
+          class:list={['lang-option', 'menu-option', { 'is-current': l.code === current }]}
           aria-current={l.code === current ? 'true' : undefined}
         >
           {l.label}
@@ -64,7 +65,7 @@ const currentLabel = LANGS.find((l) => l.code === current)?.label ?? 'English';
       </li>
     ))}
   </ul>
-</details>
+</DisclosureMenu>
 
 <script>
   // Remember explicit choices before navigating, including English at the root.
@@ -77,14 +78,4 @@ const currentLabel = LANGS.find((l) => l.code === current)?.label ?? 'English';
     });
   });
 
-  // Close the dropdown on outside-click or Escape. The control still works with
-  // JS disabled (native <details> toggle); this only adds dismissal niceties.
-  document.querySelectorAll<HTMLDetailsElement>('.lang-switcher').forEach((el) => {
-    document.addEventListener('click', (e) => {
-      if (el.open && !el.contains(e.target as Node)) el.open = false;
-    });
-    el.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape') el.open = false;
-    });
-  });
 </script>

@@ -136,7 +136,7 @@ export default function CountrySelect({ selected, onSelect }: CountrySelectProps
               </div>
             ))}
           </div>
-          <p id={`${id}-status`} className={matches.length ? 'visually-hidden' : 'capital-empty'} role="status">
+          <p id={`${id}-status`} className={matches.length ? 'sr-only' : 'capital-empty'} role="status">
             {matches.length ? `${matches.length} ${matches.length === 1 ? 'result' : 'results'} available.` : 'No countries found. Try another country name.'}
           </p>
         </div>

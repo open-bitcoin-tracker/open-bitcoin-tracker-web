@@ -1,0 +1,18 @@
+.currency-options[hidden] { display: none; }
+.currency-option { display: flex; align-items: center; gap: .75rem; width: 100%; min-height: 52px; padding: .625rem .75rem; border-radius: .625rem; color: var(--menu-link-ink); text-align: start; cursor: pointer; transition: color 150ms ease, background-color 150ms ease; }
+.currency-option-code { display: grid; place-items: center; flex: 0 0 2.75rem; min-height: 32px; border: 1px solid var(--menu-dropdown-border); border-radius: .5rem; font-size: .6875rem; font-weight: 600; letter-spacing: .05em; }
+.currency-option-name { flex: 1; font-size: .8125rem; line-height: 1.4; }
+.currency-option svg { visibility: hidden; flex-shrink: 0; color: var(--color-accent); }
+.currency-option[aria-selected='true'], .currency-option:hover { color: var(--menu-primary-ink); background: var(--menu-option-hover); }
+.currency-option[aria-selected='true'] .currency-option-code { color: var(--color-accent); border-color: rgb(247 147 26 / .35); background: rgb(247 147 26 / .08); }
+.currency-option[aria-selected='true'] svg { visibility: visible; }
+/* Media mode keeps its compact, fixed-dark presentation. */
+.currency-options--compact { padding: .35rem 0; }
+.currency-options--compact .currency-option { justify-content: space-between; gap: 1.5rem; min-height: 0; padding: .7rem .75rem; border: 0; border-radius: var(--radius-control-small); background: transparent; color: #ccc; letter-spacing: .08em; font-size: .8rem; font-weight: 600; transition: none; }
+.currency-options--compact .currency-option-code { display: inline; flex: initial; min-height: 0; border: 0; border-radius: 0; font: inherit; letter-spacing: inherit; }
+.currency-options--compact .currency-option svg { color: inherit; }
+.currency-options--compact .currency-option[aria-selected='true'] { color: #fff; background: rgb(255 255 255 / .09); }
+.currency-options--compact .currency-option[aria-selected='true'] .currency-option-code { color: inherit; background: transparent; }
+.currency-options--compact .currency-option:hover, .currency-options--compact .currency-option:focus-visible { color: #fff; background: rgb(255 255 255 / .14); }
+.currency-options--compact .currency-option:focus-visible { outline: 1px solid rgb(255 255 255 / .5); outline-offset: -1px; }
+@media (prefers-reduced-motion: reduce) { .currency-option { transition: none; } }

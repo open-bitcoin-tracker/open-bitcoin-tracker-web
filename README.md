@@ -25,6 +25,8 @@ Routes: `/`, `/price-tracker/`, `/party-mode/`, `/video-mode/`, `/android-app/`,
 
 Pages live in `src/pages/` and `src/components/pages/`; shared UI in `src/components/`, `src/layouts/`, and `src/styles/`; browser logic in `src/lib/` and `src/scripts/`; Earth and supply in `src/features/`; static assets in `public/`.
 
+Shared UI primitives live in `src/components/ui/`: native disclosure menus, currency option lists, icon buttons, and video cards. Theme and surface tokens belong in `src/styles/tokens.css`; keep visual variants in shared styles instead of copying a feature's CSS. `src/lib/disclosure-menu.ts`, `currency-picker.ts`, and `guide-drawer.ts` own keyboard, focus, and dismissal behavior. Astro and React guides both use the same drawer controller and styles; searchable country selection retains its combobox behavior. Party and Video Mode use `live-price-display.ts` for price formatting, FX state, preferences, and refresh lifecycle. Recent video cards clone the same server-rendered template used by suggestions.
+
 Prices use Kraken and bundled Coin Metrics history; currency conversions use ECB reference rates through Frankfurter. Earth uses MapLibre and OpenFreeMap tiles, with fixed BTC presets and a bundled country selector centered on capital coordinates. Country filtering runs locally without a geocoder; keep map attribution visible. Supply definitions and official sources live in [snapshot.json](src/features/supply/snapshot.json).
 
 ## Maintenance

@@ -1,0 +1,24 @@
+---
+import { currencies } from '../../lib/bitcoin-currency';
+import '../../styles/currency-picker.css';
+import CheckIcon from './CheckIcon.astro';
+interface Props {
+  id: string;
+  variant?: 'detailed' | 'compact';
+  locale?: string;
+  label?: string;
+  labelledby?: string;
+  class?: string;
+}
+const { id, variant = 'detailed', locale = 'en', label, labelledby, class: className } = Astro.props;
+const names = variant === 'detailed' ? new Intl.DisplayNames([locale], { type: 'currency' }) : undefined;
+---
+<div id={id} class:list={['currency-options', `currency-options--${variant}`, className]} data-currency-list role="listbox" aria-label={label} aria-labelledby={labelledby} hidden>
+  {currencies.map(code => (
+    <button type="button" class="currency-option" data-currency-option={code} role="option" aria-selected={code === 'USD' ? 'true' : 'false'} tabindex="-1">
+      <span class="currency-option-code">{code}</span>
+      {names && <span class="currency-option-name">{names.of(code)}</span>}
+      <CheckIcon size={variant === 'detailed' ? 17 : 14} rounded={variant === 'detailed'} />
+    </button>
+  ))}
+</div>
