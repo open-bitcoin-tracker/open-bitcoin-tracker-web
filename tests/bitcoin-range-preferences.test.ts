@@ -327,6 +327,7 @@ for (const locale of Object.keys(tracker)) {
     const number = new Intl.NumberFormat(locale, { maximumFractionDigits: 0 });
     const chart = p.root.querySelector('[data-chart]');
     const checkMoney = (rendered: string, currency: keyof typeof symbols, amount: number) => {
+      assert.equal(p.root.dataset.priceCurrencyPosition, ['en', 'pt-BR', 'tr', 'ja'].includes(locale) ? 'start' : 'end', `${locale}/${currency} menu anchor`);
       assert.ok(rendered.includes(symbols[currency]), `${locale}/${currency}: ${rendered}`);
       assert.equal(rendered.replace(symbols[currency], '').trim(), number.format(amount), `${locale}/${currency}`);
     };

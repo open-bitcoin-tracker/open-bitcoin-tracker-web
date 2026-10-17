@@ -39,6 +39,7 @@ function startTracker(root: HTMLElement) {
   const chartLoading = root.querySelector<HTMLElement>('[data-chart-loading]')!;
   const loadingDescription = root.querySelector<HTMLElement>('[data-loading-description]')!;
   let money = new Intl.NumberFormat(locale, { style: 'currency', currency, currencyDisplay: 'narrowSymbol', minimumFractionDigits: 0, maximumFractionDigits: 0 });
+  updateCurrencyPosition();
   const date = new Intl.DateTimeFormat(locale, { year: 'numeric', month: 'short', day: 'numeric', timeZone: 'UTC' });
   const dateTime = new Intl.DateTimeFormat(locale, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit', timeZone: 'UTC' });
   const rangeBar = root.querySelector<HTMLElement>('[data-range-bar]')!;
@@ -196,6 +197,11 @@ function startTracker(root: HTMLElement) {
     priceEl.style.setProperty('--price-chars', String([...value].length));
   }
 
+  function updateCurrencyPosition() {
+    const parts = money.formatToParts(0);
+    root.dataset.priceCurrencyPosition = parts.findIndex(part => part.type === 'currency') > parts.findIndex(part => part.type === 'integer') ? 'end' : 'start';
+  }
+
   function selectAtPointer(event: PointerEvent) {
     if (motion.animating || plottedRangeKey !== rangeKey()) return;
     const bounds = chart.getBoundingClientRect();
@@ -321,6 +327,7 @@ function startTracker(root: HTMLElement) {
     clearSelection();
     currency = currencySelect.value;
     money = new Intl.NumberFormat(locale, { style: 'currency', currency, currencyDisplay: 'narrowSymbol', maximumFractionDigits: 0 });
+    updateCurrencyPosition();
     formatPriceChange = createPriceChangeFormatter(locale, currency);
     saveDisplayPreferences({ scale, currency });
     currencyError = undefined;
