@@ -4,6 +4,8 @@ const EDITABLE_CONTROL = 'input:not([type="range"]), textarea, [contenteditable]
 
 /** Hide Video Mode's interface after inactivity, keeping active controls usable. */
 export function createVideoControls(root: HTMLElement) {
+  const dock = root.querySelector<HTMLElement>('.video-dock');
+  const originalInert = dock?.inert ?? false;
   const cursor = window.matchMedia('(hover: hover) and (pointer: fine)');
   let enabled = false;
   let destroyed = false;
@@ -38,11 +40,29 @@ export function createVideoControls(root: HTMLElement) {
     clearTimer();
     root.removeAttribute('data-ui-idle');
     root.dispatchEvent(new Event('videouireveal'));
+    scheduleIdle();
+  }
+
+  function scheduleIdle() {
     if (!canFade()) return;
     timer = window.setTimeout(() => {
       timer = undefined;
       if (!destroyed && canFade()) hide();
     }, IDLE_DELAY);
+  }
+
+  function restorePlayback() {
+    if (destroyed || manuallyHidden) return;
+    clearTimer();
+    root.removeAttribute('data-ui-idle');
+    // Do not reveal the editor again when focus is still on the price.
+    scheduleIdle();
+  }
+
+  function handleEditorToggle() {
+    const editing = root.hasAttribute('data-price-layout-open');
+    if (dock) dock.inert = editing;
+    if (!editing) restorePlayback();
   }
 
   function hide(manual = false) {
@@ -85,10 +105,11 @@ export function createVideoControls(root: HTMLElement) {
     if (target?.closest?.('[data-price-position], [data-price-style]')) return;
     const editing = root.hasAttribute('data-price-layout-open');
     const background = !!target && root.contains(target) && !target.closest(INTERACTIVE);
-    if (background && (editing || enabled)) hide(true);
+    if (background && editing) {
+      root.dispatchEvent(new Event('videouidismiss'));
+      restorePlayback();
+    } else if (background && enabled) hide(true);
   }
-
-  function dismiss() { hide(true); }
 
   function handleChangeOrBlur() {
     openSelect = null;
@@ -105,7 +126,8 @@ export function createVideoControls(root: HTMLElement) {
   root.addEventListener('currencytoggle', reveal);
   root.addEventListener('pricestyletoggle', reveal);
   root.addEventListener('pricelayoutchange', reveal);
-  root.addEventListener('videouihide', dismiss);
+  root.addEventListener('priceeditortoggle', handleEditorToggle);
+  handleEditorToggle();
   document.addEventListener('visibilitychange', reveal);
   document.addEventListener('fullscreenchange', reveal);
   // Navigation moves its dialog outside the page root. These events do not bubble.
@@ -133,7 +155,8 @@ export function createVideoControls(root: HTMLElement) {
       root.removeEventListener('currencytoggle', reveal);
       root.removeEventListener('pricestyletoggle', reveal);
       root.removeEventListener('pricelayoutchange', reveal);
-      root.removeEventListener('videouihide', dismiss);
+      root.removeEventListener('priceeditortoggle', handleEditorToggle);
+      if (dock) dock.inert = originalInert;
       document.removeEventListener('visibilitychange', reveal);
       document.removeEventListener('fullscreenchange', reveal);
       document.removeEventListener('toggle', reveal, true);

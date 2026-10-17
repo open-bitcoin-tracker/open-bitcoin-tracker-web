@@ -44,9 +44,6 @@ function harness({ saved, blocked = false }: { saved?: string; blocked?: boolean
     return event;
   }
   const root = new Element();
-  const dock = root.append(new Element());
-  dock.box = { left: 300, top: 484, width: 400, height: 100, bottom: 584 };
-  root.selectors.set('.video-dock', dock);
   const position = root.append(new Element());
   root.selectors.set('[data-price-position]', position);
   const wrapper = root.append(new Element());
@@ -73,7 +70,6 @@ function harness({ saved, blocked = false }: { saved?: string; blocked?: boolean
   let toggles = 0;
   root.addEventListener('pricestyletoggle', () => { toggles++; });
   const window = Object.assign(new EventTarget(), { innerWidth: 1000, innerHeight: 600,
-    getComputedStyle: () => ({ marginBottom: '16px' }),
     localStorage: {
       getItem(key: string) { if (blocked) throw Error('Storage blocked'); return storage.get(key) ?? null; },
       setItem(key: string, value: string) { if (blocked) throw Error('Storage blocked'); storage.set(key, value); writes++; },
@@ -83,7 +79,7 @@ function harness({ saved, blocked = false }: { saved?: string; blocked?: boolean
   runInNewContext(script, { exports: module, window, document, Event });
   const style = module.createVideoPriceStyle!(root as unknown as HTMLElement, () => { refreshes++; });
   return {
-    root, dock, wrapper, position, window, trigger, panel, menu, colour, font, reset, stroke, strokeWidth, strokeColour, strokeOptions, strokeValue, swatches, document, style,
+    root, wrapper, position, window, trigger, panel, menu, colour, font, reset, stroke, strokeWidth, strokeColour, strokeOptions, strokeValue, swatches, document, style,
     writes: () => writes, refreshes: () => refreshes, toggles: () => toggles,
     saved: () => storage.get('obt-video-price-style'),
     changeColour(value: string) { colour.value = value; colour.dispatchEvent(new Event('input')); },
@@ -364,86 +360,5 @@ test('the editing menu is anchored before opening either dropdown', () => {
   h.root.dispatchEvent(new Event('videouidismiss'));
   assert.equal(h.panel.hidden, true);
   assert.equal(h.menu.hidden, false, 'the price editing frame controls menu visibility');
-  h.style.destroy();
-});
-
-
-test('video controls move to the top near the price and use a wider gap before returning home', () => {
-  const h = harness();
-  const moved = () => h.root.dispatchEvent(new Event('pricelayoutchange'));
-  assert.equal(h.root.hasAttribute('data-video-controls-top'), false);
-  h.position.box = { left: 300, top: 361, width: 400, height: 100, bottom: 461 };
-  moved();
-  assert.equal(h.root.hasAttribute('data-video-controls-top'), true);
-  // The actual controls have moved, but collision detection must still use their bottom home.
-  h.dock.box = { left: 300, top: 16, width: 400, height: 100, bottom: 116 };
-  moved();
-  assert.equal(h.root.hasAttribute('data-video-controls-top'), true);
-  h.position.box = { left: 300, top: 345, width: 400, height: 100, bottom: 445 };
-  moved();
-  assert.equal(h.root.hasAttribute('data-video-controls-top'), true, 'small movements must not bounce the controls back');
-  h.position.box = { left: 300, top: 336, width: 400, height: 100, bottom: 436 };
-  moved();
-  assert.equal(h.root.hasAttribute('data-video-controls-top'), false);
-  h.style.destroy();
-});
-
-test('only the visible settings panel displaces the controls, including expanded dropdowns', () => {
-  const h = harness();
-  h.menu.offsetHeight = 220;
-  const editing = (open: boolean) => {
-    h.root.toggleAttribute('data-price-layout-open', open);
-    h.root.dispatchEvent(new Event('priceeditortoggle'));
-  };
-  editing(true);
-  assert.equal(h.root.hasAttribute('data-video-controls-top'), false);
-  h.menu.offsetHeight = 320;
-  h.trigger.click();
-  assert.equal(h.root.hasAttribute('data-video-controls-top'), true, 'an expanded editor can approach the controls before the price does');
-  editing(false);
-  assert.equal(h.root.hasAttribute('data-video-controls-top'), false, 'an invisible editor must not reserve space');
-  editing(true);
-  assert.equal(h.root.hasAttribute('data-video-controls-top'), true);
-  h.style.destroy();
-  assert.equal(h.root.hasAttribute('data-video-controls-top'), false);
-});
-
-test('dock proximity tracks viewport, panel dimensions, and safe-area spacing without moving for hidden controls', () => {
-  const h = harness();
-  h.position.box = { left: 300, top: 300, width: 400, height: 100, bottom: 400 };
-  h.window.dispatchEvent(new Event('resize'));
-  assert.equal(h.root.hasAttribute('data-video-controls-top'), false);
-  h.dock.box.height = 180;
-  h.window.dispatchEvent(new Event('resize'));
-  assert.equal(h.root.hasAttribute('data-video-controls-top'), true);
-  h.dock.box.height = 100;
-  h.window.innerHeight = 550;
-  h.window.getComputedStyle = () => ({ marginBottom: '40px' });
-  h.window.dispatchEvent(new Event('resize'));
-  assert.equal(h.root.hasAttribute('data-video-controls-top'), true);
-  h.dock.box.height = 0;
-  h.window.dispatchEvent(new Event('resize'));
-  assert.equal(h.root.hasAttribute('data-video-controls-top'), false);
-  h.style.destroy();
-});
-
-
-test('displaced controls stay reachable while hovered or focused and return when interaction ends', () => {
-  const h = harness();
-  const moved = () => h.root.dispatchEvent(new Event('pricelayoutchange'));
-  h.position.box = { left: 300, top: 400, width: 400, height: 100, bottom: 500 };
-  moved();
-  h.dock.hovered = true;
-  h.position.box = { left: 300, top: 200, width: 400, height: 100, bottom: 300 };
-  moved();
-  assert.equal(h.root.hasAttribute('data-video-controls-top'), true);
-  h.dock.hovered = false;
-  h.dock.focusVisible = true;
-  h.dock.focus();
-  h.dock.dispatchEvent(new Event('pointerleave'));
-  assert.equal(h.root.hasAttribute('data-video-controls-top'), true);
-  h.dock.focusVisible = false;
-  h.trigger.focus();
-  assert.equal(h.root.hasAttribute('data-video-controls-top'), false);
   h.style.destroy();
 });

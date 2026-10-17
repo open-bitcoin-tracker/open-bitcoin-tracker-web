@@ -316,10 +316,9 @@ export function createVideoPriceLayout(root: HTMLElement) {
       if (!frame && !operation) return;
       event.preventDefault();
       finish();
+      if (handles.some(handle => handle === document.activeElement)) position.focus({ preventScroll: true });
       dismissed = true;
       setFrame(false);
-      root.dispatchEvent(new Event('videouihide'));
-      if (handles.some(handle => handle === document.activeElement)) position.focus({ preventScroll: true });
       return;
     }
     dismissed = false;

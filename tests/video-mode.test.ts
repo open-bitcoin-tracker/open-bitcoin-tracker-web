@@ -420,6 +420,20 @@ test('video submission replaces the picker with playback controls and rejects in
   h.close();
 });
 
+test('a background click during price editing leaves playback unchanged', () => {
+  const h = harness();
+  h.submit(firstUrl);
+  h.emitPlaying(true);
+  h.root.setAttribute('data-price-layout-open', '');
+  h.videoClick();
+  assert.equal(h.pauseCalls(), 0);
+  assert.equal(h.playCalls(), 0);
+  h.root.removeAttribute('data-price-layout-open');
+  h.videoClick();
+  assert.equal(h.pauseCalls(), 1, 'ordinary background clicks still control playback');
+  h.close();
+});
+
 test('video background and price clicks toggle playback without interfering with editing or controls', () => {
   const h = harness();
   h.videoClick();

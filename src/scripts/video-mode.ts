@@ -414,6 +414,8 @@ function startVideoMode(root: HTMLElement) {
     // Price drags cancel their trailing click; plain price clicks toggle playback.
     // Leave editor buttons, form fields, and playback controls to their handlers.
     if (target?.closest?.('button, summary, input, select, textarea, a, label, [role="button"], [role="dialog"], [contenteditable], [data-price-style], [data-video-form], [data-video-controls]')) return;
+    // Clicking outside the price exits editing without also changing playback.
+    if (root.hasAttribute('data-price-layout-open') && !target?.closest?.('[data-price-position]')) return;
     togglePlayback();
   }
   root.addEventListener('click', onVideoClick);

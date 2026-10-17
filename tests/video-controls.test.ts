@@ -43,7 +43,9 @@ function harness({ finePointer = true, hidden = false } = {}) {
     },
   };
   const background = { ...button, interactive: false };
+  const dock = { inert: false };
   const root = Object.assign(new Surface(), {
+    querySelector(selector: string) { assert.equal(selector, '.video-dock'); return dock; },
     attributes: new Map<string, string>(),
     contains(element: unknown) { return element === button || element === background; },
     setAttribute(name: string, value: string) { this.attributes.set(name, value); },
@@ -116,7 +118,7 @@ function harness({ finePointer = true, hidden = false } = {}) {
     Object.defineProperty(event, 'target', { value: target });
     window.dispatchEvent(event);
   };
-  return { controls, root, button, background, click, window, document, cursor, timers, tick, pointer, focus, blur, visibility, device, menu, key, idle };
+  return { controls, root, dock, button, background, click, window, document, cursor, timers, tick, pointer, focus, blur, visibility, device, menu, key, idle };
 }
 
 test('an open price style panel prevents idle hiding until dismissed', () => {
@@ -172,7 +174,7 @@ test('a background click dismisses UI until cursor movement or keyboard input, d
   h.controls.destroy();
 });
 
-test('the price frame follows UI visibility while playback and Style controls remain interactive', () => {
+test('editing dismissal restores playback while Style controls remain interactive', () => {
   const h = harness();
   h.root.addEventListener('videouidismiss', () => h.root.removeAttribute('data-price-layout-open'));
   h.root.addEventListener('videouireveal', () => h.root.setAttribute('data-price-layout-open', ''));
@@ -192,7 +194,7 @@ test('the price frame follows UI visibility while playback and Style controls re
   assert.equal(h.idle(), false);
   assert.equal(h.root.hasAttribute('data-price-layout-open'), true, 'moving the cursor restores the frame with the controls');
   h.click();
-  assert.equal(h.idle(), true);
+  assert.equal(h.idle(), false, 'ending editing restores playback controls');
   assert.equal(h.root.hasAttribute('data-price-layout-open'), false);
   h.controls.destroy();
 });
@@ -213,36 +215,55 @@ test('clicking the navigation summary or its icon does not dismiss the video UI'
   h.controls.destroy();
 });
 
-test('Escape dismissal keeps the frame and controls hidden until new input', () => {
+test('editing makes playback controls inert until editing ends and cleanup restores them', () => {
   const h = harness();
+  h.root.setAttribute('data-price-layout-open', '');
+  h.root.dispatchEvent(new Event('priceeditortoggle'));
+  assert.equal(h.dock.inert, true);
+  h.root.removeAttribute('data-price-layout-open');
+  h.root.dispatchEvent(new Event('priceeditortoggle'));
+  assert.equal(h.dock.inert, false);
+  h.root.setAttribute('data-price-layout-open', '');
+  h.root.dispatchEvent(new Event('priceeditortoggle'));
+  h.controls.destroy();
+  assert.equal(h.dock.inert, false);
+});
+
+test('touch background dismissal restores playback controls and their normal idle delay', () => {
+  const h = harness({ finePointer: false });
+  h.root.addEventListener('videouidismiss', () => h.root.removeAttribute('data-price-layout-open'));
   h.controls.setEnabled(true);
-  h.root.dispatchEvent(new Event('videouihide'));
-  const event = Object.assign(new Event('keydown', { cancelable: true }), { key: 'Escape' });
-  event.preventDefault();
-  h.window.dispatchEvent(event);
-  assert.equal(h.idle(), true, 'the handled Escape must not immediately reveal controls');
-  h.root.dispatchEvent(new Event('focusin'));
-  assert.equal(h.idle(), true);
-  h.key();
+  h.root.setAttribute('data-price-layout-open', '');
+  h.tick(1000);
+  h.pointer('pointerdown', 'touch', h.background);
+  h.click();
   assert.equal(h.idle(), false);
+  assert.equal(h.root.hasAttribute('data-price-layout-open'), false);
+  h.tick(1199);
+  assert.equal(h.idle(), false);
+  h.tick(1);
+  assert.equal(h.idle(), true);
   h.controls.destroy();
 });
 
-test('touch background dismissal can be reversed with a second tap', () => {
-  const h = harness({ finePointer: false });
-  h.root.addEventListener('videouidismiss', () => h.root.removeAttribute('data-price-layout-open'));
-  h.root.addEventListener('videouireveal', () => h.root.setAttribute('data-price-layout-open', ''));
+test('ending editing restores playback without reopening the editor and gives a fresh idle delay', () => {
+  const h = harness();
   h.controls.setEnabled(true);
   h.tick(1000);
-  assert.equal(h.root.hasAttribute('data-price-layout-open'), true, 'the frame stays until the idle delay');
-  h.pointer('pointerdown', 'touch', h.background);
-  h.click();
-  assert.equal(h.idle(), true);
-  assert.equal(h.root.hasAttribute('data-price-layout-open'), false);
-  h.pointer('pointerdown', 'touch', h.background);
-  h.click();
+  h.root.setAttribute('data-price-layout-open', '');
+  let reveals = 0;
+  h.root.addEventListener('videouireveal', () => { reveals++; });
+  h.root.removeAttribute('data-price-layout-open');
+  h.root.dispatchEvent(new Event('priceeditortoggle'));
+  const escape = Object.assign(new Event('keydown', { cancelable: true }), { key: 'Escape' });
+  escape.preventDefault();
+  h.window.dispatchEvent(escape);
   assert.equal(h.idle(), false);
-  assert.equal(h.root.hasAttribute('data-price-layout-open'), true);
+  assert.equal(reveals, 0, 'restoration must not re-enter editing through retained focus');
+  h.tick(1199);
+  assert.equal(h.idle(), false);
+  h.tick(1);
+  assert.equal(h.idle(), true);
   h.controls.destroy();
 });
 
@@ -389,7 +410,7 @@ test('the custom currency dropdown stays visible while open and restarts idle wh
   h.controls.destroy();
 });
 
-test('dragging or resizing the price keeps controls visible until the interaction ends', () => {
+test('dragging or resizing keeps the interface awake until the interaction ends', () => {
   const h = harness();
   h.controls.setEnabled(true);
   h.tick(1200);

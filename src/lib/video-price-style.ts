@@ -23,7 +23,6 @@ export function createVideoPriceStyle(root: HTMLElement, refreshLayout: () => vo
   const font = wrapper.querySelector<HTMLSelectElement>('[data-price-font]')!;
   const reset = wrapper.querySelector<HTMLButtonElement>('[data-reset-price-style]')!;
   const position = root.querySelector<HTMLElement>('[data-price-position]')!;
-  const dock = root.querySelector<HTMLElement>('.video-dock');
   const stroke = wrapper.querySelector<HTMLInputElement>('[data-price-stroke]')!;
   const strokeWidth = wrapper.querySelector<HTMLInputElement>('[data-price-stroke-width]')!;
   const strokeColour = wrapper.querySelector<HTMLInputElement>('[data-price-stroke-colour]')!;
@@ -95,24 +94,6 @@ export function createVideoPriceStyle(root: HTMLElement, refreshLayout: () => vo
     const left = clamp(panelLeft, window.innerWidth - panelWidth - padding);
     wrapper.style.setProperty('top', `${top}px`);
     wrapper.style.setProperty('left', `${left}px`);
-    if (dock) {
-      const controls = dock.getBoundingClientRect();
-      // Always compare against the bottom home, even while the controls are at the top.
-      const bottom = window.innerHeight - (Number.parseFloat(window.getComputedStyle(dock).marginBottom) || 0);
-      const controlsTop = bottom - controls.height;
-      // A wider release gap prevents jitter when an edge hovers around the threshold.
-      const atTop = root.hasAttribute('data-video-controls-top');
-      const gap = atTop ? 48 : 24;
-      const near = (x: number, y: number, width: number, height: number) =>
-        controls.width > 0 && controls.height > 0 && width > 0 && height > 0
-        && x < controls.right + gap && x + width > controls.left - gap
-        && y < bottom + gap && y + height > controlsTop - gap;
-      const collision = near(box.left, box.top, box.width, box.height)
-        || root.hasAttribute('data-price-layout-open') && near(left, top, panelWidth, panelHeight);
-      const active = document.activeElement;
-      const interacting = dock.matches(':hover') || !!active && dock.contains(active) && active.matches(':focus-visible');
-      root.toggleAttribute('data-video-controls-top', collision || atTop && controls.height > 0 && interacting);
-    }
   }
 
   function save() {
@@ -160,7 +141,6 @@ export function createVideoPriceStyle(root: HTMLElement, refreshLayout: () => vo
   }, true);
   listen(document, 'focusin', dismissOutside);
   listen(document, 'focusin', anchor);
-  if (dock) listen(dock, 'pointerleave', anchor);
   listen(root, 'currencytoggle', () => { if (root.hasAttribute('data-currency-open')) close(); });
   listen(root, 'videouidismiss', () => close());
   listen(root, 'currencytoggle', anchor);
@@ -213,7 +193,6 @@ export function createVideoPriceStyle(root: HTMLElement, refreshLayout: () => vo
     observer.observe(wrapper);
     observer.observe(position);
     observer.observe(menu);
-    if (dock) observer.observe(dock);
   }
 
   return {
@@ -223,7 +202,6 @@ export function createVideoPriceStyle(root: HTMLElement, refreshLayout: () => vo
       close();
       observer?.disconnect();
       for (const remove of removeListeners) remove();
-      root.removeAttribute('data-video-controls-top');
     },
   };
 }
