@@ -102,7 +102,7 @@ const locale = htmlLang(Astro.currentLocale);
         <p id="video-price-keyboard-hint" class="sr-only">{t.priceKeyboardHint}</p>
       </section>
       <dialog id="video-picker" class="video-picker" data-video-picker aria-labelledby="video-picker-title">
-        <h2 id="video-picker-title" class="sr-only">{t.pickVideo}</h2>
+        <h2 id="video-picker-title" class="sr-only" tabindex="-1" autofocus>{t.pickVideo}</h2>
         <form class="video-form" data-video-form novalidate>
           <div class="video-picker-header">
             <label class="sr-only" for="video-url">{t.videoLabel}</label>

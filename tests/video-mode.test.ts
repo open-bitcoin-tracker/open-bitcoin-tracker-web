@@ -683,6 +683,19 @@ test('volume dragging keeps controls visible and pointer cancellation retains th
   h.close();
 });
 
+test('opening Change video leaves the URL field unfocused on mobile and desktop', () => {
+  for (const mobile of [true, false]) {
+    const h = harness({ mobile, storedSelection: JSON.stringify({ version: 1, url: firstUrl }) });
+    h.click('[data-change-video]');
+    assert.equal(h.control('[data-video-picker]').open, true);
+    assert.equal(h.control('[data-video-url]').focusCount, 0);
+    assert.equal(h.control('[data-video-url]').selectCount, 0);
+    h.submit('invalid');
+    assert.equal(h.control('[data-video-url]').focusCount, 1, 'invalid submissions still focus the field for correction');
+    h.close();
+  }
+});
+
 test('change, cancel, and Escape preserve the selected video and return keyboard focus to its controls', () => {
   const h = harness();
   h.submit(firstUrl);
@@ -692,8 +705,8 @@ test('change, cancel, and Escape preserve the selected video and return keyboard
   assert.equal(h.control('[data-video-picker]').open, true);
   assert.equal(h.control('[data-video-controls]').hidden, true);
   assert.equal(h.control('[data-cancel-video]').hidden, false);
-  assert.equal(h.control('[data-video-url]').focusCount, 1);
-  assert.equal(h.control('[data-video-url]').selectCount, 1);
+  assert.equal(h.control('[data-video-url]').focusCount, 0);
+  assert.equal(h.control('[data-video-url]').selectCount, 0);
   h.submit('invalid');
   h.click('[data-cancel-video]');
   assert.equal(h.control('[data-video-picker]').open, false);
@@ -715,7 +728,7 @@ test('change, cancel, and Escape preserve the selected video and return keyboard
   const previousFocusCount = h.control('[data-video-url]').focusCount;
   h.click('[data-change-video]');
   assert.equal(h.control('[data-video-url]').value, '', 'a newly selected video URL is also cleared when changing again');
-  assert.equal(h.control('[data-video-url]').focusCount, previousFocusCount + 1);
+  assert.equal(h.control('[data-video-url]').focusCount, previousFocusCount);
   assert.equal(h.control('[data-video-url]').attributes.has('aria-invalid'), false);
   assert.equal(h.control('[data-video-error]').hidden, true);
   assert.equal(h.control('[data-video-error]').attributes.has('data-youtube-error'), false);
@@ -1303,7 +1316,7 @@ test('restored videos preserve autoplay recovery and retain the canonical URL if
   h.submit(firstUrl);
   assert.equal(h.control('[data-change-video]').focusCount, 1);
   h.emitError(150);
-  assert.equal(h.control('[data-video-url]').focusCount, 1, 'explicit selection keeps the existing error recovery focus');
+  assert.equal(h.control('[data-video-url]').focusCount, 0, 'reopening after a playback error also leaves the URL field unfocused');
   h.close();
 });
 

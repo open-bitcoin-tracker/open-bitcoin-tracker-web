@@ -109,7 +109,6 @@ function startVideoMode(root: HTMLElement) {
       pickerTabs.refresh();
       picker.removeAttribute('data-closing');
       if (!picker.open) picker.showModal();
-      if (focus) { input.focus(); input.select(); }
     } else if (picker.open && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
       // Keep the dialog rendered until it has slid offscreen.
       picker.setAttribute('data-closing', '');
