@@ -1,14 +1,17 @@
-import { useEffect, useId, useRef, useState } from 'react';
+import type { EarthCopy } from '../../../i18n/earth';
+import { useEffect, useId, useMemo, useRef, useState } from 'react';
 import { Check, ChevronDown } from 'lucide-react';
-import { COUNTRIES, filterCountries, type Capital } from '../lib/locations';
+import { localizedCountries, filterCountries, type Capital } from '../lib/locations';
 import './CountrySelect.css';
 
 interface CountrySelectProps {
+  lang: string;
+  copy: EarthCopy;
   selected: Capital | null;
   onSelect: (capital: Capital) => void;
 }
 
-export default function CountrySelect({ selected, onSelect }: CountrySelectProps) {
+export default function CountrySelect({ lang, copy, selected, onSelect }: CountrySelectProps) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
   const [active, setActive] = useState(0);
@@ -17,7 +20,8 @@ export default function CountrySelect({ selected, onSelect }: CountrySelectProps
   const filter = useRef<HTMLInputElement>(null);
   const list = useRef<HTMLDivElement>(null);
   const id = useId();
-  const matches = filterCountries(query);
+  const countries = useMemo(() => localizedCountries(lang), [lang]);
+  const matches = filterCountries(query, countries, lang);
 
   useEffect(() => {
     if (!open) return;
@@ -35,7 +39,7 @@ export default function CountrySelect({ selected, onSelect }: CountrySelectProps
 
   function showOptions() {
     setQuery('');
-    setActive(Math.max(0, COUNTRIES.findIndex((capital) => capital.id === selected?.id)));
+    setActive(Math.max(0, countries.findIndex((capital) => capital.id === selected?.id)));
     setOpen(true);
   }
 
@@ -62,7 +66,7 @@ export default function CountrySelect({ selected, onSelect }: CountrySelectProps
         ref={trigger}
         type="button"
         className="capital-trigger"
-        aria-label={selected ? `Country: ${selected.country}` : 'Choose a country'}
+        aria-label={selected ? copy.country.replace('{name}', selected.country) : copy.chooseCountry}
         aria-haspopup="listbox"
         aria-expanded={open}
         aria-controls={open ? `${id}-list` : undefined}
@@ -74,7 +78,7 @@ export default function CountrySelect({ selected, onSelect }: CountrySelectProps
           }
         }}
       >
-        <span>{selected ? selected.country : 'Choose a country'}</span>
+        <span>{selected ? selected.country : copy.chooseCountry}</span>
         <ChevronDown size={16} aria-hidden="true" />
       </button>
       {open && (
@@ -83,7 +87,7 @@ export default function CountrySelect({ selected, onSelect }: CountrySelectProps
             ref={filter}
             className="capital-filter"
             role="combobox"
-            aria-label="Search countries"
+            aria-label={copy.searchCountries}
             aria-autocomplete="list"
             aria-expanded="true"
             aria-controls={`${id}-list`}
@@ -91,7 +95,7 @@ export default function CountrySelect({ selected, onSelect }: CountrySelectProps
             aria-describedby={`${id}-status`}
             autoComplete="off"
             spellCheck={false}
-            placeholder="Search countries"
+            placeholder={copy.searchCountries}
             maxLength={100}
             value={query}
             onChange={(event) => {
@@ -119,7 +123,7 @@ export default function CountrySelect({ selected, onSelect }: CountrySelectProps
               event.preventDefault();
             }}
           />
-          <div ref={list} id={`${id}-list`} className="capital-options" role="listbox" aria-label="Countries">
+          <div ref={list} id={`${id}-list`} className="capital-options" role="listbox" aria-label={copy.countries}>
             {matches.map((capital, index) => (
               <div
                 id={`${id}-${capital.id}`}
@@ -137,7 +141,7 @@ export default function CountrySelect({ selected, onSelect }: CountrySelectProps
             ))}
           </div>
           <p id={`${id}-status`} className={matches.length ? 'sr-only' : 'capital-empty'} role="status">
-            {matches.length ? `${matches.length} ${matches.length === 1 ? 'result' : 'results'} available.` : 'No countries found. Try another country name.'}
+            {matches.length ? copy.results.replace('{count}', new Intl.NumberFormat(lang).format(matches.length)) : copy.noCountries}
           </p>
         </div>
       )}

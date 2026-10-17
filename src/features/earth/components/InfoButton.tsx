@@ -1,11 +1,13 @@
+import type { EarthCopy } from '../../../i18n/earth';
 import { useState } from 'react';
 import './InfoButton.css';
 
 interface InfoButtonProps {
+  copy: EarthCopy;
   onAbout: () => void;
 }
 
-export default function InfoButton({ onAbout }: InfoButtonProps) {
+export default function InfoButton({ copy, onAbout }: InfoButtonProps) {
   const [tooltipDismissed, setTooltipDismissed] = useState(false);
 
   return (
@@ -22,12 +24,12 @@ export default function InfoButton({ onAbout }: InfoButtonProps) {
         if (event.key === 'Escape') setTooltipDismissed(true);
       }}
       data-tooltip-dismissed={tooltipDismissed || undefined}
-      aria-label="How does this work?"
+      aria-label={copy.help}
       aria-haspopup="dialog"
     >
       <span aria-hidden="true">?</span>
       <span className="about-help-tooltip" aria-hidden="true">
-        How does this work?
+        {copy.help}
       </span>
     </button>
   );

@@ -1,4 +1,5 @@
 import catalogue from './capitals.json';
+import regions from './country-regions.json';
 
 export interface Location {
   name: string;
@@ -31,17 +32,24 @@ export const COUNTRIES: readonly Capital[] = Array.from(
     && (!primaryCapitals[code] || capital.name === primaryCapitals[code]))!,
 );
 
-const normalize = (text: string) => text.normalize('NFD')
-  .replace(/\p{M}/gu, '').toLocaleLowerCase('en').trim();
-const searchable = COUNTRIES.map((capital) => ({
-  capital,
-  country: normalize(capital.country),
-}));
+const normalize = (text: string, lang: string) => text.toLocaleLowerCase(lang).normalize('NFD')
+  .replace(/\p{M}/gu, '').trim();
 
-export function filterCountries(query: string): readonly Capital[] {
-  const words = normalize(query).split(/\s+/).filter(Boolean);
-  if (!words.length) return COUNTRIES;
-  return searchable
-    .filter(({ country }) => words.every((word) => country.includes(word)))
-    .map(({ capital }) => capital);
+export function localizedCountries(lang: string): readonly Capital[] {
+  if (lang === 'en') return COUNTRIES;
+  const names = new Intl.DisplayNames([lang], { type: 'region' });
+  const collator = new Intl.Collator(lang, { sensitivity: 'base' });
+  return COUNTRIES.map((capital) => ({
+    ...capital,
+    country: names.of(regions[capital.countryCode as keyof typeof regions]) ?? capital.country,
+  })).sort((a, b) => collator.compare(a.country, b.country));
+}
+
+export function filterCountries(query: string, countries = COUNTRIES, lang = 'en'): readonly Capital[] {
+  const words = normalize(query, lang).split(/\s+/).filter(Boolean);
+  if (!words.length) return countries;
+  return countries.filter((capital) => {
+    const country = normalize(capital.country, lang);
+    return words.every((word) => country.includes(word));
+  });
 }

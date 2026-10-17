@@ -1,16 +1,18 @@
+import type { EarthCopy } from '../../../i18n/earth';
+import { LAND_KM2, MAX_BTC, toArea } from '../lib/bitcoin';
 import { createGuideDrawer } from '../../../lib/guide-drawer';
 import '../../../styles/guide-drawer.css';
 import { useEffect, useRef, useState } from 'react';
 import { ArrowLeft, ChevronRight, ExternalLink, X } from 'lucide-react';
 import './About.css';
 
-function EarthIllustration() {
+function EarthIllustration({ copy, format }: { copy: EarthCopy; format: Intl.NumberFormat }) {
   return (
     <svg
       viewBox="0 0 440 200"
       className="guide-art"
       role="img"
-      aria-label="1 BTC corresponds to approximately 7.1 square kilometres of Earth's land. Schematic, not to scale."
+      aria-label={copy.illustration.replace('{area}', format.format(toArea(1)))}
     >
       <defs>
         <clipPath id="guide-earth-clip">
@@ -40,97 +42,42 @@ function EarthIllustration() {
       />
       <rect className="art-area" x="280" y="42" width="102" height="102" />
       <text className="art-area-label" x="331" y="177" textAnchor="middle">
-        <tspan className="art-bitcoin-label">1 BTC</tspan> ≈ 7.1 km²
+        <tspan className="art-bitcoin-label">1 BTC</tspan> ≈ {format.format(toArea(1))} km²
       </text>
     </svg>
   );
 }
 
-const guideSections = [
-  { id: 'calculation', title: 'The calculation' },
-  { id: 'shape', title: 'The shape & its limits' },
-  { id: 'privacy', title: 'Privacy' },
-  { id: 'sources', title: 'Sources' },
-] as const;
+const sectionIds = ['calculation', 'privacy', 'sources'] as const;
+type GuideSection = (typeof sectionIds)[number];
 
-type GuideSection = (typeof guideSections)[number]['id'];
-
-function ModelDetails({ section }: { section: GuideSection }) {
+function ModelDetails({ section, copy, lang }: { section: GuideSection; copy: EarthCopy; lang: string }) {
+  const number = new Intl.NumberFormat(lang);
+  const area = number.format(LAND_KM2);
   switch (section) {
     case 'calculation':
       return (
         <div className="detail-content">
           <div className="model-assumptions">
-            <div>
-              <span>Maximum Bitcoin supply</span>
-              <strong>21 million BTC</strong>
-            </div>
-            <div>
-              <span>Earth’s land area</span>
-              <strong>148,940,000 km²</strong>
-            </div>
+            <div><span>{copy.maxSupply}</span><strong>{number.format(MAX_BTC)} BTC</strong></div>
+            <div><span>{copy.landArea}</span><strong>{area} km²</strong></div>
           </div>
-          <code>Area = (BTC ÷ 21,000,000) × 148,940,000 km²</code>
-          <p>
-            1 BTC ≈ 7.1 km², with an equivalent flat square about 2.66 km per side. Land
-            includes Antarctica and other ice-covered land, and excludes oceans.
-            You can place the comparison over water.
-          </p>
-          <p>
-            Side length is the square root of the unrounded area, expressed as
-            an equivalent flat square. The map uses the unrounded area.
-          </p>
-          <p>
-            This model describes scale. It does not describe land prices or
-            ownership of a parcel.
-          </p>
+          <code>{copy.area} = (BTC ÷ {number.format(MAX_BTC)}) × {area} km²</code>
+          <p>{copy.calculationScale
+            .replace('{area}', new Intl.NumberFormat(lang, { maximumFractionDigits: 1 }).format(toArea(1)))
+            .replace('{side}', new Intl.NumberFormat(lang, { maximumFractionDigits: 2 }).format(Math.sqrt(toArea(1))))}</p>
+          <p>{copy.calculationNote}</p>
         </div>
       );
-    case 'shape':
+    case 'privacy': {
+      const [before, after] = copy.privacyMap.split('{provider}');
       return (
         <div className="detail-content">
-          <p>
-            The square follows latitude and longitude lines on a spherical
-            Earth. Its north–south and east–west sides match at its center. We
-            recalculate it and check its surface area with Turf whenever it
-            moves.
-          </p>
-          <p>
-            Map projections can distort how it looks at high latitudes. For very
-            large areas or locations where the geographic square cannot fit, we
-            show an approximate square using the local map scale. You can keep
-            panning and zooming to compare its size. The numerical area stays
-            accurate.
-          </p>
-          <p>
-            Measurements are approximate, using a mean Earth radius of
-            6,371.0088 km.
-          </p>
+          <p>{copy.privacyLocal}</p>
+          <p>{before}<a href="https://openfreemap.org/privacy/" target="_blank" rel="noreferrer">OpenFreeMap</a>{after}</p>
         </div>
       );
-    case 'privacy':
-      return (
-        <div className="detail-content">
-          <p>
-            Amounts are fixed examples. Country filtering and selections stay in
-            this tab and are not saved. The app uses no
-            analytics, session recording or tracking cookies. Your theme
-            preference is stored between visits.
-          </p>
-          <p>
-            Maps load from{' '}
-            <a
-              href="https://openfreemap.org/privacy/"
-              target="_blank"
-              rel="noreferrer"
-            >
-              OpenFreeMap
-            </a>
-            . This service receives your IP address and requests for viewed
-            areas. Country filtering does not contact an external search service.
-          </p>
-        </div>
-      );
+    }
     case 'sources':
       return (
         <div className="detail-content model-sources">
@@ -139,35 +86,33 @@ function ModelDetails({ section }: { section: GuideSection }) {
             target="_blank"
             rel="noreferrer"
           >
-            Bitcoin.org · supply cap <ExternalLink size={14} />
+            {copy.supplySource} <ExternalLink size={14} />
           </a>
           <a
             href="https://www.cia.gov/the-world-factbook/static/6c4d9b9a41b27707b6720720df7161d6/Physical_World.pdf"
             target="_blank"
             rel="noreferrer"
           >
-            CIA · land-area reference <ExternalLink size={14} />
+            {copy.landSource} <ExternalLink size={14} />
           </a>
           <p>
-            The original CIA PDF link now redirects to the World Factbook
-            retirement notice. This model keeps the fixed 148,940,000 km²
-            assumption.
+            {copy.landSourceNote.replace('{area}', area)}
           </p>
           <a
             href="https://openfreemap.org/quick_start/"
             target="_blank"
             rel="noreferrer"
           >
-            OpenFreeMap · map service <ExternalLink size={14} />
+            {copy.mapSource} <ExternalLink size={14} />
           </a>
           <a href="https://github.com/mledoze/countries" target="_blank" rel="noreferrer">
-            mledoze/countries · capital names (ODbL) <ExternalLink size={14} />
+            {copy.namesSource} <ExternalLink size={14} />
           </a>
           <a href="https://www.naturalearthdata.com/" target="_blank" rel="noreferrer">
-            Natural Earth · capital coordinates <ExternalLink size={14} />
+            {copy.coordinatesSource} <ExternalLink size={14} />
           </a>
           <a href="https://www.geonames.org/" target="_blank" rel="noreferrer">
-            GeoNames · additional capital coordinates (CC BY 4.0) <ExternalLink size={14} />
+            {copy.extraCoordinatesSource} <ExternalLink size={14} />
           </a>
         </div>
       );
@@ -175,16 +120,19 @@ function ModelDetails({ section }: { section: GuideSection }) {
 }
 
 interface AboutProps {
+  copy: EarthCopy;
+  lang: string;
   onClose: () => void;
 }
 
-export default function About({ onClose }: AboutProps) {
+export default function About({ copy, lang, onClose }: AboutProps) {
   const dialogRef = useRef<HTMLDialogElement>(null);
   const headingRef = useRef<HTMLHeadingElement>(null);
   const detailHeadingRef = useRef<HTMLHeadingElement>(null);
   const detailContentRef = useRef<HTMLDivElement>(null);
   const [section, setSection] = useState<GuideSection>('calculation');
-  const activeTitle = guideSections.find((item) => item.id === section)!.title;
+  const activeTitle = copy[section];
+  const format = new Intl.NumberFormat(lang, { maximumFractionDigits: 1 });
   const closeRef = useRef(onClose);
   useEffect(() => { closeRef.current = onClose; }, [onClose]);
 
@@ -200,7 +148,7 @@ export default function About({ onClose }: AboutProps) {
       detailBody: detailContentRef.current!,
       back: dialog.querySelector<HTMLButtonElement>('.guide-back'),
       closeButtons: [...dialog.querySelectorAll<HTMLButtonElement>('.guide-close')],
-      sections: guideSections.map((item, index) => ({ trigger: triggers[index], select: () => setSection(item.id) })),
+      sections: sectionIds.map((id, index) => ({ trigger: triggers[index], select: () => setSection(id) })),
       onClose: () => closeRef.current(),
       deferDetailFocus: true,
     });
@@ -224,7 +172,7 @@ export default function About({ onClose }: AboutProps) {
             <button
               type="button"
               className="guide-close guide-drawer-close"
-              aria-label="Close guide"
+              aria-label={copy.closeGuide}
             >
               <X size={20} aria-hidden="true" />
             </button>
@@ -232,28 +180,27 @@ export default function About({ onClose }: AboutProps) {
           <div className="guide-content guide-drawer-scroll">
             <div className="guide-intro">
               <div className="guide-illustration">
-                <EarthIllustration />
+                <EarthIllustration copy={copy} format={format} />
               </div>
               <div className="guide-copy">
                 <p className="guide-description">
-                  Imagine dividing Earth’s land into 21 million equal shares,
-                  one for every Bitcoin that can ever exist.
+                  {copy.intro}
                 </p>
                 <p className="guide-note">
-                  All land counts, including Antarctica. Oceans don’t.
+                  {copy.landNote}
                 </p>
               </div>
             </div>
-            <nav className="guide-model-details" aria-label="Guide sections">
-              {guideSections.map((item) => (
+            <nav className="guide-model-details" aria-label={copy.guideSections}>
+              {sectionIds.map((id) => (
                 <button
-                  key={item.id}
+                  key={id}
                   type="button"
                   className="guide-section-trigger guide-drawer-section"
                   aria-controls="guide-detail"
                   aria-expanded="false"
                 >
-                  <span>{item.title}</span>
+                  <span>{copy[id]}</span>
                   <ChevronRight size={18} aria-hidden="true" />
                 </button>
               ))}
@@ -271,15 +218,15 @@ export default function About({ onClose }: AboutProps) {
             <button
               type="button"
               className="guide-back guide-drawer-back"
-              aria-label="Back to A Bit of Earth"
+              aria-label={copy.backToGuide}
             >
               <ArrowLeft size={18} aria-hidden="true" />
-              <span>Back</span>
+              <span>{copy.back}</span>
             </button>
             <button
               type="button"
               className="guide-close guide-drawer-close"
-              aria-label="Close guide"
+              aria-label={copy.closeGuide}
             >
               <X size={20} aria-hidden="true" />
             </button>
@@ -289,7 +236,7 @@ export default function About({ onClose }: AboutProps) {
             <h2 ref={detailHeadingRef} tabIndex={-1} id="guide-detail-title">
               {activeTitle}
             </h2>
-            <ModelDetails key={section} section={section} />
+            <ModelDetails key={section} section={section} lang={lang} copy={copy} />
           </div>
         </section>
       </div>

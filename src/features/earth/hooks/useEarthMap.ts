@@ -11,6 +11,9 @@ import type { Location } from '../lib/locations';
 import { DEFAULT_CENTER } from '../map/geo';
 import type { Theme } from '../lib/siteTheme';
 import { followViewportCenter, viewportOverlay } from '../map/mapOverlay';
+import type { Lang } from '../../../i18n/ui';
+import type { EarthCopy } from '../../../i18n/earth';
+import { localizeMapStyle } from '../map/mapLanguage';
 import { applyMapTheme } from '../map/mapTheme';
 import { renderOverlay } from '../map/renderOverlay';
 
@@ -19,12 +22,16 @@ const DEFAULT_ZOOM = 14;
 interface EarthMapOptions {
   km2: number | null;
   theme: Theme;
+  lang: Lang;
+  copy: EarthCopy;
   onInteraction: () => void;
 }
 
 export function useEarthMap({
   km2,
   theme,
+  lang,
+  copy,
   onInteraction,
 }: EarthMapOptions) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -35,7 +42,7 @@ export function useEarthMap({
   const centerRef = useRef(DEFAULT_CENTER);
   const optionsRef = useRef({ km2, theme, onInteraction });
   const [ready, setReady] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<'mapSlow' | 'mapError' | 'mapStartError' | null>(null);
   const [retryCount, setRetryCount] = useState(0);
 
   // Map callbacks read the latest committed settings without recreating the map.
@@ -85,7 +92,12 @@ export function useEarthMap({
         if (disposed) return;
         const instance = new Map({
           container,
-          style: mapStyle as StyleSpecification,
+          style: localizeMapStyle(mapStyle as StyleSpecification, lang),
+          locale: {
+            'Map.Title': copy.map,
+            'AttributionControl.ToggleAttribution': copy.attribution,
+            'AttributionControl.MapFeedback': copy.mapFeedback,
+          },
           center: centerRef.current,
           zoom: DEFAULT_ZOOM,
           maxZoom: 22,
@@ -114,9 +126,7 @@ export function useEarthMap({
         );
 
         timer = setTimeout(() => {
-          setError(
-            'The map is taking longer than expected. Check your connection and try again. Your area calculation still works.',
-          );
+          setError('mapSlow');
         }, 20_000);
 
         instance.on('style.load', () => {
@@ -139,9 +149,7 @@ export function useEarthMap({
           instance.on('render', syncOverlay);
         });
         instance.on('error', () => {
-          setError(
-            'Some map data could not load. Check your connection, then retry. Your area calculation still works.',
-          );
+          setError('mapError');
         });
         instance.on('movestart', (event) => {
           if (event.originalEvent) optionsRef.current.onInteraction();
@@ -152,14 +160,12 @@ export function useEarthMap({
       } catch {
         if (disposed) return;
         cleanup();
-        setError(
-          'The map could not start. Your browser needs WebGL enabled. Try another browser; your area calculation still works.',
-        );
+        setError('mapStartError');
       }
     }
     void initialize(container);
     return () => { disposed = true; cleanup(); };
-  }, [retryCount, syncOverlay]);
+  }, [retryCount, syncOverlay, lang, copy]);
 
   useLayoutEffect(() => {
     syncOverlay();

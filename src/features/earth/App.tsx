@@ -1,3 +1,5 @@
+import type { EarthCopy } from '../../i18n/earth';
+import type { Lang } from '../../i18n/ui';
 import { useCallback, useState } from 'react';
 import About from './components/About';
 import AmountSelect from './components/AmountSelect';
@@ -11,7 +13,7 @@ import type { Capital } from './lib/locations';
 import './styles/global.css';
 import './styles/app.css';
 
-export default function App() {
+export default function App({ lang, copy }: { lang: Lang; copy: EarthCopy }) {
   const [btc, setBtc] = useState<PresetAmount>('0.1');
   const km2 = toArea(Number(btc));
   const theme = useTheme();
@@ -22,6 +24,8 @@ export default function App() {
   const map = useEarthMap({
     km2,
     theme,
+    lang,
+    copy,
     onInteraction: clearPlace,
   });
 
@@ -33,7 +37,7 @@ export default function App() {
   return (
     <div
       className="earth-feature app-shell"
-      lang="en"
+      lang={lang}
       data-theme={theme}
       data-input-mode={inputMode}
       onPointerDownCapture={() => setInputMode('pointer')}
@@ -46,24 +50,27 @@ export default function App() {
         <div className="floating-panels">
           <div className="amount-row">
             <AmountSelect
+              lang={lang}
+              copy={copy}
               btc={btc}
               onChange={setBtc}
             />
-            <InfoButton onAbout={() => setAboutOpen(true)} />
+            <InfoButton copy={copy} onAbout={() => setAboutOpen(true)} />
           </div>
-          <section className="floating-search" aria-label="Comparison location">
-            <CountrySelect selected={place} onSelect={choosePlace} />
+          <section className="floating-search" aria-label={copy.comparison}>
+            <CountrySelect lang={lang} copy={copy} selected={place} onSelect={choosePlace} />
           </section>
         </div>
         <EarthMap
+          copy={copy}
           ready={map.ready}
-          error={map.error}
+          error={map.error ? copy[map.error] : null}
           containerRef={map.containerRef}
           overlayRef={map.overlayRef}
           onRetry={map.retry}
         />
       </div>
-      {aboutOpen && <About onClose={() => setAboutOpen(false)} />}
+      {aboutOpen && <About lang={lang} copy={copy} onClose={() => setAboutOpen(false)} />}
     </div>
   );
 }

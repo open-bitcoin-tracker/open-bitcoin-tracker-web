@@ -76,9 +76,9 @@ The Earth captures live in `src/assets/previews/` and are optimized at build tim
 
 ### Languages and social images
 
-Keep all `src/i18n/` dictionaries consistent. English uses root URLs; Portuguese uses `/pt/` and dictionary code `pt-BR`. Earth and supply content remains English.
+Keep all `src/i18n/` dictionaries consistent. English uses root URLs; Portuguese uses `/pt/` and dictionary code `pt-BR`. Earth controls, country search, map labels (where available), and guide content are translated through `earth.ts`; country names use the browser’s locale data. Supply content remains English.
 
-Adding a language requires its dictionary and `ui.ts` registration; `tracker.ts`, `ranges.ts`, `chart-settings.ts`, `party.ts`, and `video.ts`; every `src/pages/[lang]/` route's `getStaticPaths()`; Astro locales/sitemap, layout alternates, switcher entries, middleware matchers, and `scripts/generate-social-images.ts`. Build and review generated routes.
+Adding a language requires its dictionary and `ui.ts` registration; `tracker.ts`, `ranges.ts`, `chart-settings.ts`, `party.ts`, `video.ts`, and `earth.ts`; every `src/pages/[lang]/` route's `getStaticPaths()`; Astro locales/sitemap, layout alternates, switcher entries, middleware matchers, and `scripts/generate-social-images.ts`. Build and review generated routes.
 
 After social copy or tool-label changes, run `npm run generate:social`, review all `public/og-bitcoin-tools*.png`, and rebuild. Generation requires **Noto Sans** and **Noto Sans CJK JP**; normal builds use checked-in images.
 

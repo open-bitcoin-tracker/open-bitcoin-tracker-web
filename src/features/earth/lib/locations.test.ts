@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { CAPITALS, COUNTRIES, filterCountries } from './locations';
+import { CAPITALS, COUNTRIES, filterCountries, localizedCountries } from './locations';
 import { DEFAULT_CENTER } from '../map/geo';
 
 afterEach(() => vi.unstubAllGlobals());
@@ -69,6 +69,37 @@ describe('bundled country capitals', () => {
     expect(filterCountries('canada')[0].name).toBe('Ottawa');
     expect(filterCountries('Paris')).toEqual([]);
     expect(filterCountries('10 Example Street')).toEqual([]);
+    expect(fetch).not.toHaveBeenCalled();
+  });
+});
+
+describe('localized country selection', () => {
+  it('keeps all destinations while translating and sorting country names for every supported language', () => {
+    for (const lang of ['es', 'pt-BR', 'fr', 'de', 'it', 'ru', 'tr', 'vi', 'ja']) {
+      const countries = localizedCountries(lang);
+      const collator = new Intl.Collator(lang, { sensitivity: 'base' });
+      expect(countries).toHaveLength(197);
+      expect(countries.every((country, index) => index === 0 || collator.compare(countries[index - 1].country, country.country) <= 0)).toBe(true);
+      for (const country of countries) {
+        const original = COUNTRIES.find((item) => item.id === country.id)!;
+        expect(country.center).toEqual(original.center);
+        expect(country.country).not.toBe(country.countryCode);
+        expect(country.country).not.toMatch(/^[A-Z]{2}$/);
+      }
+      expect(countries.find((country) => country.countryCode === 'DEU')?.country).not.toBe('Germany');
+    }
+  });
+
+  it('finds translated names, accents and Turkish dotted I without external lookups', () => {
+    const fetch = vi.fn();
+    vi.stubGlobal('fetch', fetch);
+    for (const [lang, query, code] of [
+      ['es', 'ALEMANIA', 'DEU'], ['pt-BR', 'japao', 'JPN'], ['fr', 'etats unis', 'USA'],
+      ['de', 'osterreich', 'AUT'], ['it', 'germania', 'DEU'], ['ru', 'япония', 'JPN'],
+      ['tr', 'ispanya', 'ESP'], ['tr', 'İSPANYA', 'ESP'], ['vi', 'nhat ban', 'JPN'], ['ja', '日本', 'JPN'],
+    ]) {
+      expect(filterCountries(query, localizedCountries(lang), lang)[0]?.countryCode).toBe(code);
+    }
     expect(fetch).not.toHaveBeenCalled();
   });
 });

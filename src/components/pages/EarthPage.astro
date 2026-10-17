@@ -2,16 +2,19 @@
 import Layout from '../../layouts/Layout.astro';
 import Nav from '../Nav.astro';
 import EarthApp from '../../features/earth/App';
-import { useTranslations } from '../../i18n/utils';
+import { earth } from '../../i18n/earth';
+import { resolveLang, useTranslations } from '../../i18n/utils';
 const t = useTranslations(Astro.currentLocale);
+const lang = resolveLang(Astro.currentLocale);
+const copy = earth[lang];
 ---
 
 <Layout title="A Bit of Earth" description={t.landing.earthDescription} noReferrer>
   <Nav />
   <main id="main-content" class="earth-page">
-    <EarthApp client:only="react">
-      <div slot="fallback" class="earth-fallback" lang="en">
-        <noscript>Enable JavaScript to use the interactive map and calculator.</noscript>
+    <EarthApp client:only="react" lang={lang} copy={copy}>
+      <div slot="fallback" class="earth-fallback">
+        <noscript>{copy.noScript}</noscript>
       </div>
     </EarthApp>
   </main>
