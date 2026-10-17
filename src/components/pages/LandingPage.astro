@@ -9,7 +9,8 @@ import { tracker } from '../../i18n/tracker';
 import { aBitOfEarth } from '../../lib/projects';
 import BitcoinPreview from '../BitcoinPreview.astro';
 import VideoPreview from '../VideoPreview.astro';
-import earthPreview from '../../assets/previews/earth.jpg';
+import earthLightPreview from '../../assets/previews/earth-light.png';
+import earthDarkPreview from '../../assets/previews/earth-dark.png';
 
 const lang = resolveLang(Astro.currentLocale);
 const t = useTranslations(Astro.currentLocale);
@@ -45,8 +46,8 @@ const repo = 'https://github.com/open-bitcoin-tracker/open-bitcoin-tracker-web';
           <a class="tool-link secondary-tool" href={href(aBitOfEarth.path)}>
             <div class="tool-heading"><h2 lang="en">{aBitOfEarth.title}</h2></div>
             <figure class="secondary-preview earth-preview">
-              <Image src={earthPreview} alt="" widths={[480, 800, 1280]} sizes="(max-width: 700px) 100vw, 55vw" format="webp" quality={85} loading="lazy" />
-
+              <Image class="earth-preview-light" src={earthLightPreview} alt="" widths={[480, 800, 1280]} sizes="(max-width: 700px) 100vw, 55vw" format="webp" quality={85} loading="lazy" />
+              <Image class="earth-preview-dark" src={earthDarkPreview} alt="" widths={[480, 800, 1280]} sizes="(max-width: 700px) 100vw, 55vw" format="webp" quality={85} loading="lazy" />
             </figure>
             <div class="tool-description"><p>{home.earthDescription}</p><span class="text-action">{home.openEarth}<span aria-hidden="true">↗</span></span></div>
           </a>
@@ -142,7 +143,10 @@ const repo = 'https://github.com/open-bitcoin-tracker/open-bitcoin-tracker-web';
   .tool-heading h2 { font-size: clamp(1.75rem, 2.6vw, 2.5rem); line-height: 1.1; }
   .secondary-preview { position: relative; height: clamp(200px, 23vw, 280px); background: #202629; overflow: hidden; }
   .secondary-preview img { width: 100%; height: 100%; object-fit: cover; display: block; }
-  .earth-preview img { object-fit: contain; object-position: center; }
+  .earth-preview img { position: absolute; inset: 0; object-position: center; }
+  .earth-preview .earth-preview-dark { display: none; }
+  :global(html.dark) .earth-preview .earth-preview-light { display: none; }
+  :global(html.dark) .earth-preview .earth-preview-dark { display: block; }
   .video-tool { position: relative; }
   .video-card-link::after { content: ''; position: absolute; inset: 0; z-index: 1; }
   .video-tool:has(.video-card-link:hover) h2 { text-decoration: underline; text-decoration-color: var(--color-accent); text-decoration-thickness: 2px; text-underline-offset: 7px; }

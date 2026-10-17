@@ -68,7 +68,7 @@ The Video Mode card overlays the shared live Kraken BTC/USD feed on a randomly s
 
 To add a background, convert its GIF to a silent H.264 MP4 with `yuv420p` and fast-start metadata in `public/`, export a matching WebP poster in `src/assets/previews/`, then add the pair and original source link to `src/lib/video-preview-backgrounds.ts`. Crop any black bars baked into the source before exporting both assets. Run `npm test` and `npm run build` and check the card at desktop and mobile widths.
 
-The Earth capture lives in `src/assets/previews/` and is optimized at build time. Recapture it when the tool's appearance changes; exclude browser chrome and development controls. Preview sources: Earth map © [OpenMapTiles](https://openmaptiles.org/) and © [OpenStreetMap](https://www.openstreetmap.org/copyright). Android uses the existing theme-aware app screenshots.
+The Earth captures live in `src/assets/previews/` and are optimized at build time. The card follows the selected light or dark theme and fills its image area with centered cropping. Recapture both themes when the tool's appearance changes; exclude browser chrome and development controls. Preview sources: Earth map © [OpenMapTiles](https://openmaptiles.org/) and © [OpenStreetMap](https://www.openstreetmap.org/copyright). Android uses the existing theme-aware app screenshots.
 
 ### Languages and social images
 
