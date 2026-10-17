@@ -6,6 +6,7 @@ export const videoSections = [
       { id: 'EFDMum1vs7Q', title: 'Pump It Up (Bitcoin Maximalist Remix) on a 10 Hour Loop', isLive: false },
       { id: 'ez8m4PXksQs', title: 'Epic Sax Guy - 10 Hour Version - But when does the beat drop? 🤔', isLive: false },
       { id: '_yRJsecDjjc', title: 'Gypsy kid dancing at club cant be bothered 1997 [AI 4k 50fps]', isLive: false },
+      { id: 'G1IbRujko-A', title: 'Gandalf Sax Guy 10 Hours HD', isLive: false },
     ],
   },
   {

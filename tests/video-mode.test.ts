@@ -1691,7 +1691,7 @@ test('suggestions have unique validated video IDs and consistent translated cont
 test('curated sections preserve existing recordings, move live videos to Chill, and include every requested addition', () => {
   const sections = Object.fromEntries(videoSections.map(section => [section.id, section.videos]));
   assert.deepEqual(Object.keys(sections), ['party', 'chill', 'without-sound']);
-  assert.deepEqual(sections.party.map(video => video.id), ['EFDMum1vs7Q', 'ez8m4PXksQs', '_yRJsecDjjc']);
+  assert.deepEqual(sections.party.map(video => video.id), ['EFDMum1vs7Q', 'ez8m4PXksQs', '_yRJsecDjjc', 'G1IbRujko-A']);
   assert.deepEqual(sections.chill.map(video => video.id), ['2QWVZkuTU4s', 'vYIYIVmOo3Q', 'yf5NOyy1SXU', 'TGysUwc_LEc', 'zBRFf8gAsR8', 'vKG91INzLt0', 'mSX3OyW9Rao', '784dsKVrdjQ']);
   assert.ok(sections.chill.slice(0, -3).every(video => video.isLive));
   assert.ok(sections.chill.slice(-3).every(video => !video.isLive), 'the Zelda, fireplace, and black hole recordings must not gain Live badges when moved');
