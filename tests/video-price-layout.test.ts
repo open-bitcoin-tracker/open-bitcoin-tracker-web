@@ -92,7 +92,7 @@ function harness(options: Options = {}) {
   if (options.editingMenu) root.selectors.set('[data-price-settings-panel]', menu);
   const reset = style.append(new Element());
   reset.hidden = true;
-  reset.textContent = reset.title = 'Reset position & size';
+  reset.textContent = reset.title = 'Restore';
   position.tabIndex = 0;
   const handles = Object.fromEntries((['nw', 'ne', 'sw', 'se'] as const).map(corner => {
     const handle = position.append(new Element());
@@ -775,7 +775,7 @@ test('default state follows size and drag changes and persists through saved rou
   assert.equal(h.root.attributes.has('data-price-default'), false);
   assert.equal(h.reset.disabled, false);
   assert.equal(h.reset.hidden, false);
-  assert.equal(h.reset.textContent, 'Reset position & size');
+  assert.equal(h.reset.textContent, 'Restore');
   h.key(h.position, '-');
   assert.equal(h.root.attributes.has('data-price-default'), true);
   const box = h.position.getBoundingClientRect();
@@ -875,20 +875,20 @@ test('destroy releases observers, captures, and listeners and ignores stale call
   assert.equal(h.saved.length, 0);
 });
 
-test('reset keeps its position and size label for every layout', () => {
+test('reset keeps its Restore label for every layout', () => {
   const h = harness({ saved: JSON.stringify({ version: 1, x: 50, y: 50, size: 150 }) });
   assert.equal(h.reset.hidden, false, 'reset appears after resizing');
-  assert.equal(h.reset.textContent, 'Reset position & size');
-  assert.equal(h.reset.title, 'Reset position & size');
+  assert.equal(h.reset.textContent, 'Restore');
+  assert.equal(h.reset.title, 'Restore');
   h.key(h.position, 'ArrowRight');
   assert.equal(h.reset.hidden, false);
   assert.equal(h.reset.disabled, false);
-  assert.equal(h.reset.textContent, 'Reset position & size');
-  assert.equal(h.reset.title, 'Reset position & size');
+  assert.equal(h.reset.textContent, 'Restore');
+  assert.equal(h.reset.title, 'Restore');
   h.key(h.position, 'ArrowLeft');
   assert.equal(h.reset.hidden, false, 'reset remains available for a custom size');
-  assert.equal(h.reset.textContent, 'Reset position & size');
-  assert.equal(h.reset.title, 'Reset position & size');
+  assert.equal(h.reset.textContent, 'Restore');
+  assert.equal(h.reset.title, 'Restore');
   h.key(h.position, 'ArrowDown');
   assert.equal(h.reset.hidden, false);
   h.focus(h.reset);
@@ -916,7 +916,7 @@ test('layout reset is enabled during dragging and disabled when snapped back to 
 
 test('layout reset restores default size and hides at default', () => {
   const h = harness({ saved: JSON.stringify({ version: 1, x: 50, y: 50, size: 150 }) });
-  assert.equal(h.reset.textContent, 'Reset position & size');
+  assert.equal(h.reset.textContent, 'Restore');
   assert.equal(h.reset.hidden, false);
   assert.equal(h.reset.disabled, false);
   h.reset.click();
@@ -927,8 +927,8 @@ test('layout reset restores default size and hides at default', () => {
   assert.equal(h.reset.disabled, true);
   assert.deepEqual(h.saved.at(-1), { version: 1, x: 50, y: 50, size: 100 });
   h.layout.destroy();
-  assert.equal(h.reset.textContent, 'Reset position & size');
-  assert.equal(h.reset.title, 'Reset position & size');
+  assert.equal(h.reset.textContent, 'Restore');
+  assert.equal(h.reset.title, 'Restore');
 });
 
 test('hover margin keeps all four corner handles reachable without activating away from the price', () => {
