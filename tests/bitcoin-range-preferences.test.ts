@@ -57,7 +57,7 @@ class Control extends EventTarget {
   scrollIntoView() {}
 }
 
-function page(stored: Map<string, string>, locale = 'en', blocked: 'read' | 'write' | undefined = undefined, fxFailure = false, hold?: 'fx' | 'candles') {
+function page(stored: Map<string, string>, locale = 'en', blocked: 'read' | 'write' | undefined = undefined, fxFailure = false, hold?: 'fx' | 'candles', priceMultiplier = 1) {
   const root = new Control();
   root.dataset = {
     locale,
@@ -148,9 +148,9 @@ function page(stored: Map<string, string>, locale = 'en', blocked: 'read' | 'wri
       }
       const interval = Number(new URL(url, 'https://example.com').searchParams.get('interval')) || 1440;
       if (hold === 'candles' && interval !== 1440) await gate;
-      const rows = [now - interval * 60_000, now].map((time, i) => [Math.floor(time / 1000), '', '', '', String(100 + i)]);
-      return { ok: true, text: async () => `${new Date(now - day).toISOString().slice(0, 10)},100\n${new Date(now).toISOString().slice(0, 10)},101`,
-        json: async () => ({ error: [], result: url.includes('Ticker') ? { pair: { c: ['101'] } } : { pair: rows } }) };
+      const rows = [now - interval * 60_000, now].map((time, i) => [Math.floor(time / 1000), '', '', '', String((100 + i) * priceMultiplier)]);
+      return { ok: true, text: async () => `${new Date(now - day).toISOString().slice(0, 10)},${100 * priceMultiplier}\n${new Date(now).toISOString().slice(0, 10)},${101 * priceMultiplier}`,
+        json: async () => ({ error: [], result: url.includes('Ticker') ? { pair: { c: [String(101 * priceMultiplier)] } } : { pair: rows } }) };
     },
   });
   const modules = new Map<string, { exports: unknown }>();
@@ -319,27 +319,28 @@ test('the marker point follows pointer and keyboard inspection and disappears on
 
 for (const locale of Object.keys(tracker)) {
   test(`Price Tracker uses currency symbols for live prices, changes and inspection in ${locale}`, async () => {
-    const p = page(new Map([['bitcoin-tracker-display', JSON.stringify({ currency: 'AUD', scale: 'linear' })]]), locale);
+    const p = page(new Map([['bitcoin-tracker-display', JSON.stringify({ currency: 'AUD', scale: 'linear' })]]), locale, undefined, false, undefined, 100);
     await p.ready();
     const symbols = {
       USD: '$', EUR: '€', GBP: '£', AUD: '$', CAD: '$', CHF: 'CHF', JPY: locale === 'ja' ? '￥' : '¥',
     };
-    const number = new Intl.NumberFormat(locale, { maximumFractionDigits: 0 });
+    const number = new Intl.NumberFormat(locale, { maximumFractionDigits: 0, useGrouping: true });
     const chart = p.root.querySelector('[data-chart]');
     const checkMoney = (rendered: string, currency: keyof typeof symbols, amount: number) => {
       assert.ok(rendered.includes(symbols[currency]), `${locale}/${currency}: ${rendered}`);
       assert.equal(rendered.replace(symbols[currency], '').trim(), number.format(amount), `${locale}/${currency}`);
     };
-    checkMoney(p.root.querySelector('[data-price]').textContent, 'AUD', 81);
+    checkMoney(p.root.querySelector('[data-price]').textContent, 'AUD', 8080);
+    if (locale === 'es' || locale === 'it') assert.match(p.root.querySelector('[data-price]').textContent, /8\.080/);
     for (const currency of Object.keys(symbols) as (keyof typeof symbols)[]) {
       p.currency(currency);
       await p.ready();
-      checkMoney(p.root.querySelector('[data-price]').textContent, currency, currency === 'USD' ? 101 : 81);
+      checkMoney(p.root.querySelector('[data-price]').textContent, currency, currency === 'USD' ? 10100 : 8080);
       const change = p.root.querySelector('[data-price-change]').textContent;
       assert.ok(change.startsWith('+'));
-      checkMoney(change.slice(1).split(' (')[0], currency, currency === 'USD' ? 1 : 31);
+      checkMoney(change.slice(1).split(' (')[0], currency, currency === 'USD' ? 100 : 3080);
       chart.dispatchEvent(Object.assign(new Event('keydown'), { key: 'Home' }));
-      checkMoney(p.root.querySelector('[data-price]').textContent, currency, currency === 'USD' ? 100 : 50);
+      checkMoney(p.root.querySelector('[data-price]').textContent, currency, currency === 'USD' ? 10000 : 5000);
       chart.dispatchEvent(Object.assign(new Event('keydown'), { key: 'Escape' }));
     }
     p.close();

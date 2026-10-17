@@ -38,7 +38,7 @@ function startTracker(root: HTMLElement) {
   const historyStatus = root.querySelector<HTMLElement>('[data-history-status]')!;
   const chartLoading = root.querySelector<HTMLElement>('[data-chart-loading]')!;
   const loadingDescription = root.querySelector<HTMLElement>('[data-loading-description]')!;
-  let money = new Intl.NumberFormat(locale, { style: 'currency', currency, currencyDisplay: 'narrowSymbol', minimumFractionDigits: 0, maximumFractionDigits: 0 });
+  let money = new Intl.NumberFormat(locale, { style: 'currency', currency, currencyDisplay: 'narrowSymbol', useGrouping: true, minimumFractionDigits: 0, maximumFractionDigits: 0 });
   const date = new Intl.DateTimeFormat(locale, { year: 'numeric', month: 'short', day: 'numeric', timeZone: 'UTC' });
   const dateTime = new Intl.DateTimeFormat(locale, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit', timeZone: 'UTC' });
   const rangeBar = root.querySelector<HTMLElement>('[data-range-bar]')!;
@@ -320,7 +320,7 @@ function startTracker(root: HTMLElement) {
     if (!isCurrency(currencySelect.value) || currencySelect.value === currency) return;
     clearSelection();
     currency = currencySelect.value;
-    money = new Intl.NumberFormat(locale, { style: 'currency', currency, currencyDisplay: 'narrowSymbol', maximumFractionDigits: 0 });
+    money = new Intl.NumberFormat(locale, { style: 'currency', currency, currencyDisplay: 'narrowSymbol', useGrouping: true, maximumFractionDigits: 0 });
     formatPriceChange = createPriceChangeFormatter(locale, currency);
     saveDisplayPreferences({ scale, currency });
     currencyError = undefined;

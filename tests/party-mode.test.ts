@@ -184,17 +184,21 @@ for (const locale of Object.keys(party)) {
     const symbols: Record<Currency, string> = {
       USD: '$', EUR: '€', GBP: '£', AUD: '$', CAD: '$', CHF: 'CHF', JPY: locale === 'ja' ? '￥' : '¥',
     };
-    const number = new Intl.NumberFormat(locale, { maximumFractionDigits: 0 }).format(123_456.4);
-    h.price(123_456.4);
-    const checkPrice = (currency: Currency) => {
+    const number = new Intl.NumberFormat(locale, { maximumFractionDigits: 0, useGrouping: true });
+    const checkPrice = (currency: Currency, amount: number) => {
       const rendered = h.control('[data-price]').textContent;
       assert.ok(rendered.includes(symbols[currency]), `${locale}/${currency}: ${rendered}`);
-      assert.equal(rendered.replace(symbols[currency], '').trim(), number, `${locale}/${currency}`);
+      assert.equal(rendered.replace(symbols[currency], '').trim(), number.format(amount), `${locale}/${currency}/${amount}`);
+      if ((locale === 'es' || locale === 'it') && amount === 9000) assert.match(rendered, /9\.000/);
     };
-    checkPrice('AUD');
+    h.price(9000);
+    checkPrice('AUD', 9000);
     for (const currency of Object.keys(symbols) as Currency[]) {
       h.currency(currency);
-      checkPrice(currency);
+      for (const amount of [900, 1000, 9000, 9999, 10_000, 123_456.4]) {
+        h.price(amount);
+        checkPrice(currency, amount);
+      }
     }
     h.close();
   });

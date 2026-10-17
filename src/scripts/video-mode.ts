@@ -25,7 +25,7 @@ function startVideoMode(root: HTMLElement) {
   const currencySelect = root.querySelector<HTMLSelectElement>('[data-currency]')!;
   const rates = new CurrencyRates();
   let currency: Currency = readDisplayPreferences().currency;
-  const formatMoney = () => new Intl.NumberFormat(locale, { style: 'currency', currency, currencyDisplay: 'narrowSymbol', minimumFractionDigits: 0, maximumFractionDigits: 0 });
+  const formatMoney = () => new Intl.NumberFormat(locale, { style: 'currency', currency, currencyDisplay: 'narrowSymbol', useGrouping: true, minimumFractionDigits: 0, maximumFractionDigits: 0 });
   let money = formatMoney();
   let livePoint: HistoryPoint | undefined;
   let state: PriceFeedState = 'connecting';

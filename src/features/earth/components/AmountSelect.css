@@ -36,6 +36,9 @@
   font-weight: 700;
   line-height: 1;
 }
+.earth-feature .amount-choice .dropdown-trigger:is(:hover, [aria-expanded='true']) {
+  background: transparent;
+}
 .earth-feature .amount-choice .dropdown-trigger svg {
   color: var(--control-ink);
 }
