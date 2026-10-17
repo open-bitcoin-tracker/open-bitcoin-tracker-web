@@ -151,7 +151,6 @@ export const en = {
     fx: "Currency conversions",
     ecb: "European Central Bank reference rates",
     earthSources: "Calculation and map sources in the tool’s About panel",
-    creatorText: "OBT is an independent project by Max Hodler.",
     contributeHeading: "Open source. Open to contributions.",
     contributeIntro: "Read the code, suggest a tool, report a bug, or help with translations.",
     repositories: "The {website} and {app} have separate repositories.",

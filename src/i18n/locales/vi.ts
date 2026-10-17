@@ -137,7 +137,6 @@ export const vi: Dict = {
     fx: "Chuyển đổi tiền tệ",
     ecb: "Tỷ giá tham chiếu của Ngân hàng Trung ương châu Âu",
     earthSources: "Cách tính và nguồn bản đồ trong mục Giới thiệu của công cụ",
-    creatorText: "OBT là dự án độc lập của Max Hodler.",
     contributeHeading: "Mã nguồn mở. Luôn chào đón đóng góp.",
     contributeIntro: "Đọc mã nguồn, đề xuất công cụ, báo lỗi hoặc hỗ trợ dịch thuật.",
     repositories: "Kho mã nguồn của {website} và {app} được quản lý riêng.",

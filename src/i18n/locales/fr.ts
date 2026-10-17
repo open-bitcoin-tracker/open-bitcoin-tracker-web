@@ -137,7 +137,6 @@ export const fr: Dict = {
     fx: "Conversion des devises",
     ecb: "Taux de change de référence de la Banque centrale européenne",
     earthSources: "Calcul et sources cartographiques dans le panneau À propos de l’outil",
-    creatorText: "OBT est un projet indépendant de Max Hodler.",
     contributeHeading: "Open source. Tes contributions sont les bienvenues.",
     contributeIntro: "Lis le code, propose un outil, signale un bug ou aide à traduire.",
     repositories: "Le {website} et l’{app} ont chacun leur dépôt.",

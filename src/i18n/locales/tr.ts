@@ -137,7 +137,6 @@ export const tr: Dict = {
     fx: "Para birimi dönüşümleri",
     ecb: "Avrupa Merkez Bankası referans döviz kurları",
     earthSources: "Hesaplama ve harita kaynakları aracın Hakkında panelinde",
-    creatorText: "OBT, Max Hodler’ın bağımsız bir projesidir.",
     contributeHeading: "Açık kaynak. Katkına açık.",
     contributeIntro: "Kodu incele, bir araç öner, hata bildir veya çevirilere yardım et.",
     repositories: "Kod depoları {website} ve {app} için ayrı tutuluyor.",

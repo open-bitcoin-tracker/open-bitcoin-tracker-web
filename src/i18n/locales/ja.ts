@@ -137,7 +137,6 @@ export const ja: Dict = {
     fx: "通貨換算",
     ecb: "欧州中央銀行の参考為替レート",
     earthSources: "計算方法と地図の出典はツール内の概要パネルで確認できます",
-    creatorText: "OBTはMax Hodlerによる個人プロジェクトです。",
     contributeHeading: "オープンソース。コントリビューション歓迎。",
     contributeIntro: "コードの確認、ツールの提案、バグ報告、翻訳への協力を歓迎します。",
     repositories: "{website}と{app}には、それぞれ専用のリポジトリがあります。",
