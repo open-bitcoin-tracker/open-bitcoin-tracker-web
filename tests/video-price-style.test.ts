@@ -51,10 +51,10 @@ function harness({ saved, blocked = false }: { saved?: string; blocked?: boolean
   const menu = wrapper.append(new Element());
   menu.offsetWidth = 260; menu.offsetHeight = 320;
   wrapper.selectors.set('[data-price-settings-panel]', menu);
-  const controls = ['trigger', 'panel', 'colour', 'font', 'reset', 'stroke', 'strokeWidth', 'strokeColour', 'strokeOptions', 'strokeValue'].map(() => wrapper.append(new Element()));
-  const [trigger, panel, colour, font, reset, stroke, strokeWidth, strokeColour, strokeOptions, strokeValue] = controls;
+  const controls = ['trigger', 'panel', 'colour', 'font', 'stroke', 'strokeWidth', 'strokeColour', 'strokeOptions', 'strokeValue'].map(() => wrapper.append(new Element()));
+  const [trigger, panel, colour, font, stroke, strokeWidth, strokeColour, strokeOptions, strokeValue] = controls;
   panel.offsetWidth = 260; panel.offsetHeight = 320;
-  for (const [index, selector] of ['[data-price-style-trigger]', '[data-price-style-panel]', '[data-price-colour]', '[data-price-font]', '[data-reset-price-style]', '[data-price-stroke]', '[data-price-stroke-width]', '[data-price-stroke-colour]', '[data-stroke-options]', '[data-stroke-width-value]'].entries()) {
+  for (const [index, selector] of ['[data-price-style-trigger]', '[data-price-style-panel]', '[data-price-colour]', '[data-price-font]', '[data-price-stroke]', '[data-price-stroke-width]', '[data-price-stroke-colour]', '[data-stroke-options]', '[data-stroke-width-value]'].entries()) {
     wrapper.selectors.set(selector, controls[index]);
   }
   const swatches = ['#ffffff', '#ff981e', '#90c7ff'].map(value => {
@@ -79,9 +79,10 @@ function harness({ saved, blocked = false }: { saved?: string; blocked?: boolean
   runInNewContext(script, { exports: module, window, document, Event });
   const style = module.createVideoPriceStyle!(root as unknown as HTMLElement, () => { refreshes++; });
   return {
-    root, wrapper, position, window, trigger, panel, menu, colour, font, reset, stroke, strokeWidth, strokeColour, strokeOptions, strokeValue, swatches, document, style,
+    root, wrapper, position, window, trigger, panel, menu, colour, font, stroke, strokeWidth, strokeColour, strokeOptions, strokeValue, swatches, document, style,
     writes: () => writes, refreshes: () => refreshes, toggles: () => toggles,
     saved: () => storage.get('obt-video-price-style'),
+    restore: () => root.dispatchEvent(new Event('pricerestore')),
     changeColour(value: string) { colour.value = value; colour.dispatchEvent(new Event('input')); },
     changeFont(value: string) { font.value = value; font.dispatchEvent(new Event('change')); },
     outside() { document.dispatchEvent(eventFor('pointerdown', new Element())); },
@@ -102,8 +103,7 @@ test('style controls preview choices immediately, save them, and restore them on
   const h = harness();
   assert.equal(h.trigger.disabled, false);
   assert.equal(h.panel.hidden, true);
-  assert.equal(h.reset.disabled, true);
-  assert.equal(h.reset.hidden, true);
+  assert.equal(h.root.hasAttribute('data-price-style-custom'), false);
   assert.equal(h.colour.value, '#ffffff');
   assert.equal(h.font.value, 'modern');
   assert.equal(h.writes(), 0);
@@ -116,18 +116,16 @@ test('style controls preview choices immediately, save them, and restore them on
   assert.equal(h.root.style.values.get('--video-price-colour'), '#ab12cd');
   assert.match(h.root.style.values.get('--video-price-font')!, /Georgia/);
   assert.ok(h.refreshes() > 1, 'font changes must re-fit the price within the viewport');
-  assert.equal(h.reset.disabled, false);
-  assert.equal(h.reset.hidden, false);
+  assert.equal(h.root.hasAttribute('data-price-style-custom'), true);
   const restored = harness({ saved: h.saved() });
   assert.equal(restored.colour.value, '#ab12cd');
   assert.equal(restored.font.value, 'serif');
   assert.equal(restored.writes(), 0);
   assert.equal(restored.panel.hidden, true);
-  restored.reset.click();
+  restored.restore();
   assert.equal(restored.colour.value, '#ffffff');
   assert.equal(restored.font.value, 'modern');
-  assert.equal(restored.reset.disabled, true);
-  assert.equal(restored.reset.hidden, true);
+  assert.equal(restored.root.hasAttribute('data-price-style-custom'), false);
   assert.notEqual(restored.document.activeElement, restored.font);
   assert.deepEqual(JSON.parse(restored.saved()!), { version: 1, colour: '#ffffff', font: 'modern', stroke: false, strokeWidth: 1, strokeColour: '#000000' });
   h.style.destroy(); restored.style.destroy();
@@ -151,7 +149,7 @@ test('additional price fonts persist, re-fit the price, and reset their font met
     assert.equal(restored.root.style.values.get('--video-price-spacing'), spacing);
     assert.equal(restored.root.style.values.get('--video-price-padding'), '0');
     assert.equal(restored.writes(), 0);
-    restored.reset.click();
+    restored.restore();
     assert.equal(restored.font.value, 'modern');
     assert.equal(restored.root.style.values.get('--video-price-weight'), '750');
     assert.equal(restored.root.style.values.get('--video-price-spacing'), '-.065em');
@@ -210,7 +208,7 @@ test('storage failures preserve controls and destruction removes interactive beh
   assert.equal(h.panel.hidden, true);
   const refreshes = h.refreshes();
   const toggles = h.toggles();
-  h.trigger.click(); h.swatches[0].click(); h.changeFont('serif'); h.reset.click();
+  h.trigger.click(); h.swatches[0].click(); h.changeFont('serif'); h.restore();
   assert.equal(h.refreshes(), refreshes);
   assert.equal(h.toggles(), toggles);
 });
@@ -250,7 +248,7 @@ test('reset style unticks Stroke, removes its appearance, and saves the disabled
     version: 1, colour: '#ff981e', font: 'digital', stroke: true, strokeWidth: 3.5, strokeColour: '#ffffff',
   }) });
   assert.equal(h.stroke.checked, true);
-  h.reset.click();
+  h.restore();
   assert.equal(h.stroke.checked, false);
   assert.equal(h.strokeOptions.hidden, true);
   assert.equal(h.strokeWidth.disabled, true);
@@ -264,12 +262,11 @@ test('reset style unticks Stroke, removes its appearance, and saves the disabled
   h.style.destroy(); restored.style.destroy();
 });
 
-test('Reset style works with the panel closed and returns focus to Edit style', () => {
+test('Restore resets style with the panel closed and preserves focus', () => {
   const h = harness({ saved: JSON.stringify({ version: 1, font: 'digital', stroke: true }) });
-  h.reset.focus();
-  h.reset.dispatchEvent(Object.assign(new Event('click'), { detail: 0 }));
-  assert.equal(h.reset.disabled, true);
-  assert.equal(h.reset.hidden, true);
+  h.trigger.focus();
+  h.restore();
+  assert.equal(h.root.hasAttribute('data-price-style-custom'), false);
   assert.equal(h.panel.hidden, true);
   assert.equal(h.document.activeElement, h.trigger);
   assert.equal(h.stroke.checked, false);
@@ -314,18 +311,18 @@ test('the editing menu remains reachable in narrow and short viewports after res
   h.style.destroy();
 });
 
-test('Reset style appears only for changed styles, including manual return to defaults', () => {
+test('style customization state includes manual return to defaults', () => {
   const h = harness();
-  assert.equal(h.reset.hidden, true);
+  assert.equal(h.root.hasAttribute('data-price-style-custom'), false);
   h.swatches[1].click();
-  assert.equal(h.reset.hidden, false);
+  assert.equal(h.root.hasAttribute('data-price-style-custom'), true);
   h.swatches[0].click();
-  assert.equal(h.reset.hidden, true);
+  assert.equal(h.root.hasAttribute('data-price-style-custom'), false);
   h.changeFont('serif');
-  assert.equal(h.reset.hidden, false);
-  h.reset.focus();
-  h.reset.click();
-  assert.equal(h.reset.hidden, true);
+  assert.equal(h.root.hasAttribute('data-price-style-custom'), true);
+  h.trigger.focus();
+  h.restore();
+  assert.equal(h.root.hasAttribute('data-price-style-custom'), false);
   assert.equal(h.document.activeElement, h.trigger);
   h.style.destroy();
 });

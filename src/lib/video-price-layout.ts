@@ -63,7 +63,7 @@ export function createVideoPriceLayout(root: HTMLElement) {
     const centered = Math.abs(state.x - 50) <= .01 && Math.abs(state.y - 50) <= .01;
     const isDefault = centered && Math.abs(state.size - 100) <= .01;
     root.toggleAttribute('data-price-default', isDefault);
-    resetButton.disabled = resetButton.hidden = isDefault;
+    resetButton.disabled = resetButton.hidden = isDefault && !root.hasAttribute('data-price-style-custom');
   }
   function geometry() {
     const viewport = stage.getBoundingClientRect();
@@ -218,6 +218,7 @@ export function createVideoPriceLayout(root: HTMLElement) {
     const restoreFocus = document.activeElement === resetButton;
     finish(false);
     state = { ...DEFAULTS };
+    root.dispatchEvent(new Event('pricerestore'));
     refresh();
     notify();
     save();

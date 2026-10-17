@@ -21,7 +21,6 @@ export function createVideoPriceStyle(root: HTMLElement, refreshLayout: () => vo
   const panel = wrapper.querySelector<HTMLElement>('[data-price-style-panel]')!;
   const colour = wrapper.querySelector<HTMLInputElement>('[data-price-colour]')!;
   const font = wrapper.querySelector<HTMLSelectElement>('[data-price-font]')!;
-  const reset = wrapper.querySelector<HTMLButtonElement>('[data-reset-price-style]')!;
   const position = root.querySelector<HTMLElement>('[data-price-position]')!;
   const stroke = wrapper.querySelector<HTMLInputElement>('[data-price-stroke]')!;
   const strokeWidth = wrapper.querySelector<HTMLInputElement>('[data-price-stroke-width]')!;
@@ -71,8 +70,9 @@ export function createVideoPriceStyle(root: HTMLElement, refreshLayout: () => vo
     strokeOptions.hidden = !state.stroke;
     strokeWidth.disabled = strokeColour.disabled = !state.stroke;
     for (const swatch of swatches) swatch.setAttribute('aria-pressed', String(swatch.dataset.priceSwatch === state.colour));
-    reset.hidden = reset.disabled = state.colour === DEFAULTS.colour && state.font === DEFAULTS.font && !state.stroke
+    const isDefault = state.colour === DEFAULTS.colour && state.font === DEFAULTS.font && !state.stroke
       && state.strokeWidth === DEFAULTS.strokeWidth && state.strokeColour === DEFAULTS.strokeColour;
+    root.toggleAttribute('data-price-style-custom', !isDefault);
     refreshLayout();
     anchor();
   }
@@ -175,12 +175,9 @@ export function createVideoPriceStyle(root: HTMLElement, refreshLayout: () => vo
     state.strokeColour = strokeColour.value.toLowerCase();
     save();
   });
-  listen(reset, 'click', () => {
-    const restoreFocus = document.activeElement === reset;
+  listen(root, 'pricerestore', () => {
     state = { ...DEFAULTS };
     save();
-    // Reset hides itself, so return focus to the neighboring visible control.
-    if (restoreFocus) trigger.focus();
   });
   panel.hidden = true;
   trigger.setAttribute('aria-expanded', 'false');
@@ -202,6 +199,7 @@ export function createVideoPriceStyle(root: HTMLElement, refreshLayout: () => vo
       close();
       observer?.disconnect();
       for (const remove of removeListeners) remove();
+      root.removeAttribute('data-price-style-custom');
     },
   };
 }

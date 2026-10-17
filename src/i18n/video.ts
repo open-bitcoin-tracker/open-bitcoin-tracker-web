@@ -43,7 +43,6 @@ export interface VideoCopy {
   fontCondensed: string;
   fontSerif: string;
   fontMono: string;
-  resetPriceStyle: string;
   priceKeyboardHint: string;
   noScript: string;
   controlsLabel: string;
@@ -93,7 +92,6 @@ const en: VideoCopy = {
   fontCondensed: 'Condensed',
   fontSerif: 'Serif',
   fontMono: 'Monospace',
-  resetPriceStyle: 'Reset style',
   priceKeyboardHint: 'Use the arrow keys to move the price. Use + and − to resize it. Home resets the layout; Escape hides the frame.',
   noScript: 'JavaScript is required for live prices and YouTube playback.',
   controlsLabel: 'Video controls',
@@ -145,7 +143,6 @@ export const video: Record<Lang, VideoCopy> = {
     fontCondensed: 'Condensada',
     fontSerif: 'Con serifa',
     fontMono: 'Monoespaciada',
-    resetPriceStyle: 'Restablecer estilo',
     priceKeyboardHint: 'Usa las teclas de flecha para mover el precio. Usa + y − para cambiar su tamaño. Home restablece la posición y el tamaño; Escape oculta el recuadro.',
     noScript: 'El precio en directo y la reproducción de YouTube requieren JavaScript.',
     controlsLabel: 'Controles del vídeo',
@@ -194,7 +191,6 @@ export const video: Record<Lang, VideoCopy> = {
     fontCondensed: 'Condensada',
     fontSerif: 'Com serifa',
     fontMono: 'Monoespaçada',
-    resetPriceStyle: 'Redefinir estilo',
     priceKeyboardHint: 'Use as setas do teclado para mover o preço. Use + e − para alterar o tamanho. Home redefine o layout; Escape oculta a moldura.',
     noScript: 'O preço ao vivo e a reprodução do YouTube precisam de JavaScript.',
     controlsLabel: 'Controles do vídeo',
@@ -243,7 +239,6 @@ export const video: Record<Lang, VideoCopy> = {
     fontCondensed: 'Condensée',
     fontSerif: 'Avec empattements',
     fontMono: 'Chasse fixe',
-    resetPriceStyle: 'Réinitialiser le style',
     priceKeyboardHint: 'Déplace le cours avec les flèches. Modifie sa taille avec + et −. Home réinitialise la disposition ; Escape masque le cadre.',
     noScript: 'JavaScript est nécessaire pour le cours en direct et la lecture YouTube.',
     controlsLabel: 'Commandes de la vidéo',
@@ -292,7 +287,6 @@ export const video: Record<Lang, VideoCopy> = {
     fontCondensed: 'Schmal',
     fontSerif: 'Serifen',
     fontMono: 'Nichtproportional',
-    resetPriceStyle: 'Stil zurücksetzen',
     priceKeyboardHint: 'Verschiebe den Kurs mit den Pfeiltasten. Ändere die Größe mit + und −. Home setzt das Layout zurück; Escape blendet den Rahmen aus.',
     noScript: 'Live-Kurse und YouTube-Wiedergabe benötigen JavaScript.',
     controlsLabel: 'Videosteuerung',
@@ -341,7 +335,6 @@ export const video: Record<Lang, VideoCopy> = {
     fontCondensed: 'Condensato',
     fontSerif: 'Con grazie',
     fontMono: 'Monospazio',
-    resetPriceStyle: 'Ripristina stile',
     priceKeyboardHint: 'Usa i tasti freccia per spostare il prezzo. Usa + e − per ridimensionarlo. Home ripristina la disposizione; Escape nasconde il riquadro.',
     noScript: 'JavaScript è necessario per il prezzo in tempo reale e la riproduzione di YouTube.',
     controlsLabel: 'Controlli del video',
@@ -390,7 +383,6 @@ export const video: Record<Lang, VideoCopy> = {
     fontCondensed: 'Узкий',
     fontSerif: 'С засечками',
     fontMono: 'Моноширинный',
-    resetPriceStyle: 'Сбросить стиль',
     priceKeyboardHint: 'Перемещай курс стрелками. Меняй размер клавишами + и −. Home сбрасывает расположение, Escape скрывает рамку.',
     noScript: 'Для текущего курса и воспроизведения YouTube нужен JavaScript.',
     controlsLabel: 'Управление видео',
@@ -439,7 +431,6 @@ export const video: Record<Lang, VideoCopy> = {
     fontCondensed: 'Dar',
     fontSerif: 'Serif',
     fontMono: 'Eş aralıklı',
-    resetPriceStyle: 'Stili sıfırla',
     priceKeyboardHint: 'Fiyatı taşımak için ok tuşlarını, boyutunu değiştirmek için + ve − tuşlarını kullan. Home düzeni sıfırlar; Escape çerçeveyi gizler.',
     noScript: 'Canlı fiyatlar ve YouTube oynatma için JavaScript gerekir.',
     controlsLabel: 'Video kontrolleri',
@@ -488,7 +479,6 @@ export const video: Record<Lang, VideoCopy> = {
     fontCondensed: 'Thu hẹp',
     fontSerif: 'Có chân',
     fontMono: 'Đơn cách',
-    resetPriceStyle: 'Đặt lại kiểu',
     priceKeyboardHint: 'Dùng các phím mũi tên để di chuyển giá. Dùng + và − để thay đổi kích thước. Home đặt lại bố cục; Escape ẩn khung.',
     noScript: 'Giá trực tiếp và tính năng phát YouTube cần JavaScript.',
     controlsLabel: 'Điều khiển video',
@@ -537,7 +527,6 @@ export const video: Record<Lang, VideoCopy> = {
     fontCondensed: 'コンデンス',
     fontSerif: 'セリフ',
     fontMono: '等幅',
-    resetPriceStyle: 'スタイルをリセット',
     priceKeyboardHint: '矢印キーで価格を移動できます。+ と − キーでサイズを変更できます。Homeキーでレイアウトをリセットし、Escapeキーで枠を非表示にします。',
     noScript: 'リアルタイム価格とYouTubeの再生にはJavaScriptが必要です。',
     controlsLabel: '動画の操作',

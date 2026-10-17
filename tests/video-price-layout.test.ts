@@ -1045,3 +1045,28 @@ test('moving into the editing menu and opening currency keeps the price frame vi
   assert.equal(h.frame(), false);
   h.layout.destroy();
 });
+
+
+test('Restore stays available for style-only changes and notifies style restoration for clicks and Home', () => {
+  const h = harness();
+  let restores = 0;
+  h.root.addEventListener('pricerestore', () => {
+    restores++;
+    h.root.removeAttribute('data-price-style-custom');
+  });
+  for (const action of ['click', 'Home']) {
+    h.root.setAttribute('data-price-style-custom', '');
+    h.layout.refresh();
+    assert.equal(h.root.hasAttribute('data-price-default'), true, 'layout can be default with custom styling');
+    assert.equal(h.reset.hidden, false);
+    assert.equal(h.reset.disabled, false);
+    if (action === 'click') { h.focus(h.reset); h.reset.click(); }
+    else h.key(h.position, 'Home');
+    assert.equal(h.reset.hidden, true);
+    assert.equal(h.reset.disabled, true);
+    assert.equal(h.document.activeElement, h.position);
+    assert.deepEqual(h.saved.at(-1), { version: 1, x: 50, y: 50, size: 100 });
+  }
+  assert.equal(restores, 2);
+  h.layout.destroy();
+});
