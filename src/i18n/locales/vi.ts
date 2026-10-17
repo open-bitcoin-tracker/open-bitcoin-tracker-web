@@ -30,6 +30,7 @@ export const vi: Dict = {
     openChart: 'Mở biểu đồ',
     openEarth: 'Khám phá bản đồ',
     openVideo: 'Tạo không gian riêng',
+    nextAnimation: 'Hoạt ảnh tiếp theo',
     openApp: 'Tải ứng dụng Android',
     appDescription: 'Theo dõi danh mục Bitcoin của bạn. Không cần tài khoản. Dữ liệu stack chỉ nằm trên điện thoại của bạn.',
     priceTracker: 'Theo dõi giá',

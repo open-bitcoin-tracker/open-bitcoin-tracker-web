@@ -37,6 +37,7 @@ export const en = {
     openChart: 'Open the chart',
     openEarth: 'Explore the map',
     openVideo: 'Set the scene',
+    nextAnimation: 'Next animation',
     openApp: 'Get the Android app',
     appDescription: 'Track your Bitcoin portfolio. No accounts. Your stacks stay on your phone.',
     priceTracker: 'Price Tracker',

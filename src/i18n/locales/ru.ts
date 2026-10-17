@@ -30,6 +30,7 @@ export const ru: Dict = {
     openChart: 'Открыть график',
     openEarth: 'Изучить карту',
     openVideo: 'Создать атмосферу',
+    nextAnimation: 'Следующая анимация',
     openApp: 'Скачать приложение для Android',
     appDescription: 'Отслеживай свой биткоин-портфель. Без аккаунтов. Твои стеки остаются на твоём телефоне.',
     priceTracker: 'Трекер цены',

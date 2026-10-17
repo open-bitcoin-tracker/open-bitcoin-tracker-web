@@ -11,18 +11,20 @@ const script = ts.transpileModule(readFileSync(new URL('../src/scripts/video-pre
   compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 },
 }).outputText;
 
-function harness(reduced = false, locale = 'en', random = 0) {
+function harness(reduced = false, locale = 'en') {
   class Element extends EventTarget {
     textContent = '—'; hidden = true; title = '';
     attributes = new Map<string, string>();
     setAttribute(key: string, value: string) { this.attributes.set(key, value); }
     getAttribute(key: string) { return this.attributes.get(key); }
+    removeAttribute(key: string) { this.attributes.delete(key); }
     toggleAttribute(key: string, value: boolean) { if (value) this.attributes.set(key, ''); else this.attributes.delete(key); }
   }
   const price = new Element();
   const status = new Element();
   const play = new Element();
   const pause = new Element();
+  const next = new Element();
   const toggle = Object.assign(new Element(), { querySelector: (s: string) => s === '[data-motion-play]' ? play : pause });
   const video = Object.assign(new Element(), {
     src: '', poster: '', paused: true, muted: false, blocked: false,
@@ -31,6 +33,7 @@ function harness(reduced = false, locale = 'en', random = 0) {
       this.paused = false; this.dispatchEvent(new Event('play')); return Promise.resolve();
     },
     pause() { this.paused = true; this.dispatchEvent(new Event('pause')); },
+    load() { this.src = ''; this.pause(); },
   });
   const document = Object.assign(new EventTarget(), { hidden: false });
   const motion = Object.assign(new EventTarget(), { matches: reduced });
@@ -42,11 +45,11 @@ function harness(reduced = false, locale = 'en', random = 0) {
   const root = {
     dataset: { locale, copy: JSON.stringify({ price: 'Bitcoin price', updated: 'Updated', connecting: 'Connecting', live: 'Live', delayed: 'Reconnecting', offline: 'Offline', unavailable: 'Unavailable', play: 'Play', pause: 'Pause' }),
       backgrounds: JSON.stringify(['fireplace', 'gandalf', 'kido'].map(name => ({ src: `/video-preview-${name}.mp4`, poster: `/posters/${name}.webp` }))) },
-    querySelector: (s: string) => ({ '[data-video-price]': price, '[data-video-price-status]': status, '[data-preview-video]': video, '[data-preview-motion]': toggle })[s],
+    querySelector: (s: string) => ({ '[data-video-price]': price, '[data-video-price-status]': status, '[data-preview-video]': video, '[data-preview-motion]': toggle, '[data-preview-next]': next })[s],
   };
   const module: { startVideoPreview?: (root: unknown) => () => void } = {};
   runInNewContext(script, {
-    exports: module, document, window, navigator, Intl, Math: { floor: Math.floor, random: () => random },
+    exports: module, document, window, navigator, Intl,
     IntersectionObserver: class {
       constructor(callback: typeof intersect) { intersect = callback; }
       observe() {}
@@ -61,7 +64,7 @@ function harness(reduced = false, locale = 'en', random = 0) {
   });
   const stop = module.startVideoPreview!(root);
   const visibility = (hidden: boolean) => { document.hidden = hidden; document.dispatchEvent(new Event('visibilitychange')); };
-  return { price, status, video, toggle, play, pause, motion, window, navigator, subscriptions, stop, visibility,
+  return { price, status, video, toggle, next, play, pause, motion, window, navigator, subscriptions, stop, visibility,
     intersect: (value: boolean) => intersect([{ isIntersecting: value }]), disconnected: () => disconnected };
 }
 
@@ -143,19 +146,60 @@ test('browser back restores the feed once and final cleanup removes motion and p
   assert.equal(h.video.paused, true);
 });
 
-test('each background has an equal selection interval and keeps its matching poster through playback and browser back', () => {
-  for (const [random, name] of [[0, 'fireplace'], [1 / 3 - .001, 'fireplace'], [1 / 3, 'gandalf'], [2 / 3 - .001, 'gandalf'], [2 / 3, 'kido'], [.99999, 'kido']] as const) {
-    const h = harness(true, 'en', random);
+test('starts with the fireplace and cycles in order, preserving selection through browser back', () => {
+  const h = harness();
+  assert.equal(h.next.hidden, false);
+  assert.equal(h.video.poster, '/posters/fireplace.webp');
+  assert.equal(h.video.src, '');
+  h.intersect(true);
+  for (const name of ['gandalf', 'kido', 'fireplace']) {
+    h.next.dispatchEvent(new Event('click'));
     assert.equal(h.video.poster, `/posters/${name}.webp`);
-    assert.equal(h.video.src, '');
-    h.intersect(true);
-    assert.equal(h.video.src, '');
-    h.toggle.dispatchEvent(new Event('click'));
     assert.equal(h.video.src, `/video-preview-${name}.mp4`);
+    assert.equal(h.video.paused, false);
     h.window.dispatchEvent(Object.assign(new Event('pagehide'), { persisted: true }));
     h.window.dispatchEvent(new Event('pageshow'));
     assert.equal(h.video.src, `/video-preview-${name}.mp4`);
     assert.equal(h.video.poster, `/posters/${name}.webp`);
+  }
+  h.stop();
+  h.next.dispatchEvent(new Event('click'));
+  assert.equal(h.video.poster, '/posters/fireplace.webp');
+});
+
+test('changing animation while manually paused or using reduced motion shows only its poster', () => {
+  for (const reduced of [false, true]) {
+    const h = harness(reduced);
+    h.intersect(true);
+    if (!reduced) h.toggle.dispatchEvent(new Event('click'));
+    h.next.dispatchEvent(new Event('click'));
+    assert.equal(h.video.poster, '/posters/gandalf.webp');
+    assert.equal(h.video.src, '');
+    assert.equal(h.video.paused, true);
+    h.visibility(true); h.visibility(false);
+    h.intersect(false); h.intersect(true);
+    assert.equal(h.video.src, '');
+    h.toggle.dispatchEvent(new Event('click'));
+    assert.equal(h.video.src, '/video-preview-gandalf.mp4');
+    assert.equal(h.video.paused, false);
+    h.stop();
+  }
+});
+
+test('changing animation offscreen or in a hidden tab defers loading until visible', () => {
+  for (const hiddenTab of [false, true]) {
+    const h = harness();
+    h.intersect(true);
+    if (hiddenTab) h.visibility(true);
+    else h.intersect(false);
+    h.next.dispatchEvent(new Event('click'));
+    assert.equal(h.video.poster, '/posters/gandalf.webp');
+    assert.equal(h.video.src, '');
+    assert.equal(h.video.paused, true);
+    if (hiddenTab) h.visibility(false);
+    else h.intersect(true);
+    assert.equal(h.video.src, '/video-preview-gandalf.mp4');
+    assert.equal(h.video.paused, false);
     h.stop();
   }
 });

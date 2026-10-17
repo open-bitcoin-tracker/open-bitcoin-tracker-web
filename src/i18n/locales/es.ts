@@ -30,6 +30,7 @@ export const es: Dict = {
     openChart: 'Abrir el gráfico',
     openEarth: 'Explorar el mapa',
     openVideo: 'Ponle ambiente',
+    nextAnimation: 'Siguiente animación',
     openApp: 'Obtener la app para Android',
     appDescription: 'Trackea tu portfolio de Bitcoin. Sin cuentas. Tus stacks se quedan en tu teléfono.',
     priceTracker: 'Trackeador de precio',
