@@ -197,6 +197,22 @@ test('the price frame follows UI visibility while playback and Style controls re
   h.controls.destroy();
 });
 
+test('clicking the navigation summary or its icon does not dismiss the video UI', () => {
+  const h = harness();
+  h.controls.setEnabled(true);
+  // Both the summary and its nested SVG resolve to the summary ancestor.
+  h.button.closest = selector => selector.split(', ').includes('summary') ? h.button : null;
+  h.background.closest = selector => h.button.closest(selector);
+  for (const target of [h.button, h.background]) {
+    h.click(target);
+    assert.equal(h.idle(), false);
+  }
+  h.menu(true);
+  h.tick(10000);
+  assert.equal(h.idle(), false, 'the open navigation keeps the UI visible');
+  h.controls.destroy();
+});
+
 test('Escape dismissal keeps the frame and controls hidden until new input', () => {
   const h = harness();
   h.controls.setEnabled(true);

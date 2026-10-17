@@ -456,6 +456,26 @@ test('video background and price clicks toggle playback without interfering with
   assert.equal(h.pauseCalls(), 2);
 });
 
+test('opening navigation from its summary or icon preserves playing and paused video states', () => {
+  const h = harness();
+  h.submit(firstUrl);
+  const summary = Object.assign(new Control(), {
+    closest(selectors: string) { return selectors.split(', ').includes('summary') ? this : null; },
+  });
+  const icon = Object.assign(new Control(), {
+    closest(selectors: string) { return summary.closest(selectors); },
+  });
+  for (const playing of [true, false]) {
+    h.emitPlaying(playing);
+    h.videoClick(summary);
+    h.videoClick(icon);
+    assert.equal(h.pauseCalls(), 0, 'opening navigation must not pause a playing video');
+    assert.equal(h.playCalls(), 0, 'opening navigation must not resume a paused video');
+    assert.equal(h.control('[data-play-pause]').attributes.get('aria-label'), playing ? copy.pause : copy.play);
+  }
+  h.close();
+});
+
 test('play and pause labels follow player state while mute updates its action and icon', () => {
   const h = harness();
   h.submit(firstUrl);

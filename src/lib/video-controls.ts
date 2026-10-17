@@ -1,5 +1,5 @@
 const IDLE_DELAY = 1200;
-const INTERACTIVE = 'button, input, select, textarea, a, [role="button"], [role="dialog"], [data-price-style], [data-price-position], [data-video-form]';
+const INTERACTIVE = 'button, summary, input, select, textarea, a, [role="button"], [role="dialog"], [data-price-style], [data-price-position], [data-video-form]';
 const EDITABLE_CONTROL = 'input:not([type="range"]), textarea, [contenteditable]:not([contenteditable="false"]), [role="textbox"], [role="combobox"]';
 
 /** Hide Video Mode's interface after inactivity, keeping active controls usable. */
