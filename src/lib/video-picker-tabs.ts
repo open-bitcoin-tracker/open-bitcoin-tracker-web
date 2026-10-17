@@ -6,7 +6,7 @@ import { videoSections, videoSuggestions } from './video-suggestions';
 const RECENTS_KEY = 'obt-video-recents';
 
 type PickerOptions = {
-  copy: Pick<VideoCopy, 'load' | 'removeRecent' | 'recentTitleLoading' | 'recentTitleUnavailable'> & Pick<PartyCopy, 'live'>;
+  copy: Pick<VideoCopy, 'load' | 'removeRecent' | 'recentTitleLoading' | 'recentTitleUnavailable' | 'noSound'> & Pick<PartyCopy, 'live'>;
   onSelect(video: YouTubeVideo): void;
 };
 
@@ -33,6 +33,7 @@ export function createVideoPickerTabs(root: HTMLElement, { copy, onSelect }: Pic
   let renderPending = false;
   let opened = false;
   const titles = new Map<string, string>(videoSuggestions.map(video => [video.id, video.title]));
+  const silentVideos = new Set(videoSuggestions.filter(video => video.isSilent).map(video => video.id));
   const liveStatus = new Map<string, boolean>(videoSuggestions.map(video => [video.id, video.isLive]));
   const suggestionBadges = new Map([...root.querySelectorAll<HTMLButtonElement>('[data-video-suggestion]')].map(button => [
     button.dataset.videoSuggestion!, { button, badge: button.querySelector<HTMLElement>('[data-video-live]')! },
@@ -107,10 +108,12 @@ export function createVideoPickerTabs(root: HTMLElement, { copy, onSelect }: Pic
     return request;
   }
 
-  function paintLiveStatus(id: string, button: HTMLButtonElement, badge: HTMLElement) {
+  function paintBadges(id: string, button: HTMLButtonElement, badge: HTMLElement) {
     const isLive = liveStatus.get(id) === true;
     badge.hidden = !isLive;
-    button.setAttribute('aria-label', `${copy.load}: ${button.title}${isLive ? ` (${copy.live})` : ''}`);
+    const isSilent = silentVideos.has(id);
+    button.querySelector<HTMLElement>('[data-video-no-sound]')!.hidden = !isSilent;
+    button.setAttribute('aria-label', `${copy.load}: ${button.title}${isLive ? ` (${copy.live})` : ''}${isSilent ? ` (${copy.noSound})` : ''}`);
   }
 
   function render() {
@@ -147,7 +150,7 @@ export function createVideoPickerTabs(root: HTMLElement, { copy, onSelect }: Pic
       const showTitle = (value?: string) => {
         title.textContent = value ?? copy.recentTitleLoading;
         load.title = value ?? url;
-        paintLiveStatus(id, load, badge);
+        paintBadges(id, load, badge);
         remove.setAttribute('aria-label', `${copy.removeRecent}: ${value ?? url}`);
       };
       showTitle(titles.get(id));
@@ -204,12 +207,12 @@ export function createVideoPickerTabs(root: HTMLElement, { copy, onSelect }: Pic
     if (destroyed || !/^[A-Za-z0-9_-]{11}$/.test(id) || typeof isLive !== 'boolean' || liveStatus.get(id) === isLive) return;
     liveStatus.set(id, isLive);
     const suggestion = suggestionBadges.get(id);
-    if (suggestion) paintLiveStatus(id, suggestion.button, suggestion.badge);
-    recentBadges.get(id)?.forEach(({ button, badge }) => paintLiveStatus(id, button, badge));
+    if (suggestion) paintBadges(id, suggestion.button, suggestion.badge);
+    recentBadges.get(id)?.forEach(({ button, badge }) => paintBadges(id, button, badge));
     if (urls.some(url => parseYouTubeVideo(url)!.id === id)) save();
   }
 
-  suggestionBadges.forEach(({ button, badge }, id) => paintLiveStatus(id, button, badge));
+  suggestionBadges.forEach(({ button, badge }, id) => paintBadges(id, button, badge));
 
   const handlers = tabs.map((tab, index) => {
     const onClick = () => selectTab(index);

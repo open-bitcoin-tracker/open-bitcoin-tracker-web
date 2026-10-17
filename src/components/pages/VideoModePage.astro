@@ -125,14 +125,14 @@ const locale = htmlLang(Astro.currentLocale);
           </div>
           <div id="video-recent-panel" class="video-picker-content" role="tabpanel" data-video-panel="recent" aria-labelledby="video-recent-tab" tabindex="0" hidden>
             <ul class="video-recents" data-video-recents></ul>
-            <template data-video-card-template><VideoCard class="video-recent-load" liveLabel={t.live} /></template>
+            <template data-video-card-template><VideoCard class="video-recent-load" liveLabel={t.live} noSoundLabel={t.noSound} /></template>
           </div>
           {videoSections.map((section, index) => (
             <div id={`video-${section.id}-panel`} class="video-picker-content" role="tabpanel" data-video-panel={section.id} aria-labelledby={`video-${section.id}-tab`} tabindex="0" hidden={index !== 0}>
               <ul class="video-suggestions" data-video-suggestions aria-label={t[section.labelKey]}>
                 {section.videos.map(suggestion => (
                   <li>
-                    <VideoCard class="video-suggestion" id={suggestion.id} title={suggestion.title} isLive={suggestion.isLive} loadLabel={t.load} liveLabel={t.live} />
+                    <VideoCard class="video-suggestion" id={suggestion.id} title={suggestion.title} isLive={suggestion.isLive} isSilent={suggestion.isSilent} loadLabel={t.load} liveLabel={t.live} noSoundLabel={t.noSound} />
                   </li>
                 ))}
               </ul>
@@ -333,8 +333,6 @@ const locale = htmlLang(Astro.currentLocale);
   .video-recents :global(.video-recent-delete:hover) { background: #191919; color: #fff; }
   .video-recents :global(button:focus-visible) { outline: 2px solid var(--color-media-focus); outline-offset: 2px; }
   .video-suggestions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; margin: 0; padding: 0; list-style: none; text-align: left; }
-  .video-page :global(.video-live-badge) { position: absolute; top: .5rem; left: .5rem; display: inline-flex; align-items: center; gap: .3rem; margin: 0; padding: .2rem .4rem; border-radius: .35rem; background: #b91c1c; color: #fff; font-size: .65rem; font-weight: 700; line-height: 1.4; box-shadow: 0 1px 4px #0005; }
-  .video-page :global(.video-live-badge)::before { content: ''; width: .4rem; height: .4rem; border-radius: 50%; background: currentColor; }
   .video-page :global(.video-live-badge[hidden]) { display: none !important; }
   .video-playback { width: 100%; }
   .video-playback:not([hidden]) { animation: video-controls-in .3s ease; }

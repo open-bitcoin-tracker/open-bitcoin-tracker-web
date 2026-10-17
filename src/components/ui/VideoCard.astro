@@ -1,10 +1,11 @@
 ---
 import '../../styles/video-card.css';
-interface Props { id?: string; title?: string; isLive?: boolean; liveLabel: string; loadLabel?: string; class?: string; }
-const { id, title = '', isLive = false, liveLabel, loadLabel, class: className } = Astro.props;
+interface Props { id?: string; title?: string; isLive?: boolean; isSilent?: boolean; liveLabel: string; noSoundLabel: string; loadLabel?: string; class?: string; }
+const { id, title = '', isLive = false, isSilent = false, liveLabel, noSoundLabel, loadLabel, class: className } = Astro.props;
 ---
-<button type="button" class:list={['video-card', className]} data-video-suggestion={id} aria-label={loadLabel && `${loadLabel}: ${title}${isLive ? ` (${liveLabel})` : ''}`} title={title} disabled={!!id}>
+<button type="button" class:list={['video-card', className]} data-video-suggestion={id} aria-label={loadLabel && `${loadLabel}: ${title}${isLive ? ` (${liveLabel})` : ''}${isSilent ? ` (${noSoundLabel})` : ''}`} title={title} disabled={!!id}>
   <img src={id ? `https://i.ytimg.com/vi/${id}/hqdefault.jpg` : undefined} width="480" height="360" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" />
   <span class="video-card-title">{title}</span>
-  <span class="video-live-badge" data-video-live hidden={!isLive} aria-hidden="true">{liveLabel}</span>
+  <span class="video-card-badge video-live-badge" data-video-live hidden={!isLive} aria-hidden="true">{liveLabel}</span>
+  <span class="video-card-badge video-no-sound-badge" data-video-no-sound hidden={!isSilent} aria-hidden="true">{noSoundLabel}</span>
 </button>

@@ -21,7 +21,9 @@ export function videoCardTemplate(Element: new () => any) {
     Object.assign(image, { width: 480, height: 360, alt: '', loading: 'lazy', decoding: 'async', referrerPolicy: 'no-referrer' });
     const badge = button.querySelector('[data-video-live]');
     badge.textContent = 'Live';
-    button.append(image, button.querySelector('.video-card-title'), badge);
+    const noSound = button.querySelector('[data-video-no-sound]');
+    noSound.textContent = 'No sound';
+    button.append(image, button.querySelector('.video-card-title'), badge, noSound);
     return button;
   } } } };
 }

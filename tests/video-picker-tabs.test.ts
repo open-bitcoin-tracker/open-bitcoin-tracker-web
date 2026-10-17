@@ -100,14 +100,13 @@ function harness({ saved, blocked = false, deferMetadata = false }: { saved?: st
 test('all sections support click and keyboard navigation, skipping empty Recent without changing playback', () => {
   const h = harness();
   const chill = h.root.querySelector('[data-video-tab="chill"]');
-  const silent = h.root.querySelector('[data-video-tab="without-sound"]');
-  const tabs = [h.recent, h.partyTab, chill, silent];
+  const tabs = [h.recent, h.partyTab, chill];
   function selected(tab: Element, panel: string) {
     for (const candidate of tabs) {
       assert.equal(candidate.attributes.get('aria-selected'), String(candidate === tab));
       assert.equal(candidate.tabIndex, candidate === tab ? 0 : -1);
     }
-    for (const id of ['recent', 'party', 'chill', 'without-sound']) {
+    for (const id of ['recent', 'party', 'chill']) {
       assert.equal(h.root.querySelector(`[data-video-panel="${id}"]`).hidden, id !== panel);
     }
   }
@@ -116,16 +115,14 @@ test('all sections support click and keyboard navigation, skipping empty Recent 
   assert.equal(h.recent.hidden, true);
   chill.click();
   selected(chill, 'chill');
-  silent.click();
-  selected(silent, 'without-sound');
-  assert.equal(h.key(silent, 'ArrowRight'), true);
+  assert.equal(h.key(chill, 'ArrowRight'), true);
   selected(h.partyTab, 'party');
   assert.equal(h.key(h.partyTab, 'ArrowLeft'), true);
-  selected(silent, 'without-sound');
-  assert.equal(h.key(silent, 'Home'), true);
+  selected(chill, 'chill');
+  assert.equal(h.key(chill, 'Home'), true);
   selected(h.partyTab, 'party');
   assert.equal(h.key(h.partyTab, 'End'), true);
-  selected(silent, 'without-sound');
+  selected(chill, 'chill');
   h.controller.remember(first);
   assert.equal(h.recent.hidden, false);
   selected(h.recent, 'recent');
@@ -134,22 +131,20 @@ test('all sections support click and keyboard navigation, skipping empty Recent 
   assert.equal(h.key(h.partyTab, 'ArrowRight'), true);
   selected(chill, 'chill');
   assert.equal(h.key(chill, 'ArrowRight'), true);
-  selected(silent, 'without-sound');
-  assert.equal(h.key(silent, 'ArrowRight'), true);
   selected(h.recent, 'recent');
   assert.equal(h.key(h.recent, 'ArrowLeft'), true);
-  selected(silent, 'without-sound');
-  assert.equal(h.key(silent, 'Home'), true);
+  selected(chill, 'chill');
+  assert.equal(h.key(chill, 'Home'), true);
   selected(h.recent, 'recent');
   assert.equal(h.key(h.recent, 'End'), true);
-  selected(silent, 'without-sound');
-  assert.equal(h.key(silent, 'Escape'), false, 'Escape belongs to the drawer');
+  selected(chill, 'chill');
+  assert.equal(h.key(chill, 'Escape'), false, 'Escape belongs to the drawer');
   assert.deepEqual(h.selected, []);
   assert.equal(h.writes.length, 1, 'tab changes must not add storage writes');
   h.controller.destroy();
   h.partyTab.click();
-  assert.equal(h.key(silent, 'Home'), false, 'destroy removes handlers from every category');
-  selected(silent, 'without-sound');
+  assert.equal(h.key(chill, 'Home'), false, 'destroy removes handlers from every category');
+  selected(chill, 'chill');
 });
 
 test('submitted URLs are validated, canonicalized, deduplicated, ordered by use, and restored across visits', () => {
@@ -315,6 +310,31 @@ test('late metadata cannot restore deleted entries or update a destroyed picker'
   await destroyed.title(0, 'Late title');
   assert.equal(title.textContent, video.en.recentTitleLoading);
   assert.deepEqual(destroyed.writes, []);
+});
+
+test('silent Party videos keep No sound badges and accessible labels in suggestions and Recent', () => {
+  for (const suggestion of videoSuggestions) {
+    const url = `https://www.youtube.com/watch?v=${suggestion.id}`;
+    const h = harness({ saved: JSON.stringify({ version: 1, urls: [url, first] }) });
+    const card = h.list.children[0].children[0];
+    const curated = h.root.querySelector(`[data-video-suggestion="${suggestion.id}"]`);
+    for (const button of [curated, card]) {
+      assert.equal(button.querySelector('[data-video-no-sound]').hidden, !suggestion.isSilent);
+      assert.equal(button.attributes.get('aria-label')!.includes(`(${video.en.noSound})`), suggestion.isSilent);
+    }
+    assert.equal(card.querySelector('[data-video-no-sound]').textContent, video.en.noSound);
+    assert.equal(h.list.children[1].children[0].querySelector('[data-video-no-sound]').hidden, true, 'unknown videos must not be labelled silent');
+    h.controller.setLiveStatus(suggestion.id, !suggestion.isLive);
+    assert.equal(card.querySelector('[data-video-no-sound]').hidden, !suggestion.isSilent, 'live updates preserve sound metadata');
+    assert.equal(card.attributes.get('aria-label')!.includes(`(${video.en.noSound})`), suggestion.isSilent);
+    h.play(0);
+    assert.deepEqual(h.selected, [{ id: suggestion.id, startSeconds: 0 }]);
+    const saved = h.storage.get(storageKey)!;
+    h.controller.destroy();
+    const restored = harness({ saved });
+    assert.equal(restored.list.children[0].children[0].querySelector('[data-video-no-sound]').hidden, !suggestion.isSilent);
+    restored.controller.destroy();
+  }
 });
 
 test('live suggestions show badges in both tabs without inferring status from titles', () => {

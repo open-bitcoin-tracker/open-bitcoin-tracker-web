@@ -4,3 +4,9 @@
 .video-card-title { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; margin: .65rem .75rem; font-size: .8rem; line-height: 1.4; }
 .video-recent-load .video-card-title { min-height: 2.8em; overflow-wrap: anywhere; }
 .video-recent-load img { background: #242424; }
+.video-card-badge { position: absolute; top: .5rem; left: .5rem; display: inline-flex; align-items: center; gap: .3rem; margin: 0; padding: .2rem .4rem; border-radius: .35rem; color: #fff; font-size: .65rem; font-weight: 700; line-height: 1.4; box-shadow: 0 1px 4px #0005; }
+.video-live-badge { background: #b91c1c; }
+.video-live-badge::before { content: ''; width: .4rem; height: .4rem; border-radius: 50%; background: currentColor; }
+.video-no-sound-badge { background: #333e; }
+.video-live-badge:not([hidden]) ~ .video-no-sound-badge { top: 2rem; }
+.video-card-badge[hidden] { display: none !important; }

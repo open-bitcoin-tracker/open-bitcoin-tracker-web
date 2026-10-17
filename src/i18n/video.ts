@@ -11,7 +11,7 @@ export interface VideoCopy {
   recentTab: string;
   partyTab: string;
   chillTab: string;
-  withoutSoundTab: string;
+  noSound: string;
   removeRecent: string;
   recentTitleLoading: string;
   recentTitleUnavailable: string;
@@ -60,7 +60,7 @@ const en: VideoCopy = {
   recentTab: 'Recent',
   partyTab: 'Party',
   chillTab: 'Chill',
-  withoutSoundTab: 'No Sound',
+  noSound: 'No sound',
   removeRecent: 'Remove from recent videos',
   recentTitleLoading: 'Loading title…',
   recentTitleUnavailable: 'Title unavailable',
@@ -111,7 +111,7 @@ export const video: Record<Lang, VideoCopy> = {
     recentTab: 'Recientes',
     partyTab: 'Fiesta',
     chillTab: 'Relax',
-    withoutSoundTab: 'Sin sonido',
+    noSound: 'Sin sonido',
     removeRecent: 'Eliminar de los vídeos recientes',
     recentTitleLoading: 'Cargando título…',
     recentTitleUnavailable: 'Título no disponible',
@@ -159,7 +159,7 @@ export const video: Record<Lang, VideoCopy> = {
     recentTab: 'Recentes',
     partyTab: 'Festa',
     chillTab: 'Relax',
-    withoutSoundTab: 'Sem som',
+    noSound: 'Sem som',
     removeRecent: 'Remover dos vídeos recentes',
     recentTitleLoading: 'Carregando título…',
     recentTitleUnavailable: 'Título indisponível',
@@ -207,7 +207,7 @@ export const video: Record<Lang, VideoCopy> = {
     recentTab: 'Récentes',
     partyTab: 'Fête',
     chillTab: 'Détente',
-    withoutSoundTab: 'Sans son',
+    noSound: 'Sans son',
     removeRecent: 'Retirer des vidéos récentes',
     recentTitleLoading: 'Chargement du titre…',
     recentTitleUnavailable: 'Titre indisponible',
@@ -255,7 +255,7 @@ export const video: Record<Lang, VideoCopy> = {
     recentTab: 'Zuletzt verwendet',
     partyTab: 'Party',
     chillTab: 'Entspannung',
-    withoutSoundTab: 'Ohne Ton',
+    noSound: 'Ohne Ton',
     removeRecent: 'Aus den zuletzt verwendeten Videos entfernen',
     recentTitleLoading: 'Titel wird geladen…',
     recentTitleUnavailable: 'Titel nicht verfügbar',
@@ -303,7 +303,7 @@ export const video: Record<Lang, VideoCopy> = {
     recentTab: 'Recenti',
     partyTab: 'Festa',
     chillTab: 'Relax',
-    withoutSoundTab: 'Senza audio',
+    noSound: 'Senza audio',
     removeRecent: 'Rimuovi dai video recenti',
     recentTitleLoading: 'Caricamento del titolo…',
     recentTitleUnavailable: 'Titolo non disponibile',
@@ -351,7 +351,7 @@ export const video: Record<Lang, VideoCopy> = {
     recentTab: 'Недавние',
     partyTab: 'Вечеринка',
     chillTab: 'Релакс',
-    withoutSoundTab: 'Без звука',
+    noSound: 'Без звука',
     removeRecent: 'Удалить из недавних видео',
     recentTitleLoading: 'Загрузка названия…',
     recentTitleUnavailable: 'Название недоступно',
@@ -399,7 +399,7 @@ export const video: Record<Lang, VideoCopy> = {
     recentTab: 'Son kullanılanlar',
     partyTab: 'Parti',
     chillTab: 'Rahatlama',
-    withoutSoundTab: 'Sessiz',
+    noSound: 'Sessiz',
     removeRecent: 'Son kullanılan videolardan kaldır',
     recentTitleLoading: 'Başlık yükleniyor…',
     recentTitleUnavailable: 'Başlık kullanılamıyor',
@@ -447,7 +447,7 @@ export const video: Record<Lang, VideoCopy> = {
     recentTab: 'Gần đây',
     partyTab: 'Tiệc',
     chillTab: 'Thư giãn',
-    withoutSoundTab: 'Không âm thanh',
+    noSound: 'Không âm thanh',
     removeRecent: 'Xóa khỏi video gần đây',
     recentTitleLoading: 'Đang tải tiêu đề…',
     recentTitleUnavailable: 'Không có tiêu đề',
@@ -495,7 +495,7 @@ export const video: Record<Lang, VideoCopy> = {
     recentTab: '最近の動画',
     partyTab: 'パーティー',
     chillTab: 'チル',
-    withoutSoundTab: '音声なし',
+    noSound: '音声なし',
     removeRecent: '最近の動画から削除',
     recentTitleLoading: 'タイトルを読み込み中…',
     recentTitleUnavailable: 'タイトルを取得できません',
