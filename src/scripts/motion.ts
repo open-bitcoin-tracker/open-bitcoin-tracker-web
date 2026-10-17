@@ -10,6 +10,13 @@ const observer = new IntersectionObserver((entries) => {
 }, { rootMargin: '0px 0px -24px 0px', threshold: 0.08 });
 
 if (!reduceMotion.matches) {
+  // Content may already have painted before this deferred script runs. Keep
+  // everything at or above the viewport in place; reveal only content below it.
+  reveals.forEach((element) => {
+    if (element.getBoundingClientRect().top < window.innerHeight) {
+      element.classList.add('is-revealed');
+    }
+  });
   document.querySelectorAll<HTMLElement>('[data-reveal-stagger]').forEach((group) => {
     const delay = Number(group.dataset.revealStagger) || 90;
     [...group.children].forEach((child, i) => {
@@ -17,7 +24,9 @@ if (!reduceMotion.matches) {
     });
   });
   root.classList.add('motion-ready');
-  reveals.forEach((element) => observer.observe(element));
+  reveals.forEach((element) => {
+    if (!element.classList.contains('is-revealed')) observer.observe(element);
+  });
 }
 
 // Scroll work is limited to visible scenes and one animation frame per update.

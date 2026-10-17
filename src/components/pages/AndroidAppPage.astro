@@ -25,19 +25,3 @@ import '../../styles/android-app.css';
 <script>
   import '../../scripts/motion';
 </script>
-
-<style>
-  :global(body:has(.android-app-page)) {
-    --android-title-size: clamp(4rem, 6.5vw, 6.5rem);
-    --android-header-top: max(clamp(4rem, 6vw, 6rem), env(safe-area-inset-top, 0px));
-  }
-  @media (min-width: 1200px) {
-    :global(body:has(.android-app-page)) { --android-title-size: clamp(7rem, 9vw, 9rem); }
-  }
-  @media (max-width: 767px) {
-    :global(body:has(.android-app-page)) {
-      --android-title-size: clamp(2.75rem, 14vw, 4.5rem);
-      --android-header-top: var(--menu-control-top);
-    }
-  }
-</style>
