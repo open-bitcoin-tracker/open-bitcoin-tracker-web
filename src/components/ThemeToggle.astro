@@ -1,5 +1,6 @@
 ---
 import { useTranslations } from '../i18n/utils';
+import '../styles/preference-selectors.css';
 
 interface Props {
   placement?: 'down' | 'up';
@@ -104,59 +105,3 @@ const choices = [
     });
   });
 </script>
-
-<style>
-  .theme-selector { position: relative; }
-  .theme-summary {
-    display: inline-flex;
-    align-items: center;
-    gap: .5rem;
-    color: var(--color-ink-muted);
-    font-size: .875rem;
-    list-style: none;
-    cursor: pointer;
-    user-select: none;
-    transition: color .2s;
-  }
-  .theme-summary::-webkit-details-marker { display: none; }
-  .theme-caret { opacity: .7; transition: transform .2s; }
-  .theme-selector--up .theme-caret, .theme-selector--down[open] .theme-caret { transform: rotate(180deg); }
-  .theme-selector--up[open] .theme-caret { transform: rotate(0deg); }
-  .theme-menu {
-    position: absolute;
-    left: 0;
-    z-index: 60;
-    min-width: 11rem;
-    max-height: min(50dvh, 24rem);
-    overflow-y: auto;
-    margin: 0;
-    padding: .375rem;
-    list-style: none;
-    background: var(--menu-dropdown-bg);
-    border: 1px solid var(--menu-dropdown-border);
-    border-radius: var(--radius-md);
-    box-shadow: var(--menu-dropdown-shadow);
-  }
-  .theme-selector--up .theme-menu { bottom: calc(100% + .5rem); }
-  .theme-selector--down .theme-menu { top: calc(100% + .5rem); }
-  .theme-toggle {
-    display: block;
-    width: 100%;
-    padding: .5rem .75rem;
-    border-radius: .5rem;
-    color: var(--menu-link-ink);
-    font-size: .875rem;
-    text-align: left;
-    white-space: nowrap;
-    cursor: pointer;
-    transition: color .15s, background-color .15s;
-  }
-  .theme-toggle:hover, .theme-toggle[aria-pressed='true'] {
-    color: var(--menu-primary-ink);
-    background: var(--menu-option-hover);
-  }
-  .theme-toggle[aria-pressed='true'] { font-weight: 600; }
-  @media (prefers-reduced-motion: reduce) {
-    .theme-summary, .theme-toggle, .theme-caret { transition: none; }
-  }
-</style>

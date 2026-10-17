@@ -1,6 +1,7 @@
 ---
 import { getRelativeLocaleUrl } from 'astro:i18n';
 import { useTranslations, resolveLang, stripLocale } from '../i18n/utils';
+import '../styles/preference-selectors.css';
 
 interface Props {
   // Which way the menu opens. In the footer there's no room below, so the menu
@@ -87,83 +88,3 @@ const currentLabel = LANGS.find((l) => l.code === current)?.label ?? 'English';
     });
   });
 </script>
-
-<style>
-  .lang-switcher {
-    position: relative;
-  }
-  .lang-summary {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.5rem;
-    cursor: pointer;
-    list-style: none;
-    color: var(--color-ink-muted);
-    font-size: 14px;
-    transition: color 0.2s ease;
-    user-select: none;
-  }
-  .lang-summary::-webkit-details-marker {
-    display: none;
-  }
-  .lang-summary:hover {
-    color: var(--color-ink);
-  }
-  .lang-current {
-    display: inline;
-  }
-  .lang-caret {
-    transition: transform 0.2s ease;
-    opacity: 0.7;
-  }
-  /* The caret points toward where the menu will open: down-placement starts
-     pointing down and flips up when open; up-placement does the reverse. */
-  .lang-switcher--up .lang-caret {
-    transform: rotate(180deg);
-  }
-  .lang-switcher--down[open] .lang-caret {
-    transform: rotate(180deg);
-  }
-  .lang-switcher--up[open] .lang-caret {
-    transform: rotate(0deg);
-  }
-
-  .lang-menu {
-    position: absolute;
-    left: 0;
-    z-index: 60;
-    margin: 0;
-    padding: 0.375rem;
-    list-style: none;
-    min-width: 11rem;
-    max-height: min(70vh, 24rem);
-    overflow-y: auto;
-    background: var(--color-surface);
-    border: 1px solid var(--color-divider);
-    border-radius: var(--radius-md);
-    box-shadow: var(--shadow-card-hover);
-  }
-  .lang-switcher--down .lang-menu {
-    top: calc(100% + 0.5rem);
-  }
-  .lang-switcher--up .lang-menu {
-    bottom: calc(100% + 0.5rem);
-  }
-  .lang-option {
-    display: block;
-    padding: 0.5rem 0.75rem;
-    border-radius: 0.5rem;
-    color: var(--color-ink-muted);
-    font-size: 14px;
-    white-space: nowrap;
-    transition: background-color 0.15s ease, color 0.15s ease;
-  }
-  .lang-option:hover {
-    background: var(--hover-tint);
-    color: var(--color-ink);
-  }
-  .lang-option.is-current {
-    color: var(--color-ink);
-    font-weight: 600;
-  }
-</style>

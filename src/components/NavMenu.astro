@@ -263,12 +263,6 @@ const isHome = stripLocale(Astro.url.pathname) === '';
     color: var(--menu-link-ink); font-size: .875rem; cursor: pointer;
   }
   .nav-menu-settings :global(.lang-summary:hover), .nav-menu-settings :global(.theme-summary:hover) { color: var(--menu-primary-ink); }
-  .nav-menu-settings :global(.lang-menu) {
-    background: var(--menu-dropdown-bg); border-color: var(--menu-dropdown-border); box-shadow: var(--menu-dropdown-shadow);
-    max-height: min(50dvh, 24rem);
-  }
-  .nav-menu-settings :global(.lang-option) { color: var(--menu-link-ink); }
-  .nav-menu-settings :global(.lang-option:hover), .nav-menu-settings :global(.lang-option.is-current) { color: var(--menu-primary-ink); background: var(--menu-option-hover); }
   @starting-style {
     .nav-menu-dialog[open] .nav-menu-panel { opacity: 0; transform: translateX(100%); }
   }
