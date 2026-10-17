@@ -22,10 +22,12 @@ const repo = 'https://github.com/open-bitcoin-tracker/open-bitcoin-tracker-web';
   <Nav />
   <main id="main-content" class="landing-main">
     <header class="masthead">
-      <a href={href('')} class="masthead-brand" aria-label="Open Bitcoin Tracker" aria-current="page">
-        <img src="/app-icon.png" width="40" height="40" alt="" />
-        <h1 lang="en" class="brand-name">Open Bitcoin Tracker</h1>
-      </a>
+      <h1 lang="en" class="brand-name" aria-label="Open Bitcoin Tracker">
+        <button class="masthead-brand" type="button" data-brand-toggle aria-label="Open Bitcoin Tracker" aria-expanded="false">
+          <img src="/app-icon.png" width="56" height="56" alt="" />
+          <span class="brand-wordmark" aria-hidden="true"><span class="brand-word">O<span class="brand-reveal"><span>pen&nbsp;</span></span></span><span class="brand-word">B<span class="brand-reveal"><span>itcoin&nbsp;</span></span></span><span class="brand-word">T<span class="brand-reveal"><span>racker</span></span></span></span>
+        </button>
+      </h1>
     </header>
 
     <section id="tools" class="tools" aria-label={home.toolsLabel}>
@@ -86,6 +88,26 @@ const repo = 'https://github.com/open-bitcoin-tracker/open-bitcoin-tracker-web';
   </main>
 </Layout>
 
+<script>
+  const brand = document.querySelector<HTMLButtonElement>('[data-brand-toggle]');
+  if (brand) {
+    const mobile = window.matchMedia('(max-width: 700px)');
+    const hover = window.matchMedia('(hover: hover)');
+    const usesHover = () => !mobile.matches && hover.matches;
+    const expand = (expanded: boolean) => brand.setAttribute('aria-expanded', String(expanded));
+    brand.addEventListener('pointerenter', () => { if (usesHover()) expand(true); });
+    brand.addEventListener('pointerleave', () => { if (usesHover() && !brand.matches(':focus-visible')) expand(false); });
+    brand.addEventListener('focus', () => { if (usesHover() && brand.matches(':focus-visible')) expand(true); });
+    brand.addEventListener('blur', () => expand(usesHover() && brand.matches(':hover')));
+    brand.addEventListener('click', () => {
+      if (!usesHover()) expand(brand.getAttribute('aria-expanded') !== 'true');
+    });
+    brand.addEventListener('keydown', (event) => { if (event.key === 'Escape') expand(false); });
+    mobile.addEventListener('change', () => expand(false));
+    hover.addEventListener('change', () => expand(false));
+  }
+</script>
+
 <style>
   /* Dark mode inherits the shared Android app palette and menu controls. */
   :global(html:not(.dark):has(.landing-main)) {
@@ -101,10 +123,17 @@ const repo = 'https://github.com/open-bitcoin-tracker/open-bitcoin-tracker-web';
     background: var(--color-paper);
   }
   .landing-main { max-width: 1280px; margin-inline: auto; padding: 0 clamp(1.25rem, 4.5vw, 4rem); }
-  .masthead { min-height: 105px; display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding-right: 4.75rem; }
-  .masthead-brand { display: inline-flex; align-items: center; gap: .7rem; }
-  .masthead-brand img { width: 32px; height: 32px; border-radius: 8px; }
-  .masthead-brand h1 { font-size: 1.5rem; line-height: 1; letter-spacing: -.02em; }
+  .masthead { container-type: inline-size; min-height: 105px; display: flex; align-items: flex-start; padding-top: var(--menu-control-top); padding-right: 4.75rem; }
+  .masthead h1 { display: flex; min-width: 0; max-width: 100%; font-size: calc(var(--menu-control-size) * 1.25); line-height: 1.06; letter-spacing: -.015em; white-space: nowrap; transition: font-size 550ms cubic-bezier(.22, 1, .36, 1); }
+  .masthead h1:has([aria-expanded="true"]) { font-size: clamp(1rem, calc((100cqi - var(--menu-control-size) - 1rem) / 8.5), calc(var(--menu-control-size) * 1.25)); }
+  .masthead-brand { display: inline-flex; align-items: center; height: var(--menu-control-size); gap: .875rem; border-radius: 8px; font: inherit; letter-spacing: inherit; text-transform: inherit; cursor: default; }
+  .masthead-brand img { flex: none; width: var(--menu-control-size); height: var(--menu-control-size); border-radius: 12px; }
+  .brand-wordmark, .brand-word { display: inline-flex; flex-shrink: 0; }
+  /* Align the visible capitals with the icon, accounting for the font's descent. */
+  .brand-wordmark { transform: translateY(-.05em); }
+  .brand-reveal { display: inline-grid; grid-template-columns: 0fr; opacity: 0; transition: grid-template-columns 550ms cubic-bezier(.22, 1, .36, 1), opacity 350ms ease; }
+  .brand-reveal > span { min-width: 0; overflow: hidden; }
+  .masthead-brand[aria-expanded="true"] .brand-reveal { grid-template-columns: 1fr; opacity: 1; }
   h2 { overflow-wrap: anywhere; font-family: 'Barlow Condensed', var(--font-sans); font-weight: 700; text-transform: uppercase; }
   .app-feature > * { min-width: 0; }
   .text-action { display: inline-flex; align-items: center; gap: .8rem; font-size: .8125rem; font-weight: 600; line-height: 1.4; }
@@ -158,8 +187,6 @@ const repo = 'https://github.com/open-bitcoin-tracker/open-bitcoin-tracker-web';
   @media (max-width: 700px) {
     .masthead { min-height: 88px; padding-right: 3.75rem; }
     .masthead-brand { gap: .5rem; }
-    .masthead-brand img { width: 28px; height: 28px; }
-    .masthead-brand h1 { font-size: 1.2rem; max-width: 10rem; }
     .chart-feature { grid-template-columns: 1fr; }
     .chart-copy { display: grid; grid-template-columns: minmax(0, 1fr); align-items: center; gap: .6rem; padding: 1.25rem; }
     .chart-copy h2 { margin: 0; font-size: 2rem; }
@@ -191,6 +218,7 @@ const repo = 'https://github.com/open-bitcoin-tracker/open-bitcoin-tracker-web';
     .phone-frame { width: 200px; top: 1.5rem; margin-left: 0; }
   }
   @media (prefers-reduced-motion: reduce) {
+    .masthead h1, .brand-reveal { transition: none; }
     .tool-link .text-action > span, .app-action > span { transition: none; }
     .tool-link:hover .text-action > span, .tool-link:hover .app-action > span { transform: none; }
   }
