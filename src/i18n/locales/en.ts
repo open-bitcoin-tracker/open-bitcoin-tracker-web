@@ -39,7 +39,7 @@ export const en = {
     openVideo: 'Set the scene',
     appTitle: 'Android app',
     openApp: 'More about the app',
-    appDescription: 'No keys or seed phrases needed. You enter your bitcoin amounts by hand. You can’t make transactions with the app, but it’s a very handy way to check what your bitcoin stacks are worth.',
+    appDescription: "No keys or seeds needed. Bitcoin amounts are entered by hand. You can't transact, but it’s a very handy and super secure way to check what your bitcoin stacks are worth.",
     priceTracker: 'Price Tracker',
     priceDescription: 'Live Bitcoin price and history since 2010.',
     videoDescription: 'Live Bitcoin price over YouTube videos',
