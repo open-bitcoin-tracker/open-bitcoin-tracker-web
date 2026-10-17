@@ -43,9 +43,22 @@ function harness({ finePointer = true, hidden = false } = {}) {
     },
   };
   const background = { ...button, interactive: false };
-  const dock = { inert: false };
+  const dock = {
+    inert: false,
+    box: { left: 300, right: 700, top: 484, bottom: 584, width: 400, height: 100 },
+    getBoundingClientRect() { return this.box; },
+  };
+  const price = {
+    box: { left: 300, right: 700, top: 200, bottom: 300, width: 400, height: 100 },
+    getBoundingClientRect() { return this.box; },
+  };
   const root = Object.assign(new Surface(), {
-    querySelector(selector: string) { assert.equal(selector, '.video-dock'); return dock; },
+    querySelector(selector: string) {
+      if (selector === '.video-dock') return dock;
+      assert.equal(selector, '[data-price-position]');
+      return price;
+    },
+    toggleAttribute(name: string, force: boolean) { if (force) this.attributes.set(name, ''); else this.attributes.delete(name); },
     attributes: new Map<string, string>(),
     contains(element: unknown) { return element === button || element === background; },
     setAttribute(name: string, value: string) { this.attributes.set(name, value); },
@@ -65,6 +78,9 @@ function harness({ finePointer = true, hidden = false } = {}) {
   let now = 0;
   let nextId = 0;
   const window = Object.assign(new Surface(), {
+    innerHeight: 600,
+    marginBottom: '16px',
+    getComputedStyle() { return { marginBottom: this.marginBottom }; },
     matchMedia(query: string) {
       assert.equal(query, '(hover: hover) and (pointer: fine)');
       return cursor;
@@ -76,8 +92,16 @@ function harness({ finePointer = true, hidden = false } = {}) {
     },
     clearTimeout(id: number) { timers.delete(id); },
   });
+  let observedResize: (() => void) | undefined;
+  let disconnected = false;
+  const observed: unknown[] = [];
+  class Observer {
+    constructor(callback: () => void) { observedResize = callback; }
+    observe(element: unknown) { observed.push(element); }
+    disconnect() { disconnected = true; }
+  }
   const module: { createVideoControls?: typeof createVideoControls } = {};
-  runInNewContext(script, { exports: module, window, document, Event });
+  runInNewContext(script, { exports: module, window, document, Event, ResizeObserver: Observer });
   const controls = module.createVideoControls!(root as unknown as HTMLElement);
 
   function tick(milliseconds: number) {
@@ -118,7 +142,7 @@ function harness({ finePointer = true, hidden = false } = {}) {
     Object.defineProperty(event, 'target', { value: target });
     window.dispatchEvent(event);
   };
-  return { controls, root, dock, button, background, click, window, document, cursor, timers, tick, pointer, focus, blur, visibility, device, menu, key, idle };
+  return { controls, root, dock, price, observed, resizeObserved: () => observedResize?.(), disconnected: () => disconnected, button, background, click, window, document, cursor, timers, tick, pointer, focus, blur, visibility, device, menu, key, idle };
 }
 
 test('an open price style panel prevents idle hiding until dismissed', () => {
@@ -558,4 +582,85 @@ test('destroy clears listeners and timers, restores the UI, and guards stale cal
   assert.equal(h.idle(), false);
   assert.equal(h.timers.size, 0);
   h.controls.destroy();
+});
+
+test('only the price overlapping the bottom dock moves playback to the top', () => {
+  const h = harness();
+  const atTop = () => h.root.hasAttribute('data-video-controls-top');
+  const moved = () => h.root.dispatchEvent(new Event('pricelayoutchange'));
+  assert.equal(atTop(), false);
+  h.price.box.top = 384;
+  h.price.box.bottom = 484;
+  moved();
+  assert.equal(atTop(), false, 'touching the bottom home does not count as overlap');
+  h.price.box.top = 385;
+  h.price.box.bottom = 485;
+  moved();
+  assert.equal(atTop(), true);
+  Object.assign(h.dock.box, { top: 16, bottom: 116 });
+  moved();
+  assert.equal(atTop(), true, 'the top position must not change the collision reference');
+  h.price.box.bottom = 470;
+  moved();
+  assert.equal(atTop(), true, 'small movements near the edge must not cause flicker');
+  h.price.box.bottom = 459;
+  moved();
+  assert.equal(atTop(), false, 'return once the price clears the bottom home and release margin');
+  Object.assign(h.price.box, { left: 720, right: 920, top: 500, bottom: 600 });
+  moved();
+  assert.equal(atTop(), false, 'vertical proximity alone must not move the dock');
+  h.controls.destroy();
+});
+
+test('editing and expanded style or currency menus do not determine dock placement', () => {
+  const h = harness();
+  for (const attribute of ['data-price-layout-open', 'data-price-style-open', 'data-currency-open']) {
+    h.root.setAttribute(attribute, '');
+  }
+  for (const event of ['priceeditortoggle', 'pricestyletoggle', 'currencytoggle']) h.root.dispatchEvent(new Event(event));
+  assert.equal(h.dock.inert, true, 'playback remains unavailable while editing');
+  h.resizeObserved();
+  assert.equal(h.root.hasAttribute('data-video-controls-top'), false, 'menus never participate in the geometry check');
+  Object.assign(h.price.box, { top: 500, bottom: 600 });
+  h.root.dispatchEvent(new Event('pricelayoutchange'));
+  assert.equal(h.root.hasAttribute('data-video-controls-top'), true);
+  for (const attribute of ['data-price-layout-open', 'data-price-style-open', 'data-currency-open']) h.root.removeAttribute(attribute);
+  h.root.dispatchEvent(new Event('priceeditortoggle'));
+  assert.equal(h.dock.inert, false);
+  assert.equal(h.root.hasAttribute('data-video-controls-top'), true, 'restored controls stay above a bottom-positioned price');
+  h.controls.destroy();
+});
+
+test('dock placement follows viewport, safe area, price size, and playback panel size changes', () => {
+  const h = harness();
+  assert.deepEqual(h.observed, [h.price, h.dock]);
+  h.price.box.bottom = 450;
+  h.window.innerHeight = 550;
+  h.window.dispatchEvent(new Event('resize'));
+  assert.equal(h.root.hasAttribute('data-video-controls-top'), true);
+  h.window.innerHeight = 600;
+  h.window.dispatchEvent(new Event('resize'));
+  assert.equal(h.root.hasAttribute('data-video-controls-top'), false);
+  h.window.marginBottom = '60px';
+  h.window.dispatchEvent(new Event('resize'));
+  assert.equal(h.root.hasAttribute('data-video-controls-top'), true);
+  h.window.marginBottom = '16px';
+  h.window.dispatchEvent(new Event('resize'));
+  assert.equal(h.root.hasAttribute('data-video-controls-top'), false);
+  h.dock.box.height = 160;
+  h.resizeObserved();
+  assert.equal(h.root.hasAttribute('data-video-controls-top'), true);
+  h.dock.box.height = 0;
+  h.resizeObserved();
+  assert.equal(h.root.hasAttribute('data-video-controls-top'), false, 'a hidden playback panel has no collision area');
+  h.dock.box.height = 100;
+  h.price.box.bottom = 500;
+  h.resizeObserved();
+  assert.equal(h.root.hasAttribute('data-video-controls-top'), true);
+  h.controls.destroy();
+  assert.equal(h.disconnected(), true);
+  assert.equal(h.root.hasAttribute('data-video-controls-top'), false);
+  h.resizeObserved();
+  h.window.dispatchEvent(new Event('resize'));
+  assert.equal(h.root.hasAttribute('data-video-controls-top'), false, 'stale callbacks cannot reposition a destroyed controller');
 });

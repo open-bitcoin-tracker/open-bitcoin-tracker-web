@@ -5,6 +5,7 @@ const EDITABLE_CONTROL = 'input:not([type="range"]), textarea, [contenteditable]
 /** Hide Video Mode's interface after inactivity, keeping active controls usable. */
 export function createVideoControls(root: HTMLElement) {
   const dock = root.querySelector<HTMLElement>('.video-dock');
+  const price = root.querySelector<HTMLElement>('[data-price-position]');
   const originalInert = dock?.inert ?? false;
   const cursor = window.matchMedia('(hover: hover) and (pointer: fine)');
   let enabled = false;
@@ -19,6 +20,25 @@ export function createVideoControls(root: HTMLElement) {
     if (timer === undefined) return;
     window.clearTimeout(timer);
     timer = undefined;
+  }
+
+  function updatePlacement() {
+    if (destroyed || !dock || !price) return;
+    const controls = dock.getBoundingClientRect();
+    const box = price.getBoundingClientRect();
+    // Compare only the price with the dock's bottom home, even while docked at the top.
+    const bottom = window.innerHeight - (Number.parseFloat(window.getComputedStyle(dock).marginBottom) || 0);
+    // Require an overlap to move up; wait for a little clearance before returning.
+    const gap = root.hasAttribute('data-video-controls-top') ? 24 : 0;
+    const overlap = controls.width > 0 && controls.height > 0 && box.width > 0 && box.height > 0
+      && box.left < controls.right + gap && box.right > controls.left - gap
+      && box.top < bottom + gap && box.bottom > bottom - controls.height - gap;
+    root.toggleAttribute('data-video-controls-top', overlap);
+  }
+
+  function handleLayoutChange() {
+    updatePlacement();
+    reveal();
   }
 
   function canFade() {
@@ -125,7 +145,7 @@ export function createVideoControls(root: HTMLElement) {
   root.addEventListener('change', handleChangeOrBlur);
   root.addEventListener('currencytoggle', reveal);
   root.addEventListener('pricestyletoggle', reveal);
-  root.addEventListener('pricelayoutchange', reveal);
+  root.addEventListener('pricelayoutchange', handleLayoutChange);
   root.addEventListener('priceeditortoggle', handleEditorToggle);
   handleEditorToggle();
   document.addEventListener('visibilitychange', reveal);
@@ -134,6 +154,14 @@ export function createVideoControls(root: HTMLElement) {
   document.addEventListener('toggle', reveal, true);
   document.addEventListener('close', reveal, true);
   cursor.addEventListener('change', reveal);
+  window.addEventListener('resize', updatePlacement);
+  updatePlacement();
+  let observer: ResizeObserver | undefined;
+  if (typeof ResizeObserver !== 'undefined') {
+    observer = new ResizeObserver(updatePlacement);
+    if (price) observer.observe(price);
+    if (dock) observer.observe(dock);
+  }
 
   return {
     setEnabled(value: boolean) {
@@ -154,7 +182,7 @@ export function createVideoControls(root: HTMLElement) {
       root.removeEventListener('change', handleChangeOrBlur);
       root.removeEventListener('currencytoggle', reveal);
       root.removeEventListener('pricestyletoggle', reveal);
-      root.removeEventListener('pricelayoutchange', reveal);
+      root.removeEventListener('pricelayoutchange', handleLayoutChange);
       root.removeEventListener('priceeditortoggle', handleEditorToggle);
       if (dock) dock.inert = originalInert;
       document.removeEventListener('visibilitychange', reveal);
@@ -162,7 +190,10 @@ export function createVideoControls(root: HTMLElement) {
       document.removeEventListener('toggle', reveal, true);
       document.removeEventListener('close', reveal, true);
       cursor.removeEventListener('change', reveal);
+      window.removeEventListener('resize', updatePlacement);
+      observer?.disconnect();
       clearTimer();
+      root.removeAttribute('data-video-controls-top');
       root.removeAttribute('data-ui-idle');
     },
   };

@@ -300,8 +300,8 @@ const locale = htmlLang(Astro.currentLocale);
   /* Compensate for the final negative letter spacing so the last glyph stays inside the frame. */
   .video-price { --price-chars: 8; --video-price-base-size: clamp(3rem, min(9.375vw, 16.6667vh, 207vw / var(--price-chars)), 22.5rem); color: var(--video-price-colour, #fff); font-family: var(--video-price-font, var(--font-sans)); font-size: calc(var(--video-price-base-size) * var(--video-price-scale, 1) * var(--video-price-fit, 1)); font-weight: var(--video-price-weight, 750); letter-spacing: var(--video-price-spacing, -.065em); padding-inline-end: .065em; padding-block: var(--video-price-padding, 0); -webkit-text-stroke: var(--video-price-stroke-width, 0px) var(--video-price-stroke-colour, #000); paint-order: stroke fill; line-height: 1.2; font-variant-numeric: tabular-nums; white-space: nowrap; text-shadow: 0 3px 30px #000, 0 0 80px #0009; }
   .video-dock { position: fixed; bottom: 0; margin-bottom: max(1rem, env(safe-area-inset-bottom)); left: 50%; transform: translateX(-50%); width: min(28rem, calc(100% - 3rem)); z-index: 3; text-align: center; }
-  /* Keep playback in one place and out of the way of price editing.
-     Visibility also removes its controls from keyboard and accessibility navigation. */
+  .video-page[data-video-controls-top] .video-dock { top: 0; bottom: auto; margin-top: max(1rem, env(safe-area-inset-top)); }
+  /* Keep playback out of the way while editing, at either dock position. */
   .video-page[data-price-layout-open] .video-dock { opacity: 0; visibility: hidden; pointer-events: none; }
   .video-dock:has(.video-time[hidden]) { width: min(20rem, calc(100% - 3rem)); }
   .video-picker { position: fixed; inset: 0 auto 0 0; width: min(32rem, 100%); max-width: 100%; height: 100dvh; max-height: 100dvh; margin: 0; padding: max(1.75rem, env(safe-area-inset-top)) max(1.5rem, env(safe-area-inset-right)) max(1.75rem, env(safe-area-inset-bottom)) max(1.5rem, env(safe-area-inset-left)); overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; border: 0; border-right: 1px solid #ffffff14; background: #111; color: #fff; box-shadow: 12px 0 60px #0005; transform: translate3d(-100%, 0, 0); transition: transform .3s ease; will-change: transform; }
@@ -389,6 +389,7 @@ const locale = htmlLang(Astro.currentLocale);
   @media (max-width: 700px) {
     .video-price-stage { padding: 5rem 1rem 6rem; }
     .video-dock { width: min(20rem, calc(100% - 2rem)); }
+    .video-page[data-video-controls-top] .video-dock { margin-top: calc(var(--menu-control-top) + var(--menu-control-size) + .5rem); }
     .video-dock:has(.video-time[hidden]) { width: min(16rem, calc(100% - 2rem)); }
     .video-controls { flex-wrap: wrap; justify-content: space-between; gap: .25rem; }
     .video-controls .video-icon-button { width: 100%; max-width: 4rem; height: 4rem; }
