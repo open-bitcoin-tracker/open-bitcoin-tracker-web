@@ -53,8 +53,8 @@ export const vi: Dict = {
     langLabel: 'Ngôn ngữ',
     themeLabel: 'Giao diện',
     themeAuto: 'Tự động',
-    themeDark: 'Chế độ tối',
-    themeLight: 'Chế độ sáng',
+    themeDark: 'Tối',
+    themeLight: 'Sáng',
   },
 
   hero: {

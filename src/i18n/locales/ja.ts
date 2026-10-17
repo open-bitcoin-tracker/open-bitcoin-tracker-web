@@ -53,8 +53,8 @@ export const ja: Dict = {
     langLabel: '言語',
     themeLabel: 'テーマ',
     themeAuto: '自動',
-    themeDark: 'ダークモード',
-    themeLight: 'ライトモード',
+    themeDark: 'ダーク',
+    themeLight: 'ライト',
   },
 
   hero: {

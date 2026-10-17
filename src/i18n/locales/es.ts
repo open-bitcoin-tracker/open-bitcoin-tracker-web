@@ -53,8 +53,8 @@ export const es: Dict = {
     langLabel: 'Idioma',
     themeLabel: 'Tema',
     themeAuto: 'Automático',
-    themeDark: 'Modo oscuro',
-    themeLight: 'Modo claro',
+    themeDark: 'Oscuro',
+    themeLight: 'Claro',
   },
 
   hero: {

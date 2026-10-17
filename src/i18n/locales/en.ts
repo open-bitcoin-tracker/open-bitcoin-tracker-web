@@ -61,8 +61,8 @@ export const en = {
     langLabel: 'Language',
     themeLabel: 'Theme',
     themeAuto: 'Auto',
-    themeDark: 'Dark mode',
-    themeLight: 'Light mode',
+    themeDark: 'Dark',
+    themeLight: 'Light',
   },
 
   hero: {

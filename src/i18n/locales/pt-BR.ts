@@ -53,8 +53,8 @@ export const ptBR: Dict = {
     langLabel: 'Idioma',
     themeLabel: 'Tema',
     themeAuto: 'Automático',
-    themeDark: 'Modo escuro',
-    themeLight: 'Modo claro',
+    themeDark: 'Escuro',
+    themeLight: 'Claro',
   },
 
   hero: {

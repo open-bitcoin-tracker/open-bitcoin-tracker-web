@@ -53,8 +53,8 @@ export const ru: Dict = {
     langLabel: 'Язык',
     themeLabel: 'Тема',
     themeAuto: 'Авто',
-    themeDark: 'Тёмная тема',
-    themeLight: 'Светлая тема',
+    themeDark: 'Тёмная',
+    themeLight: 'Светлая',
   },
 
   hero: {

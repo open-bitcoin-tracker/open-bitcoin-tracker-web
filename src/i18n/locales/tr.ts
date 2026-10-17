@@ -53,8 +53,8 @@ export const tr: Dict = {
     langLabel: 'Dil',
     themeLabel: 'Tema',
     themeAuto: 'Otomatik',
-    themeDark: 'Karanlık mod',
-    themeLight: 'Aydınlık mod',
+    themeDark: 'Karanlık',
+    themeLight: 'Aydınlık',
   },
 
   hero: {

@@ -3,6 +3,8 @@ import { Image } from 'astro:assets';
 import { getRelativeLocaleUrl } from 'astro:i18n';
 import Layout from '../../layouts/Layout.astro';
 import Nav from '../Nav.astro';
+import LanguageSwitcher from '../LanguageSwitcher.astro';
+import ThemeToggle from '../ThemeToggle.astro';
 import AppScreenshot from '../AppScreenshot.astro';
 import AppHighlights from '../AppHighlights.astro';
 import { resolveLang, useTranslations } from '../../i18n/utils';
@@ -24,12 +26,18 @@ const href = (path: string) => getRelativeLocaleUrl(lang, path);
   <Nav />
   <main id="main-content" class="landing-main">
     <header class="masthead">
-      <h1 lang="en" class="brand-name" aria-label="Open Bitcoin Tracker">
-        <button class="masthead-brand" type="button" data-brand-toggle aria-label="Open Bitcoin Tracker" aria-expanded="false">
-          <img src="/app-icon.png" width="56" height="56" alt="" />
-          <span class="brand-wordmark" aria-hidden="true"><span class="brand-word">O<span class="brand-reveal"><span>pen&nbsp;</span></span></span><span class="brand-word">B<span class="brand-reveal"><span>itcoin&nbsp;</span></span></span><span class="brand-word">T<span class="brand-reveal"><span>racker</span></span></span></span>
-        </button>
-      </h1>
+      <div class="masthead-identity">
+        <h1 lang="en" class="brand-name" aria-label="Open Bitcoin Tracker">
+          <button class="masthead-brand" type="button" data-brand-toggle aria-label="Open Bitcoin Tracker" aria-expanded="false">
+            <img src="/app-icon.png" width="56" height="56" alt="" />
+            <span class="brand-wordmark" aria-hidden="true"><span class="brand-word">O<span class="brand-reveal"><span>pen&nbsp;</span></span></span><span class="brand-word">B<span class="brand-reveal"><span>itcoin&nbsp;</span></span></span><span class="brand-word">T<span class="brand-reveal"><span>racker</span></span></span></span>
+          </button>
+        </h1>
+      </div>
+      <div class="homepage-settings homepage-settings--desktop">
+        <LanguageSwitcher />
+        <ThemeToggle placement="down" />
+      </div>
     </header>
 
     <section id="tools" class="tools" aria-label={home.toolsLabel}>
@@ -73,6 +81,10 @@ const href = (path: string) => getRelativeLocaleUrl(lang, path);
       </a>
     </section>
 
+    <div class="homepage-settings homepage-settings--mobile">
+      <LanguageSwitcher placement="up" />
+      <ThemeToggle />
+    </div>
     <ProjectFooter />
   </main>
 </Layout>
@@ -112,7 +124,11 @@ const href = (path: string) => getRelativeLocaleUrl(lang, path);
     background: var(--color-paper);
   }
   .landing-main { max-width: 1280px; margin-inline: auto; padding: 0 clamp(1.25rem, 4.5vw, 4rem); }
-  .masthead { container-type: inline-size; min-height: 105px; display: flex; align-items: flex-start; padding-top: var(--menu-control-top); padding-right: 4.75rem; }
+  .masthead { min-height: 105px; display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: start; gap: .75rem 1.5rem; padding-top: var(--menu-control-top); padding-right: 4.75rem; }
+  .masthead-identity { container-type: inline-size; min-width: 0; }
+  .homepage-settings { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem 2.25rem; min-height: var(--menu-control-size); }
+  .homepage-settings--mobile { display: none; }
+  .homepage-settings :global(.lang-summary), .homepage-settings :global(.theme-summary) { min-height: 44px; }
   .masthead h1 { display: flex; min-width: 0; max-width: 100%; font-size: calc(var(--menu-control-size) * 1.25); line-height: 1.06; letter-spacing: -.015em; white-space: nowrap; transition: font-size 550ms cubic-bezier(.22, 1, .36, 1); }
   .masthead h1:has([aria-expanded="true"]) { font-size: clamp(1rem, calc((100cqi - var(--menu-control-size) - 1rem) / 8.5), calc(var(--menu-control-size) * 1.25)); }
   .masthead-brand { display: inline-flex; align-items: center; height: var(--menu-control-size); gap: .875rem; border-radius: 8px; font: inherit; letter-spacing: inherit; text-transform: inherit; cursor: default; }
@@ -166,13 +182,17 @@ const href = (path: string) => getRelativeLocaleUrl(lang, path);
   .phone-frame :global(img) { display: block; width: 100%; height: auto; }
   @media (min-width: 1450px) { .masthead { padding-right: 0; } }
   @media (max-width: 1000px) {
+    .masthead { grid-template-columns: minmax(0, 1fr); }
     .chart-feature { grid-template-columns: 1fr 1.8fr; }
     .explore-grid { gap: 1.5rem; }
     .tool-description { flex-direction: column; gap: .6rem; }
     .tool-description p { max-width: 32ch; }
   }
   @media (max-width: 700px) {
-    .masthead { min-height: 88px; padding-right: 3.75rem; }
+    .homepage-settings--desktop { display: none; }
+    .homepage-settings--mobile { display: flex; padding-top: 1.5rem; }
+    .masthead { min-height: 88px; padding-right: 0; }
+    .masthead-identity { margin-right: 3.75rem; }
     .masthead-brand { gap: .5rem; }
     .chart-feature { grid-template-columns: 1fr; }
     .chart-copy { display: grid; grid-template-columns: minmax(0, 1fr); align-items: center; gap: .6rem; padding: 1.25rem; }
