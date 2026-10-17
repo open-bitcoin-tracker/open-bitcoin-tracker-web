@@ -6,6 +6,9 @@ const FONTS: Record<string, string> = {
   serif: 'Georgia, "Times New Roman", serif',
   mono: 'ui-monospace, "Cascadia Code", "Source Code Pro", Menlo, Consolas, monospace',
   digital: '"OBT Digital", var(--font-sans)',
+  space: '"Space Grotesk", var(--font-sans)',
+  slab: '"Roboto Slab", Georgia, serif',
+  bungee: '"Bungee", var(--font-sans)',
 };
 const isColour = (value: unknown): value is string => typeof value === 'string' && /^#[\da-f]{6}$/i.test(value);
 const isFont = (value: unknown): value is string => typeof value === 'string' && Object.hasOwn(FONTS, value);
@@ -52,8 +55,10 @@ export function createVideoPriceStyle(root: HTMLElement, refreshLayout: () => vo
   function paint() {
     root.style.setProperty('--video-price-colour', state.colour);
     root.style.setProperty('--video-price-font', FONTS[state.font]);
-    root.style.setProperty('--video-price-weight', state.font === 'digital' ? '400' : '750');
-    root.style.setProperty('--video-price-spacing', state.font === 'digital' ? '.04em' : '-.065em');
+    root.style.setProperty('--video-price-weight', state.font === 'digital' || state.font === 'bungee' ? '400'
+      : state.font === 'space' || state.font === 'slab' ? '700' : '750');
+    root.style.setProperty('--video-price-spacing', state.font === 'digital' ? '.04em'
+      : state.font === 'bungee' ? '0' : state.font === 'space' || state.font === 'slab' ? '-.03em' : '-.065em');
     root.style.setProperty('--video-price-padding', state.font === 'digital' ? '.1em' : '0');
     root.style.setProperty('--video-price-stroke-width', state.stroke ? `${state.strokeWidth}px` : '0px');
     root.style.setProperty('--video-price-stroke-colour', state.strokeColour);

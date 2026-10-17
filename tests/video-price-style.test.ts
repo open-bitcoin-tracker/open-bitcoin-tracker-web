@@ -137,6 +137,32 @@ test('style controls preview choices immediately, save them, and restore them on
   h.style.destroy(); restored.style.destroy();
 });
 
+test('additional price fonts persist, re-fit the price, and reset their font metrics', () => {
+  for (const [font, family, weight, spacing] of [
+    ['space', 'Space Grotesk', '700', '-.03em'],
+    ['slab', 'Roboto Slab', '700', '-.03em'],
+    ['bungee', 'Bungee', '400', '0'],
+  ]) {
+    const h = harness();
+    h.changeFont('digital');
+    const before = h.refreshes();
+    h.changeFont(font);
+    assert.ok(h.refreshes() > before, 'changing the font must re-fit the price');
+    const restored = harness({ saved: h.saved() });
+    assert.equal(restored.font.value, font);
+    assert.equal(restored.root.style.values.get('--video-price-font')!.split(',')[0], `"${family}"`);
+    assert.equal(restored.root.style.values.get('--video-price-weight'), weight);
+    assert.equal(restored.root.style.values.get('--video-price-spacing'), spacing);
+    assert.equal(restored.root.style.values.get('--video-price-padding'), '0');
+    assert.equal(restored.writes(), 0);
+    restored.reset.click();
+    assert.equal(restored.font.value, 'modern');
+    assert.equal(restored.root.style.values.get('--video-price-weight'), '750');
+    assert.equal(restored.root.style.values.get('--video-price-spacing'), '-.065em');
+    h.style.destroy(); restored.style.destroy();
+  }
+});
+
 test('the style panel supports Escape, outside dismissal, native focus, and mutual exclusion with currency', () => {
   const h = harness();
   h.trigger.focus();

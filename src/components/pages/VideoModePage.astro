@@ -62,6 +62,9 @@ const locale = htmlLang(Astro.currentLocale);
                   <option value="serif">{t.fontSerif}</option>
                   <option value="mono">{t.fontMono}</option>
                   <option value="digital">{t.fontDigital}</option>
+                  <option value="space">Space Grotesk</option>
+                  <option value="slab">Roboto Slab</option>
+                  <option value="bungee">Bungee</option>
                 </select>
               </div>
               <div class="video-style-row video-stroke-row">
@@ -186,6 +189,27 @@ const locale = htmlLang(Astro.currentLocale);
 </script>
 
 <style>
+  @font-face {
+    font-family: 'Space Grotesk';
+    src: url('/fonts/SpaceGrotesk-Bold.woff2') format('woff2');
+    font-style: normal;
+    font-weight: 700;
+    font-display: swap;
+  }
+  @font-face {
+    font-family: 'Roboto Slab';
+    src: url('/fonts/RobotoSlab-Bold.woff2') format('woff2');
+    font-style: normal;
+    font-weight: 700;
+    font-display: swap;
+  }
+  @font-face {
+    font-family: 'Bungee';
+    src: url('/fonts/Bungee-Regular.woff2') format('woff2');
+    font-style: normal;
+    font-weight: 400;
+    font-display: swap;
+  }
   @font-face {
     font-family: 'OBT Digital';
     src: url('/fonts/OBTDigital-Regular.woff2') format('woff2');
