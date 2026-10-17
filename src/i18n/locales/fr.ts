@@ -22,7 +22,7 @@ export const fr: Dict = {
         'Politique de confidentialité d’Open Bitcoin Tracker : une application Android open source et respectueuse de la vie privée pour tracker la valeur de tes stacks de Bitcoin.',
     },
     ogImageAlt: 'Open Bitcoin Tracker — outils Bitcoin gratuits et open source et appli Android',
-    socialTagline: 'Des outils Bitcoin gratuits et open source',
+    socialDescription: 'Des outils Bitcoin amusants, utiles et beaux.',
   },
 
   landing: {

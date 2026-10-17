@@ -22,7 +22,7 @@ export const tr: Dict = {
         "Open Bitcoin Tracker için gizlilik politikası: Bitcoin stack'lerinizin değerini takip etmek için gizliliğe önem veren, açık kaynaklı bir Android uygulaması.",
     },
     ogImageAlt: 'Open Bitcoin Tracker — ücretsiz, açık kaynaklı Bitcoin araçları ve Android uygulaması',
-    socialTagline: 'Ücretsiz, açık kaynaklı Bitcoin araçları',
+    socialDescription: 'Eğlenceli, kullanışlı ve güzel Bitcoin araçları.',
   },
 
   landing: {

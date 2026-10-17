@@ -22,7 +22,7 @@ export const de: Dict = {
         'Datenschutzerklärung für Open Bitcoin Tracker – eine datenschutzfreundliche, quelloffene Android-App, um den Wert deiner Bitcoin-Stacks zu tracken.',
     },
     ogImageAlt: 'Open Bitcoin Tracker — kostenlose Open-Source-Bitcoin-Tools und Android-App',
-    socialTagline: 'Kostenlose Open-Source-Tools für Bitcoin',
+    socialDescription: 'Bitcoin-Tools, die Spaß machen, nützlich sind und gut aussehen.',
   },
 
   landing: {

@@ -22,7 +22,7 @@ export const it: Dict = {
         'Informativa sulla privacy di Open Bitcoin Tracker: un’app Android open source e attenta alla privacy per monitorare il valore dei tuoi stack di Bitcoin.',
     },
     ogImageAlt: 'Open Bitcoin Tracker — strumenti Bitcoin gratuiti e open source e app Android',
-    socialTagline: 'Strumenti Bitcoin gratuiti e open source',
+    socialDescription: 'Strumenti Bitcoin divertenti, utili e belli.',
   },
 
   landing: {

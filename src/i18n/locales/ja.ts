@@ -22,7 +22,7 @@ export const ja: Dict = {
         'Open Bitcoin Tracker のプライバシーポリシー — ビットコインのスタックの価値を追跡する、プライバシー重視のオープンソース Android アプリ。',
     },
     ogImageAlt: 'Open Bitcoin Tracker — 無料のオープンソース・ビットコインツールとAndroidアプリ',
-    socialTagline: '無料のオープンソース・ビットコインツール',
+    socialDescription: '楽しくて、便利で、美しいビットコインツール。',
   },
 
   landing: {

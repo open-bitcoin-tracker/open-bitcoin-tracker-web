@@ -29,7 +29,7 @@ export const en = {
         'Privacy policy for Open Bitcoin Tracker — a privacy-focused, open-source Android app to track the value of your Bitcoin stacks.',
     },
     ogImageAlt: 'Open Bitcoin Tracker — free, open-source Bitcoin tools and Android app',
-    socialTagline: 'Free, open-source Bitcoin tools',
+    socialDescription: 'Fun, useful and beautiful bitcoin tools.',
   },
 
   landing: {

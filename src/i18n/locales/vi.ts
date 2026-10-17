@@ -22,7 +22,7 @@ export const vi: Dict = {
         'Chính sách quyền riêng tư của Open Bitcoin Tracker — một ứng dụng Android mã nguồn mở, chú trọng quyền riêng tư để theo dõi giá trị các stack Bitcoin của bạn.',
     },
     ogImageAlt: 'Open Bitcoin Tracker — công cụ Bitcoin miễn phí, mã nguồn mở và ứng dụng Android',
-    socialTagline: 'Công cụ Bitcoin miễn phí, mã nguồn mở',
+    socialDescription: 'Các công cụ Bitcoin thú vị, hữu ích và đẹp mắt.',
   },
 
   landing: {
