@@ -24,7 +24,8 @@ const title = titleProp ?? t.meta[page].title;
 const description = descriptionProp ?? t.meta[page].description;
 
 const canonical = new URL(Astro.url.pathname, Astro.site).toString();
-const ogImage = new URL(`/og-bitcoin-tools${lang === 'en' ? '' : `-${lang}`}.png`, Astro.site).toString();
+// Bump the version when replacing the social card so it has a fresh image URL.
+const ogImage = new URL(`/og-bitcoin-tools${lang === 'en' ? '' : `-${lang}`}.png?v=5`, Astro.site).toString();
 const ogImageAlt = t.meta.ogImageAlt;
 const siteName = 'Open Bitcoin Tracker';
 const appUrl = new URL('/android-app', Astro.site).toString();

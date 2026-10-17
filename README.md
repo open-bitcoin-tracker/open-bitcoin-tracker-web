@@ -83,7 +83,7 @@ Keep all `src/i18n/` dictionaries consistent. English uses root URLs; Portuguese
 
 Locale codes, URL segments, and autonyms live in `src/i18n/languages.ts`. Astro locales/sitemap, localized routes, layout alternates, the language switcher, and redirect middleware share that metadata. Adding a language requires an entry there, its dictionary and `ui.ts` registration, plus `tracker.ts`, `ranges.ts`, `chart-settings.ts`, `party.ts`, `video.ts`, and `earth.ts`. Social images use the registered dictionaries. Run `npm run check`, build, and review generated routes.
 
-After social copy or tool-label changes, run `npm run generate:social`, review all `public/og-bitcoin-tools*.png`, and rebuild. Generation requires **Noto Sans** and **Noto Sans CJK JP**; normal builds use checked-in images.
+After social design or app-icon changes, run `npm run generate:social`, review `public/og-bitcoin-tools.png`, and rebuild. The social image uses the homepage paper background, app icon, and black product name in the bundled Barlow Condensed display font (`scripts/fonts/`, with its OFL license). Every locale uses the same brand image; generation needs no system fonts, and normal builds use checked-in images. Bump the image URL version in `src/layouts/Layout.astro` when replacing the cards. `public/og-image.png` remains a compatibility copy.
 
 ## Deployment
 
