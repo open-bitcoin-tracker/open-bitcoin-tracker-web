@@ -35,7 +35,7 @@
 }
 .earth-feature .guide-description {
   margin: 16px 0 0;
-  color: var(--muted);
+  color: var(--control-ink);
   font-size: var(--text-intro);
   line-height: 1.75;
 }
@@ -45,7 +45,7 @@
   border-left: 2px solid var(--orange);
   font-size: var(--text-label);
   line-height: 1.7;
-  color: var(--muted);
+  color: var(--control-ink);
 }
 .earth-feature .guide-model-details {
   padding: 8px 28px 28px;
@@ -145,13 +145,13 @@
   stroke-width: 2;
 }
 .earth-feature .art-area-label {
-  fill: var(--ink);
+  fill: var(--control-ink);
   font-size: 20px;
   font-weight: 600;
   font-family: inherit;
 }
 .earth-feature .art-bitcoin-label {
-  fill: var(--color-emphasis-ink);
+  fill: var(--control-ink);
 }
 .earth-feature[data-theme='dark'] .art-water {
   fill: #253b3e;

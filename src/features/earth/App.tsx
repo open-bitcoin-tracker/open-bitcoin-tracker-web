@@ -1,7 +1,9 @@
 import type { EarthCopy } from '../../i18n/earth';
 import type { Lang } from '../../i18n/ui';
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import About from './components/About';
+import Welcome from './components/Welcome';
+import { shouldShowWelcome } from './lib/welcomePreference';
 import AmountSelect from './components/AmountSelect';
 import InfoButton from './components/InfoButton';
 import EarthMap from './components/EarthMap';
@@ -20,6 +22,8 @@ export default function App({ lang, copy }: { lang: Lang; copy: EarthCopy }) {
   const [inputMode, setInputMode] = useState<'keyboard' | 'pointer'>('keyboard');
   const [place, setPlace] = useState<Capital | null>(null);
   const [aboutOpen, setAboutOpen] = useState(false);
+  const [welcomeOpen, setWelcomeOpen] = useState(false);
+  useEffect(() => { setWelcomeOpen(shouldShowWelcome()); }, []);
   const clearPlace = useCallback(() => setPlace(null), []);
   const map = useEarthMap({
     km2,
@@ -71,6 +75,7 @@ export default function App({ lang, copy }: { lang: Lang; copy: EarthCopy }) {
         />
       </div>
       {aboutOpen && <About lang={lang} copy={copy} onClose={() => setAboutOpen(false)} />}
+      {welcomeOpen && <Welcome lang={lang} copy={copy} onClose={() => setWelcomeOpen(false)} />}
     </div>
   );
 }
