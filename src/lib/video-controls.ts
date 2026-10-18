@@ -1,4 +1,4 @@
-const IDLE_DELAY = 1200;
+const IDLE_DELAY = 3000;
 const REVEAL_DURATION = 250;
 const INTERACTIVE = 'button, summary, input, select, textarea, a, [role="button"], [role="dialog"], [data-price-style], [data-price-position], [data-video-form]';
 const EDITABLE_CONTROL = 'input:not([type="range"]), textarea, [contenteditable]:not([contenteditable="false"]), [role="textbox"], [role="combobox"]';
