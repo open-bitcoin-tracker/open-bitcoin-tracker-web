@@ -5,6 +5,7 @@ import { createCurrencyPicker } from '../lib/currency-picker';
 import { createVideoPriceLayout } from '../lib/video-price-layout';
 import { createVideoPriceStyle } from '../lib/video-price-style';
 import { createVideoPickerTabs } from '../lib/video-picker-tabs';
+import { videoSuggestions } from '../lib/video-suggestions';
 import type { PartyCopy } from '../i18n/party';
 import type { VideoCopy } from '../i18n/video';
 
@@ -56,6 +57,7 @@ function startVideoMode(root: HTMLElement) {
   let focusRecovery = true;
   let playing = false;
   let muted = false;
+  let silentVideo = false;
   let volume = 100;
   let lastAudibleVolume = 100;
   let looping = false;
@@ -205,11 +207,14 @@ function startVideoMode(root: HTMLElement) {
   }
 
   function paintAudio() {
-    const label = muted ? t.unmute : t.mute;
+    const label = silentVideo ? t.noSound : muted ? t.unmute : t.mute;
+    const showMuted = muted || silentVideo;
+    root.toggleAttribute('data-video-silent', silentVideo);
+    muteButton.disabled = volumeInput.disabled = phoneAudio || !hasVideo || silentVideo;
     muteButton.setAttribute('aria-label', label);
     muteButton.title = label;
-    root.querySelector<SVGElement>('[data-muted-icon]')!.toggleAttribute('hidden', !muted);
-    root.querySelector<SVGElement>('[data-sound-icon]')!.toggleAttribute('hidden', muted);
+    root.querySelector<SVGElement>('[data-muted-icon]')!.toggleAttribute('hidden', !showMuted);
+    root.querySelector<SVGElement>('[data-sound-icon]')!.toggleAttribute('hidden', showMuted);
     volumeInput.value = String(volume);
     volumeInput.setAttribute('aria-valuetext', new Intl.NumberFormat(locale, { style: 'percent', maximumFractionDigits: 0 }).format(volume / 100));
     volumeInput.style.setProperty('--video-progress', `${volume}%`);
@@ -248,7 +253,7 @@ function startVideoMode(root: HTMLElement) {
       stopProgressRefresh();
       setPlaying(false);
       seek.disabled = true;
-      volumeInput.disabled = true;
+      paintAudio();
       playButton.disabled = true;
       error.textContent = code === 101 || code === 150 ? t.embeddingDisabled : t.videoUnavailable;
       if (code !== undefined) error.setAttribute('data-youtube-error', String(code));
@@ -284,7 +289,6 @@ function startVideoMode(root: HTMLElement) {
       ({ volume, muted, lastAudibleVolume } = desktopAudio);
     }
     adjustingVolume = false;
-    muteButton.disabled = volumeInput.disabled = phoneAudio || !hasVideo;
     player.setVolume(volume);
     player.setMuted(muted);
     paintAudio();
@@ -319,7 +323,8 @@ function startVideoMode(root: HTMLElement) {
     seek.disabled = true;
     renderPosition(0);
     playButton.disabled = loopButton.disabled = false;
-    muteButton.disabled = volumeInput.disabled = phoneAudio;
+    silentVideo = videoSuggestions.some(suggestion => suggestion.id === video.id && suggestion.isSilent);
+    paintAudio();
     setPlaying(false);
     videoStatus.textContent = t.loadingVideo;
     videoStatus.hidden = false;
@@ -411,7 +416,7 @@ function startVideoMode(root: HTMLElement) {
   }
   playButton.addEventListener('click', togglePlayback);
   muteButton.addEventListener('click', () => {
-    if (phoneAudio) return;
+    if (muteButton.disabled) return;
     if (muted && volume === 0) { changeVolume(lastAudibleVolume); return; }
     muted = !muted;
     player.setMuted(muted);

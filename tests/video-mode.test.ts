@@ -232,6 +232,7 @@ function harness(options: Options = {}) {
     }
   }
   const modules = {
+    videoSuggestions,
     CurrencyRates: Rates,
     isCurrency: (value: string) => ['USD', 'EUR', 'GBP', 'AUD', 'CAD', 'CHF', 'JPY'].includes(value),
     readDisplayPreferences: () => ({ ...preferences }),
@@ -520,6 +521,66 @@ test('play and pause labels follow player state while mute updates its action an
   assert.equal(h.control('[data-mute]').attributes.has('aria-pressed'), false);
   assert.equal(h.control('[data-muted-icon]').attributes.has('hidden'), true);
   assert.equal(h.control('[data-sound-icon]').attributes.has('hidden'), false);
+  h.close();
+});
+
+test('silent videos show a disabled muted indicator without changing saved audio preferences', () => {
+  const silent = videoSuggestions.find(video => video.isSilent)!;
+  for (const select of ['suggestion', 'url', 'recent'] as const) {
+    const url = `https://www.youtube.com/watch?v=${silent.id}`;
+    const storedPlayback = JSON.stringify({ version: 1, volume: 37, muted: false, lastAudibleVolume: 37 });
+    const h = harness({ realPicker: true, storedPlayback, storedRecents: JSON.stringify({ version: 1, urls: [url] }) });
+    if (select === 'suggestion') h.click(`[data-video-suggestion="${silent.id}"]`);
+    else if (select === 'url') h.submit(url);
+    else {
+      h.control('[data-video-recents]').children[0].children[0].dispatchEvent(new Event('click'));
+      h.finishPickerTransition();
+    }
+    h.emitPlaying(true);
+    assert.equal(h.control('[data-mute]').disabled, true, select);
+    assert.equal(h.control('[data-video-volume]').disabled, true, select);
+    assert.equal(h.control('[data-mute]').attributes.get('aria-label'), copy.noSound);
+    assert.equal(h.control('[data-mute]').title, copy.noSound);
+    assert.equal(h.control('[data-muted-icon]').attributes.has('hidden'), false);
+    assert.equal(h.control('[data-sound-icon]').attributes.has('hidden'), true);
+    assert.equal(h.root.hasAttribute('data-video-silent'), true);
+    h.click('[data-mute]');
+    h.control('[data-video-volume]').value = '0';
+    h.control('[data-video-volume]').dispatchEvent(new Event('input'));
+    assert.equal(h.muted.at(-1), false, 'silent content does not mute future videos');
+    assert.equal(h.volumes.at(-1), 37);
+    assert.equal(h.storage.get(videoPlaybackKey), storedPlayback);
+
+    h.submit(firstUrl);
+    assert.equal(h.control('[data-mute]').disabled, false);
+    assert.equal(h.control('[data-video-volume]').disabled, false);
+    assert.equal(h.control('[data-video-volume]').value, '37');
+    assert.equal(h.control('[data-mute]').attributes.get('aria-label'), copy.mute);
+    assert.equal(h.control('[data-muted-icon]').attributes.has('hidden'), true);
+    assert.equal(h.control('[data-sound-icon]').attributes.has('hidden'), false);
+    assert.equal(h.root.hasAttribute('data-video-silent'), false, 'unknown videos are not labelled silent');
+    h.close();
+  }
+});
+
+test('restored silent videos retain their muted indicator across touch and desktop audio modes', () => {
+  const silent = videoSuggestions.find(video => video.isSilent)!;
+  const storedPlayback = JSON.stringify({ version: 1, volume: 24, muted: true, lastAudibleVolume: 24 });
+  const h = harness({ storedPlayback, storedSelection: JSON.stringify({ version: 1, url: `https://www.youtube.com/watch?v=${silent.id}` }) });
+  for (const mobile of [false, true, false]) {
+    h.mobile(mobile);
+    assert.equal(h.control('[data-mute]').disabled, true);
+    assert.equal(h.control('[data-video-volume]').disabled, true);
+    assert.equal(h.control('[data-mute]').attributes.get('aria-label'), copy.noSound);
+    assert.equal(h.control('[data-muted-icon]').attributes.has('hidden'), false);
+    assert.equal(h.root.hasAttribute('data-video-silent'), true);
+    assert.equal(h.storage.get(videoPlaybackKey), storedPlayback);
+  }
+  h.submit(`https://www.youtube.com/watch?v=${videoSuggestions.find(video => !video.isSilent)!.id}`);
+  assert.equal(h.control('[data-mute]').disabled, false);
+  assert.equal(h.control('[data-mute]').attributes.get('aria-label'), copy.unmute, 'saved mute preference survives silent playback');
+  assert.equal(h.control('[data-video-volume]').value, '24');
+  assert.equal(h.root.hasAttribute('data-video-silent'), false);
   h.close();
 });
 
