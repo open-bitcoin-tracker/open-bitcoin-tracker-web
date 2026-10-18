@@ -3,7 +3,7 @@ const REVEAL_DURATION = 250;
 const INTERACTIVE = 'button, summary, input, select, textarea, a, [role="button"], [role="dialog"], [data-price-style], [data-price-position], [data-video-form]';
 const EDITABLE_CONTROL = 'input:not([type="range"]), textarea, [contenteditable]:not([contenteditable="false"]), [role="textbox"], [role="combobox"]';
 
-/** Hide Video Mode's interface after inactivity, keeping active controls usable. */
+/** Hide Price on Video's interface after inactivity, keeping active controls usable. */
 export function createVideoControls(root: HTMLElement) {
   const price = root.querySelector<HTMLElement>('[data-price-position]');
   const cursor = window.matchMedia('(hover: hover) and (pointer: fine)');
@@ -85,11 +85,12 @@ export function createVideoControls(root: HTMLElement) {
     // Close the editor and menus before hiding; their close events cannot undo a manual dismissal.
     root.dispatchEvent(new Event('videouidismiss'));
     root.setAttribute('data-ui-idle', '');
-    manuallyHidden = manual;
+    // Fullscreen stays quiet until an intentional tap or keyboard navigation.
+    manuallyHidden = manual || !!document.fullscreenElement;
   }
 
   function handlePointerMove(event: PointerEvent) {
-    if (event.pointerType === 'touch') return;
+    if (event.pointerType === 'touch' || document.fullscreenElement) return;
     // Mouse clicks can first emit a move; protect the tap during the UI fade-in.
     if (manuallyHidden || root.hasAttribute('data-ui-idle')) pointerRevealUntil = Date.now() + REVEAL_DURATION;
     manuallyHidden = false;
@@ -108,6 +109,7 @@ export function createVideoControls(root: HTMLElement) {
 
   function handleKeyDown(event: KeyboardEvent) {
     if (event.key === 'Escape' && event.defaultPrevented) return;
+    if (document.fullscreenElement && manuallyHidden && event.key !== 'Tab') return;
     lastInput = 'keyboard';
     manuallyHidden = false;
     reveal();
@@ -140,6 +142,17 @@ export function createVideoControls(root: HTMLElement) {
     reveal();
   }
 
+  function handleFullscreenChange() {
+    if (destroyed) return;
+    pointerRevealUntil = 0;
+    revealOnlyClick = false;
+    if (document.fullscreenElement) hide(true);
+    else {
+      manuallyHidden = false;
+      reveal();
+    }
+  }
+
   window.addEventListener('pointermove', handlePointerMove);
   window.addEventListener('pointerdown', handlePointerDown, true);
   root.addEventListener('click', consumeRevealClick, true);
@@ -154,7 +167,7 @@ export function createVideoControls(root: HTMLElement) {
   root.addEventListener('priceeditortoggle', handleEditorToggle);
   handleEditorToggle();
   document.addEventListener('visibilitychange', reveal);
-  document.addEventListener('fullscreenchange', reveal);
+  document.addEventListener('fullscreenchange', handleFullscreenChange);
   // Navigation moves its dialog outside the page root. These events do not bubble.
   document.addEventListener('toggle', reveal, true);
   document.addEventListener('close', reveal, true);
@@ -190,7 +203,7 @@ export function createVideoControls(root: HTMLElement) {
       root.removeEventListener('pricelayoutchange', handleLayoutChange);
       root.removeEventListener('priceeditortoggle', handleEditorToggle);
       document.removeEventListener('visibilitychange', reveal);
-      document.removeEventListener('fullscreenchange', reveal);
+      document.removeEventListener('fullscreenchange', handleFullscreenChange);
       document.removeEventListener('toggle', reveal, true);
       document.removeEventListener('close', reveal, true);
       cursor.removeEventListener('change', reveal);

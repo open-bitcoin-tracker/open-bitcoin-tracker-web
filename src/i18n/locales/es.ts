@@ -4,7 +4,7 @@ export const es: Dict = {
   meta: {
     landing: {
       title: 'Open Bitcoin Tracker — Herramientas Bitcoin y app Android',
-      description: 'Trackea el precio de Bitcoin en directo, explora gráficos históricos y A Bit of Earth, o usa Video Mode. Herramientas de código abierto y una app de portfolio para Android que respeta tu privacidad, todo gratis.',
+      description: 'Trackea el precio de Bitcoin en directo, explora gráficos históricos y A Bit of Earth, o usa Price on Video. Herramientas de código abierto y una app de portfolio para Android que respeta tu privacidad, todo gratis.',
     },
     home: {
       title: 'Open Bitcoin Tracker para Android',
@@ -35,14 +35,14 @@ export const es: Dict = {
     appDescription: 'No le hacen falta llaves ni semillas, las cantidades se meten a mano. No puedes hacer transacciones, pero es muy conveniente para ver lo que valen tus stacks de bitcoin.',
     priceTracker: 'Trackeador de precio',
     priceDescription: 'Precio de Bitcoin en directo e historial desde 2010.',
-    videoDescription: 'El precio de Bitcoin en directo sobre vídeos de YouTube',
+    videoDescription: 'El precio de Bitcoin en directo sobre vídeos de YouTube.',
     earthDescription: 'Explora Bitcoin como una parte de la superficie terrestre.',
     supplyDescription: 'Descubre cómo la oferta de dinero fiat aumenta cada año y la de bitcoin no.',
   },
 
   nav: {
     partyMode: 'Party Mode',
-    videoMode: 'Video Mode',
+    videoMode: 'Price on Video',
     menuLabel: 'Menú',
     closeMenu: 'Cerrar menú',
     skipToContent: 'Saltar al contenido',

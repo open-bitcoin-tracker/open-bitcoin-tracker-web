@@ -4,7 +4,7 @@ export const ru: Dict = {
   meta: {
     landing: {
       title: 'Open Bitcoin Tracker — Биткоин-инструменты и Android-приложение',
-      description: 'Отслеживай курс биткоина, изучай исторические графики и A Bit of Earth или используй Video Mode. Бесплатные инструменты с открытым кодом и Android-приложение для учёта портфеля с заботой о приватности.',
+      description: 'Отслеживай курс биткоина, изучай исторические графики и A Bit of Earth или используй Price on Video. Бесплатные инструменты с открытым кодом и Android-приложение для учёта портфеля с заботой о приватности.',
     },
     home: {
       title: 'Open Bitcoin Tracker для Android',
@@ -35,14 +35,14 @@ export const ru: Dict = {
     appDescription: 'Ключи и сид-фразы не нужны. Ты вручную вводишь количество биткоинов. Через приложение нельзя проводить транзакции, зато с ним очень удобно проверять, сколько стоят твои биткоин-накопления.',
     priceTracker: 'Трекер цены',
     priceDescription: 'Курс биткоина в реальном времени и история с 2010 года.',
-    videoDescription: 'Курс биткоина в реальном времени поверх видео на YouTube',
+    videoDescription: 'Курс биткоина в реальном времени поверх видео на YouTube.',
     earthDescription: 'Узнай, какую долю земной суши можно сопоставить с биткоином.',
     supplyDescription: 'Посмотри, как денежная масса фиатных валют растёт каждый год, а предложение биткоина — нет.',
   },
 
   nav: {
     partyMode: 'Party Mode',
-    videoMode: 'Video Mode',
+    videoMode: 'Price on Video',
     menuLabel: 'Меню',
     closeMenu: 'Закрыть меню',
     skipToContent: 'Перейти к содержимому',

@@ -4,7 +4,7 @@ export const vi: Dict = {
   meta: {
     landing: {
       title: 'Open Bitcoin Tracker — Công cụ Bitcoin và ứng dụng Android',
-      description: 'Theo dõi giá Bitcoin trực tiếp, khám phá biểu đồ lịch sử và A Bit of Earth hoặc dùng Video Mode. Các công cụ miễn phí, mã nguồn mở và ứng dụng quản lý danh mục Android chú trọng quyền riêng tư.',
+      description: 'Theo dõi giá Bitcoin trực tiếp, khám phá biểu đồ lịch sử và A Bit of Earth hoặc dùng Price on Video. Các công cụ miễn phí, mã nguồn mở và ứng dụng quản lý danh mục Android chú trọng quyền riêng tư.',
     },
     home: {
       title: 'Open Bitcoin Tracker dành cho Android',
@@ -35,14 +35,14 @@ export const vi: Dict = {
     appDescription: 'Không cần khóa hay cụm từ khôi phục. Bạn tự nhập số lượng bitcoin. Ứng dụng không hỗ trợ giao dịch, nhưng rất tiện để xem số bitcoin bạn tích lũy có giá trị bao nhiêu.',
     priceTracker: 'Theo dõi giá',
     priceDescription: 'Giá Bitcoin trực tiếp và lịch sử giá từ năm 2010.',
-    videoDescription: 'Giá Bitcoin trực tiếp trên video YouTube',
+    videoDescription: 'Giá Bitcoin trực tiếp trên video YouTube.',
     earthDescription: 'Khám phá Bitcoin như một phần diện tích đất liền trên Trái Đất.',
     supplyDescription: 'Xem cung tiền pháp định tăng mỗi năm, còn cung bitcoin thì không.',
   },
 
   nav: {
     partyMode: 'Party Mode',
-    videoMode: 'Video Mode',
+    videoMode: 'Price on Video',
     menuLabel: 'Menu',
     closeMenu: 'Đóng menu',
     skipToContent: 'Chuyển đến nội dung',

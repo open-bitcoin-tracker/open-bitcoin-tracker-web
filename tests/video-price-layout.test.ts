@@ -99,7 +99,7 @@ function harness(options: Options = {}) {
     handle.dataset.priceResize = corner;
     return [corner, handle];
   })) as Record<Corner, Element>;
-  const document = Object.assign(new Element(), { hidden: false, activeElement: null as Element | null });
+  const document = Object.assign(new Element(), { hidden: false, activeElement: null as Element | null, fullscreenElement: null as object | null });
   const outside = new Element();
   const viewport: Rect = { left: 100, top: 80, width: 1000, height: 600, ...options.viewport };
   let naturalWidth = options.width ?? 200;
@@ -225,6 +225,27 @@ test('the frame follows price hover rather than general page UI visibility', () 
   h.root.dispatchEvent(new Event('videouireveal'));
   assert.equal(h.frame(), false);
   assert.equal(h.notifications(), 0, 'hover must not restart the page idle timer');
+  h.layout.destroy();
+});
+
+test('fullscreen requires a price tap to reveal editing instead of hover', () => {
+  const h = harness();
+  h.document.fullscreenElement = h.root;
+  h.root.setAttribute('data-ui-idle', '');
+  h.root.dispatchEvent(new Event('videouidismiss'));
+  h.pointer('pointerenter', h.position, { pointerType: 'mouse' });
+  h.pointer('pointermove', h.position, { pointerType: 'mouse' });
+  h.focus(h.position);
+  h.window.dispatchEvent(new Event('focus'));
+  h.visibility(false);
+  assert.equal(h.frame(), false, 'hidden fullscreen controls must not reveal the price editor');
+  h.root.removeAttribute('data-ui-idle');
+  h.root.dispatchEvent(new Event('videouireveal'));
+  h.focus(h.outside, false);
+  h.pointer('pointermove', h.position, { pointerType: 'mouse' });
+  assert.equal(h.frame(), false, 'hover must not pin fullscreen controls after a background tap');
+  h.pointer('pointerdown', h.position, { pointerType: 'touch' });
+  assert.equal(h.frame(), true, 'an intentional price tap still enables editing');
   h.layout.destroy();
 });
 

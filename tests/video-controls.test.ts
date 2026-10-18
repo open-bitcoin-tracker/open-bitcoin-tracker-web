@@ -69,6 +69,7 @@ function harness({ finePointer = true, hidden = false } = {}) {
   let menuClass = false;
   const document = Object.assign(new Surface(), {
     hidden,
+    fullscreenElement: null as object | null,
     activeElement: null as typeof button | null,
     documentElement: { classList: { contains(name: string) { assert.equal(name, 'nav-menu-open'); return menuClass; } } },
     querySelector(selector: string) { assert.equal(selector, '#site-navigation-dialog[open]'); return dialogOpen ? {} : null; },
@@ -526,7 +527,7 @@ test('idle timeout checks current menu and focus state without polling while blo
   h.controls.destroy();
 });
 
-test('background tabs wait for visibility and fullscreen changes reveal idle controls', () => {
+test('background tabs wait for visibility and fullscreen exit reveals idle controls', () => {
   const h = harness({ hidden: true });
   h.controls.setEnabled(true);
   h.tick(10000);
@@ -542,6 +543,77 @@ test('background tabs wait for visibility and fullscreen changes reveal idle con
   h.tick(10000);
   assert.equal(h.idle(), false);
   assert.equal(h.timers.size, 0);
+  h.controls.destroy();
+});
+
+test('fullscreen entry hides immediately and only a tap reveals controls for three seconds', () => {
+  for (const pointerType of ['touch', 'mouse', 'pen']) {
+    const h = harness({ finePointer: pointerType === 'mouse' });
+    h.controls.setEnabled(true);
+    h.tick(500);
+    h.root.setAttribute('data-price-layout-open', '');
+    h.root.addEventListener('videouidismiss', () => {
+      h.root.removeAttribute('data-price-layout-open');
+      h.root.dispatchEvent(new Event('priceeditortoggle'));
+    });
+    h.document.fullscreenElement = h.document.documentElement;
+    h.document.dispatchEvent(new Event('fullscreenchange'));
+    assert.equal(h.idle(), true);
+    assert.equal(h.root.hasAttribute('data-price-layout-open'), false);
+    assert.equal(h.timers.size, 0);
+
+    h.pointer('pointermove', pointerType);
+    h.controls.reveal();
+    h.visibility(true);
+    h.visibility(false);
+    h.root.dispatchEvent(new Event('focusout'));
+    h.root.dispatchEvent(new Event('pricelayoutchange'));
+    h.tick(10000);
+    assert.equal(h.idle(), true, 'movement and lifecycle events must not reveal fullscreen controls');
+
+    h.pointer('pointerdown', pointerType, h.background);
+    assert.equal(h.click().defaultPrevented, true, 'the reveal tap must not also toggle playback');
+    assert.equal(h.idle(), false);
+    h.tick(2000);
+    h.pointer('pointermove', pointerType);
+    h.tick(999);
+    assert.equal(h.idle(), false);
+    h.tick(1);
+    assert.equal(h.idle(), true, 'pointer movement must not extend the three-second display');
+    h.pointer('pointermove', pointerType);
+    assert.equal(h.idle(), true);
+
+    h.pointer('pointerdown', pointerType, h.background);
+    h.click();
+    assert.equal(h.idle(), false);
+    h.tick(3000);
+    assert.equal(h.idle(), true);
+    h.document.fullscreenElement = null;
+    h.document.dispatchEvent(new Event('fullscreenchange'));
+    assert.equal(h.idle(), false);
+    h.tick(3000);
+    h.pointer('pointermove', 'mouse');
+    assert.equal(h.idle(), false, 'normal mouse reveal resumes outside fullscreen');
+    h.controls.destroy();
+  }
+});
+
+test('Tab keeps fullscreen controls accessible to keyboard users', () => {
+  const h = harness();
+  h.controls.setEnabled(true);
+  h.document.fullscreenElement = h.document.documentElement;
+  h.document.dispatchEvent(new Event('fullscreenchange'));
+  h.window.dispatchEvent(Object.assign(new Event('keydown'), { key: 'Escape' }));
+  assert.equal(h.idle(), true, 'Escape must not flash controls before fullscreen exits');
+  h.window.dispatchEvent(Object.assign(new Event('keydown'), { key: 'Tab' }));
+  h.focus({ visible: true });
+  h.tick(10000);
+  assert.equal(h.idle(), false, 'keyboard-focused controls remain visible');
+  h.blur();
+  h.tick(2999);
+  assert.equal(h.idle(), false);
+  h.tick(1);
+  assert.equal(h.idle(), true);
   h.controls.destroy();
 });
 

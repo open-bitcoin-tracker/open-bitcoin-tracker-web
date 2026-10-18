@@ -50,8 +50,8 @@ export interface VideoCopy {
 }
 
 const en: VideoCopy = {
-  title: 'Video Mode',
-  description: 'The live Bitcoin price over your choice of YouTube video. Paste a link, go fullscreen, and watch.',
+  title: 'Price on Video',
+  description: 'Live Bitcoin price over YouTube videos.',
   videoLabel: 'YouTube video URL',
   urlPlaceholder: 'Paste a YouTube link',
   load: 'Play video',
@@ -101,8 +101,8 @@ const en: VideoCopy = {
 export const video: Record<Lang, VideoCopy> = {
   en,
   es: {
-    title: 'Video Mode',
-    description: 'El precio de Bitcoin en directo sobre el vídeo de YouTube que tú elijas. Pega un enlace, activa la pantalla completa y disfruta.',
+    title: 'Price on Video',
+    description: 'El precio de Bitcoin en directo sobre vídeos de YouTube.',
     videoLabel: 'URL del vídeo de YouTube',
     urlPlaceholder: 'Pega un enlace de YouTube',
     load: 'Reproducir vídeo',
@@ -149,8 +149,8 @@ export const video: Record<Lang, VideoCopy> = {
     backgroundTitle: 'Vídeo de YouTube de fondo',
   },
   'pt-BR': {
-    title: 'Video Mode',
-    description: 'O preço do Bitcoin ao vivo sobre o vídeo do YouTube que você escolher. Cole um link, ative a tela cheia e curta.',
+    title: 'Price on Video',
+    description: 'O preço do Bitcoin ao vivo sobre vídeos do YouTube.',
     videoLabel: 'URL do vídeo do YouTube',
     urlPlaceholder: 'Cole um link do YouTube',
     load: 'Reproduzir vídeo',
@@ -197,8 +197,8 @@ export const video: Record<Lang, VideoCopy> = {
     backgroundTitle: 'Vídeo do YouTube de fundo',
   },
   fr: {
-    title: 'Video Mode',
-    description: 'Le cours du Bitcoin en direct sur la vidéo YouTube de ton choix. Colle un lien, passe en plein écran et profite.',
+    title: 'Price on Video',
+    description: 'Le cours du Bitcoin en direct sur des vidéos YouTube.',
     videoLabel: 'URL de la vidéo YouTube',
     urlPlaceholder: 'Colle un lien YouTube',
     load: 'Lire la vidéo',
@@ -245,8 +245,8 @@ export const video: Record<Lang, VideoCopy> = {
     backgroundTitle: 'Vidéo YouTube en arrière-plan',
   },
   de: {
-    title: 'Video Mode',
-    description: 'Der Live-Bitcoin-Kurs vor einem YouTube-Video deiner Wahl. Füge einen Link ein, schalte auf Vollbild und schau zu.',
+    title: 'Price on Video',
+    description: 'Der Bitcoin-Livekurs über YouTube-Videos.',
     videoLabel: 'URL des YouTube-Videos',
     urlPlaceholder: 'YouTube-Link einfügen',
     load: 'Video abspielen',
@@ -293,8 +293,8 @@ export const video: Record<Lang, VideoCopy> = {
     backgroundTitle: 'YouTube-Video im Hintergrund',
   },
   it: {
-    title: 'Video Mode',
-    description: 'Il prezzo di Bitcoin in tempo reale sopra un video di YouTube a tua scelta. Incolla un link, passa a schermo intero e goditi la vista.',
+    title: 'Price on Video',
+    description: 'Il prezzo di Bitcoin in tempo reale sui video di YouTube.',
     videoLabel: 'URL del video di YouTube',
     urlPlaceholder: 'Incolla un link di YouTube',
     load: 'Riproduci video',
@@ -341,8 +341,8 @@ export const video: Record<Lang, VideoCopy> = {
     backgroundTitle: 'Video di YouTube sullo sfondo',
   },
   ru: {
-    title: 'Video Mode',
-    description: 'Курс биткоина в реальном времени поверх выбранного тобой видео на YouTube. Вставь ссылку, включи полноэкранный режим и смотри.',
+    title: 'Price on Video',
+    description: 'Курс биткоина в реальном времени поверх видео на YouTube.',
     videoLabel: 'Ссылка на видео YouTube',
     urlPlaceholder: 'Вставь ссылку на YouTube',
     load: 'Воспроизвести видео',
@@ -389,8 +389,8 @@ export const video: Record<Lang, VideoCopy> = {
     backgroundTitle: 'Фоновое видео YouTube',
   },
   tr: {
-    title: 'Video Mode',
-    description: 'Seçtiğin YouTube videosunun üzerinde canlı Bitcoin fiyatı. Bir bağlantı yapıştır, tam ekrana geç ve izle.',
+    title: 'Price on Video',
+    description: 'YouTube videolarının üzerinde canlı Bitcoin fiyatı.',
     videoLabel: 'YouTube video bağlantısı',
     urlPlaceholder: 'Bir YouTube bağlantısı yapıştır',
     load: 'Videoyu oynat',
@@ -437,8 +437,8 @@ export const video: Record<Lang, VideoCopy> = {
     backgroundTitle: 'YouTube arka plan videosu',
   },
   vi: {
-    title: 'Video Mode',
-    description: 'Giá Bitcoin trực tiếp trên nền video YouTube bạn chọn. Dán liên kết, bật toàn màn hình và thưởng thức.',
+    title: 'Price on Video',
+    description: 'Giá Bitcoin trực tiếp trên video YouTube.',
     videoLabel: 'URL video YouTube',
     urlPlaceholder: 'Dán liên kết YouTube',
     load: 'Phát video',
@@ -485,8 +485,8 @@ export const video: Record<Lang, VideoCopy> = {
     backgroundTitle: 'Video YouTube làm nền',
   },
   ja: {
-    title: 'Video Mode',
-    description: '好きなYouTube動画を背景に、ビットコインのリアルタイム価格を表示。リンクを貼り付けて、全画面で楽しもう。',
+    title: 'Price on Video',
+    description: 'YouTube動画にビットコインのリアルタイム価格を重ねて表示。',
     videoLabel: 'YouTube動画のURL',
     urlPlaceholder: 'YouTubeのリンクを貼り付け',
     load: '動画を再生',

@@ -147,6 +147,7 @@ export function createVideoPriceLayout(root: HTMLElement) {
   }
   function revealFrame() {
     if (destroyed) return;
+    if (document.fullscreenElement && root.hasAttribute('data-ui-idle')) { setFrame(false); return; }
     setFrame(!dismissed && !document.hidden && (hovered || touchEditing || !!operation || root.hasAttribute('data-price-settings-open') || root.hasAttribute('data-price-style-open') || root.hasAttribute('data-currency-open') || keyboardFocus()));
   }
   function resizeGeometry(corner: Corner, centered = false): Resize {
@@ -239,7 +240,7 @@ export function createVideoPriceLayout(root: HTMLElement) {
     revealFrame();
   });
   const hover = (event: PointerEvent) => {
-    if (event.pointerType === 'touch') return;
+    if (event.pointerType === 'touch' || document.fullscreenElement) return;
     hovered = true;
     touchEditing = false;
     lastInput = 'pointer';

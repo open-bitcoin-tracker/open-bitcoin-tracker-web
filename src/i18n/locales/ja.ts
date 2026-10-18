@@ -4,7 +4,7 @@ export const ja: Dict = {
   meta: {
     landing: {
       title: 'Open Bitcoin Tracker — ビットコインツールとAndroidアプリ',
-      description: 'ビットコインのリアルタイム価格や過去のチャート、A Bit of Earth、Video Modeを楽しもう。無料のオープンソースツールと、プライバシーを重視したAndroid向けポートフォリオアプリ。',
+      description: 'ビットコインのリアルタイム価格や過去のチャート、A Bit of Earth、Price on Videoを楽しもう。無料のオープンソースツールと、プライバシーを重視したAndroid向けポートフォリオアプリ。',
     },
     home: {
       title: 'Android向けOpen Bitcoin Tracker',
@@ -35,14 +35,14 @@ export const ja: Dict = {
     appDescription: '秘密鍵もシードフレーズも不要。ビットコインの保有量は手入力します。アプリで取引はできませんが、コツコツ貯めたビットコインが今いくらなのかを確認するのにとても便利です。',
     priceTracker: '価格トラッカー',
     priceDescription: 'ビットコインのリアルタイム価格と2010年からの価格履歴。',
-    videoDescription: 'YouTube動画にビットコインのリアルタイム価格を重ねて表示',
+    videoDescription: 'YouTube動画にビットコインのリアルタイム価格を重ねて表示。',
     earthDescription: 'ビットコインを地球の陸地の割合として見てみよう。',
     supplyDescription: '法定通貨の供給量が毎年増える一方、ビットコインの供給量は増えないことを見てみよう。',
   },
 
   nav: {
     partyMode: 'Party Mode',
-    videoMode: 'Video Mode',
+    videoMode: 'Price on Video',
     menuLabel: 'メニュー',
     closeMenu: 'メニューを閉じる',
     skipToContent: 'コンテンツへ移動',
