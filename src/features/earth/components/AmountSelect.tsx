@@ -72,6 +72,7 @@ export default function AmountSelect({ lang, copy, btc, onChange }: AmountSelect
           onBlur={() => setPointerFocus(false)}
           type="text"
           inputMode="decimal"
+          enterKeyHint="done"
           autoComplete="off"
           spellCheck={false}
           maxLength={32}
@@ -79,6 +80,11 @@ export default function AmountSelect({ lang, copy, btc, onChange }: AmountSelect
           aria-invalid={invalid || undefined}
           aria-describedby={precisionRejected ? `${id}-precision` : invalid ? `${id}-error` : undefined}
           value={btc}
+          onKeyDown={(event) => {
+            if (event.key !== 'Enter' || event.nativeEvent.isComposing) return;
+            event.preventDefault();
+            event.currentTarget.blur();
+          }}
           onPaste={(event) => {
             if (exceedsBitcoinPrecision(proposedValue(event.currentTarget, event.clipboardData.getData('text')))) {
               event.preventDefault();
