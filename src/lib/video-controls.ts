@@ -1,4 +1,5 @@
 const IDLE_DELAY = 1200;
+const REVEAL_DURATION = 250;
 const INTERACTIVE = 'button, summary, input, select, textarea, a, [role="button"], [role="dialog"], [data-price-style], [data-price-position], [data-video-form]';
 const EDITABLE_CONTROL = 'input:not([type="range"]), textarea, [contenteditable]:not([contenteditable="false"]), [role="textbox"], [role="combobox"]';
 
@@ -12,7 +13,8 @@ export function createVideoControls(root: HTMLElement) {
   let openSelect: Element | null = null;
   let timer: number | undefined;
   let manuallyHidden = false;
-  let revealedByTouch = false;
+  let revealOnlyClick = false;
+  let pointerRevealUntil = 0;
 
   function clearTimer() {
     if (timer === undefined) return;
@@ -88,15 +90,17 @@ export function createVideoControls(root: HTMLElement) {
 
   function handlePointerMove(event: PointerEvent) {
     if (event.pointerType === 'touch') return;
+    // Mouse clicks can first emit a move; protect the tap during the UI fade-in.
+    if (manuallyHidden || root.hasAttribute('data-ui-idle')) pointerRevealUntil = Date.now() + REVEAL_DURATION;
     manuallyHidden = false;
     reveal();
   }
 
   function handlePointerDown(event: PointerEvent) {
     lastInput = 'pointer';
-    const touch = event.pointerType === 'touch';
-    revealedByTouch = touch && (manuallyHidden || root.hasAttribute('data-ui-idle'));
-    if (touch) manuallyHidden = false;
+    revealOnlyClick = manuallyHidden || root.hasAttribute('data-ui-idle') || Date.now() < pointerRevealUntil;
+    pointerRevealUntil = 0;
+    manuallyHidden = false;
     const select = (event.target as Element | null)?.closest?.('select');
     openSelect = select && root.contains(select) ? select : null;
     reveal();
@@ -109,9 +113,18 @@ export function createVideoControls(root: HTMLElement) {
     reveal();
   }
 
+  function consumeRevealClick(event: MouseEvent) {
+    if (destroyed || event.defaultPrevented) return;
+    if (!revealOnlyClick && !root.hasAttribute('data-ui-idle')) return;
+    revealOnlyClick = false;
+    manuallyHidden = false;
+    reveal();
+    event.preventDefault();
+    event.stopPropagation();
+  }
+
   function handleClick(event: MouseEvent) {
     if (destroyed || event.defaultPrevented) return;
-    if (revealedByTouch) { revealedByTouch = false; return; }
     const target = event.target as Element | null;
     if (target?.closest?.('[data-price-position], [data-price-style]')) return;
     const editing = root.hasAttribute('data-price-layout-open');
@@ -128,7 +141,8 @@ export function createVideoControls(root: HTMLElement) {
   }
 
   window.addEventListener('pointermove', handlePointerMove);
-  window.addEventListener('pointerdown', handlePointerDown);
+  window.addEventListener('pointerdown', handlePointerDown, true);
+  root.addEventListener('click', consumeRevealClick, true);
   window.addEventListener('keydown', handleKeyDown);
   window.addEventListener('click', handleClick);
   root.addEventListener('focusin', reveal);
@@ -164,7 +178,8 @@ export function createVideoControls(root: HTMLElement) {
       if (destroyed) return;
       destroyed = true;
       window.removeEventListener('pointermove', handlePointerMove);
-      window.removeEventListener('pointerdown', handlePointerDown);
+      window.removeEventListener('pointerdown', handlePointerDown, true);
+      root.removeEventListener('click', consumeRevealClick, true);
       window.removeEventListener('keydown', handleKeyDown);
       window.removeEventListener('click', handleClick);
       root.removeEventListener('focusin', reveal);

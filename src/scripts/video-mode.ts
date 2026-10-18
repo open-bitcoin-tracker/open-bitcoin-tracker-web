@@ -23,6 +23,8 @@ function startVideoMode(root: HTMLElement) {
   const priceDisplay = createLivePriceDisplay(root, { copy: t, locale, onPaint: () => priceLayout?.refresh() });
   const currencyPicker = createCurrencyPicker(root, currencySelect);
   const dismissCurrency = () => currencyPicker.close();
+  const onSettingsToggle = () => { if (!root.hasAttribute('data-price-settings-open')) currencyPicker.close(); };
+  root.addEventListener('pricesettingstoggle', onSettingsToggle);
   const onStyleToggle = () => { if (root.hasAttribute('data-price-style-open')) currencyPicker.close(); };
   root.addEventListener('pricestyletoggle', onStyleToggle);
   root.addEventListener('videouidismiss', dismissCurrency);
@@ -519,6 +521,7 @@ function startVideoMode(root: HTMLElement) {
     destroyed = true;
     priceDisplay.destroy();
     currencyPicker.destroy();
+    root.removeEventListener('pricesettingstoggle', onSettingsToggle);
     root.removeEventListener('pricestyletoggle', onStyleToggle);
     root.removeEventListener('videouidismiss', dismissCurrency);
     priceStyle.destroy();

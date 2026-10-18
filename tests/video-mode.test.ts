@@ -1803,3 +1803,17 @@ test('Video Mode owns currency dismissal when styling opens or the UI hides', ()
   h.root.dispatchEvent(new Event('videouidismiss'));
   assert.equal(h.currencyPickerCloses(), 2, 'page cleanup removes its adapters');
 });
+
+
+test('closing price settings closes currency and cleanup removes the settings adapter', () => {
+  const h = harness();
+  h.root.setAttribute('data-price-settings-open', '');
+  h.root.dispatchEvent(new Event('pricesettingstoggle'));
+  assert.equal(h.currencyPickerCloses(), 0);
+  h.root.removeAttribute('data-price-settings-open');
+  h.root.dispatchEvent(new Event('pricesettingstoggle'));
+  assert.equal(h.currencyPickerCloses(), 1);
+  h.close();
+  h.root.dispatchEvent(new Event('pricesettingstoggle'));
+  assert.equal(h.currencyPickerCloses(), 1);
+});

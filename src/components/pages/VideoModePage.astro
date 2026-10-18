@@ -36,7 +36,11 @@ const locale = htmlLang(Astro.currentLocale);
           </div>
         </div>
         <div class="video-price-style" data-price-style>
-          <div id="video-price-settings-panel" class="video-settings-panel" data-price-settings-panel role="group" aria-label={t.settings}>
+          <button type="button" class="video-settings-trigger" data-price-settings-trigger aria-expanded="false" aria-controls="video-price-settings-panel" disabled>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true"><path d="m16 3 5 5M4 20l4-1L21 6l-3-3L5 16l-1 4Z" /></svg>
+            <span>{t.settings}</span>
+          </button>
+          <div id="video-price-settings-panel" class="video-settings-panel" data-price-settings-panel role="group" aria-label={t.settings} hidden>
             <button type="button" class="video-settings-option" data-price-style-trigger aria-expanded="false" aria-controls="video-price-style-panel" disabled>
               <span>{t.style}</span>
               <svg class="video-style-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m6 9 6 6 6-6" /></svg>
@@ -234,10 +238,12 @@ const locale = htmlLang(Astro.currentLocale);
   button:focus-visible, input:focus-visible, select:focus-visible { outline: 2px solid var(--color-media-focus); outline-offset: 4px; }
   .video-icon-button { border: 0; background: rgb(16 16 16 / .65); backdrop-filter: blur(12px);  color: #fff;}
   .video-icon-button:hover { background: rgb(50 50 50 / .85); }
-  .video-price-style { position: fixed; width: min(260px, calc(100vw - 2rem)); z-index: 4; opacity: 0; visibility: hidden; pointer-events: none; transition: opacity var(--video-ui-fade) ease, visibility 0s linear var(--video-ui-fade); text-align: left; }
+  .video-price-style { position: fixed; width: max-content; z-index: 4; opacity: 0; visibility: hidden; pointer-events: none; transition: opacity var(--video-ui-fade) ease, visibility 0s linear var(--video-ui-fade); text-align: left; }
   .video-page[data-price-layout-open] .video-price-style { opacity: 1; visibility: visible; pointer-events: auto; transition-delay: 0s; }
   .video-settings-panel, .video-player-panel { background: rgb(16 16 16 / .75); backdrop-filter: blur(12px); }
-  .video-settings-panel { width: 100%; max-height: calc(100svh - 2rem); overflow-y: auto; padding: 1rem; border: 0; border-radius: var(--radius-control); font-size: .8rem; }
+  .video-settings-trigger { display: flex; align-items: center; gap: .5rem; min-height: 2.75rem; padding: .65rem .85rem; border: 0; border-radius: var(--radius-control); background: rgb(16 16 16 / .75); backdrop-filter: blur(12px); color: #fff; font-size: .9rem; font-weight: 600; }
+  .video-settings-trigger:hover { background: rgb(50 50 50 / .85); }
+  .video-settings-panel { width: min(260px, calc(100vw - 2rem)); max-height: calc(100svh - 2rem); overflow-y: auto; padding: 1rem; border: 0; border-radius: var(--radius-control); font-size: .8rem; }
   .video-settings-resets:not(:has(button:not([hidden]))) { display: none; }
   .video-settings-divider { margin: .5rem 0; border: 0; border-top: 1px solid #ffffff18; }
   .video-settings-reset { display: flex; align-items: center; gap: .6rem; width: 100%; min-height: 2.75rem; padding: .65rem .75rem; border: 0; border-radius: 8px; background: transparent; color: #ccc; text-align: left; font-size: .8rem; line-height: 1.4; }

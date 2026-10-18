@@ -1070,3 +1070,17 @@ test('Restore stays available for style-only changes and notifies style restorat
   assert.equal(restores, 2);
   h.layout.destroy();
 });
+
+
+test('expanded settings keep the price frame visible away from the hover zone', () => {
+  const h = harness();
+  h.pointer('pointerenter', h.position, { pointerType: 'mouse' });
+  h.root.setAttribute('data-price-settings-open', '');
+  h.root.dispatchEvent(new Event('pricesettingstoggle'));
+  h.pointer('pointermove', h.outside, { pointerType: 'mouse', clientX: 2000, clientY: 2000 });
+  assert.equal(h.frame(), true);
+  h.root.removeAttribute('data-price-settings-open');
+  h.root.dispatchEvent(new Event('pricesettingstoggle'));
+  assert.equal(h.frame(), false);
+  h.layout.destroy();
+});

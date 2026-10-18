@@ -48,6 +48,8 @@ function harness({ saved, blocked = false }: { saved?: string; blocked?: boolean
   root.selectors.set('[data-price-position]', position);
   const wrapper = root.append(new Element());
   root.selectors.set('[data-price-style]', wrapper);
+  const settingsTrigger = wrapper.append(new Element());
+  wrapper.selectors.set('[data-price-settings-trigger]', settingsTrigger);
   const menu = wrapper.append(new Element());
   menu.offsetWidth = 260; menu.offsetHeight = 320;
   wrapper.selectors.set('[data-price-settings-panel]', menu);
@@ -79,9 +81,10 @@ function harness({ saved, blocked = false }: { saved?: string; blocked?: boolean
   runInNewContext(script, { exports: module, window, document, Event });
   const style = module.createVideoPriceStyle!(root as unknown as HTMLElement, () => { refreshes++; });
   return {
-    root, wrapper, position, window, trigger, panel, menu, colour, font, stroke, strokeWidth, strokeColour, strokeOptions, strokeValue, swatches, document, style,
+    root, wrapper, position, window, settingsTrigger, trigger, panel, menu, colour, font, stroke, strokeWidth, strokeColour, strokeOptions, strokeValue, swatches, document, style,
     writes: () => writes, refreshes: () => refreshes, toggles: () => toggles,
     saved: () => storage.get('obt-video-price-style'),
+    toggleStyle() { if (menu.hidden) settingsTrigger.click(); trigger.click(); },
     restore: () => root.dispatchEvent(new Event('pricerestore')),
     changeColour(value: string) { colour.value = value; colour.dispatchEvent(new Event('input')); },
     changeFont(value: string) { font.value = value; font.dispatchEvent(new Event('change')); },
@@ -160,7 +163,7 @@ test('additional price fonts persist, re-fit the price, and reset their font met
 test('the style panel supports Escape, outside dismissal, native focus, and mutual exclusion with currency', () => {
   const h = harness();
   h.trigger.focus();
-  h.trigger.click();
+  h.toggleStyle();
   assert.equal(h.panel.hidden, false);
   assert.equal(h.trigger.attributes.get('aria-expanded'), 'true');
   assert.equal(h.root.hasAttribute('data-price-style-open'), true);
@@ -169,10 +172,13 @@ test('the style panel supports Escape, outside dismissal, native focus, and mutu
   assert.equal(h.escape(), true);
   assert.equal(h.document.activeElement, h.trigger);
   assert.equal(h.panel.hidden, true);
+  assert.equal(h.escape(), true);
+  assert.equal(h.menu.hidden, true);
+  assert.equal(h.document.activeElement, h.settingsTrigger);
   assert.equal(h.escape(), false);
-  h.trigger.click(); h.outside();
+  h.toggleStyle(); h.outside();
   assert.equal(h.panel.hidden, true);
-  h.trigger.click();
+  h.toggleStyle();
   h.root.setAttribute('data-currency-open', '');
   h.root.dispatchEvent(new Event('currencytoggle'));
   assert.equal(h.panel.hidden, true);
@@ -203,12 +209,12 @@ test('storage failures preserve controls and destruction removes interactive beh
   assert.equal(h.root.style.values.get('--video-price-colour'), '#123456');
   assert.match(h.root.style.values.get('--video-price-font')!, /monospace/);
   assert.equal(h.writes(), 0);
-  h.trigger.click();
+  h.toggleStyle();
   h.style.destroy(); h.style.destroy();
   assert.equal(h.panel.hidden, true);
   const refreshes = h.refreshes();
   const toggles = h.toggles();
-  h.trigger.click(); h.swatches[0].click(); h.changeFont('serif'); h.restore();
+  h.toggleStyle(); h.swatches[0].click(); h.changeFont('serif'); h.restore();
   assert.equal(h.refreshes(), refreshes);
   assert.equal(h.toggles(), toggles);
 });
@@ -275,7 +281,7 @@ test('Restore resets style with the panel closed and preserves focus', () => {
 
 test('the editing menu uses free space beside, below, or above the price', () => {
   const h = harness();
-  h.trigger.click();
+  h.toggleStyle();
   assert.equal(h.wrapper.style.values.get('left'), '710px');
   assert.equal(h.wrapper.style.values.get('top'), '200px');
   h.window.innerWidth = 1200;
@@ -298,7 +304,7 @@ test('the editing menu uses free space beside, below, or above the price', () =>
 
 test('the editing menu remains reachable in narrow and short viewports after resize', () => {
   const h = harness();
-  h.trigger.click();
+  h.toggleStyle();
   h.window.innerWidth = 390;
   h.window.innerHeight = 240;
   h.menu.offsetHeight = 208;
@@ -330,7 +336,7 @@ test('style customization state includes manual return to defaults', () => {
 
 test('outside pointer dismissal consumes exactly its following click before playback can handle it', () => {
   const h = harness();
-  h.trigger.click();
+  h.toggleStyle();
   h.outside();
   h.position.focus();
   assert.equal(h.panel.hidden, true);
@@ -338,7 +344,7 @@ test('outside pointer dismissal consumes exactly its following click before play
   assert.equal(dismissal.defaultPrevented, true);
   assert.equal(dismissal.cancelBubble, true, 'dismissal must stop before reaching background playback handlers');
   assert.equal(h.documentClick().defaultPrevented, false, 'later ordinary clicks are not swallowed');
-  h.trigger.click();
+  h.toggleStyle();
   const inside = h.documentClick(h.font);
   assert.equal(inside.defaultPrevented, false);
   assert.equal(h.panel.hidden, false, 'inside controls keep their normal click behavior');
@@ -346,16 +352,48 @@ test('outside pointer dismissal consumes exactly its following click before play
 });
 
 
-test('the editing menu is anchored before opening either dropdown', () => {
+test('the frame shows a settings button and the editing menu opens only on request', () => {
   const h = harness();
   assert.equal(h.panel.hidden, true);
-  assert.equal(h.menu.hidden, false);
+  assert.equal(h.menu.hidden, true);
+  assert.equal(h.settingsTrigger.hidden, false);
+  assert.equal(h.settingsTrigger.disabled, false);
+  assert.equal(h.settingsTrigger.attributes.get('aria-expanded'), 'false');
+  h.root.setAttribute('data-price-layout-open', '');
+  h.root.dispatchEvent(new Event('priceeditortoggle'));
+  assert.equal(h.menu.hidden, true, 'revealing the frame must not expand settings');
   assert.equal(h.wrapper.style.values.get('left'), '710px');
   assert.equal(h.wrapper.style.values.get('top'), '200px');
-  h.trigger.click();
+  h.toggleStyle();
   assert.equal(h.panel.hidden, false);
   h.root.dispatchEvent(new Event('videouidismiss'));
   assert.equal(h.panel.hidden, true);
-  assert.equal(h.menu.hidden, false, 'the price editing frame controls menu visibility');
+  assert.equal(h.menu.hidden, true);
+  assert.equal(h.settingsTrigger.hidden, false);
+  assert.equal(h.settingsTrigger.attributes.get('aria-expanded'), 'false');
   h.style.destroy();
+});
+
+
+test('outside dismissal closes settings even when both dropdowns are collapsed', () => {
+  for (const pointer of [true, false]) {
+    const h = harness();
+    h.settingsTrigger.click();
+    assert.equal(h.menu.hidden, false);
+    assert.equal(h.panel.hidden, true);
+    assert.equal(h.settingsTrigger.hidden, true);
+    assert.equal(h.settingsTrigger.attributes.get('aria-expanded'), 'true');
+    let dismissals = 0;
+    h.root.addEventListener('videouidismiss', () => { dismissals++; });
+    if (pointer) h.outside();
+    const event = h.documentClick(h.position);
+    assert.equal(h.menu.hidden, true);
+    assert.equal(event.defaultPrevented, true);
+    assert.equal(event.cancelBubble, true);
+    assert.equal(dismissals, 1);
+    assert.equal(h.documentClick().defaultPrevented, false);
+    h.style.destroy();
+    h.settingsTrigger.click();
+    assert.equal(h.menu.hidden, true, 'cleanup removes the settings trigger listener');
+  }
 });

@@ -137,7 +137,7 @@ export function createVideoPriceLayout(root: HTMLElement) {
   function withinHoverZone(event: PointerEvent) {
     const box = position.getBoundingClientRect();
     const controls = styleControls.getBoundingClientRect();
-    const menuBox = menu?.getBoundingClientRect();
+    const menuBox = menu && !menu.hidden ? menu.getBoundingClientRect() : undefined;
     const inside = (left: number, top: number, width: number, height: number, verticalPadding: number) =>
       event.clientX >= left - HOVER_PADDING && event.clientX <= left + width + HOVER_PADDING
       && event.clientY >= top - verticalPadding && event.clientY <= top + height + verticalPadding;
@@ -147,7 +147,7 @@ export function createVideoPriceLayout(root: HTMLElement) {
   }
   function revealFrame() {
     if (destroyed) return;
-    setFrame(!dismissed && !document.hidden && (hovered || touchEditing || !!operation || root.hasAttribute('data-price-style-open') || root.hasAttribute('data-currency-open') || keyboardFocus()));
+    setFrame(!dismissed && !document.hidden && (hovered || touchEditing || !!operation || root.hasAttribute('data-price-settings-open') || root.hasAttribute('data-price-style-open') || root.hasAttribute('data-currency-open') || keyboardFocus()));
   }
   function resizeGeometry(corner: Corner, centered = false): Resize {
     const { viewport, box } = geometry();
@@ -325,6 +325,7 @@ export function createVideoPriceLayout(root: HTMLElement) {
     dismissed = false;
     if (keyboardFocus()) revealFrame();
   }) as EventListener);
+  listen(root, 'pricesettingstoggle', revealFrame);
   listen(root, 'pricestyletoggle', revealFrame);
   listen(root, 'currencytoggle', revealFrame);
   const focusIn = () => { if (keyboardFocus()) revealFrame(); };
@@ -332,7 +333,7 @@ export function createVideoPriceLayout(root: HTMLElement) {
   listen(styleControls, 'focusin', focusIn);
   const focusOut = ((event: FocusEvent) => {
     if (!position.contains(event.relatedTarget as Node | null) && !styleControls.contains(event.relatedTarget as Node | null)
-      && !hovered && !touchEditing && !operation && !root.hasAttribute('data-price-style-open') && !root.hasAttribute('data-currency-open')) setFrame(false);
+      && !hovered && !touchEditing && !operation && !root.hasAttribute('data-price-settings-open') && !root.hasAttribute('data-price-style-open') && !root.hasAttribute('data-currency-open')) setFrame(false);
   }) as EventListener;
   listen(position, 'focusout', focusOut);
   listen(styleControls, 'focusout', focusOut);

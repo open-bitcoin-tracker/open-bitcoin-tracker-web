@@ -99,7 +99,7 @@ function harness({ finePointer = true, hidden = false } = {}) {
     disconnect() { disconnected = true; }
   }
   const module: { createVideoControls?: typeof createVideoControls } = {};
-  runInNewContext(script, { exports: module, window, document, Event, ResizeObserver: Observer });
+  runInNewContext(script, { exports: module, window, document, Event, Date: { now: () => now }, ResizeObserver: Observer });
   const controls = module.createVideoControls!(root as unknown as HTMLElement);
 
   function tick(milliseconds: number) {
@@ -136,9 +136,11 @@ function harness({ finePointer = true, hidden = false } = {}) {
   const key = () => window.dispatchEvent(new Event('keydown'));
   const idle = () => root.attributes.has('data-ui-idle');
   const click = (target = background) => {
-    const event = new Event('click');
+    const event = new Event('click', { cancelable: true });
     Object.defineProperty(event, 'target', { value: target });
-    window.dispatchEvent(event);
+    root.dispatchEvent(event);
+    if (!event.cancelBubble) window.dispatchEvent(event);
+    return event;
   };
   return { controls, root, dock, price, observed, resizeObserved: () => observedResize?.(), disconnected: () => disconnected, button, background, click, window, document, cursor, timers, tick, pointer, focus, blur, visibility, device, menu, key, idle };
 }
@@ -661,4 +663,51 @@ test('placement follows viewport and price size changes while ignoring dock dime
   h.resizeObserved();
   h.window.dispatchEvent(new Event('resize'));
   assert.equal(h.root.hasAttribute('data-video-controls-top'), false);
+});
+
+
+test('a first tap reveals hidden UI without playback; the next visible tap can toggle playback', () => {
+  for (const pointerType of ['touch', 'mouse', 'pen']) {
+    for (const onPrice of [false, true]) {
+      const h = harness({ finePointer: pointerType === 'mouse' });
+      h.controls.setEnabled(true);
+      let playbackToggles = 0;
+      h.root.addEventListener('click', event => { if (!event.defaultPrevented) playbackToggles++; });
+      h.tick(1200);
+      assert.equal(h.idle(), true);
+      h.button.price = onPrice;
+      const target = onPrice ? h.button : h.background;
+      h.pointer('pointerdown', pointerType, target);
+      assert.equal(h.idle(), false);
+      const first = h.click(target);
+      assert.equal(first.defaultPrevented, true);
+      assert.equal(first.cancelBubble, true);
+      assert.equal(playbackToggles, 0);
+      assert.equal(h.idle(), false);
+      h.pointer('pointerdown', pointerType, target);
+      assert.equal(h.click(target).defaultPrevented, false);
+      assert.equal(playbackToggles, 1);
+      h.controls.destroy();
+    }
+  }
+});
+
+
+test('a mouse click that first moves the pointer to reveal UI cannot also toggle playback', () => {
+  const h = harness();
+  h.controls.setEnabled(true);
+  h.tick(1200);
+  h.pointer('pointermove');
+  h.tick(100);
+  h.pointer('pointerdown');
+  assert.equal(h.click().defaultPrevented, true);
+  assert.equal(h.idle(), false);
+  h.pointer('pointerdown');
+  assert.equal(h.click().defaultPrevented, false);
+  h.tick(1200);
+  h.pointer('pointermove');
+  h.tick(250);
+  h.pointer('pointerdown');
+  assert.equal(h.click().defaultPrevented, false, 'a completed reveal leaves clicks available');
+  h.controls.destroy();
 });

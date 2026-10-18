@@ -16,6 +16,7 @@ const isFont = (value: unknown): value is string => typeof value === 'string' &&
 /** A small disclosure for locally saved price styling, independent of its layout. */
 export function createVideoPriceStyle(root: HTMLElement, refreshLayout: () => void) {
   const wrapper = root.querySelector<HTMLElement>('[data-price-style]')!;
+  const settingsTrigger = wrapper.querySelector<HTMLButtonElement>('[data-price-settings-trigger]')!;
   const trigger = wrapper.querySelector<HTMLButtonElement>('[data-price-style-trigger]')!;
   const menu = wrapper.querySelector<HTMLElement>('[data-price-settings-panel]')!;
   const panel = wrapper.querySelector<HTMLElement>('[data-price-style-panel]')!;
@@ -31,6 +32,7 @@ export function createVideoPriceStyle(root: HTMLElement, refreshLayout: () => vo
   const removeListeners: (() => void)[] = [];
   let state = { ...DEFAULTS };
   let open = false;
+  let settingsOpen = false;
   let destroyed = false;
   let dismissingPointerClick = false;
 
@@ -84,7 +86,8 @@ export function createVideoPriceStyle(root: HTMLElement, refreshLayout: () => vo
     const clamp = (value: number, maximum: number) => Math.max(padding, Math.min(value, maximum));
     const centre = box.left + box.width / 2;
     menu.style.setProperty('max-height', `${Math.max(0, window.innerHeight - padding * 2)}px`);
-    const panelHeight = menu.offsetHeight, panelWidth = menu.offsetWidth;
+    const surface = settingsOpen ? menu : settingsTrigger;
+    const panelHeight = surface.offsetHeight, panelWidth = surface.offsetWidth;
     const panelOnLeft = centre > window.innerWidth / 2 || box.right + gap + panelWidth > window.innerWidth - padding;
     const beside = box.left - gap - panelWidth >= padding || box.right + gap + panelWidth <= window.innerWidth - padding;
     const panelLeft = beside ? (panelOnLeft ? box.left - gap - panelWidth : box.right + gap) : centre - panelWidth / 2;
@@ -113,6 +116,29 @@ export function createVideoPriceStyle(root: HTMLElement, refreshLayout: () => vo
     if (restoreFocus) trigger.focus();
   }
 
+  function closeSettings(restoreFocus = false) {
+    if (!settingsOpen) return;
+    settingsOpen = false;
+    close();
+    menu.hidden = true;
+    settingsTrigger.hidden = false;
+    settingsTrigger.setAttribute('aria-expanded', 'false');
+    root.removeAttribute('data-price-settings-open');
+    root.dispatchEvent(new Event('pricesettingstoggle'));
+    anchor();
+    if (restoreFocus) settingsTrigger.focus();
+  }
+
+  listen(settingsTrigger, 'click', () => {
+    settingsOpen = true;
+    menu.hidden = false;
+    settingsTrigger.hidden = true;
+    settingsTrigger.setAttribute('aria-expanded', 'true');
+    root.setAttribute('data-price-settings-open', '');
+    root.dispatchEvent(new Event('pricesettingstoggle'));
+    anchor();
+    trigger.focus();
+  });
   listen(trigger, 'click', () => {
     if (open) { close(); return; }
     open = true;
@@ -123,18 +149,31 @@ export function createVideoPriceStyle(root: HTMLElement, refreshLayout: () => vo
     anchor();
   });
   listen(wrapper, 'keydown', ((event: KeyboardEvent) => {
-    if (event.key === 'Escape' && open) { event.preventDefault(); close(true); }
+    if (event.key !== 'Escape') return;
+    if (open) { event.preventDefault(); close(true); }
+    else if (settingsOpen) { event.preventDefault(); closeSettings(true); }
   }) as EventListener);
   const dismissOutside = (event: Event) => {
-    if (!wrapper.contains(event.target as Node | null)) close();
+    if (!wrapper.contains(event.target as Node | null)) closeSettings();
   };
   listen(document, 'pointerdown', event => {
-    dismissingPointerClick = open && !wrapper.contains(event.target as Node | null);
-    if (dismissingPointerClick) close();
+    dismissingPointerClick = settingsOpen && !wrapper.contains(event.target as Node | null);
+    if (dismissingPointerClick) {
+      // Prevent the same gesture from starting a price drag or activating a control.
+      event.preventDefault();
+      event.stopPropagation();
+      closeSettings();
+      root.dispatchEvent(new Event('videouidismiss'));
+    }
   }, true);
   // Consume the dismissal click before playback or other controls can handle it.
   listen(document, 'click', event => {
-    if (!dismissingPointerClick) return;
+    const outside = settingsOpen && !wrapper.contains(event.target as Node | null);
+    if (!dismissingPointerClick && !outside) return;
+    if (outside) {
+      closeSettings();
+      root.dispatchEvent(new Event('videouidismiss'));
+    }
     dismissingPointerClick = false;
     event.preventDefault();
     event.stopPropagation();
@@ -142,7 +181,7 @@ export function createVideoPriceStyle(root: HTMLElement, refreshLayout: () => vo
   listen(document, 'focusin', dismissOutside);
   listen(document, 'focusin', anchor);
   listen(root, 'currencytoggle', () => { if (root.hasAttribute('data-currency-open')) close(); });
-  listen(root, 'videouidismiss', () => close());
+  listen(root, 'videouidismiss', () => closeSettings());
   listen(root, 'currencytoggle', anchor);
   listen(root, 'pricelayoutchange', anchor);
   listen(root, 'priceeditortoggle', anchor);
@@ -179,6 +218,9 @@ export function createVideoPriceStyle(root: HTMLElement, refreshLayout: () => vo
     state = { ...DEFAULTS };
     save();
   });
+  menu.hidden = true;
+  settingsTrigger.disabled = false;
+  settingsTrigger.setAttribute('aria-expanded', 'false');
   panel.hidden = true;
   trigger.setAttribute('aria-expanded', 'false');
   trigger.disabled = colour.disabled = font.disabled = stroke.disabled = false;
@@ -196,7 +238,7 @@ export function createVideoPriceStyle(root: HTMLElement, refreshLayout: () => vo
     destroy() {
       if (destroyed) return;
       destroyed = true;
-      close();
+      closeSettings();
       observer?.disconnect();
       for (const remove of removeListeners) remove();
       root.removeAttribute('data-price-style-custom');
