@@ -393,12 +393,7 @@ const locale = htmlLang(Astro.currentLocale);
   .video-page[data-ui-idle] :global(.site-nav) { opacity: 0; pointer-events: none; }
   .video-page[data-ui-idle] .video-price-style { opacity: 0; visibility: hidden; pointer-events: none; }
   [hidden] { display: none !important; }
-  @media (hover: none) and (pointer: coarse) {
-    .video-page:not([data-video-silent]) .video-volume-control { display: none; }
-    .video-controls { justify-content: space-between; }
-    .video-controls [data-loop], .video-player-panel:has(.video-time[hidden]) [data-fullscreen] { margin-left: 0; }
-  }
-  @media (max-width: 700px) {
+  @media (max-width: 700px), (hover: none) and (pointer: coarse) {
     .video-price-stage { padding: 5rem 1rem 6rem; }
     .video-dock { width: min(18rem, calc(100% - 2rem)); }
     .video-dock:has(.video-time[hidden]) { width: min(16rem, calc(100% - 2rem)); }
@@ -408,10 +403,10 @@ const locale = htmlLang(Astro.currentLocale);
     .video-controls .video-icon-button svg { width: 1.75rem; height: 1.75rem; }
     .video-time { font-size: .8rem; }
     .video-controls [data-loop], .video-player-panel:has(.video-time[hidden]) [data-fullscreen] { margin-left: 0; }
-    .video-volume-control { position: relative; }
-    .video-volume-reveal { position: absolute; bottom: 100%; left: 0; height: 3rem; padding: .25rem .5rem; border-radius: 999px; background: rgb(16 16 16 / .95); }
-    .video-volume-control:is(:hover, :has(:focus-visible), :has(input:active)) .video-volume-reveal { width: 7rem; }
-    .video-volume-slider { width: 6rem; margin-left: 0; }
+    .video-page:not([data-video-silent]) .video-volume-control { flex: 1 0 100%; order: 1; max-width: none; }
+    .video-volume-control .video-volume-reveal,
+    .video-volume-control:is(:hover, :has(:focus-visible), :has(input:active)) .video-volume-reveal { flex: 1; width: auto; min-width: 0; opacity: 1; visibility: visible; pointer-events: auto; }
+    .video-volume-slider { flex: 1; min-width: 0; width: 0; margin-left: .5rem; margin-right: .75rem; }
   }
   @media (max-width: 600px) and (max-height: 640px) {
     .video-playback:not([hidden]) ~ [data-video-status] { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }

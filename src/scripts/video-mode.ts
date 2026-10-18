@@ -56,7 +56,9 @@ function startVideoMode(root: HTMLElement) {
   let hasVideo = false;
   let focusRecovery = true;
   let playing = false;
-  let muted = false;
+  // Start touch playback muted; users opt in to sound when other apps may be playing.
+  const startMuted = window.matchMedia('(hover: none) and (pointer: coarse)').matches;
+  let muted = startMuted;
   let silentVideo = false;
   let volume = 100;
   let lastAudibleVolume = 100;
@@ -80,20 +82,15 @@ function startVideoMode(root: HTMLElement) {
       if (typeof saved.lastAudibleVolume === 'number' && Number.isFinite(saved.lastAudibleVolume) && saved.lastAudibleVolume >= 1 && saved.lastAudibleVolume <= 100) {
         lastAudibleVolume = Math.round(saved.lastAudibleVolume);
       }
-      muted = volume === 0 || saved.muted === true;
+      muted = startMuted || volume === 0 || saved.muted === true;
       looping = saved.looping === true;
     }
   } catch { /* Keep playback usable when saved settings are malformed or storage is blocked. */ }
-  const mobileAudio = window.matchMedia('(hover: none) and (pointer: coarse)');
-  let phoneAudio = mobileAudio.matches;
-  let desktopAudio = { volume, muted, lastAudibleVolume };
-  if (phoneAudio) { volume = lastAudibleVolume = 100; muted = false; }
-
   function savePlaybackPreferences() {
     if (destroyed) return;
     try {
       window.localStorage.setItem(VIDEO_PLAYBACK_KEY, JSON.stringify({
-        version: 1, ...(phoneAudio ? desktopAudio : { volume, muted, lastAudibleVolume }), looping,
+        version: 1, volume, muted, lastAudibleVolume, looping,
       }));
     } catch { /* Settings remain usable when storage is blocked or full. */ }
   }
@@ -210,7 +207,7 @@ function startVideoMode(root: HTMLElement) {
     const label = silentVideo ? t.noSound : muted ? t.unmute : t.mute;
     const showMuted = muted || silentVideo;
     root.toggleAttribute('data-video-silent', silentVideo);
-    muteButton.disabled = volumeInput.disabled = phoneAudio || !hasVideo || silentVideo;
+    muteButton.disabled = volumeInput.disabled = !hasVideo || silentVideo;
     muteButton.setAttribute('aria-label', label);
     muteButton.title = label;
     root.querySelector<SVGElement>('[data-muted-icon]')!.toggleAttribute('hidden', !showMuted);
@@ -278,24 +275,6 @@ function startVideoMode(root: HTMLElement) {
   player.setLoop(looping);
   // Ignore legacy subtitle preferences and keep YouTube-selected tracks off.
   player.setCaptions(false);
-  function updateAudioMode() {
-    if (destroyed || phoneAudio === mobileAudio.matches) return;
-    phoneAudio = mobileAudio.matches;
-    if (phoneAudio) {
-      desktopAudio = { volume, muted, lastAudibleVolume };
-      volume = lastAudibleVolume = 100;
-      muted = false;
-    } else {
-      ({ volume, muted, lastAudibleVolume } = desktopAudio);
-    }
-    adjustingVolume = false;
-    player.setVolume(volume);
-    player.setMuted(muted);
-    paintAudio();
-    updateIdle();
-  }
-  mobileAudio.addEventListener('change', updateAudioMode);
-
   function loadSelectedVideo(video: YouTubeVideo, { focus = true, persist = true, remember = false, rememberOnPlayback = false } = {}) {
     if (destroyed) return;
     // Store only the validated ID and requested start time, without share tracking.
@@ -535,7 +514,6 @@ function startVideoMode(root: HTMLElement) {
     player.destroy();
     document.removeEventListener('visibilitychange', onVisibility);
     document.removeEventListener('fullscreenchange', updateFullscreen);
-    mobileAudio.removeEventListener('change', updateAudioMode);
     window.removeEventListener('pointerup', releaseSeek);
     window.removeEventListener('pointercancel', cancelSeek);
   }, { once: true });

@@ -38,6 +38,10 @@ Price on Video uses `/video-mode/` and its localized routes. Its page title, hom
 
 Tapping the video or price toggles the controls without changing playback. Revealed controls fade after three seconds of inactivity; playback uses the Play/Pause button. Entering fullscreen hides the controls immediately, and mouse movement does not reveal them there. Keyboard navigation and active editing keep controls accessible.
 
+Mobile and narrow layouts expose mute and a volume slider directly in the panel. Touch devices start each page visit muted, with the saved volume ready for explicit unmuting; changing input mode never resets the audio settings. Mute and volume selections persist across video replacements. Silent catalogue videos retain their disabled No sound indicator.
+
+For music from another app, keep the video muted. Cross-app audio focus belongs to the browser/OS and the cross-origin YouTube player, so simultaneous audible playback cannot be guaranteed. iOS may ignore the YouTube volume setting and require device volume controls; mute remains the per-video option. Verify mixing on real target devices before claiming support; desktop or touch emulation cannot confirm native-app audio behavior.
+
 Edit the sections in `src/lib/video-suggestions.ts` to add or reorder curated videos in Price on Video. Party and Chill share the same selection and Recent-history behavior; adding a section also needs a translated tab label in `src/i18n/video.ts`. Each entry needs a YouTube video ID, its original title, and verified `isLive` and `isSilent` status; thumbnails use YouTube images, and selection uses the normal player and saved-video flow. Check the broadcast status rather than inferring it from the title or URL.
 
 Recent videos stay in browser storage. Submitted URLs are saved immediately; suggestions join Recent when playback starts. Titles use the suggestion catalog when available; other titles come from YouTube's oEmbed endpoint and are cached alongside the saved URLs. Unavailable metadata does not prevent playback or removal.

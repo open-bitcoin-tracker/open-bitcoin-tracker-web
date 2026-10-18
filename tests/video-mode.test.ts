@@ -563,7 +563,7 @@ test('silent videos show a disabled muted indicator without changing saved audio
   }
 });
 
-test('restored silent videos retain their muted indicator across touch and desktop audio modes', () => {
+test('restored silent videos retain their muted indicator across input mode changes', () => {
   const silent = videoSuggestions.find(video => video.isSilent)!;
   const storedPlayback = JSON.stringify({ version: 1, volume: 24, muted: true, lastAudibleVolume: 24 });
   const h = harness({ storedPlayback, storedSelection: JSON.stringify({ version: 1, url: `https://www.youtube.com/watch?v=${silent.id}` }) });
@@ -595,48 +595,69 @@ test('a narrow desktop window retains volume and mute controls', () => {
   h.close();
 });
 
-test('mobile playback uses full unmuted sound without overwriting saved desktop audio settings', () => {
-  const h = harness({ mobile: true, storedPlayback: JSON.stringify({ version: 1, volume: 37, muted: true, lastAudibleVolume: 37 }) });
+test('mobile playback starts muted with accessible audio controls and a remembered volume', () => {
+  for (const savedMuted of [false, true]) {
+    const h = harness({ mobile: true, storedPlayback: JSON.stringify({ version: 1, volume: 37, muted: savedMuted, lastAudibleVolume: 37 }) });
+    h.submit(firstUrl);
+    assert.equal(h.volumes.at(-1), 37);
+    assert.equal(h.muted.at(-1), true, 'mobile selection must not force audible playback');
+    assert.equal(h.playbackAtLoad.at(-1)?.muted, true, 'mute is queued before loading the video');
+    assert.equal(h.control('[data-video-volume]').disabled, false);
+    assert.equal(h.control('[data-mute]').disabled, false);
+    assert.equal(h.control('[data-mute]').attributes.get('aria-label'), copy.unmute);
+    h.click('[data-mute]');
+    assert.equal(h.muted.at(-1), false, 'the user can explicitly enable video audio');
+    h.control('[data-video-volume]').value = '18';
+    h.control('[data-video-volume]').dispatchEvent(new Event('input'));
+    assert.equal(h.volumes.at(-1), 18);
+    assert.equal(h.control('[data-video-volume]').attributes.get('aria-valuetext'), '18%');
+    h.click('[data-mute]');
+    h.submit(secondUrl);
+    assert.equal(h.playbackAtLoad.at(-1)?.muted, true, 'replacement videos preserve mute');
+    assert.equal(h.playbackAtLoad.at(-1)?.volume, 18);
+    assert.deepEqual(JSON.parse(h.storage.get(videoPlaybackKey)!), {
+      version: 1, volume: 18, muted: true, lastAudibleVolume: 18, looping: false,
+    });
+    h.close();
+  }
+});
+
+test('fresh mobile playback is muted and zero volume can restore the last audible level', () => {
+  const h = harness({ mobile: true });
   h.submit(firstUrl);
-  assert.equal(h.volumes.at(-1), 100);
-  assert.equal(h.muted.at(-1), false);
-  assert.equal(h.control('[data-video-volume]').disabled, true);
-  assert.equal(h.control('[data-mute]').disabled, true);
-  h.click('[data-mute]');
-  assert.equal(h.muted.at(-1), false);
-  h.click('[data-loop]');
-  assert.deepEqual(JSON.parse(h.storage.get(videoPlaybackKey)!), {
-    version: 1, volume: 37, muted: true, lastAudibleVolume: 37, looping: true,
-  });
-  h.mobile(false);
-  assert.equal(h.volumes.at(-1), 37);
+  assert.equal(h.playbackAtLoad.at(-1)?.muted, true);
+  assert.equal(h.playbackAtLoad.at(-1)?.volume, 100);
+  const volume = h.control('[data-video-volume]');
+  for (const value of ['24', '0']) {
+    volume.value = value;
+    volume.dispatchEvent(new Event('input'));
+  }
   assert.equal(h.muted.at(-1), true);
-  assert.equal(h.control('[data-video-volume]').disabled, false);
+  h.click('[data-mute]');
+  assert.equal(h.volumes.at(-1), 24);
+  assert.equal(h.muted.at(-1), false);
   h.close();
 });
 
-test('switching to touch input restores full sound and switching back restores desktop audio', () => {
+test('input mode changes never reset volume, unmute video, or disable audio controls', () => {
   const h = harness();
   h.submit(firstUrl);
   const volume = h.control('[data-video-volume]');
   volume.value = '24';
   volume.dispatchEvent(new Event('input'));
   h.click('[data-mute]');
-  h.mobile(true);
-  assert.equal(h.volumes.at(-1), 100);
-  assert.equal(h.muted.at(-1), false);
-  assert.equal(volume.disabled, true);
-  h.submit(secondUrl);
-  assert.equal(volume.disabled, true);
-  assert.equal(h.playbackAtLoad.at(-1)?.volume, 100);
-  h.mobile(false);
-  assert.equal(h.volumes.at(-1), 24);
-  assert.equal(h.muted.at(-1), true);
-  assert.equal(volume.disabled, false);
+  for (const mobile of [true, false, true]) {
+    const calls = h.volumes.length;
+    h.mobile(mobile);
+    assert.equal(h.volumes.length, calls, 'changing input mode leaves audio alone');
+    assert.equal(h.volumes.at(-1), 24);
+    assert.equal(h.muted.at(-1), true);
+    assert.equal(volume.disabled, false);
+    h.submit(secondUrl);
+    assert.equal(h.playbackAtLoad.at(-1)?.volume, 24);
+    assert.equal(h.playbackAtLoad.at(-1)?.muted, true);
+  }
   h.close();
-  const calls = h.volumes.length;
-  h.mobile(true);
-  assert.equal(h.volumes.length, calls, 'page cleanup releases the responsive audio listener');
 });
 
 test('volume starts at full sound, zero mutes, and unmute restores the last audible level', () => {
