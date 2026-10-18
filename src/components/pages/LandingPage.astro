@@ -51,6 +51,11 @@ const href = (path: string) => getRelativeLocaleUrl(lang, path);
       </a>
 
       <div class="explore-grid">
+        <article class="video-tool secondary-tool">
+            <div class="tool-heading"><h2><a class="tool-link video-card-link" href={href('video-mode')}>{t.nav.videoMode}</a></h2></div>
+            <VideoPreview />
+            <div class="tool-description"><p>{home.videoDescription}</p><span class="text-action">{home.openVideo}<span aria-hidden="true">↗</span></span></div>
+        </article>
         <article class="earth-tool">
           <a class="tool-link secondary-tool" href={href(aBitOfEarth.path)}>
             <div class="tool-heading"><h2 lang="en">{aBitOfEarth.title}</h2></div>
@@ -60,11 +65,6 @@ const href = (path: string) => getRelativeLocaleUrl(lang, path);
             </figure>
             <div class="tool-description"><p>{home.earthDescription}</p><span class="text-action">{home.openEarth}<span aria-hidden="true">↗</span></span></div>
           </a>
-        </article>
-        <article class="video-tool secondary-tool">
-            <div class="tool-heading"><h2><a class="tool-link video-card-link" href={href('video-mode')}>{t.nav.videoMode}</a></h2></div>
-            <VideoPreview />
-            <div class="tool-description"><p>{home.videoDescription}</p><span class="text-action">{home.openVideo}<span aria-hidden="true">↗</span></span></div>
         </article>
       </div>
 
