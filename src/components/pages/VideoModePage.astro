@@ -105,6 +105,10 @@ const locale = htmlLang(Astro.currentLocale);
         </div>
         <p id="video-price-keyboard-hint" class="sr-only">{t.priceKeyboardHint}</p>
       </section>
+      <button type="button" class="video-change" data-change-video aria-haspopup="dialog" aria-controls="video-picker" aria-expanded="false" hidden disabled>
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="3" /><path d="M7 3v18M17 3v18M3 8h4m-4 8h4M17 8h4m-4 8h4" /></svg>
+        <span>{t.changeVideo}</span>
+      </button>
       <dialog id="video-picker" class="video-picker" data-video-picker aria-labelledby="video-picker-title">
         <h2 id="video-picker-title" class="sr-only" tabindex="-1" autofocus>{t.pickVideo}</h2>
         <form class="video-form" data-video-form novalidate>
@@ -151,7 +155,6 @@ const locale = htmlLang(Astro.currentLocale);
             <div class="video-timeline" data-video-timeline>
               <input class="video-seek" data-video-seek type="range" min="0" max="0" value="0" step="1" aria-label={t.seek} aria-valuetext={t.playbackPosition.replace('{current}', '0:00').replace('{duration}', '—')} disabled />
             </div>
-            <button type="button" class="video-change" data-change-video aria-haspopup="dialog" aria-controls="video-picker" aria-expanded="false" disabled>{t.changeVideo}</button>
           </div>
           <div class="video-controls">
           <IconButton type="button" class="video-icon-button" data-play-pause aria-label={t.play} title={t.play} disabled>
@@ -310,7 +313,7 @@ const locale = htmlLang(Astro.currentLocale);
   /* Compensate for the final negative letter spacing so the last glyph stays inside the frame. */
   .video-price { --price-chars: 8; --video-price-base-size: clamp(3.75rem, min(11.71875vw, 20.8334vh, 258.75vw / var(--price-chars)), 28.125rem); color: var(--video-price-colour, #fff); font-family: var(--video-price-font, var(--font-sans)); font-size: calc(var(--video-price-base-size) * var(--video-price-scale, 1) * var(--video-price-fit, 1)); font-weight: var(--video-price-weight, 750); letter-spacing: var(--video-price-spacing, -.065em); padding-inline-end: .065em; padding-block: var(--video-price-padding, 0); -webkit-text-stroke: var(--video-price-stroke-width, 0px) var(--video-price-stroke-colour, #000); paint-order: stroke fill; line-height: 1.2; font-variant-numeric: tabular-nums; white-space: nowrap; text-shadow: 0 3px 30px #000, 0 0 80px #0009; }
   .video-dock { position: fixed; bottom: 0; margin-bottom: max(1rem, env(safe-area-inset-bottom)); left: 50%; transform: translateX(-50%); width: min(28rem, calc(100% - 3rem)); z-index: 3; text-align: center; }
-  .video-page[data-video-controls-top] .video-dock { top: 0; bottom: auto; margin-top: max(1rem, env(safe-area-inset-top)); }
+  .video-page[data-video-controls-top] .video-dock { top: 0; bottom: auto; margin-top: calc(var(--menu-control-top) + var(--menu-control-size) + .75rem); }
   .video-dock:has(.video-time[hidden]) { width: min(20rem, calc(100% - 3rem)); }
   .video-picker { position: fixed; inset: 0 auto 0 0; width: min(32rem, 100%); max-width: 100%; height: 100dvh; max-height: 100dvh; margin: 0; padding: max(1.75rem, env(safe-area-inset-top)) max(1.5rem, env(safe-area-inset-right)) max(1.75rem, env(safe-area-inset-bottom)) max(1.5rem, env(safe-area-inset-left)); overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; border: 0; border-right: 1px solid #ffffff14; background: #111; color: #fff; box-shadow: 12px 0 60px #0005; transform: translate3d(-100%, 0, 0); transition: transform .3s ease; will-change: transform; }
   .video-picker[open] { transform: translate3d(0, 0, 0); }
@@ -358,8 +361,7 @@ const locale = htmlLang(Astro.currentLocale);
   .video-controls .video-icon-button:hover { background: rgb(255 255 255 / .1); }
   .video-icon-button[aria-pressed="true"] { color: #ffb047; background: rgb(71 41 9 / .85); }
   .video-player-header { display: flex; align-items: center; gap: .75rem; padding: 0 .5rem; margin-bottom: .25rem; }
-  .video-player-header:has(.video-timeline[hidden]) { justify-content: center; }
-  .video-player-header:has(.video-timeline[hidden]) .video-change { margin-inline: 0; max-width: 100%; }
+  .video-player-header:has(.video-timeline[hidden]) { display: none; }
   .video-timeline { display: flex; align-items: center; flex: 1 1 0; min-width: 0; }
   .video-timeline .video-seek { width: 100%; min-width: 0; }
   .video-time { display: flex; align-items: center; gap: .25rem; flex-shrink: 0; margin-right: auto; font-size: .7rem; font-variant-numeric: tabular-nums; white-space: nowrap; }
@@ -377,13 +379,15 @@ const locale = htmlLang(Astro.currentLocale);
   .video-volume-control:has(:focus-visible) .video-volume-reveal,
   .video-volume-control:has(input:active) .video-volume-reveal { width: calc(clamp(3rem, 15vw, 5rem) + .5rem); opacity: 1; visibility: visible; pointer-events: auto; }
   .video-volume-slider { --video-progress: 100%; width: clamp(3rem, 15vw, 5rem); margin-left: .5rem; }
-  .video-change { flex: 0 1 auto; max-width: 60%; min-height: 2.75rem; margin-left: auto; padding: .5rem; border: 0; border-radius: 8px; background: transparent; color: var(--color-media-accent); font-size: .75rem; font-weight: 600; line-height: 1.4; overflow-wrap: anywhere; }
-  .video-change:hover { background: rgb(255 255 255 / .1); }
+  .video-change { position: fixed; top: var(--menu-control-top); left: max(var(--menu-control-gutter), env(safe-area-inset-left, 0px)); z-index: 5; display: flex; align-items: center; justify-content: center; gap: .625rem; min-height: var(--menu-control-size); max-width: calc(100% - max(var(--menu-control-gutter), env(safe-area-inset-left, 0px)) - var(--menu-control-right) - var(--menu-control-size) - .75rem); padding: .75rem 1.125rem; border: 1px solid #ffb047; border-radius: var(--radius-control); background: var(--color-media-accent); color: #211000; box-shadow: 0 3px 18px #0006; font-size: 1rem; font-weight: 700; line-height: 1.3; text-align: left; overflow-wrap: anywhere; }
+  .video-change svg { flex-shrink: 0; }
+  .video-change:hover { background: #ffb047; }
   .video-message { margin-top: .75rem; padding: .4rem .7rem; font-size: .75rem; line-height: 1.5; color: #ddd; background: rgb(8 8 8 / .85); border-radius: 8px; }
   .video-error { color: #ffc2b2; }
-  .video-dock, .video-page :global(.site-nav) { transition: opacity var(--video-ui-fade) ease; }
+  .video-change, .video-dock, .video-page :global(.site-nav) { transition: opacity var(--video-ui-fade) ease; }
   .video-page[data-ui-idle] { cursor: none; }
   .video-page[data-ui-idle] .video-price-position { cursor: none; }
+  .video-page[data-ui-idle] .video-change,
   .video-page[data-ui-idle] .video-dock,
   .video-page[data-ui-idle] :global(.site-nav) { opacity: 0; pointer-events: none; }
   .video-page[data-ui-idle] .video-price-style { opacity: 0; visibility: hidden; pointer-events: none; }
@@ -395,7 +399,6 @@ const locale = htmlLang(Astro.currentLocale);
   @media (max-width: 700px) {
     .video-price-stage { padding: 5rem 1rem 6rem; }
     .video-dock { width: min(20rem, calc(100% - 2rem)); }
-    .video-page[data-video-controls-top] .video-dock { margin-top: calc(var(--menu-control-top) + var(--menu-control-size) + .5rem); }
     .video-dock:has(.video-time[hidden]) { width: min(16rem, calc(100% - 2rem)); }
     .video-controls { flex-wrap: wrap; justify-content: space-between; gap: .25rem; }
     .video-controls .video-icon-button { width: 100%; max-width: 4rem; height: 4rem; }
@@ -422,7 +425,6 @@ const locale = htmlLang(Astro.currentLocale);
   @media (max-height: 480px) and (min-width: 600px) {
     .video-timeline .video-seek { height: 1.5rem; }
     .video-player-panel { padding: 1px .25rem; }
-    .video-change { min-height: 1.75rem; padding-block: .2rem; }
   }
   @media (max-height: 360px) and (min-width: 600px) {
     .video-price-stage { justify-content: flex-start; padding-top: calc(var(--menu-control-top) + var(--menu-control-size) + .5rem); }
@@ -431,6 +433,6 @@ const locale = htmlLang(Astro.currentLocale);
     .video-picker, .video-picker::backdrop { transition: none; }
     .video-playback:not([hidden]) { animation: none; }
     .video-price-style { transition: none; }
-    .video-dock, .video-style-chevron, .video-currency-chevron, .video-volume-reveal, .video-price-editing, .video-page :global(.site-nav) { transition: none; }
+    .video-change, .video-dock, .video-style-chevron, .video-currency-chevron, .video-volume-reveal, .video-price-editing, .video-page :global(.site-nav) { transition: none; }
   }
 </style>

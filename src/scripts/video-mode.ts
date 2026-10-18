@@ -102,6 +102,7 @@ function startVideoMode(root: HTMLElement) {
 
   function showForm(show: boolean, focus = true) {
     controls.hidden = show;
+    changeButton.hidden = show || !hasVideo;
     playbackPanel.hidden = !hasVideo;
     changeButton.setAttribute('aria-expanded', String(show));
     if (pickerCloseTimer !== undefined) clearTimeout(pickerCloseTimer);

@@ -689,12 +689,15 @@ test('opening Change video leaves the URL field unfocused on mobile and desktop'
 
 test('change, cancel, and Escape preserve the selected video and return keyboard focus to its controls', () => {
   const h = harness();
+  assert.equal(h.control('[data-change-video]').hidden, true, 'the initial picker owns video selection');
   h.submit(firstUrl);
+  assert.equal(h.control('[data-change-video]').hidden, false, 'the separate change button appears with playback');
   h.emitPlaying(true);
   h.click('[data-change-video]');
   assert.equal(h.control('[data-video-url]').value, '', 'changing a video opens an empty URL field');
   assert.equal(h.control('[data-video-picker]').open, true);
   assert.equal(h.control('[data-video-controls]').hidden, true);
+  assert.equal(h.control('[data-change-video]').hidden, true, 'hide the separate button while the picker is open');
   assert.equal(h.control('[data-cancel-video]').hidden, false);
   assert.equal(h.control('[data-video-url]').focusCount, 0);
   assert.equal(h.control('[data-video-url]').selectCount, 0);
@@ -702,6 +705,7 @@ test('change, cancel, and Escape preserve the selected video and return keyboard
   h.click('[data-cancel-video]');
   assert.equal(h.control('[data-video-picker]').open, false);
   assert.equal(h.control('[data-video-controls]').hidden, false);
+  assert.equal(h.control('[data-change-video]').hidden, false, 'restore the separate button after cancelling');
   assert.equal(h.control('[data-video-error]').hidden, true);
   assert.equal(h.control('[data-video-url]').attributes.has('aria-invalid'), false);
   assert.equal(h.control('[data-change-video]').focusCount, 2);
