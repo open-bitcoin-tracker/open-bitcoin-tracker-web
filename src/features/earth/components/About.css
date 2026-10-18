@@ -140,8 +140,9 @@
   stroke-linejoin: round;
 }
 .earth-feature .art-area {
-  fill: var(--orange-soft);
-  stroke: var(--orange);
+  fill: var(--map-orange);
+  fill-opacity: var(--overlay-opacity);
+  stroke: var(--map-orange);
   stroke-width: 2;
 }
 .earth-feature .art-area-label {
