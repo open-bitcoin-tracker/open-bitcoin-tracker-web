@@ -282,7 +282,7 @@ export function createVideoPriceLayout(root: HTMLElement) {
     dismissed = false;
     revealFrame();
     // Pointer capture can target this element with a click after moving/resizing.
-    // Let the page toggle playback only for an ordinary click or tap.
+    // Let ordinary taps toggle UI visibility while drags keep editing active.
     if (suppressClick) event.preventDefault();
     suppressClick = false;
   });

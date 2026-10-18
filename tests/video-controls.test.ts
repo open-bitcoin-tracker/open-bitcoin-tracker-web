@@ -39,7 +39,7 @@ function harness({ finePointer = true, hidden = false } = {}) {
     closest(selector: string) {
       if (selector === 'select') return this.select ? this : null;
       if (selector === '[data-price-position], [data-price-style]') return this.price || this.style ? this : null;
-      return this.interactive ? this : null;
+      return this.interactive && !this.price ? this : null;
     },
   };
   const background = { ...button, interactive: false };
@@ -199,7 +199,7 @@ test('a background click dismisses UI until cursor movement or keyboard input, d
   h.controls.destroy();
 });
 
-test('editing dismissal restores playback while Style controls remain interactive', () => {
+test('a video tap hides editing and playback UI while Style controls remain interactive', () => {
   const h = harness();
   h.root.addEventListener('videouidismiss', () => h.root.removeAttribute('data-price-layout-open'));
   h.root.addEventListener('videouireveal', () => h.root.setAttribute('data-price-layout-open', ''));
@@ -216,7 +216,7 @@ test('editing dismissal restores playback while Style controls remain interactiv
   assert.equal(h.idle(), false, 'editing keeps playback available');
   assert.equal(h.root.hasAttribute('data-price-layout-open'), true);
   h.click();
-  assert.equal(h.idle(), false, 'ending editing restores playback controls');
+  assert.equal(h.idle(), true, 'a background tap hides editing and playback controls');
   assert.equal(h.root.hasAttribute('data-price-layout-open'), false);
   h.controls.destroy();
 });
@@ -251,7 +251,7 @@ test('editing leaves playback controls interactive and keeps the interface awake
   assert.equal(h.dock.inert, false);
 });
 
-test('touch background dismissal restores playback controls and their normal idle delay', () => {
+test('touch background taps hide editing and reveal controls for a fresh idle delay', () => {
   const h = harness({ finePointer: false });
   h.root.addEventListener('videouidismiss', () => h.root.removeAttribute('data-price-layout-open'));
   h.controls.setEnabled(true);
@@ -259,8 +259,11 @@ test('touch background dismissal restores playback controls and their normal idl
   h.tick(1000);
   h.pointer('pointerdown', 'touch', h.background);
   h.click();
-  assert.equal(h.idle(), false);
+  assert.equal(h.idle(), true);
   assert.equal(h.root.hasAttribute('data-price-layout-open'), false);
+  h.pointer('pointerdown', 'touch', h.background);
+  h.click();
+  assert.equal(h.idle(), false);
   h.tick(2999);
   assert.equal(h.idle(), false);
   h.tick(1);
@@ -738,7 +741,7 @@ test('placement follows viewport and price size changes while ignoring dock dime
 });
 
 
-test('a first tap reveals hidden UI without playback; the next visible tap can toggle playback', () => {
+test('video and price taps toggle UI visibility without playback on touch, mouse, and pen', () => {
   for (const pointerType of ['touch', 'mouse', 'pen']) {
     for (const onPrice of [false, true]) {
       const h = harness({ finePointer: pointerType === 'mouse' });
@@ -757,13 +760,44 @@ test('a first tap reveals hidden UI without playback; the next visible tap can t
       assert.equal(playbackToggles, 0);
       assert.equal(h.idle(), false);
       h.pointer('pointerdown', pointerType, target);
-      assert.equal(h.click(target).defaultPrevented, false);
-      assert.equal(playbackToggles, 1);
+      assert.equal(h.click(target).defaultPrevented, true);
+      assert.equal(playbackToggles, 0);
+      assert.equal(h.idle(), true, 'the next tap dismisses visible controls');
+      h.pointer('pointerdown', pointerType, target);
+      h.click(target);
+      assert.equal(h.idle(), false);
+      h.tick(2999);
+      assert.equal(h.idle(), false);
+      h.tick(1);
+      assert.equal(h.idle(), true);
+      assert.equal(playbackToggles, 0);
       h.controls.destroy();
     }
   }
 });
 
+
+test('a reveal tap over the price clears pointerdown editing and still fades after three seconds', () => {
+  const h = harness();
+  h.controls.setEnabled(true);
+  h.button.price = true;
+  h.root.addEventListener('videouidismiss', () => {
+    h.root.removeAttribute('data-price-layout-open');
+    h.root.dispatchEvent(new Event('priceeditortoggle'));
+  });
+  h.tick(3000);
+  h.pointer('pointerdown', 'touch', h.button);
+  h.root.setAttribute('data-price-layout-open', '');
+  h.root.dispatchEvent(new Event('priceeditortoggle'));
+  h.click(h.button);
+  assert.equal(h.root.hasAttribute('data-price-layout-open'), false);
+  assert.equal(h.idle(), false);
+  h.tick(2999);
+  assert.equal(h.idle(), false);
+  h.tick(1);
+  assert.equal(h.idle(), true);
+  h.controls.destroy();
+});
 
 test('a mouse click that first moves the pointer to reveal UI cannot also toggle playback', () => {
   const h = harness();
@@ -775,11 +809,11 @@ test('a mouse click that first moves the pointer to reveal UI cannot also toggle
   assert.equal(h.click().defaultPrevented, true);
   assert.equal(h.idle(), false);
   h.pointer('pointerdown');
-  assert.equal(h.click().defaultPrevented, false);
+  assert.equal(h.click().defaultPrevented, true);
   h.tick(3000);
   h.pointer('pointermove');
   h.tick(250);
   h.pointer('pointerdown');
-  assert.equal(h.click().defaultPrevented, false, 'a completed reveal leaves clicks available');
+  assert.equal(h.click().defaultPrevented, true, 'a completed reveal tap hides UI without playback');
   h.controls.destroy();
 });

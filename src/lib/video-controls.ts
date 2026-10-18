@@ -1,6 +1,6 @@
 const IDLE_DELAY = 3000;
 const REVEAL_DURATION = 250;
-const INTERACTIVE = 'button, summary, input, select, textarea, a, [role="button"], [role="dialog"], [data-price-style], [data-price-position], [data-video-form]';
+const INTERACTIVE = 'button, summary, input, select, textarea, a, label, [role="button"], [role="dialog"], [contenteditable], [data-price-style], [data-video-form], [data-video-controls]';
 const EDITABLE_CONTROL = 'input:not([type="range"]), textarea, [contenteditable]:not([contenteditable="false"]), [role="textbox"], [role="combobox"]';
 
 /** Hide Price on Video's interface after inactivity, keeping active controls usable. */
@@ -119,6 +119,9 @@ export function createVideoControls(root: HTMLElement) {
     if (destroyed || event.defaultPrevented) return;
     if (!revealOnlyClick && !root.hasAttribute('data-ui-idle')) return;
     revealOnlyClick = false;
+    // A tap on the price can start editing on pointerdown. Keep this first
+    // tap focused on revealing the UI, with a fresh three-second timeout.
+    hide();
     manuallyHidden = false;
     reveal();
     event.preventDefault();
@@ -128,13 +131,12 @@ export function createVideoControls(root: HTMLElement) {
   function handleClick(event: MouseEvent) {
     if (destroyed || event.defaultPrevented) return;
     const target = event.target as Element | null;
-    if (target?.closest?.('[data-price-position], [data-price-style]')) return;
-    const editing = root.hasAttribute('data-price-layout-open');
     const background = !!target && root.contains(target) && !target.closest(INTERACTIVE);
-    if (background && editing) {
-      root.dispatchEvent(new Event('videouidismiss'));
-      restorePlayback();
-    } else if (background && enabled) hide(true);
+    if (background && enabled) {
+      hide(true);
+      event.preventDefault();
+      event.stopPropagation();
+    }
   }
 
   function handleChangeOrBlur() {
@@ -157,7 +159,7 @@ export function createVideoControls(root: HTMLElement) {
   window.addEventListener('pointerdown', handlePointerDown, true);
   root.addEventListener('click', consumeRevealClick, true);
   window.addEventListener('keydown', handleKeyDown);
-  window.addEventListener('click', handleClick);
+  root.addEventListener('click', handleClick);
   root.addEventListener('focusin', reveal);
   root.addEventListener('focusout', handleChangeOrBlur);
   root.addEventListener('change', handleChangeOrBlur);
@@ -194,7 +196,7 @@ export function createVideoControls(root: HTMLElement) {
       window.removeEventListener('pointerdown', handlePointerDown, true);
       root.removeEventListener('click', consumeRevealClick, true);
       window.removeEventListener('keydown', handleKeyDown);
-      window.removeEventListener('click', handleClick);
+      root.removeEventListener('click', handleClick);
       root.removeEventListener('focusin', reveal);
       root.removeEventListener('focusout', handleChangeOrBlur);
       root.removeEventListener('change', handleChangeOrBlur);

@@ -430,52 +430,43 @@ test('a background click during price editing leaves playback unchanged', () => 
   assert.equal(h.playCalls(), 0);
   h.root.removeAttribute('data-price-layout-open');
   h.videoClick();
-  assert.equal(h.pauseCalls(), 1, 'ordinary background clicks still control playback');
+  assert.equal(h.pauseCalls(), 0, 'background clicks only control UI visibility');
   h.close();
 });
 
-test('video background and price clicks toggle playback without interfering with editing or controls', () => {
+test('video and price taps never toggle playback; the playback button still does', () => {
   const h = harness();
   h.videoClick();
-  assert.equal(h.playCalls(), 0, 'the initial picker has no video to play');
   h.submit(firstUrl);
-  h.emitPlaying(true);
-  h.videoClick();
-  assert.equal(h.pauseCalls(), 1);
-  assert.equal(h.control('[data-play-pause]').attributes.get('aria-label'), copy.play);
-  h.videoClick();
-  assert.equal(h.playCalls(), 1);
-  assert.equal(h.control('[data-play-pause]').attributes.get('aria-label'), copy.pause);
-
   const price = Object.assign(new Control(), {
     closest(selectors: string) { return selectors.split(', ').includes('[data-price-position]') ? this : null; },
   });
-  h.videoClick(price);
-  assert.equal(h.pauseCalls(), 2, 'clicking the price pauses playback');
-  h.videoClick(price);
-  assert.equal(h.playCalls(), 2, 'clicking the price again resumes playback');
-  h.videoClick(price, true);
-
-  for (const selector of ['button', 'input', 'a', '[data-price-style]', '[data-video-form]', '[data-video-controls]']) {
-    const target = Object.assign(new Control(), {
-      closest(selectors: string) { return selectors.split(', ').includes(selector) ? this : null; },
-    });
-    h.videoClick(target);
+  for (const playing of [true, false]) {
+    h.emitPlaying(playing);
+    for (const target of [h.root, price]) {
+      h.videoClick(target);
+      h.videoClick(target);
+      h.videoClick(target, true);
+    }
+    assert.equal(h.playCalls(), 0);
+    assert.equal(h.pauseCalls(), 0);
+    assert.equal(h.control('[data-play-pause]').attributes.get('aria-label'), playing ? copy.pause : copy.play);
   }
-  h.videoClick(h.root, true);
-  assert.equal(h.pauseCalls(), 2, 'controls, price dragging, and handled clicks do not pause');
+  h.click('[data-play-pause]');
+  assert.equal(h.playCalls(), 1, 'the playback button resumes a paused video');
+  h.click('[data-play-pause]');
+  assert.equal(h.pauseCalls(), 1, 'the playback button pauses a playing video');
   h.click('[data-change-video]');
   h.videoClick();
   h.videoClick(price);
-  assert.equal(h.pauseCalls(), 2, 'editing a replacement URL leaves playback alone');
+  assert.equal(h.playCalls(), 1);
+  assert.equal(h.pauseCalls(), 1);
   h.click('[data-cancel-video]');
   h.emitError(150);
   h.videoClick();
   h.videoClick(price);
-  assert.equal(h.playCalls(), 2, 'an unavailable video cannot restart from the background or price');
+  assert.equal(h.playCalls(), 1, 'background taps cannot restart an unavailable video');
   h.close();
-  h.videoClick();
-  assert.equal(h.pauseCalls(), 2);
 });
 
 test('opening navigation from its summary or icon preserves playing and paused video states', () => {

@@ -36,6 +36,8 @@ Prices use Kraken and bundled Coin Metrics history; currency conversions use ECB
 
 Price on Video uses `/video-mode/` and its localized routes. Its page title, homepage heading, and menu label share `title` in `src/i18n/video.ts`; the homepage subtitle and page metadata share `description` there. Update that dictionary for every locale when changing the name or subtitle.
 
+Tapping the video or price toggles the controls without changing playback. Revealed controls fade after three seconds of inactivity; playback uses the Play/Pause button. Entering fullscreen hides the controls immediately, and mouse movement does not reveal them there. Keyboard navigation and active editing keep controls accessible.
+
 Edit the sections in `src/lib/video-suggestions.ts` to add or reorder curated videos in Price on Video. Party and Chill share the same selection and Recent-history behavior; adding a section also needs a translated tab label in `src/i18n/video.ts`. Each entry needs a YouTube video ID, its original title, and verified `isLive` and `isSilent` status; thumbnails use YouTube images, and selection uses the normal player and saved-video flow. Check the broadcast status rather than inferring it from the title or URL.
 
 Recent videos stay in browser storage. Submitted URLs are saved immediately; suggestions join Recent when playback starts. Titles use the suggestion catalog when available; other titles come from YouTube's oEmbed endpoint and are cached alongside the saved URLs. Unavailable metadata does not prevent playback or removal.
