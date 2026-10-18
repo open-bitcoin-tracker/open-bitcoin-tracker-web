@@ -1,5 +1,5 @@
 /** A keyboard-accessible currency menu backed by the page's existing select. */
-export function createCurrencyPicker(root: HTMLElement, select: HTMLSelectElement, { wrapper = root.querySelector<HTMLElement>('[data-currency-picker]')!, panel, back }: { wrapper?: HTMLElement; panel?: HTMLElement; back?: HTMLButtonElement } = {}) {
+export function createCurrencyPicker(root: HTMLElement, select: HTMLSelectElement, { wrapper = root.querySelector<HTMLElement>('[data-currency-picker]')!, panel, back, closeOnSelect = true }: { wrapper?: HTMLElement; panel?: HTMLElement; back?: HTMLButtonElement; closeOnSelect?: boolean } = {}) {
   const trigger = wrapper.querySelector<HTMLButtonElement>('[data-currency-trigger]')!;
   const value = wrapper.querySelector<HTMLElement>('[data-currency-value]')!;
   const list = wrapper.querySelector<HTMLElement>('[data-currency-list]')!;
@@ -61,7 +61,8 @@ export function createCurrencyPicker(root: HTMLElement, select: HTMLSelectElemen
     if (destroyed || select.disabled || option.disabled) return;
     select.value = option.dataset.currencyOption!;
     select.dispatchEvent(new Event('change', { bubbles: true }));
-    close(true);
+    if (closeOnSelect) close(true);
+    else focusOption(options.indexOf(option));
   }
 
   function onKeyDown(event: KeyboardEvent) {

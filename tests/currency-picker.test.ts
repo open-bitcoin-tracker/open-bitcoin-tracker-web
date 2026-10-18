@@ -9,7 +9,7 @@ const script = ts.transpileModule(readFileSync(new URL('../src/lib/currency-pick
   compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 },
 }).outputText;
 
-function harness({ currency = 'USD', disabled = false, standalone = false, explicitWrapper = false } = {}) {
+function harness({ currency = 'USD', disabled = false, standalone = false, explicitWrapper = false, closeOnSelect = true } = {}) {
   class Element extends EventTarget {
     attributes = new Map<string, string>();
     dataset: Record<string, string> = {};
@@ -83,7 +83,7 @@ function harness({ currency = 'USD', disabled = false, standalone = false, expli
   root.addEventListener('currencytoggle', () => { toggles++; });
   const module: { createCurrencyPicker?: typeof createCurrencyPicker } = {};
   runInNewContext(script, { exports: module, document, Event, Date: { now: () => now } });
-  const picker = module.createCurrencyPicker!(root as unknown as HTMLElement, select as unknown as HTMLSelectElement, { wrapper: explicitWrapper ? wrapper as unknown as HTMLElement : undefined, panel: panel as unknown as HTMLElement, back: back as unknown as HTMLButtonElement });
+  const picker = module.createCurrencyPicker!(root as unknown as HTMLElement, select as unknown as HTMLSelectElement, { closeOnSelect, wrapper: explicitWrapper ? wrapper as unknown as HTMLElement : undefined, panel: panel as unknown as HTMLElement, back: back as unknown as HTMLButtonElement });
   const option = (currency: string) => options.find(option => option.dataset.currencyOption === currency)!;
   return {
     root, wrapper, trigger, value, list, select, options, document, outside, changes, picker, option, panel, back,
@@ -323,5 +323,30 @@ test('closing without focus restoration keeps focus out of hidden controls', () 
   assert.equal(h.list.hidden, true);
   assert.equal(h.root.hasAttribute('data-currency-open'), false);
   assert.equal(h.trigger.focusCount, focusCount);
+  h.picker.destroy();
+});
+
+
+test('a persistent currency section stays open after selection until its title is activated again', () => {
+  const h = harness({ closeOnSelect: false });
+  h.trigger.click();
+  h.option('EUR').click();
+  assert.equal(h.select.value, 'EUR');
+  assert.equal(h.value.textContent, 'EUR');
+  assert.equal(h.option('EUR').attributes.get('aria-selected'), 'true');
+  assert.equal(h.list.hidden, false);
+  assert.equal(h.trigger.attributes.get('aria-expanded'), 'true');
+  assert.equal(h.focused(), 'EUR');
+  h.key(h.option('EUR'), 'ArrowDown');
+  h.key(h.option('GBP'), 'Enter');
+  assert.equal(h.select.value, 'GBP');
+  assert.equal(h.list.hidden, false);
+  h.trigger.click();
+  assert.equal(h.list.hidden, true);
+  assert.equal(h.trigger.attributes.get('aria-expanded'), 'false');
+  h.trigger.click();
+  assert.equal(h.key(h.option('GBP'), 'Escape'), true);
+  assert.equal(h.list.hidden, true);
+  assert.equal(h.document.activeElement, h.trigger);
   h.picker.destroy();
 });

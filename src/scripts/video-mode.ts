@@ -21,7 +21,7 @@ function startVideoMode(root: HTMLElement) {
   let priceLayout: ReturnType<typeof createVideoPriceLayout> | undefined;
   const currencySelect = root.querySelector<HTMLSelectElement>('[data-currency]')!;
   const priceDisplay = createLivePriceDisplay(root, { copy: t, locale, onPaint: () => priceLayout?.refresh() });
-  const currencyPicker = createCurrencyPicker(root, currencySelect);
+  const currencyPicker = createCurrencyPicker(root, currencySelect, { closeOnSelect: false });
   const dismissCurrency = () => currencyPicker.close();
   const onSettingsToggle = () => { if (!root.hasAttribute('data-price-settings-open')) currencyPicker.close(); };
   root.addEventListener('pricesettingstoggle', onSettingsToggle);

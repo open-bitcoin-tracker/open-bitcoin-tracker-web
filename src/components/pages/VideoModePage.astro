@@ -37,10 +37,9 @@ const locale = htmlLang(Astro.currentLocale);
         </div>
         <div class="video-price-style" data-price-style>
           <button type="button" class="video-settings-trigger" data-price-settings-trigger aria-expanded="false" aria-controls="video-price-settings-panel" disabled>
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true"><path d="m16 3 5 5M4 20l4-1L21 6l-3-3L5 16l-1 4Z" /></svg>
-            <span>{t.settings}</span>
+            <span>{t.edit}</span>
           </button>
-          <div id="video-price-settings-panel" class="video-settings-panel" data-price-settings-panel role="group" aria-label={t.settings} hidden>
+          <div id="video-price-settings-panel" class="video-settings-panel" data-price-settings-panel role="group" aria-label={t.edit} hidden>
             <button type="button" class="video-settings-option" data-price-style-trigger aria-expanded="false" aria-controls="video-price-style-panel" disabled>
               <span>{t.style}</span>
               <svg class="video-style-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m6 9 6 6 6-6" /></svg>
@@ -244,6 +243,11 @@ const locale = htmlLang(Astro.currentLocale);
   .video-settings-trigger { display: flex; align-items: center; gap: .5rem; min-height: 2.75rem; padding: .65rem .85rem; border: 0; border-radius: var(--radius-control); background: rgb(16 16 16 / .75); backdrop-filter: blur(12px); color: #fff; font-size: .9rem; font-weight: 600; }
   .video-settings-trigger:hover { background: rgb(50 50 50 / .85); }
   .video-settings-panel { width: min(260px, calc(100vw - 2rem)); max-height: calc(100svh - 2rem); overflow-y: auto; padding: 1rem; border: 0; border-radius: var(--radius-control); font-size: .8rem; }
+  .video-page[data-price-style-open] .video-currency,
+  .video-page[data-price-style-open] label[for="video-currency"],
+  .video-page[data-currency-open] [data-price-style-trigger],
+  .video-page:is([data-price-style-open], [data-currency-open]) .video-settings-divider,
+  .video-page:is([data-price-style-open], [data-currency-open]) .video-settings-resets { display: none; }
   .video-settings-resets:not(:has(button:not([hidden]))) { display: none; }
   .video-settings-divider { margin: .5rem 0; border: 0; border-top: 1px solid #ffffff18; }
   .video-settings-reset { display: flex; align-items: center; gap: .6rem; width: 100%; min-height: 2.75rem; padding: .65rem .75rem; border: 0; border-radius: 8px; background: transparent; color: #ccc; text-align: left; font-size: .8rem; line-height: 1.4; }
