@@ -242,7 +242,7 @@ const locale = htmlLang(Astro.currentLocale);
   .video-icon-button:hover { background: rgb(50 50 50 / .85); }
   .video-price-style { position: fixed; width: max-content; z-index: 4; opacity: 0; visibility: hidden; pointer-events: none; transition: opacity var(--video-ui-fade) ease, visibility 0s linear var(--video-ui-fade); text-align: left; }
   .video-page[data-price-layout-open] .video-price-style { opacity: 1; visibility: visible; pointer-events: auto; transition-delay: 0s; }
-  .video-settings-panel, .video-player-panel { background: rgb(16 16 16 / .75); backdrop-filter: blur(12px); }
+  .video-settings-panel, .video-player-panel, .video-change { background: rgb(16 16 16 / .75); backdrop-filter: blur(12px); }
   .video-settings-trigger { display: flex; align-items: center; gap: .5rem; min-height: 2.75rem; padding: .65rem .85rem; border: 0; border-radius: var(--radius-control); background: rgb(16 16 16 / .75); backdrop-filter: blur(12px); color: #fff; font-size: .9rem; font-weight: 600; }
   .video-settings-trigger:hover { background: rgb(50 50 50 / .85); }
   .video-settings-panel { width: min(260px, calc(100vw - 2rem)); max-height: calc(100svh - 2rem); overflow-y: auto; padding: 1rem; border: 0; border-radius: var(--radius-control); font-size: .8rem; }
@@ -379,9 +379,9 @@ const locale = htmlLang(Astro.currentLocale);
   .video-volume-control:has(:focus-visible) .video-volume-reveal,
   .video-volume-control:has(input:active) .video-volume-reveal { width: calc(clamp(3rem, 15vw, 5rem) + .5rem); opacity: 1; visibility: visible; pointer-events: auto; }
   .video-volume-slider { --video-progress: 100%; width: clamp(3rem, 15vw, 5rem); margin-left: .5rem; }
-  .video-change { position: fixed; top: var(--menu-control-top); left: max(var(--menu-control-gutter), env(safe-area-inset-left, 0px)); z-index: 5; display: flex; align-items: center; justify-content: center; gap: .625rem; min-height: var(--menu-control-size); max-width: calc(100% - max(var(--menu-control-gutter), env(safe-area-inset-left, 0px)) - var(--menu-control-right) - var(--menu-control-size) - .75rem); padding: .75rem 1.125rem; border: 1px solid #ffb047; border-radius: var(--radius-control); background: var(--color-media-accent); color: #211000; box-shadow: 0 3px 18px #0006; font-size: 1rem; font-weight: 700; line-height: 1.3; text-align: left; overflow-wrap: anywhere; }
+  .video-change { position: fixed; top: var(--menu-control-top); left: max(var(--menu-control-gutter), env(safe-area-inset-left, 0px)); z-index: 5; display: flex; align-items: center; justify-content: center; gap: .625rem; min-height: var(--menu-control-size); max-width: calc(100% - max(var(--menu-control-gutter), env(safe-area-inset-left, 0px)) - var(--menu-control-right) - var(--menu-control-size) - .75rem); padding: .75rem 1.125rem; border: 0; border-radius: var(--radius-control); color: var(--color-media-accent); font-size: 1rem; font-weight: 700; line-height: 1.3; text-align: left; overflow-wrap: anywhere; }
   .video-change svg { flex-shrink: 0; }
-  .video-change:hover { background: #ffb047; }
+  .video-change:hover { background: rgb(50 50 50 / .85); }
   .video-message { margin-top: .75rem; padding: .4rem .7rem; font-size: .75rem; line-height: 1.5; color: #ddd; background: rgb(8 8 8 / .85); border-radius: 8px; }
   .video-error { color: #ffc2b2; }
   .video-change, .video-dock, .video-page :global(.site-nav) { transition: opacity var(--video-ui-fade) ease; }
