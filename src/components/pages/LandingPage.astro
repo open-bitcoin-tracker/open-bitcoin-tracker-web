@@ -112,17 +112,13 @@ const href = (path: string) => getRelativeLocaleUrl(lang, path);
 
 <style>
   :global(html:has(.landing-main)) { background: var(--color-paper); }
-  /* Dark mode inherits the shared Android app palette and menu controls. */
+  /* Background and menu controls inherit the shared palette in both themes. */
   :global(html:not(.dark):has(.landing-main)) {
-    --color-paper: #f4f2eb;
     --color-surface: #fffef9;
     --color-ink: #252722;
     --color-ink-muted: #65675e;
     --color-divider: #d5d6cc;
     --color-ink-rgb: 37 39 34;
-    --color-paper-rgb: 244 242 235;
-    --menu-control-bg: #e8e8df;
-    --menu-control-ink: #252722;
   }
   .landing-main { display: flex; flex-direction: column; min-height: 100vh; min-height: 100dvh; max-width: 1280px; margin-inline: auto; padding: 0 clamp(1.25rem, 4.5vw, 4rem); }
   .landing-main > * { flex-shrink: 0; }
