@@ -2,14 +2,10 @@
 .earth-feature .guide-content { padding-bottom: env(safe-area-inset-bottom); }
 .earth-feature .guide-section-trigger { font-size: var(--text-control); }
 .earth-feature .guide-header .eyebrow {
+  color: var(--control-ink);
   font-size: 1.25rem;
   font-weight: 600;
   letter-spacing: .08em;
-}
-.earth-feature .guide-detail-panel .guide-detail-eyebrow {
-  font-size: var(--text-eyebrow);
-  font-weight: 500;
-  letter-spacing: .16em;
 }
 .earth-feature .guide-intro {
   padding: 8px 28px 28px;
@@ -56,10 +52,6 @@
 }
 .earth-feature .guide-detail-panel .model-details {
   padding: 12px 28px max(28px, env(safe-area-inset-bottom));
-}
-.earth-feature .guide-detail-panel .guide-detail-eyebrow {
-  margin: 0 0 12px;
-  color: var(--muted);
 }
 .earth-feature .guide-detail-panel h2 {
   margin-bottom: 24px;

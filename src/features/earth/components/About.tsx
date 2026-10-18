@@ -50,6 +50,7 @@ function EarthIllustration({ copy, format }: { copy: EarthCopy; format: Intl.Num
 
 const sectionIds = ['calculation', 'privacy', 'sources'] as const;
 type GuideSection = (typeof sectionIds)[number];
+const repositoryUrl = 'https://github.com/open-bitcoin-tracker/open-bitcoin-tracker-web';
 
 function ModelDetails({ section, copy, lang }: { section: GuideSection; copy: EarthCopy; lang: string }) {
   const number = new Intl.NumberFormat(lang);
@@ -75,12 +76,16 @@ function ModelDetails({ section, copy, lang }: { section: GuideSection; copy: Ea
         <div className="detail-content">
           <p>{copy.privacyLocal}</p>
           <p>{before}<a href="https://openfreemap.org/privacy/" target="_blank" rel="noreferrer">OpenFreeMap</a>{after}</p>
+          <p><a href={repositoryUrl} target="_blank" rel="noreferrer">{copy.repositorySource}</a></p>
         </div>
       );
     }
     case 'sources':
       return (
         <div className="detail-content model-sources">
+          <a href={repositoryUrl} target="_blank" rel="noreferrer">
+            {copy.repositorySource} <ExternalLink size={14} />
+          </a>
           <a
             href="https://bitcoin.org/en/halving"
             target="_blank"
@@ -232,7 +237,6 @@ export default function About({ copy, lang, onClose }: AboutProps) {
             </button>
           </header>
           <div ref={detailContentRef} className="guide-content model-details guide-drawer-scroll">
-            <p className="guide-detail-eyebrow eyebrow">A BIT OF EARTH</p>
             <h2 ref={detailHeadingRef} tabIndex={-1} id="guide-detail-title">
               {activeTitle}
             </h2>
