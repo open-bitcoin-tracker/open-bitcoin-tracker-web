@@ -35,14 +35,12 @@ export const it: Dict = {
     appDescription: 'Non servono chiavi né seed. Inserisci a mano le quantità di bitcoin. Non puoi effettuare transazioni con l’app, ma è molto comoda per vedere quanto valgono i tuoi stack di bitcoin.',
     priceTracker: 'Tracker del prezzo',
     priceDescription: 'Prezzo di Bitcoin in tempo reale e storico dal 2010.',
-    videoDescription: 'Il prezzo di Bitcoin in tempo reale sui video di YouTube.',
     earthDescription: 'Esplora Bitcoin come una quota della superficie terrestre.',
     supplyDescription: 'Scopri come l’offerta di moneta fiat aumenta ogni anno e quella di bitcoin no.',
   },
 
   nav: {
     partyMode: 'Party Mode',
-    videoMode: 'Price on Video',
     menuLabel: 'Menu',
     closeMenu: 'Chiudi menu',
     skipToContent: 'Vai al contenuto',

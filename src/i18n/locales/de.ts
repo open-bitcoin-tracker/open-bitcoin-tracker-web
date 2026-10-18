@@ -35,14 +35,12 @@ export const de: Dict = {
     appDescription: 'Du brauchst weder Keys noch einen Seed. Deine Bitcoin-Beträge gibst du von Hand ein. Mit der App kannst du keine Transaktionen ausführen, aber sie ist sehr praktisch, um zu sehen, wie viel deine Bitcoin-Stacks wert sind.',
     priceTracker: 'Preis-Tracker',
     priceDescription: 'Bitcoin-Livekurs und Kurshistorie seit 2010.',
-    videoDescription: 'Der Bitcoin-Livekurs über YouTube-Videos.',
     earthDescription: 'Entdecke Bitcoin als Anteil an der Landfläche der Erde.',
     supplyDescription: 'Sieh, wie die Fiat-Geldmenge jedes Jahr steigt und die von Bitcoin nicht.',
   },
 
   nav: {
     partyMode: 'Party Mode',
-    videoMode: 'Price on Video',
     menuLabel: 'Menü',
     closeMenu: 'Menü schließen',
     skipToContent: 'Zum Inhalt springen',

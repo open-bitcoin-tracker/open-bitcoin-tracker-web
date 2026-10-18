@@ -42,14 +42,12 @@ export const en = {
     appDescription: "No keys or seeds needed. Bitcoin amounts are entered by hand. You can't transact, but it’s great to check what your bitcoin stacks are worth.",
     priceTracker: 'Price Tracker',
     priceDescription: 'Live Bitcoin price and history since 2010.',
-    videoDescription: 'Live Bitcoin price over YouTube videos.',
     earthDescription: 'Explore Bitcoin as a share of Earth’s land.',
     supplyDescription: "See how fiat money supply increases every year and bitcoin doesn't.",
   },
 
   nav: {
     partyMode: 'Party Mode',
-    videoMode: 'Price on Video',
     menuLabel: 'Menu',
     closeMenu: 'Close menu',
     skipToContent: 'Skip to content',

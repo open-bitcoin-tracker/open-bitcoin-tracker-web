@@ -35,14 +35,12 @@ export const ptBR: Dict = {
     appDescription: 'Não precisa de chaves nem de uma seed. Você insere as quantidades de bitcoin à mão. Não dá para fazer transações pelo app, mas ele é bem prático para ver quanto valem seus stacks de bitcoin.',
     priceTracker: 'Trackeador de preço',
     priceDescription: 'Preço do Bitcoin ao vivo e histórico desde 2010.',
-    videoDescription: 'O preço do Bitcoin ao vivo sobre vídeos do YouTube.',
     earthDescription: 'Explore o Bitcoin como uma parcela da superfície terrestre.',
     supplyDescription: 'Veja como a oferta de moeda fiduciária aumenta a cada ano e a de bitcoin não.',
   },
 
   nav: {
     partyMode: 'Party Mode',
-    videoMode: 'Price on Video',
     menuLabel: 'Menu',
     closeMenu: 'Fechar menu',
     skipToContent: 'Pular para o conteúdo',

@@ -1057,7 +1057,7 @@ test('subtitles stay off across video changes and ignore legacy enabled preferen
 });
 
 for (const locale of Object.keys(videoCopy)) {
-  test(`Video Mode uses currency symbols and localized numbers in ${locale}`, () => {
+  test(`Price on Video uses currency symbols and localized numbers in ${locale}`, () => {
     const h = harness({
       locale,
       preferences: { currency: 'AUD', scale: 'linear' },
@@ -1086,7 +1086,7 @@ for (const locale of Object.keys(videoCopy)) {
   });
 }
 
-test('Video Mode restores currency and saves changes without altering the shared chart scale', async () => {
+test('Price on Video restores currency and saves changes without altering the shared chart scale', async () => {
   const h = harness({ preferences: { currency: 'EUR', scale: 'linear' }, rates: { EUR: .9, GBP: .75 } });
   assert.equal(h.control('[data-currency]').value, 'EUR');
   assert.equal(h.control('[data-currency]').disabled, false);
@@ -1790,7 +1790,7 @@ test('curated sections keep silent videos in Party and exclude the removed wallp
 });
 
 
-test('Video Mode owns currency dismissal when styling opens or the UI hides', () => {
+test('Price on Video owns currency dismissal when styling opens or the UI hides', () => {
   const h = harness();
   h.root.dispatchEvent(new Event('pricestyletoggle'));
   assert.equal(h.currencyPickerCloses(), 0);

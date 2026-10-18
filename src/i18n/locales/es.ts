@@ -35,14 +35,12 @@ export const es: Dict = {
     appDescription: 'No le hacen falta llaves ni semillas, las cantidades se meten a mano. No puedes hacer transacciones, pero es muy conveniente para ver lo que valen tus stacks de bitcoin.',
     priceTracker: 'Trackeador de precio',
     priceDescription: 'Precio de Bitcoin en directo e historial desde 2010.',
-    videoDescription: 'El precio de Bitcoin en directo sobre vídeos de YouTube.',
     earthDescription: 'Explora Bitcoin como una parte de la superficie terrestre.',
     supplyDescription: 'Descubre cómo la oferta de dinero fiat aumenta cada año y la de bitcoin no.',
   },
 
   nav: {
     partyMode: 'Party Mode',
-    videoMode: 'Price on Video',
     menuLabel: 'Menú',
     closeMenu: 'Cerrar menú',
     skipToContent: 'Saltar al contenido',

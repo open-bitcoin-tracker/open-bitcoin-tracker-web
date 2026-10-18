@@ -35,14 +35,12 @@ export const fr: Dict = {
     appDescription: 'Pas besoin de clés ni de phrase de récupération. Tu saisis tes montants en bitcoin à la main. Tu ne peux pas faire de transactions avec l’appli, mais elle est bien pratique pour voir combien valent tes stacks de bitcoin.',
     priceTracker: 'Tracker de prix',
     priceDescription: 'Le cours du Bitcoin en direct et son historique depuis 2010.',
-    videoDescription: 'Le cours du Bitcoin en direct sur des vidéos YouTube.',
     earthDescription: 'Explore Bitcoin comme une part des terres émergées de la planète.',
     supplyDescription: 'Découvre comment la masse monétaire des monnaies fiat augmente chaque année, tandis que celle du bitcoin reste inchangée.',
   },
 
   nav: {
     partyMode: 'Party Mode',
-    videoMode: 'Price on Video',
     menuLabel: 'Menu',
     closeMenu: 'Fermer le menu',
     skipToContent: 'Aller au contenu',

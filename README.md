@@ -32,7 +32,9 @@ Prices use Kraken and bundled Coin Metrics history; currency conversions use ECB
 
 ## Maintenance
 
-### Video picker sections
+### Price on Video
+
+Price on Video uses `/video-mode/` and its localized routes. Its page title, homepage heading, and menu label share `title` in `src/i18n/video.ts`; the homepage subtitle and page metadata share `description` there. Update that dictionary for every locale when changing the name or subtitle.
 
 Edit the sections in `src/lib/video-suggestions.ts` to add or reorder curated videos in Price on Video. Party and Chill share the same selection and Recent-history behavior; adding a section also needs a translated tab label in `src/i18n/video.ts`. Each entry needs a YouTube video ID, its original title, and verified `isLive` and `isSilent` status; thumbnails use YouTube images, and selection uses the normal player and saved-video flow. Check the broadcast status rather than inferring it from the title or URL.
 

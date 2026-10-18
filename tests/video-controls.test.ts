@@ -162,7 +162,7 @@ test('an open price style panel prevents idle hiding until dismissed', () => {
   h.controls.destroy();
 });
 
-test('Video Mode hides the interface after 3 seconds only when enabled', () => {
+test('Price on Video hides the interface after 3 seconds only when enabled', () => {
   const h = harness();
   h.tick(10000);
   assert.equal(h.idle(), false);

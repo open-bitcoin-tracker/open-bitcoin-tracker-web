@@ -35,14 +35,12 @@ export const tr: Dict = {
     appDescription: 'Anahtar veya kurtarma ifadesi gerekmez. Bitcoin miktarlarını elle girersin. Uygulamayla işlem yapamazsın, ama biriktirdiğin bitcoinlerin değerini görmek için çok kullanışlıdır.',
     priceTracker: 'Fiyat takibi',
     priceDescription: 'Canlı Bitcoin fiyatı ve 2010’dan bu yana fiyat geçmişi.',
-    videoDescription: 'YouTube videolarının üzerinde canlı Bitcoin fiyatı.',
     earthDescription: 'Bitcoin’i Dünya’nın kara yüzeyinin bir payı olarak keşfet.',
     supplyDescription: 'İtibari para arzının her yıl nasıl arttığını ve bitcoin arzının artmadığını gör.',
   },
 
   nav: {
     partyMode: 'Party Mode',
-    videoMode: 'Price on Video',
     menuLabel: 'Menü',
     closeMenu: 'Menüyü kapat',
     skipToContent: 'İçeriğe geç',
