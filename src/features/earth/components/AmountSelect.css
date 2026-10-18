@@ -19,26 +19,48 @@
   color: var(--control-ink);
   font-size: 26px;
 }
-.earth-feature .amount-choice {
+.earth-feature .amount-input {
   flex: 1;
-  min-width: 0;
-  font-variant-numeric: tabular-nums;
-}
-.earth-feature .amount-choice .dropdown-select {
+  min-width: 3ch;
   width: 100%;
-}
-.earth-feature .amount-choice .dropdown-trigger {
-  width: 100%;
-  justify-content: space-between;
-  padding: 0;
+  height: 36px;
+  padding: 0 4px;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
   color: var(--orange);
   font-size: var(--text-heading);
   font-weight: 700;
-  line-height: 1;
+  font-variant-numeric: tabular-nums;
 }
-.earth-feature .amount-choice .dropdown-trigger:is(:hover, [aria-expanded='true']) {
-  background: transparent;
-}
-.earth-feature .amount-choice .dropdown-trigger svg {
+.earth-feature .amount-input:focus-visible { outline-offset: 0; }
+.earth-feature .amount-input[data-pointer-focus]:focus-visible { outline: none; }
+.earth-feature .amount-error {
+  margin: 8px 0 0;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--panel);
   color: var(--control-ink);
+  font-size: var(--text-caption);
+  line-height: 1.5;
+}
+
+.earth-feature .amount-precision {
+  flex: 0 1 auto;
+  max-width: 60%;
+  color: var(--muted);
+  font-size: .6875rem;
+  line-height: 1.25;
+  text-align: right;
+  pointer-events: none;
+  animation: amount-precision-notice 3200ms ease both;
+}
+@keyframes amount-precision-notice {
+  0% { opacity: 0; }
+  6.25%, 93.75% { opacity: 1; }
+  100% { opacity: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .earth-feature .amount-precision { animation: none; }
 }

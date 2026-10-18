@@ -1,0 +1,7 @@
+{
+  "source": "https://raw.githubusercontent.com/nvkelso/natural-earth-vector/789c9904087846cc3361302857aa2e76b0ae71ff/geojson/ne_10m_populated_places.geojson",
+  "sha256": "9b8e3de09048ef00dfc70357dbb9fa324493f214b5e0ae4daf1aa79a8d10116b",
+  "reviewedAt": "2026-10-18",
+  "license": "Public domain",
+  "count": 7342
+}

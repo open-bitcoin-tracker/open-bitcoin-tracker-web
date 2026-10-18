@@ -7,20 +7,21 @@ import { shouldShowWelcome } from './lib/welcomePreference';
 import AmountSelect from './components/AmountSelect';
 import InfoButton from './components/InfoButton';
 import EarthMap from './components/EarthMap';
-import CountrySelect from './components/CountrySelect';
-import { toArea, type PresetAmount } from './lib/bitcoin';
+import PlaceSelect from './components/PlaceSelect';
+import { parseBitcoinAmount, toArea } from './lib/bitcoin';
 import { useEarthMap } from './hooks/useEarthMap';
 import { useTheme } from './hooks/useTheme';
-import type { Capital } from './lib/locations';
+import type { Place } from './lib/places';
 import './styles/global.css';
 import './styles/app.css';
 
 export default function App({ lang, copy }: { lang: Lang; copy: EarthCopy }) {
-  const [btc, setBtc] = useState<PresetAmount>('0.1');
-  const km2 = toArea(Number(btc));
+  const [btc, setBtc] = useState('0.1');
+  const amount = parseBitcoinAmount(btc);
+  const km2 = amount === null ? null : toArea(amount);
   const theme = useTheme();
   const [inputMode, setInputMode] = useState<'keyboard' | 'pointer'>('keyboard');
-  const [place, setPlace] = useState<Capital | null>(null);
+  const [place, setPlace] = useState<Place | null>(null);
   const [aboutOpen, setAboutOpen] = useState(false);
   const [welcomeOpen, setWelcomeOpen] = useState(false);
   useEffect(() => { setWelcomeOpen(shouldShowWelcome()); }, []);
@@ -33,7 +34,7 @@ export default function App({ lang, copy }: { lang: Lang; copy: EarthCopy }) {
     onInteraction: clearPlace,
   });
 
-  function choosePlace(location: Capital) {
+  function choosePlace(location: Place) {
     setPlace(location);
     map.goToLocation(location);
   }
@@ -62,7 +63,7 @@ export default function App({ lang, copy }: { lang: Lang; copy: EarthCopy }) {
             <InfoButton copy={copy} onAbout={() => setAboutOpen(true)} />
           </div>
           <section className="floating-search" aria-label={copy.comparison}>
-            <CountrySelect lang={lang} copy={copy} selected={place} onSelect={choosePlace} />
+            <PlaceSelect lang={lang} copy={copy} selected={place} onSelect={choosePlace} />
           </section>
         </div>
         <EarthMap

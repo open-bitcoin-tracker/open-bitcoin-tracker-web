@@ -26,9 +26,9 @@ Routes: `/`, `/price-tracker/`, `/party-mode/`, `/video-mode/`, `/android-app/`,
 
 Pages live in `src/pages/` and `src/components/pages/`; shared UI in `src/components/`, `src/layouts/`, and `src/styles/`; browser logic in `src/lib/` and `src/scripts/`; Earth and supply in `src/features/`; static assets in `public/`.
 
-Shared UI primitives live in `src/components/ui/`: native disclosure menus, currency option lists, icon buttons, and video cards. Theme and surface tokens belong in `src/styles/tokens.css`; keep visual variants in shared styles instead of copying a feature's CSS. `src/lib/disclosure-menu.ts`, `currency-picker.ts`, and `guide-drawer.ts` own keyboard, focus, and dismissal behavior. Astro and React guides both use the same drawer controller and styles; searchable country selection retains its combobox behavior. Party and Price on Video use `live-price-display.ts` for price formatting, FX state, preferences, and refresh lifecycle. Recent video cards clone the same server-rendered template used by suggestions.
+Shared UI primitives live in `src/components/ui/`: native disclosure menus, currency option lists, icon buttons, and video cards. Theme and surface tokens belong in `src/styles/tokens.css`; keep visual variants in shared styles instead of copying a feature's CSS. `src/lib/disclosure-menu.ts`, `currency-picker.ts`, and `guide-drawer.ts` own keyboard, focus, and dismissal behavior. Astro and React guides both use the same drawer controller and styles; local place search retains its combobox behavior. Party and Price on Video use `live-price-display.ts` for price formatting, FX state, preferences, and refresh lifecycle. Recent video cards clone the same server-rendered template used by suggestions.
 
-Prices use Kraken and bundled Coin Metrics history; currency conversions use ECB reference rates through Frankfurter. Earth uses MapLibre and OpenFreeMap tiles, with fixed BTC presets and a bundled country selector centered on capital coordinates. Country filtering runs locally without a geocoder; keep map attribution visible. Earth opens with a dismissible introduction over the map. Choosing “Don’t show again” saves that preference in this browser across localized routes; the help button still opens the full guide. Supply definitions and official sources live in [snapshot.json](src/features/supply/snapshot.json).
+Prices use Kraken and bundled Coin Metrics history; currency conversions use ECB reference rates through Frankfurter. Earth uses MapLibre and OpenFreeMap tiles, with custom BTC entry and a bundled country-and-city selector. Amounts allow zero through the maximum Bitcoin supply, with at most one decimal place and either a decimal point or comma (no grouping separators). Extra fractional digits are rejected without changing the displayed amount. Other invalid or empty input hides the overlay until it is valid. Amount edits never move or zoom the camera. Calculations and search filtering run locally without a geocoder; keep map attribution visible. Earth opens with a dismissible introduction over the map. Choosing “Don’t show again” saves that preference in this browser across localized routes; the help button still opens the full guide. Supply definitions and official sources live in [snapshot.json](src/features/supply/snapshot.json).
 
 ## Maintenance
 
@@ -72,6 +72,24 @@ Review population annually or after a UN WPP revision: World / Medium / both-sex
 
 Review capital changes and coordinates together before updating the catalogue. In particular, older source snapshots still list Bujumbura, Dar es Salaam, Melekeok, Nur-Sultan or Malabo; the bundled list uses Gitega, Dodoma, Ngerulmud, Astana and [Ciudad de la Paz](https://www.guineaecuatorialpress.com/noticias/el_presidente_de_la_republica_proclama_la_ciudad_de_la_paz_como_capital_de_la_republica_de_guinea_ecuatorial_con_la_firma_de_un_decreto_ley). Sri Jayawardenepura Kotte is included alongside Colombo; Jakarta remains listed while Nusantara's political-capital transition is planned for 2028. Source data is downloaded only for maintenance, never by visitors. After edits, run `npm run test:earth`, `npm run check:earth` and `npm run build`.
 
+### Earth city catalogue and privacy
+
+`src/features/earth/lib/cities.json` contains Natural Earth 1:10m Populated Places, including major cities and selected towns, with translated names where available. It is a finite catalogue, not a street-address search. `cities-source.json` records the pinned source revision, checksum, date and public-domain license. Administrative labels are retained where city and country names alone are ambiguous. The existing country destinations and reviewed capitals remain authoritative; the search also includes reviewed capitals missing from the older city release and uses Astana’s current name.
+
+The browser loads the entire city catalogue as a separate static chunk when the picker first opens. The request is identical for every query. Typed amounts, queries and selected places remain in memory: no URL parameters, saved history, storage, analytics or geocoding requests. Country choices remain available if city data cannot load, with a retry control. OpenFreeMap still receives the visitor’s IP address and requests for viewed map areas; local search does not hide the viewport from the tile provider.
+
+To regenerate the catalogue, download the exact source URL recorded in `cities-source.json`, then run:
+
+```sh
+python3 scripts/import-earth-cities.py /path/to/ne_10m_populated_places.geojson
+npm run test:earth
+npm run check:earth
+npm test
+npm run build
+```
+
+The importer performs no network requests and rejects a different checksum. For a new source release, review the source revision, checksum, names, country codes and coordinates before updating its constants and review date. Natural Earth city data is [public domain](https://www.naturalearthdata.com/about/terms-of-use/); the adapted capital catalogue retains its existing ODbL attribution above.
+
 ### Homepage previews
 
 The homepage price card renders an all-time logarithmic SVG at build time from the bundled history. Its compact samples retain time-bucket highs/lows and segment endpoints; missing days remain separate paths. The browser receives these samples rather than the full CSV or interactive tracker. A small script polls the USD ticker once a minute and overlapping daily history every 15 minutes while the page is visible and online. Failed requests retain the dated price/curve and show unavailable status; a ticker cannot bridge missing daily history. The card links to the localized tracker.
@@ -84,7 +102,7 @@ The Earth captures live in `src/assets/previews/` and are optimized at build tim
 
 ### Languages and social images
 
-Keep all `src/i18n/` dictionaries consistent. English uses root URLs; Portuguese uses `/pt/` and dictionary code `pt-BR`. Earth controls, country search, map labels (where available), and guide content are translated through `earth.ts`; country names use the browser’s locale data. Supply content remains English.
+Keep all `src/i18n/` dictionaries consistent. English uses root URLs; Portuguese uses `/pt/` and dictionary code `pt-BR`. Earth controls, place search, map labels (where available), and guide content are translated through `earth.ts`; country names use the browser’s locale data. Supply content remains English.
 
 Locale codes, URL segments, and autonyms live in `src/i18n/languages.ts`. Astro locales/sitemap, localized routes, layout alternates, the language switcher, and redirect middleware share that metadata. Adding a language requires an entry there, its dictionary and `ui.ts` registration, plus `tracker.ts`, `ranges.ts`, `chart-settings.ts`, `party.ts`, `video.ts`, and `earth.ts`. Social images use the registered dictionaries. Run `npm run check`, build, and review generated routes.
 
