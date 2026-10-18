@@ -328,12 +328,12 @@ const locale = htmlLang(Astro.currentLocale);
   .video-cancel { flex-shrink: 0; width: 3.5rem; height: 3.5rem; background: #ffffff0d; }
   .video-url-field { display: flex; flex: 1; min-width: 0; height: 3.5rem; align-items: center; gap: .5rem; padding: .4375rem; padding-left: 1rem; border: 1px solid #ffffff14; border-radius: var(--radius-control); background: #ffffff08; }
   input { min-width: 0; width: 100%; border: 0; background: transparent; color: #fff; font-size: .85rem; padding: .5rem 0; }
-  input::placeholder { color: #aaa; }
+  input::placeholder { color: var(--color-media-accent); opacity: 1; }
   input[aria-invalid="true"] { color: #ffc2b2; }
   [data-video-url]:focus-visible { outline: none; }
   .video-url-field:hover, .video-url-field:has([data-video-url]:focus-visible) { background: rgb(50 50 50 / .9); }
-  .video-submit { flex-shrink: 0; display: grid; place-items: center; width: 2.5rem; height: 2.5rem; border: 0; border-radius: var(--radius-control-small); background: var(--color-media-accent); color: #211000; }
-  .video-submit:hover { background: #ffb047; }
+  .video-submit { flex-shrink: 0; display: grid; place-items: center; width: 2.5rem; height: 2.5rem; border: 0; border-radius: var(--radius-control-small); background: #ffffff14; color: #fff; }
+  .video-submit:hover { background: #ffffff1f; }
   .video-picker-tabs { display: flex; gap: .35rem; padding: .3rem; overflow-x: auto; border-radius: 1.5rem; background: #ffffff08; }
   .video-picker-tab { flex: 1 0 auto; white-space: nowrap; min-height: 2.75rem; padding: .65rem 1rem; border: 0; border-radius: 999px; background: transparent; color: #aaa; font-size: .9rem; font-weight: 600; }
   .video-picker-tab:hover { color: #fff; background: #ffffff08; }
