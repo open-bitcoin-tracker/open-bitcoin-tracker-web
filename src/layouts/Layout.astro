@@ -171,9 +171,10 @@ const jsonLd = {
     <meta name="twitter:image" content={ogImage} />
     <meta name="twitter:image:alt" content={ogImageAlt} />
 
-    <!-- Fonts are self-hosted (see @font-face in global.css); preload the
-         variable Inter file since it's used for all body text on first paint. -->
-    <link rel="preload" href="/fonts/InterVariable.woff2" as="font" type="font/woff2" crossorigin />
+    <!-- Preload the common Latin/currency subset; Russian also needs Cyrillic
+         for first paint. Other glyphs load only when present in displayed text. -->
+    <link rel="preload" href="/fonts/InterVariable-latin.woff2" as="font" type="font/woff2" crossorigin />
+    {lang === 'ru' && <link rel="preload" href="/fonts/InterVariable-cyrillic.woff2" as="font" type="font/woff2" crossorigin />}
 
     {isLanding && <script type="application/ld+json" set:html={JSON.stringify(websiteJsonLd)} />}
     {isApp && <script type="application/ld+json" set:html={JSON.stringify(jsonLd)} />}

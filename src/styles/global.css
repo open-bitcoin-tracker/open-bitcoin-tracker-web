@@ -1,20 +1,14 @@
 @import "tailwindcss";
 @import "./tokens.css";
+@import "./inter-fonts.css";
 
 /*
  * Self-hosted fonts (served from /fonts on our own origin — no third-party
  * requests, no IP leak to Google/rsms.me, in keeping with the no-tracking
- * promise). Inter ships as a single variable woff2 covering weights 100-900;
- * we expose it under the family name "Inter" so --font-sans needs no change.
- * Headings use the same Inter family, with weight and color for emphasis.
+ * promise). Inter's generated subsets preserve its weights 100-900 and optical
+ * sizing. CSS selects the characters needed for each page; the family and
+ * heading/body typography stay the same.
  */
-@font-face {
-  font-family: "Inter";
-  font-style: normal;
-  font-weight: 100 900;
-  font-display: swap;
-  src: url("/fonts/InterVariable.woff2") format("woff2");
-}
 
 @font-face {
   font-family: 'Barlow Condensed';

@@ -11,6 +11,8 @@
     "preview": "astro preview",
     "check": "tsc --noEmit",
     "generate:social": "node --experimental-strip-types scripts/generate-social-images.ts",
+    "generate:fonts": "python3 scripts/subset-fonts.py",
+    "check:fonts": "python3 scripts/subset-fonts.py --check",
     "test": "node --experimental-strip-types --test tests/*.test.ts",
     "astro": "astro",
     "test:earth": "vitest run src/features/earth",

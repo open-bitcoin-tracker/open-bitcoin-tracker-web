@@ -108,6 +108,23 @@ Locale codes, URL segments, and autonyms live in `src/i18n/languages.ts`. Astro 
 
 After social design or app-icon changes, run `npm run generate:social`, review `public/og-bitcoin-tools.png` and `public/app-icon.webp`, and rebuild. The command also generates a 288-pixel WebP icon for page UI (up to 96 CSS pixels at 3× density); `public/app-icon.png` remains the full-resolution artwork source. The social image uses the homepage paper background, app icon, and black product name in the bundled Barlow Condensed display font (`scripts/fonts/`, with its OFL license). Every locale uses the same brand image; generation needs no system fonts, and normal builds use checked-in images. Bump the image URL version in `src/layouts/Layout.astro` when replacing the cards. `public/og-image.png` remains a compatibility copy.
 
+### Font maintenance
+
+Inter is self-hosted as generated Latin, Cyrillic, and extended-character WOFF2 subsets. The Latin subset includes Turkish/Vietnamese accents, combining marks, currency signs, and common UI symbols; the remaining original characters stay available on demand. Both variable axes (weight and optical size), glyph outlines, and line metrics are preserved. Japanese continues to use the existing system-font fallback for characters Inter does not contain. The layout preloads Latin on every route and Cyrillic on Russian routes; it never preloads the full source or the extended subset.
+
+`public/fonts/InterVariable.woff2` is the authoritative source. When replacing it, preserve its OFL license and regenerate the checked-in subsets and `src/styles/inter-fonts.css`:
+
+```sh
+python3 -m venv /tmp/obt-fonts
+. /tmp/obt-fonts/bin/activate
+python -m pip install -r scripts/fonts/requirements.txt
+npm run generate:fonts
+npm run check:fonts
+npm run build
+```
+
+The font checks verify complete original character coverage, variable axes, outlines, metrics, license metadata, and text shaping (including accents, ligatures, kerning, and tabular numbers). Review all localized routes after font changes. Ordinary builds use the checked-in files and need no Python font tooling or external font requests.
+
 ## Deployment
 
 Cloudflare Pages: `npm run build`, output `dist/`, include `functions/`. Language redirects use the saved cookie or browser language; development and preview do not run the function. Configure runtime in `wrangler.toml`, site URL/locales/sitemap in `astro.config.mjs`. Forks must also review `public/robots.txt` and project/download links.
