@@ -10,8 +10,8 @@
 export const en = {
   meta: {
     landing: {
-      title: 'Open Bitcoin Tracker — Bitcoin Tools & Android App',
-      description: 'Track live Bitcoin prices, explore historical charts and A Bit of Earth, or use Price on Video. Free, open-source tools and a private Android portfolio app.',
+      title: 'Open Bitcoin Tracker',
+      description: 'Fun, useful and beautiful bitcoin tools.',
     },
     home: {
       title: 'Open Bitcoin Tracker for Android',
@@ -29,7 +29,6 @@ export const en = {
         'Privacy policy for Open Bitcoin Tracker — a privacy-focused, open-source Android app to track the value of your Bitcoin stacks.',
     },
     ogImageAlt: 'Open Bitcoin Tracker — free, open-source Bitcoin tools and Android app',
-    socialDescription: 'Fun, useful and beautiful bitcoin tools.',
   },
 
   landing: {

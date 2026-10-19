@@ -3,8 +3,8 @@ import type { Dict } from '../ui';
 export const ja: Dict = {
   meta: {
     landing: {
-      title: 'Open Bitcoin Tracker — ビットコインツールとAndroidアプリ',
-      description: 'ビットコインのリアルタイム価格や過去のチャート、A Bit of Earth、Price on Videoを楽しもう。無料のオープンソースツールと、プライバシーを重視したAndroid向けポートフォリオアプリ。',
+      title: 'Open Bitcoin Tracker',
+      description: '楽しくて、便利で、美しいビットコインツール。',
     },
     home: {
       title: 'Android向けOpen Bitcoin Tracker',
@@ -22,7 +22,6 @@ export const ja: Dict = {
         'Open Bitcoin Tracker のプライバシーポリシー — ビットコインのスタックの価値を追跡する、プライバシー重視のオープンソース Android アプリ。',
     },
     ogImageAlt: 'Open Bitcoin Tracker — 無料のオープンソース・ビットコインツールとAndroidアプリ',
-    socialDescription: '楽しくて、便利で、美しいビットコインツール。',
   },
 
   landing: {

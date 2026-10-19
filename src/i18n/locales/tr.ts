@@ -3,8 +3,8 @@ import type { Dict } from '../ui';
 export const tr: Dict = {
   meta: {
     landing: {
-      title: 'Open Bitcoin Tracker — Bitcoin Araçları ve Android Uygulaması',
-      description: 'Canlı Bitcoin fiyatını takip et, geçmiş fiyat grafiklerini ve A Bit of Earth’ü keşfet ya da Price on Video’yu kullan. Ücretsiz, açık kaynaklı araçlar ve gizliliğe önem veren bir Android portföy uygulaması.',
+      title: 'Open Bitcoin Tracker',
+      description: 'Eğlenceli, kullanışlı ve güzel Bitcoin araçları.',
     },
     home: {
       title: 'Android için Open Bitcoin Tracker',
@@ -22,7 +22,6 @@ export const tr: Dict = {
         "Open Bitcoin Tracker için gizlilik politikası: Bitcoin stack'lerinizin değerini takip etmek için gizliliğe önem veren, açık kaynaklı bir Android uygulaması.",
     },
     ogImageAlt: 'Open Bitcoin Tracker — ücretsiz, açık kaynaklı Bitcoin araçları ve Android uygulaması',
-    socialDescription: 'Eğlenceli, kullanışlı ve güzel Bitcoin araçları.',
   },
 
   landing: {

@@ -3,8 +3,8 @@ import type { Dict } from '../ui';
 export const vi: Dict = {
   meta: {
     landing: {
-      title: 'Open Bitcoin Tracker — Công cụ Bitcoin và ứng dụng Android',
-      description: 'Theo dõi giá Bitcoin trực tiếp, khám phá biểu đồ lịch sử và A Bit of Earth hoặc dùng Price on Video. Các công cụ miễn phí, mã nguồn mở và ứng dụng quản lý danh mục Android chú trọng quyền riêng tư.',
+      title: 'Open Bitcoin Tracker',
+      description: 'Các công cụ Bitcoin thú vị, hữu ích và đẹp mắt.',
     },
     home: {
       title: 'Open Bitcoin Tracker dành cho Android',
@@ -22,7 +22,6 @@ export const vi: Dict = {
         'Chính sách quyền riêng tư của Open Bitcoin Tracker — một ứng dụng Android mã nguồn mở, chú trọng quyền riêng tư để theo dõi giá trị các stack Bitcoin của bạn.',
     },
     ogImageAlt: 'Open Bitcoin Tracker — công cụ Bitcoin miễn phí, mã nguồn mở và ứng dụng Android',
-    socialDescription: 'Các công cụ Bitcoin thú vị, hữu ích và đẹp mắt.',
   },
 
   landing: {
