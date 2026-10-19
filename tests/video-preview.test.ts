@@ -72,6 +72,7 @@ function harness(reduced = false, locale = 'en') {
 test('video card draws only received quotes, formats for the locale, and retains prices during disconnections', () => {
   const h = harness(false, 'de');
   assert.equal(h.price.textContent, '—');
+  h.intersect(true);
   h.subscriptions[0].onState('delayed');
   assert.equal(h.status.textContent, 'Unavailable');
   h.subscriptions[0].onPrice({ time: Date.now(), price: 83456.7 });
@@ -87,6 +88,35 @@ test('video card draws only received quotes, formats for the locale, and retains
   assert.equal(h.status.textContent, 'Offline');
   assert.equal(h.price.textContent, lastPrice);
   h.stop();
+});
+
+test('offscreen and hidden cards release the feed and reconnect once with the last quote intact', () => {
+  const h = harness(true);
+  assert.equal(h.subscriptions.length, 0, 'no price connection before intersection');
+  h.intersect(true);
+  h.intersect(true);
+  assert.equal(h.subscriptions.length, 1);
+  h.subscriptions[0].onPrice({ time: Date.now(), price: 83456.7 });
+  const lastPrice = h.price.textContent;
+  h.intersect(false);
+  assert.equal(h.subscriptions[0].stopped, true);
+  h.visibility(true);
+  h.intersect(true);
+  h.window.dispatchEvent(new Event('pageshow'));
+  assert.equal(h.subscriptions.length, 1, 'hidden cards do not reconnect');
+  h.visibility(false);
+  h.visibility(false);
+  assert.equal(h.subscriptions.length, 2);
+  assert.equal(h.price.textContent, lastPrice);
+  assert.equal(h.video.src, '', 'reduced motion does not prevent visible price updates');
+  h.visibility(true);
+  assert.equal(h.subscriptions[1].stopped, true);
+  h.intersect(false);
+  h.visibility(false);
+  assert.equal(h.subscriptions.length, 2, 'offscreen cards stay disconnected on tab return');
+  h.stop();
+  h.intersect(true);
+  assert.equal(h.subscriptions.length, 2, 'cleanup prevents new connections');
 });
 
 test('animation loads only in view, pauses in background, and preserves manual pause', () => {

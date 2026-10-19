@@ -37,12 +37,23 @@ export function startVideoPreview(root: HTMLElement) {
   }
 
   function startPrice() {
-    if (stopPrice || stopped) return;
+    if (stopPrice || stopped || suspended || !visible || document.hidden) return;
     stopPrice = subscribeBitcoinPrice({
       onPrice(value) { point = value; paintPrice(); },
       onState(value) { state = value; paintPrice(); },
     });
   }
+
+  function syncPrice() {
+    if (stopped || suspended || !visible || document.hidden) {
+      stopPrice?.();
+      stopPrice = undefined;
+    } else {
+      startPrice();
+    }
+  }
+
+  function syncVisibility() { syncPrice(); syncMotion(); }
 
   function paintMotion() {
     const playing = !video.paused;
@@ -76,13 +87,12 @@ export function startVideoPreview(root: HTMLElement) {
   function pagehide(event: PageTransitionEvent) {
     if (!event.persisted) { stop(); return; }
     suspended = true;
-    stopPrice?.(); stopPrice = undefined;
-    syncMotion();
+    syncVisibility();
   }
-  function pageshow() { suspended = false; startPrice(); syncMotion(); }
+  function pageshow() { suspended = false; syncVisibility(); }
   const observer = new IntersectionObserver(entries => {
     visible = entries.some(entry => entry.isIntersecting);
-    syncMotion();
+    syncVisibility();
   });
   function stop() {
     if (stopped) return;
@@ -95,7 +105,7 @@ export function startVideoPreview(root: HTMLElement) {
     motion.removeEventListener('change', motionChange);
     video.removeEventListener('play', paintMotion);
     video.removeEventListener('pause', paintMotion);
-    document.removeEventListener('visibilitychange', syncMotion);
+    document.removeEventListener('visibilitychange', syncVisibility);
     window.removeEventListener('pagehide', pagehide);
     window.removeEventListener('pageshow', pageshow);
   }
@@ -106,10 +116,10 @@ export function startVideoPreview(root: HTMLElement) {
   motion.addEventListener('change', motionChange);
   video.addEventListener('play', paintMotion);
   video.addEventListener('pause', paintMotion);
-  document.addEventListener('visibilitychange', syncMotion);
+  document.addEventListener('visibilitychange', syncVisibility);
   window.addEventListener('pagehide', pagehide);
   window.addEventListener('pageshow', pageshow);
   observer.observe(root);
-  startPrice();
+  paintMotion();
   return stop;
 }
