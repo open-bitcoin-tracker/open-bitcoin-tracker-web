@@ -240,7 +240,7 @@ const locale = htmlLang(Astro.currentLocale);
   .video-icon-button { border: 0; background: rgb(16 16 16 / .65); backdrop-filter: blur(12px);  color: #fff;}
   .video-icon-button:hover { background: rgb(50 50 50 / .85); }
   .video-price-style { position: fixed; width: max-content; z-index: 4; opacity: 0; visibility: hidden; pointer-events: none; transition: opacity var(--video-ui-fade) ease, visibility 0s linear var(--video-ui-fade); text-align: left; }
-  .video-page[data-price-layout-open] .video-price-style { opacity: 1; visibility: visible; pointer-events: auto; transition-delay: 0s; }
+  .video-page[data-price-layout-ready]:not([data-ui-idle]) .video-price-style { opacity: 1; visibility: visible; pointer-events: auto; transition-delay: 0s; }
   .video-settings-panel, .video-player-panel, .video-change { background: rgb(16 16 16 / .75); backdrop-filter: blur(12px); }
   .video-settings-trigger { display: flex; align-items: center; gap: .5rem; min-height: 2.75rem; padding: .65rem .85rem; border: 0; border-radius: var(--radius-control); background: rgb(16 16 16 / .75); backdrop-filter: blur(12px); color: #fff; font-size: .9rem; font-weight: 600; }
   .video-settings-trigger:hover { background: rgb(50 50 50 / .85); }
@@ -293,10 +293,10 @@ const locale = htmlLang(Astro.currentLocale);
   .video-page[data-price-layout-ready] .video-price-position { position: absolute; z-index: 2; pointer-events: auto; cursor: grab; touch-action: none; user-select: none; }
   .video-price-editing { position: absolute; inset: 0; opacity: 0; visibility: hidden; pointer-events: none; transition: opacity var(--video-ui-fade) ease, visibility 0s linear var(--video-ui-fade); }
   .video-price-editing::after { content: ''; position: absolute; inset: 0; border: 1px solid rgb(255 255 255 / .8); border-radius: 3px; pointer-events: none; }
-  .video-page[data-price-layout-open] .video-price-editing { opacity: 1; visibility: visible; transition-delay: 0s; }
+  .video-page[data-price-layout-ready]:not([data-ui-idle]) .video-price-editing { opacity: 1; visibility: visible; transition-delay: 0s; }
   .video-price-resize { position: absolute; z-index: 1; width: 32px; height: 32px; display: grid; place-items: center; border: 0; padding: 0; background: transparent; transform: translate(-50%, -50%); touch-action: none; pointer-events: none; }
   .video-price-resize::after { content: ''; width: 16px; height: 16px; border-radius: 50%; background: var(--color-media-accent); box-shadow: 0 1px 5px #0008; }
-  .video-page[data-price-layout-open] .video-price-resize { pointer-events: auto; }
+  .video-page[data-price-layout-ready]:not([data-ui-idle]) .video-price-resize { pointer-events: auto; }
   .video-price-resize-nw { top: 0; left: 0; cursor: nwse-resize; }
   .video-price-resize-ne { top: 0; left: 100%; cursor: nesw-resize; }
   .video-price-resize-sw { top: 100%; left: 0; cursor: nesw-resize; }

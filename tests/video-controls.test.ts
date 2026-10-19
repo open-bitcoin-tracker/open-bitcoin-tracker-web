@@ -292,6 +292,20 @@ test('ending editing restores playback without reopening the editor and gives a 
   h.controls.destroy();
 });
 
+test('hiding the price frame with Escape dismisses the whole UI until intentional input', () => {
+  const h = harness();
+  h.controls.setEnabled(true);
+  h.root.dispatchEvent(new Event('videouihide'));
+  assert.equal(h.idle(), true);
+  h.root.dispatchEvent(new Event('priceeditortoggle'));
+  h.root.dispatchEvent(new Event('focusin'));
+  h.tick(10000);
+  assert.equal(h.idle(), true);
+  h.key();
+  assert.equal(h.idle(), false);
+  h.controls.destroy();
+});
+
 test('mouse and pen movement reveal the interface and restart the full idle delay', () => {
   const h = harness();
   h.controls.setEnabled(true);

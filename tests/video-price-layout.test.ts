@@ -313,12 +313,15 @@ test('Escape hides focused handles without reopening and safely ends an active r
   assert.equal(h.key(h.outside, 'Escape'), false, 'navigation outside the page root keeps its own Escape behavior');
   assert.equal(h.frame(), false);
   let dismissals = 0;
+  let hideRequests = 0;
+  h.root.addEventListener('videouihide', () => { hideRequests++; });
   h.root.addEventListener('priceeditortoggle', () => { if (!h.frame()) dismissals++; });
   h.focus(h.position);
   h.focus(h.handles.ne);
   assert.equal(h.key(h.handles.ne, 'Escape'), true);
   assert.equal(h.frame(), false);
   assert.equal(dismissals, 1, 'Escape notifies playback controls that editing has ended');
+  assert.equal(hideRequests, 1, 'Escape also hides the page controls with the frame');
   assert.equal(h.document.activeElement, h.position);
   assert.equal(h.handles.ne.tabIndex, -1);
   h.window.dispatchEvent(new Event('focus'));

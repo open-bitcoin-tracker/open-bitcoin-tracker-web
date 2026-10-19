@@ -78,6 +78,10 @@ export function createVideoControls(root: HTMLElement) {
     restorePlayback();
   }
 
+  function handleHideRequest() {
+    hide(true);
+  }
+
   function hide(manual = false) {
     clearTimer();
     manuallyHidden = true;
@@ -167,6 +171,7 @@ export function createVideoControls(root: HTMLElement) {
   root.addEventListener('pricestyletoggle', reveal);
   root.addEventListener('pricelayoutchange', handleLayoutChange);
   root.addEventListener('priceeditortoggle', handleEditorToggle);
+  root.addEventListener('videouihide', handleHideRequest);
   handleEditorToggle();
   document.addEventListener('visibilitychange', reveal);
   document.addEventListener('fullscreenchange', handleFullscreenChange);
@@ -204,6 +209,7 @@ export function createVideoControls(root: HTMLElement) {
       root.removeEventListener('pricestyletoggle', reveal);
       root.removeEventListener('pricelayoutchange', handleLayoutChange);
       root.removeEventListener('priceeditortoggle', handleEditorToggle);
+      root.removeEventListener('videouihide', handleHideRequest);
       document.removeEventListener('visibilitychange', reveal);
       document.removeEventListener('fullscreenchange', handleFullscreenChange);
       document.removeEventListener('toggle', reveal, true);
