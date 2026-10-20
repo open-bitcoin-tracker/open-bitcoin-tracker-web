@@ -115,7 +115,7 @@ function harness(hidden = false, fullscreenEnabled = false, options: { locale?: 
     ChartMotion: class { finish() {} clear() {} },
   };
   const globals = {
-    document, window, navigator,
+    document, window, navigator, Event,
     Date: class extends Date { static now() { return now; } },
     WebSocket: Socket, AbortController, AbortSignal,
     ResizeObserver: class { observe() {} disconnect() { disconnected = true; } },
@@ -129,7 +129,7 @@ function harness(hidden = false, fullscreenEnabled = false, options: { locale?: 
   };
   const feedModule = {};
   runInNewContext(feedScript, { ...globals, exports: feedModule });
-  const titleModule = browserModule('lib/price-tab-title', globals);
+  const titleModule = browserModule('lib/price-tab-title', globals, browserModule('lib/currency-picker', globals));
   runInNewContext(script, {
     ...globals, require: (name: string) => name.includes('bitcoin-live-price') ? feedModule : name.includes('price-tab-title') ? titleModule : modules, exports: {},
   });

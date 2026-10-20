@@ -1,3 +1,5 @@
+import { createOptionPicker } from './currency-picker';
+
 const preferenceKey = 'bitcoin-tracker-price-tab';
 const refreshPreferenceKey = 'bitcoin-tracker-price-tab-refresh';
 export const priceTabRefreshSeconds = [1, 5, 15, 30, 60] as const;
@@ -27,6 +29,14 @@ export function createPriceTabTitle(root: HTMLElement) {
   try { refreshSeconds = validRefresh(window.localStorage.getItem(refreshPreferenceKey)) ?? 1; }
   catch { /* Use the default interval when storage is unavailable. */ }
   refreshSelect.value = dialogRefresh.value = String(refreshSeconds);
+  const pickerOptions = {
+    selectors: { trigger: '[data-refresh-trigger]', value: '[data-refresh-value]', list: '[data-refresh-list]', option: '[data-refresh-option]', optionKey: 'refreshOption' },
+    displayOptionLabel: true, openAttribute: 'data-refresh-open', toggleEvent: 'refreshtoggle',
+  };
+  const refreshWrapper = refreshRow.querySelector<HTMLElement>('[data-refresh-picker]')!;
+  const dialogWrapper = dialog.querySelector<HTMLElement>('[data-refresh-picker]')!;
+  const refreshPicker = createOptionPicker(refreshWrapper, refreshSelect, { ...pickerOptions, wrapper: refreshWrapper });
+  const dialogPicker = createOptionPicker(dialogWrapper, dialogRefresh, { ...pickerOptions, wrapper: dialogWrapper });
 
   function clearRefresh() {
     clearTimeout(refreshTimer);
@@ -69,12 +79,14 @@ export function createPriceTabTitle(root: HTMLElement) {
   }
 
   function onToggle() {
+    refreshPicker.close();
     menu.open = false;
     if (enabled) {
       setEnabled(false);
       menuTrigger.focus({ preventScroll: true });
     } else if (!dialog.open) {
       dialogRefresh.value = String(refreshSeconds);
+      dialogPicker.sync();
       dialog.showModal();
       heading.focus({ preventScroll: true });
     }
@@ -84,6 +96,7 @@ export function createPriceTabTitle(root: HTMLElement) {
     if (!dialog.open || destroyed) return;
     refreshSeconds = validRefresh(dialogRefresh.value) ?? refreshSeconds;
     refreshSelect.value = String(refreshSeconds);
+    refreshPicker.sync();
     setEnabled(true);
     dialog.close();
   }
@@ -94,12 +107,18 @@ export function createPriceTabTitle(root: HTMLElement) {
   }
 
   function onClose() {
+    dialogPicker.close();
     if (!destroyed) menuTrigger.focus({ preventScroll: true });
+  }
+
+  function onMenuToggle() {
+    if (!menu.open) refreshPicker.close();
   }
 
   function onRefreshChange() {
     refreshSeconds = validRefresh(refreshSelect.value) ?? refreshSeconds;
     refreshSelect.value = String(refreshSeconds);
+    refreshPicker.sync();
     savePreferences();
     paint(true);
   }
@@ -110,6 +129,7 @@ export function createPriceTabTitle(root: HTMLElement) {
   dialog.addEventListener('cancel', onCancel);
   dialog.addEventListener('close', onClose);
   refreshSelect.addEventListener('change', onRefreshChange);
+  menu.addEventListener('toggle', onMenuToggle);
   paint();
 
   return {
@@ -123,6 +143,9 @@ export function createPriceTabTitle(root: HTMLElement) {
       dialog.removeEventListener('cancel', onCancel);
       dialog.removeEventListener('close', onClose);
       refreshSelect.removeEventListener('change', onRefreshChange);
+      menu.removeEventListener('toggle', onMenuToggle);
+      refreshPicker.destroy();
+      dialogPicker.destroy();
       if (dialog.open) dialog.close();
       paint();
     },

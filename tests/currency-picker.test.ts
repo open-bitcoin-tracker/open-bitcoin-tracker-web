@@ -3,13 +3,16 @@ import { readFileSync } from 'node:fs';
 import { runInNewContext } from 'node:vm';
 import test from 'node:test';
 import ts from 'typescript';
-import type { createCurrencyPicker } from '../src/lib/currency-picker.ts';
+import type { createCurrencyPicker, createOptionPicker } from '../src/lib/currency-picker.ts';
 
 const script = ts.transpileModule(readFileSync(new URL('../src/lib/currency-picker.ts', import.meta.url), 'utf8'), {
   compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 },
 }).outputText;
 
-function harness({ currency = 'USD', disabled = false, standalone = false, explicitWrapper = false, closeOnSelect = true } = {}) {
+function harness({ currency = 'USD', disabled = false, standalone = false, explicitWrapper = false, closeOnSelect = true, refresh = false } = {}) {
+  const selectors = refresh
+    ? { trigger: '[data-refresh-trigger]', value: '[data-refresh-value]', list: '[data-refresh-list]', option: '[data-refresh-option]', optionKey: 'refreshOption' }
+    : { trigger: '[data-currency-trigger]', value: '[data-currency-value]', list: '[data-currency-list]', option: '[data-currency-option]', optionKey: 'currencyOption' };
   class Element extends EventTarget {
     attributes = new Map<string, string>();
     dataset: Record<string, string> = {};
@@ -38,7 +41,7 @@ function harness({ currency = 'USD', disabled = false, standalone = false, expli
     removeAttribute(name: string) { this.attributes.delete(name); }
     hasAttribute(name: string) { return this.attributes.has(name); }
     querySelector(selector: string) { return this.selectors.get(selector) ?? null; }
-    querySelectorAll(selector: string) { assert.equal(selector, '[data-currency-option]'); return this.children; }
+    querySelectorAll(selector: string) { assert.equal(selector, selectors.option); return this.children; }
     contains(target: Element | null): boolean { return target === this || this.children.some(child => child.contains(target)); }
     focus() {
       this.focusCount++;
@@ -63,15 +66,16 @@ function harness({ currency = 'USD', disabled = false, standalone = false, expli
   const select = wrapper.append(new Element());
   const outside = new Element();
   const document = Object.assign(new Element(), { activeElement: null as Element | null });
-  const options = ['USD', 'EUR', 'GBP', 'AUD', 'CAD', 'CHF', 'JPY'].map(currency => {
+  const options = (refresh ? ['1', '5', '15', '30', '60'] : ['USD', 'EUR', 'GBP', 'AUD', 'CAD', 'CHF', 'JPY']).map(currency => {
     const option = list.append(new Element());
-    option.dataset.currencyOption = currency;
+    option.dataset[selectors.optionKey] = currency;
+    option.textContent = refresh ? (currency === '1' ? '1 second' : `${currency} seconds`) : currency;
     return option;
   });
   if (!explicitWrapper) root.selectors.set('[data-currency-picker]', wrapper);
-  wrapper.selectors.set('[data-currency-trigger]', trigger);
-  wrapper.selectors.set('[data-currency-value]', value);
-  wrapper.selectors.set('[data-currency-list]', list);
+  wrapper.selectors.set(selectors.trigger, trigger);
+  wrapper.selectors.set(selectors.value, value);
+  wrapper.selectors.set(selectors.list, list);
   select.value = currency;
   select.disabled = disabled;
   trigger.disabled = true;
@@ -80,16 +84,17 @@ function harness({ currency = 'USD', disabled = false, standalone = false, expli
   let toggles = 0;
   let now = 1000;
   select.addEventListener('change', event => changes.push({ currency: select.value, bubbles: event.bubbles }));
-  root.addEventListener('currencytoggle', () => { toggles++; });
-  const module: { createCurrencyPicker?: typeof createCurrencyPicker } = {};
+  root.addEventListener(refresh ? 'refreshtoggle' : 'currencytoggle', () => { toggles++; });
+  const module: { createCurrencyPicker?: typeof createCurrencyPicker; createOptionPicker?: typeof createOptionPicker } = {};
   runInNewContext(script, { exports: module, document, Event, Date: { now: () => now } });
-  const picker = module.createCurrencyPicker!(root as unknown as HTMLElement, select as unknown as HTMLSelectElement, { closeOnSelect, wrapper: explicitWrapper ? wrapper as unknown as HTMLElement : undefined, panel: panel as unknown as HTMLElement, back: back as unknown as HTMLButtonElement });
-  const option = (currency: string) => options.find(option => option.dataset.currencyOption === currency)!;
+  const createPicker = refresh ? module.createOptionPicker! : module.createCurrencyPicker!;
+  const picker = createPicker(root as unknown as HTMLElement, select as unknown as HTMLSelectElement, { closeOnSelect, wrapper: explicitWrapper ? wrapper as unknown as HTMLElement : undefined, panel: panel as unknown as HTMLElement, back: back as unknown as HTMLButtonElement, ...(refresh ? { selectors, displayOptionLabel: true, openAttribute: 'data-refresh-open', toggleEvent: 'refreshtoggle' } : {}) });
+  const option = (currency: string) => options.find(option => option.dataset[selectors.optionKey] === currency)!;
   return {
     root, wrapper, trigger, value, list, select, options, document, outside, changes, picker, option, panel, back,
     toggles: () => toggles,
     advance(milliseconds: number) { now += milliseconds; },
-    focused: () => document.activeElement?.dataset.currencyOption,
+    focused: () => document.activeElement?.dataset[selectors.optionKey],
     key(target: Element, key: string, modifiers: Partial<Pick<KeyboardEvent, 'ctrlKey' | 'altKey' | 'metaKey'>> = {}) {
       const event = Object.assign(eventFor('keydown', target), { key, ...modifiers });
       wrapper.dispatchEvent(event);
@@ -99,6 +104,52 @@ function harness({ currency = 'USD', disabled = false, standalone = false, expli
     nativeCurrency(currency: string) { select.value = currency; select.dispatchEvent(new Event('change', { bubbles: true })); },
   };
 }
+
+test('refresh pickers use localized option labels, selected checks, and the same keyboard and dismissal controls', () => {
+  const h = harness({ currency: '5', refresh: true, explicitWrapper: true });
+  assert.equal(h.value.textContent, '5 seconds');
+  assert.equal(h.option('5').attributes.get('aria-selected'), 'true');
+  h.trigger.click();
+  assert.equal(h.focused(), '5');
+  assert.equal(h.root.hasAttribute('data-refresh-open'), true);
+  assert.equal(h.root.hasAttribute('data-currency-open'), false);
+  h.key(h.option('5'), 'ArrowDown');
+  assert.equal(h.focused(), '15');
+  assert.equal(h.select.value, '5', 'moving focus leaves the interval unchanged');
+  h.key(h.option('15'), 'Enter');
+  assert.equal(h.select.value, '15');
+  assert.equal(h.value.textContent, '15 seconds');
+  assert.equal(h.option('15').attributes.get('aria-selected'), 'true');
+  assert.equal(h.list.hidden, true);
+  assert.equal(h.document.activeElement, h.trigger);
+  h.trigger.click();
+  h.key(h.option('15'), 'End');
+  assert.equal(h.focused(), '60');
+  assert.equal(h.key(h.option('60'), 'Escape'), true);
+  assert.equal(h.select.value, '15');
+  assert.equal(h.list.hidden, true);
+  h.trigger.click();
+  h.pointer(h.outside);
+  assert.equal(h.list.hidden, true);
+  h.picker.destroy();
+});
+
+test('refresh pickers synchronize a reset draft without committing it and preserve translated labels', () => {
+  const h = harness({ currency: '30', refresh: true, explicitWrapper: true });
+  h.option('5').textContent = '5 Sekunden';
+  h.select.value = '5';
+  h.picker.sync();
+  assert.equal(h.value.textContent, '5 Sekunden');
+  assert.equal(h.option('5').attributes.get('aria-selected'), 'true');
+  assert.equal(h.changes.length, 0);
+  h.trigger.click();
+  h.outside.focus();
+  assert.equal(h.list.hidden, true);
+  h.picker.destroy();
+  assert.equal(h.trigger.listenerCount(), 0);
+  assert.equal(h.wrapper.listenerCount(), 0);
+  assert.equal(h.document.listenerCount(), 0);
+});
 
 test('the currency picker restores the native select and stays synchronized with currency and disabled changes', () => {
   const h = harness({ currency: 'GBP' });

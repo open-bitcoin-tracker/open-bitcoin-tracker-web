@@ -11,30 +11,34 @@ function harness(storage = new Map([[preferenceKey, 'true']])) {
     value = '';
     hidden = false;
     open = false;
+    disabled = false;
     attributes = new Map<string, string>();
     querySelector(selector: string): Control {
       if (!controls.has(selector)) controls.set(selector, new Control());
       return controls.get(selector)!;
     }
     setAttribute(name: string, value: string) { this.attributes.set(name, value); }
+    removeAttribute(name: string) { this.attributes.delete(name); }
+    querySelectorAll() { return []; }
     focus() {}
     showModal() { this.open = true; }
     close() { this.open = false; this.dispatchEvent(new Event('close')); }
   }
   const root = new Control();
-  const document = { title: 'Price Chart — Open Bitcoin Tracker' };
+  const document = Object.assign(new EventTarget(), { title: 'Price Chart — Open Bitcoin Tracker' });
   const timeouts = new Map<number, { at: number; run: () => void }>();
   let now = 1_000_000;
   let nextId = 0;
-  const { createPriceTabTitle } = browserModule('lib/price-tab-title', {
-    document, Date: { now: () => now },
+  const globals = {
+    document, Event, Date: { now: () => now },
     window: { localStorage: {
       getItem: (key: string) => storage.get(key) ?? null,
       setItem: (key: string, value: string) => storage.set(key, value),
     } },
     setTimeout(run: () => void, delay: number) { const id = ++nextId; timeouts.set(id, { run, at: now + delay }); return id; },
     clearTimeout(id: number) { timeouts.delete(id); },
-  });
+  };
+  const { createPriceTabTitle } = browserModule('lib/price-tab-title', globals, browserModule('lib/currency-picker', globals));
   const title = createPriceTabTitle(root);
   const control = (selector: string) => controls.get(selector)!;
   const advance = (ms: number) => {

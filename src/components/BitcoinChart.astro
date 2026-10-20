@@ -9,14 +9,13 @@ import { rangeSlots } from '../lib/bitcoin-range';
 import { currencies } from '../lib/bitcoin-currency';
 import { chartSettings } from '../i18n/chart-settings';
 import { party } from '../i18n/party';
-import { priceTabRefreshSeconds } from '../lib/price-tab-title';
+import RefreshIntervalPicker from './ui/RefreshIntervalPicker.astro';
 
 const lang = resolveLang(Astro.currentLocale);
 const t = tracker[lang];
 const r = ranges[lang];
 const { fullscreen, exitFullscreen, fullscreenUnavailable } = party[lang];
 const settings = { ...chartSettings[lang], fullscreen, exitFullscreen, fullscreenUnavailable };
-const refreshIntervalLabel = new Intl.NumberFormat(lang, { style: 'unit', unit: 'second', unitDisplay: 'long' });
 const history = parseHistory(bundledHistory);
 const paths = chartPaths(history, 1200, 440);
 const lastDate = new Intl.DateTimeFormat(lang, { year: 'numeric', month: 'short', day: 'numeric', timeZone: 'UTC' }).format(history.at(-1)!.time);
@@ -124,12 +123,9 @@ const lastDate = new Intl.DateTimeFormat(lang, { year: 'numeric', month: 'short'
           <span class="chart-action-label">{settings.priceTab}</span>
           <svg class="chart-action-check" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 4 4L19 6" /></svg>
         </button>
-        <label class="chart-tab-refresh" data-price-tab-refresh-row hidden>
-          <span>{settings.priceTabRefresh}</span>
-          <select class="price-tab-refresh-select" data-price-tab-refresh>
-            {priceTabRefreshSeconds.map(seconds => <option value={seconds}>{refreshIntervalLabel.format(seconds)}</option>)}
-          </select>
-        </label>
+        <div class="chart-tab-refresh" data-price-tab-refresh-row hidden>
+          <RefreshIntervalPicker id="chart-tab-refresh" label={settings.priceTabRefresh} locale={lang} variant="menu" />
+        </div>
         <button type="button" class="chart-menu-action chart-fullscreen-button" data-fullscreen aria-label={settings.fullscreen} title={settings.fullscreen} hidden disabled>
           <svg class="chart-action-icon" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 3H3v5m13-5h5v5M3 16v5h5m13-5v5h-5" /></svg>
           <span class="chart-action-label" data-fullscreen-label>{settings.fullscreen}</span>
@@ -154,12 +150,7 @@ const lastDate = new Intl.DateTimeFormat(lang, { year: 'numeric', month: 'short'
       <p id="price-tab-description">{settings.priceTabDescription}</p>
       <p id="price-tab-downsides">{settings.priceTabDownsides}</p>
       <p id="price-tab-note">{settings.priceTabNote}</p>
-      <label class="price-tab-refresh">
-        <span>{settings.priceTabRefresh}</span>
-        <select class="price-tab-refresh-select" data-price-tab-dialog-refresh>
-          {priceTabRefreshSeconds.map(seconds => <option value={seconds}>{refreshIntervalLabel.format(seconds)}</option>)}
-        </select>
-      </label>
+      <RefreshIntervalPicker id="dialog-tab-refresh" label={settings.priceTabRefresh} locale={lang} variant="dialog" />
     </div>
     <footer class="price-tab-footer">
       <button type="button" class="price-tab-confirm" data-price-tab-confirm>{settings.priceTabConfirm}</button>
@@ -184,12 +175,9 @@ const lastDate = new Intl.DateTimeFormat(lang, { year: 'numeric', month: 'short'
   .chart-action-label { flex: 1; }
   .chart-action-check { flex-shrink: 0; color: var(--color-emphasis-ink); }
   [data-price-tab-toggle][aria-pressed="false"] .chart-action-check { visibility: hidden; }
-  .chart-tab-refresh { display: flex; align-items: center; gap: .75rem; padding: .375rem .75rem .75rem; color: var(--menu-link-ink); font-size: .8125rem; }
+  .chart-tab-refresh { padding: .375rem .75rem .75rem; }
   .chart-tab-refresh[hidden] { display: none; }
-  .chart-tab-refresh > span { flex: 1; min-width: 0; overflow-wrap: anywhere; }
-  .chart-tab-refresh select { max-width: 52%; }
-  .price-tab-refresh { display: grid; gap: .5rem; color: var(--menu-ink); font-size: .875rem; font-weight: 600; }
-  .price-tab-refresh-select { min-height: 44px; padding: .5rem .75rem; border: 1px solid var(--menu-dropdown-border); border-radius: .625rem; background: var(--menu-option-hover); color: var(--menu-ink); font: inherit; cursor: pointer; }
+  .chart-settings-menu { scrollbar-width: thin; scrollbar-color: var(--menu-dropdown-border) transparent; }
   .price-tab-dialog { position: fixed; inset: 0; width: min(460px, calc(100vw - 32px)); max-width: none; max-height: calc(100dvh - 32px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)); margin: auto; padding: 0; overflow-y: auto; overscroll-behavior: contain; border: 1px solid var(--menu-dropdown-border); border-radius: 20px; background: var(--menu-dropdown-bg); color: var(--menu-ink); box-shadow: 0 24px 80px #0006; }
   .price-tab-dialog::backdrop { background: #000b; }
   .price-tab-dialog[open], .price-tab-dialog[open]::backdrop { animation: price-tab-enter 240ms ease-out; }
