@@ -8,24 +8,44 @@ const refreshKey = 'bitcoin-tracker-price-tab-refresh';
 function harness(storage = new Map([[preferenceKey, 'true']])) {
   const controls = new Map<string, Control>();
   class Control extends EventTarget {
+    id = '';
     value = '';
+    textContent = '';
+    dataset: Record<string, string> = {};
     hidden = false;
     open = false;
     disabled = false;
     attributes = new Map<string, string>();
+    pickerControls = new Map<string, Control>();
+    options: Control[] | undefined;
     querySelector(selector: string): Control {
+      if (['[data-refresh-trigger]', '[data-refresh-value]', '[data-refresh-list]'].includes(selector)) {
+        if (!this.pickerControls.has(selector)) this.pickerControls.set(selector, new Control());
+        return this.pickerControls.get(selector)!;
+      }
       if (!controls.has(selector)) controls.set(selector, new Control());
       return controls.get(selector)!;
     }
     setAttribute(name: string, value: string) { this.attributes.set(name, value); }
+    getAttribute(name: string) { return this.attributes.get(name) ?? null; }
     removeAttribute(name: string) { this.attributes.delete(name); }
-    querySelectorAll() { return []; }
-    focus() {}
+    querySelectorAll(selector: string) {
+      if (selector !== '[data-refresh-option]') return [];
+      return this.options ??= [1, 5, 15, 30, 60].map(seconds => Object.assign(new Control(), {
+        dataset: { refreshOption: String(seconds) }, textContent: `${seconds} ${seconds === 1 ? 'second' : 'seconds'}`,
+      }));
+    }
+    contains(node: Control): boolean { return this === node || [...this.pickerControls.values(), ...this.options ?? []].some(child => child.contains(node)); }
+    focus() { document.activeElement = this; }
     showModal() { this.open = true; }
     close() { this.open = false; this.dispatchEvent(new Event('close')); }
   }
   const root = new Control();
-  const document = Object.assign(new EventTarget(), { title: 'Price Chart — Open Bitcoin Tracker' });
+  const document = Object.assign(new EventTarget(), { title: 'Price Chart — Open Bitcoin Tracker', activeElement: null as Control | null });
+  const dialog = root.querySelector('[data-price-tab-dialog]');
+  dialog.setAttribute('aria-describedby', 'price-tab-description price-tab-note');
+  dialog.querySelector('[data-price-tab-heading]').id = 'price-tab-heading';
+  dialog.querySelector('[data-price-tab-refresh-heading]').id = 'dialog-tab-refresh-heading';
   const timeouts = new Map<number, { at: number; run: () => void }>();
   let now = 1_000_000;
   let nextId = 0;
@@ -53,10 +73,69 @@ function harness(storage = new Map([[preferenceKey, 'true']])) {
     now = target;
   };
   return { title, document, storage, timeouts, advance, control,
+    dialogControl(selector: string) { return dialog.querySelector(selector); },
+    chooseDialogInterval(seconds: string) {
+      dialog.querySelector('[data-refresh-list]').querySelectorAll('[data-refresh-option]').find(option => option.dataset.refreshOption === seconds)!.dispatchEvent(new Event('click'));
+    },
+    dialogKey(key: string) {
+      const event = Object.assign(new Event('keydown', { cancelable: true }), { key });
+      Object.defineProperty(event, 'target', { value: document.activeElement });
+      dialog.dispatchEvent(event);
+      return event.defaultPrevented;
+    },
     click(selector: string) { control(selector).dispatchEvent(new Event('click')); },
     changeInterval(value: string) { control('[data-price-tab-refresh]').value = value; control('[data-price-tab-refresh]').dispatchEvent(new Event('change')); },
   };
 }
+
+test('the modal interval panel preserves drafts, restores focus, and requires confirmation before saving', () => {
+  const h = harness(new Map([[preferenceKey, 'false'], [refreshKey, '15']]));
+  const dialog = h.control('[data-price-tab-dialog]');
+  const confirmation = h.control('[data-price-tab-confirmation]');
+  const panel = h.control('[data-price-tab-refresh-panel]');
+  const trigger = h.dialogControl('[data-refresh-trigger]');
+  h.click('[data-price-tab-toggle]');
+  trigger.dispatchEvent(new Event('click'));
+  assert.equal(panel.hidden, false);
+  assert.equal(confirmation.hidden, true);
+  assert.equal(dialog.getAttribute('aria-labelledby'), 'dialog-tab-refresh-heading');
+  assert.equal(dialog.getAttribute('aria-describedby'), null);
+  assert.equal(h.document.activeElement!.dataset.refreshOption, '15');
+  h.chooseDialogInterval('30');
+  assert.equal(panel.hidden, true);
+  assert.equal(confirmation.hidden, false);
+  assert.equal(dialog.open, true);
+  assert.equal(dialog.getAttribute('aria-labelledby'), 'price-tab-heading');
+  assert.equal(dialog.getAttribute('aria-describedby'), 'price-tab-description price-tab-note');
+  assert.equal(h.document.activeElement, trigger);
+  assert.equal(h.control('[data-price-tab-dialog-refresh]').value, '30');
+  assert.equal(h.storage.get(refreshKey), '15');
+  trigger.dispatchEvent(new Event('click'));
+  h.click('[data-price-tab-refresh-back]');
+  assert.equal(panel.hidden, true);
+  assert.equal(h.control('[data-price-tab-dialog-refresh]').value, '30');
+  trigger.dispatchEvent(new Event('click'));
+  assert.equal(h.dialogKey('Escape'), true);
+  assert.equal(panel.hidden, true);
+  assert.equal(dialog.open, true);
+  trigger.dispatchEvent(new Event('click'));
+  dialog.dispatchEvent(new Event('cancel', { cancelable: true }));
+  assert.equal(panel.hidden, true, 'a native cancel from the nested panel returns to confirmation');
+  assert.equal(dialog.open, true);
+  dialog.dispatchEvent(new Event('cancel', { cancelable: true }));
+  assert.equal(dialog.open, false);
+  assert.equal(h.storage.get(refreshKey), '15');
+  assert.equal(h.storage.get(preferenceKey), 'false');
+  h.click('[data-price-tab-toggle]');
+  assert.equal(h.control('[data-price-tab-dialog-refresh]').value, '15', 'discarded drafts reset on reopening');
+  trigger.dispatchEvent(new Event('click'));
+  h.chooseDialogInterval('5');
+  h.click('[data-price-tab-confirm]');
+  assert.equal(dialog.open, false);
+  assert.equal(h.storage.get(refreshKey), '5');
+  assert.equal(h.storage.get(preferenceKey), 'true');
+  h.title.destroy();
+});
 
 test('the tab-price switch reflects confirmed choices and keeps settings open when switched off', () => {
   const h = harness(new Map());

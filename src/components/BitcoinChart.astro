@@ -162,18 +162,29 @@ const lastDate = new Intl.DateTimeFormat(lang, { year: 'numeric', month: 'short'
     </details>
   </div>
   <dialog class="price-tab-dialog" id="price-tab-dialog" data-price-tab-dialog aria-labelledby="price-tab-heading" aria-describedby="price-tab-description price-tab-note">
-    <header class="price-tab-header">
-      <h2 id="price-tab-heading" data-price-tab-heading tabindex="-1">{settings.priceTab}</h2>
-    </header>
-    <div class="price-tab-body">
-      <p id="price-tab-description">{settings.priceTabDescription}</p>
-      <p id="price-tab-note">{settings.priceTabNote}</p>
-      <RefreshIntervalPicker id="dialog-tab-refresh" label={settings.priceTabRefresh} locale={lang} variant="dialog" />
+    <div data-price-tab-confirmation>
+      <header class="price-tab-header">
+        <h2 id="price-tab-heading" data-price-tab-heading tabindex="-1">{settings.priceTab}</h2>
+      </header>
+      <div class="price-tab-body">
+        <p id="price-tab-description">{settings.priceTabDescription}</p>
+        <p id="price-tab-note">{settings.priceTabNote}</p>
+        <RefreshIntervalPicker id="dialog-tab-refresh" label={settings.priceTabRefresh} locale={lang} variant="dialog" />
+      </div>
+      <footer class="price-tab-footer">
+        <button type="button" class="price-tab-confirm" data-price-tab-confirm>{settings.priceTabConfirm}</button>
+        <button type="button" class="price-tab-cancel" data-price-tab-cancel>{settings.cancel}</button>
+      </footer>
     </div>
-    <footer class="price-tab-footer">
-      <button type="button" class="price-tab-confirm" data-price-tab-confirm>{settings.priceTabConfirm}</button>
-      <button type="button" class="price-tab-cancel" data-price-tab-cancel>{settings.cancel}</button>
-    </footer>
+    <div class="price-tab-refresh-panel" data-price-tab-refresh-panel hidden>
+      <div class="chart-currency-header">
+        <button type="button" class="chart-currency-back" data-price-tab-refresh-back aria-label={settings.priceTab}>
+          <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m14 6-6 6 6 6" /></svg>
+        </button>
+        <h2 class="chart-menu-title" id="dialog-tab-refresh-heading" data-price-tab-refresh-heading>{settings.priceTabRefresh}</h2>
+      </div>
+      <RefreshIntervalOptions id="dialog-tab-refresh-options" locale={lang} class="price-tab-refresh-options" labelledby="dialog-tab-refresh-heading" />
+    </div>
   </dialog>
 </section>
 
@@ -217,6 +228,7 @@ const lastDate = new Intl.DateTimeFormat(lang, { year: 'numeric', month: 'short'
   .price-tab-dialog { position: fixed; inset: 0; width: min(460px, calc(100vw - 32px)); max-width: none; max-height: calc(100dvh - 32px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)); margin: auto; padding: 0; overflow-y: auto; overscroll-behavior: contain; border: 1px solid var(--menu-dropdown-border); border-radius: 20px; background: var(--menu-dropdown-bg); color: var(--menu-ink); box-shadow: 0 24px 80px #0006; }
   .price-tab-dialog::backdrop { background: #000b; }
   .price-tab-dialog { scrollbar-width: thin; scrollbar-color: var(--menu-dropdown-border) transparent; }
+  .price-tab-refresh-panel { padding: .5rem; }
   .price-tab-dialog[open], .price-tab-dialog[open]::backdrop { animation: price-tab-enter 240ms ease-out; }
   @keyframes price-tab-enter { from { opacity: 0; } to { opacity: 1; } }
   .price-tab-header { padding: 28px 28px 16px; }
@@ -235,7 +247,7 @@ const lastDate = new Intl.DateTimeFormat(lang, { year: 'numeric', month: 'short'
   .chart-currency-header .chart-menu-title { padding: .625rem .25rem; }
   .chart-currency-back { display: grid; place-items: center; flex-shrink: 0; width: 44px; height: 44px; border-radius: 50%; color: var(--menu-link-ink); }
   .chart-currency-back:hover { color: var(--menu-primary-ink); background: var(--menu-option-hover); }
-  :global(.chart-currency-menu), :global(.chart-refresh-options) { padding-top: .375rem; }
+  :global(.chart-currency-menu), :global(.chart-refresh-options), :global(.price-tab-refresh-options) { padding-top: .375rem; }
   @keyframes chart-menu-enter { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
   .price-header, .history-status { padding-inline: var(--tracker-gutter, 1rem); }
   .price-header { position: relative; z-index: 1; display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem; padding-inline-end: calc(var(--tracker-gutter, 1rem) + 48px + 1rem); }

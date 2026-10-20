@@ -18,6 +18,10 @@ export function createPriceTabTitle(root: HTMLElement) {
   const refreshRow = root.querySelector<HTMLElement>('[data-price-tab-refresh-row]')!;
   const refreshSelect = root.querySelector<HTMLSelectElement>('[data-price-tab-refresh]')!;
   const dialogRefresh = dialog.querySelector<HTMLSelectElement>('[data-price-tab-dialog-refresh]')!;
+  const confirmation = dialog.querySelector<HTMLElement>('[data-price-tab-confirmation]')!;
+  const dialogRefreshPanel = dialog.querySelector<HTMLElement>('[data-price-tab-refresh-panel]')!;
+  const dialogRefreshHeading = dialog.querySelector<HTMLElement>('[data-price-tab-refresh-heading]')!;
+  const dialogDescription = dialog.getAttribute('aria-describedby');
   let enabled = false;
   let refreshSeconds: number = 1;
   let price: string | undefined;
@@ -33,13 +37,23 @@ export function createPriceTabTitle(root: HTMLElement) {
     selectors: { trigger: '[data-refresh-trigger]', value: '[data-refresh-value]', list: '[data-refresh-list]', option: '[data-refresh-option]', optionKey: 'refreshOption' },
     displayOptionLabel: true, openAttribute: 'data-refresh-open', toggleEvent: 'refreshtoggle',
   };
-  const dialogWrapper = dialog.querySelector<HTMLElement>('[data-refresh-picker]')!;
   const refreshPicker = createOptionPicker(menu, refreshSelect, {
     ...pickerOptions, wrapper: menu,
     panel: menu.querySelector<HTMLElement>('[data-refresh-panel]')!,
     back: menu.querySelector<HTMLButtonElement>('[data-refresh-back]')!,
   });
-  const dialogPicker = createOptionPicker(dialogWrapper, dialogRefresh, { ...pickerOptions, wrapper: dialogWrapper });
+  const dialogPicker = createOptionPicker(dialog, dialogRefresh, {
+    ...pickerOptions, wrapper: dialog, panel: dialogRefreshPanel,
+    back: dialog.querySelector<HTMLButtonElement>('[data-price-tab-refresh-back]')!,
+  });
+
+  function onDialogRefreshToggle() {
+    const choosing = !dialogRefreshPanel.hidden;
+    confirmation.hidden = choosing;
+    dialog.setAttribute('aria-labelledby', choosing ? dialogRefreshHeading.id : heading.id);
+    if (!choosing && dialogDescription) dialog.setAttribute('aria-describedby', dialogDescription);
+    else dialog.removeAttribute('aria-describedby');
+  }
 
   function clearRefresh() {
     clearTimeout(refreshTimer);
@@ -105,6 +119,10 @@ export function createPriceTabTitle(root: HTMLElement) {
 
   function onCancel(event: Event) {
     event.preventDefault();
+    if (!dialogRefreshPanel.hidden) {
+      dialogPicker.close(true);
+      return;
+    }
     dialog.close();
   }
 
@@ -130,8 +148,10 @@ export function createPriceTabTitle(root: HTMLElement) {
   cancel.addEventListener('click', onCancel);
   dialog.addEventListener('cancel', onCancel);
   dialog.addEventListener('close', onClose);
+  dialog.addEventListener('refreshtoggle', onDialogRefreshToggle);
   refreshSelect.addEventListener('change', onRefreshChange);
   menu.addEventListener('toggle', onMenuToggle);
+  onDialogRefreshToggle();
   paint();
 
   return {
@@ -148,6 +168,7 @@ export function createPriceTabTitle(root: HTMLElement) {
       menu.removeEventListener('toggle', onMenuToggle);
       refreshPicker.destroy();
       dialogPicker.destroy();
+      dialog.removeEventListener('refreshtoggle', onDialogRefreshToggle);
       if (dialog.open) dialog.close();
       paint();
     },

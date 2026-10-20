@@ -42,6 +42,7 @@ class Control extends EventTarget {
   }
   querySelectorAll(_selector: string): Control[] { return []; }
   setAttribute(name: string, value: string) { this.attributes[name] = value; }
+  getAttribute(name: string) { return this.attributes[name] ?? null; }
   hasAttribute(name: string) { return name in this.attributes; }
   removeAttribute(name: string) { delete this.attributes[name]; }
   getBoundingClientRect() { return rect(); }

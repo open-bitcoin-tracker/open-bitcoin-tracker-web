@@ -29,6 +29,7 @@ function harness(hidden = false, fullscreenEnabled = false, options: { locale?: 
     dataset: Record<string, string> = {};
     style = { setProperty() {}, opacity: '', transform: '' };
     setAttribute(name: string, value: string) { this.attributes.set(name, value); }
+    getAttribute(name: string) { return this.attributes.get(name) ?? null; }
     removeAttribute() {}
     querySelector(selector: string): Control {
       if (!controls.has(selector)) controls.set(selector, new Control());
