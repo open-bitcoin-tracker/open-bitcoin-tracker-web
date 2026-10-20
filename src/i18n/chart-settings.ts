@@ -5,7 +5,7 @@ const en = {
   fxUnavailable: 'Exchange rates unavailable.', fxHistoryUnavailable: 'Exchange-rate history unavailable.',
   priceTab: 'Price on browser tab',
   priceTabRefresh: 'Refresh interval',
-  priceTabDescription: "The bitcoin price will displayed as this page’s title on the browser tab",
+  priceTabDescription: "The bitcoin price will be displayed as this page’s title on the browser tab.",
   priceTabDownsides: "This will use just a bit more battery and data than the default tab name.",
   priceTabNote: "You can turn this off at any point.",
   priceTabConfirm: 'Show price on the browser tab', cancel: 'Cancel',
