@@ -154,7 +154,7 @@ test('trackers keep their original title and pause background activity by defaul
   const originalTitle = h.document.title;
   h.sockets[0].tick(85000);
   assert.equal(h.document.title, originalTitle);
-  assert.equal(h.controls.get('[data-price-tab-toggle]')!.attributes.get('aria-pressed'), 'false');
+  assert.equal(h.controls.get('[data-price-tab-toggle]')!.attributes.get('aria-checked'), 'false');
   h.visibility(true);
   assert.equal(h.sockets[0].readyState, 3);
   assert.equal(h.timers.size, 0);
@@ -200,7 +200,7 @@ test('the menu requires confirmation, supports Cancel and Escape, and remembers 
   toggle.dispatchEvent(new Event('click'));
   confirm.dispatchEvent(new Event('click'));
   assert.equal(dialog.open, false);
-  assert.equal(toggle.attributes.get('aria-pressed'), 'true');
+  assert.equal(toggle.attributes.get('aria-checked'), 'true');
   assert.equal(h.document.title, '$85,000');
   assert.equal(h.storage.get('bitcoin-tracker-price-tab'), 'true');
   const restored = harness(false, false, { storage: h.storage });
@@ -209,7 +209,7 @@ test('the menu requires confirmation, supports Cancel and Escape, and remembers 
   restored.window.dispatchEvent(new Event('pagehide'));
   toggle.dispatchEvent(new Event('click'));
   assert.equal(dialog.open, false, 'turning off takes effect immediately');
-  assert.equal(toggle.attributes.get('aria-pressed'), 'false');
+  assert.equal(toggle.attributes.get('aria-checked'), 'false');
   assert.equal(h.document.title, originalTitle);
   assert.equal(h.storage.get('bitcoin-tracker-price-tab'), 'false');
   h.visibility(true);

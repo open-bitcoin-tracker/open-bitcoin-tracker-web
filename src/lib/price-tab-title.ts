@@ -45,7 +45,7 @@ export function createPriceTabTitle(root: HTMLElement) {
 
   function paint(immediate = false) {
     const title = !destroyed && enabled && price ? price : pageTitle;
-    toggle.setAttribute('aria-pressed', String(enabled));
+    toggle.setAttribute('aria-checked', String(enabled));
     refreshRow.hidden = !enabled;
     if (title === pageTitle) {
       clearRefresh();
@@ -80,11 +80,10 @@ export function createPriceTabTitle(root: HTMLElement) {
 
   function onToggle() {
     refreshPicker.close();
-    menu.open = false;
     if (enabled) {
       setEnabled(false);
-      menuTrigger.focus({ preventScroll: true });
     } else if (!dialog.open) {
+      menu.open = false;
       dialogRefresh.value = String(refreshSeconds);
       dialogPicker.sync();
       dialog.showModal();

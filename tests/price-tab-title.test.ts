@@ -58,6 +58,31 @@ function harness(storage = new Map([[preferenceKey, 'true']])) {
   };
 }
 
+test('the tab-price switch reflects confirmed choices and keeps settings open when switched off', () => {
+  const h = harness(new Map());
+  const toggle = h.control('[data-price-tab-toggle]');
+  const menu = h.control('[data-chart-settings]');
+  const refresh = h.control('[data-price-tab-refresh-row]');
+  assert.equal(toggle.attributes.get('aria-checked'), 'false');
+  assert.equal(refresh.hidden, true);
+  menu.open = true;
+  h.click('[data-price-tab-toggle]');
+  assert.equal(menu.open, false);
+  assert.equal(toggle.attributes.get('aria-checked'), 'false', 'opening the explanation does not enable the switch');
+  h.click('[data-price-tab-cancel]');
+  assert.equal(toggle.attributes.get('aria-checked'), 'false');
+  h.click('[data-price-tab-toggle]');
+  h.click('[data-price-tab-confirm]');
+  assert.equal(toggle.attributes.get('aria-checked'), 'true');
+  assert.equal(refresh.hidden, false);
+  menu.open = true;
+  h.click('[data-price-tab-toggle]');
+  assert.equal(toggle.attributes.get('aria-checked'), 'false');
+  assert.equal(refresh.hidden, true);
+  assert.equal(menu.open, true);
+  h.title.destroy();
+});
+
 test('each supported refresh interval coalesces ticks into the latest price at its deadline', () => {
   for (const seconds of [1, 5, 15, 30, 60]) {
     const h = harness(new Map([[preferenceKey, 'true'], [refreshKey, String(seconds)]]));
