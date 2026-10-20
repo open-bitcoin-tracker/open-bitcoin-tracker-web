@@ -11,7 +11,7 @@ const script = ts.transpileModule(readFileSync(new URL('../src/lib/bitcoin-live-
   compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 },
 }).outputText;
 
-function harness(hidden = false, online = true) {
+function harness(hidden = false, online = true, keepAliveWhenHidden: boolean | (() => boolean) = false) {
   const document = Object.assign(new EventTarget(), { hidden });
   const window = new EventTarget();
   const navigator = { onLine: online };
@@ -33,7 +33,7 @@ function harness(hidden = false, online = true) {
     message(body: unknown) { this.dispatchEvent(Object.assign(new Event('message'), { data: JSON.stringify(body) })); }
     tick(price: number) { this.message({ channel: 'ticker', type: 'update', data: [{ symbol: 'BTC/USD', last: price }] }); }
   }
-  const module: { subscribeBitcoinPrice?: (callbacks: { onPrice: (point: HistoryPoint) => void; onState: (state: PriceFeedState) => void }) => () => void } = {};
+  const module: { subscribeBitcoinPrice?: (callbacks: { onPrice: (point: HistoryPoint) => void; onState: (state: PriceFeedState) => void; keepAliveWhenHidden?: boolean | (() => boolean) }) => () => void } = {};
   runInNewContext(script, {
     exports: module, document, window, navigator, Date: { now: () => now }, WebSocket: Socket, AbortController, AbortSignal,
     fetch: (_url: string, options: { signal: AbortSignal }) => new Promise(resolve => requests.push({ signal: options.signal, resolve })),
@@ -42,7 +42,7 @@ function harness(hidden = false, online = true) {
     setInterval: (run: () => void, delay: number) => { const id = nextId++; intervals.set(id, { run, delay }); return id; },
     clearInterval: (id: number) => intervals.delete(id),
   });
-  const stop = module.subscribeBitcoinPrice!({ onPrice: point => points.push(point), onState: state => states.push(state) });
+  const stop = module.subscribeBitcoinPrice!({ onPrice: point => points.push(point), onState: state => states.push(state), keepAliveWhenHidden });
   const visibility = (hidden: boolean) => { document.hidden = hidden; document.dispatchEvent(new Event('visibilitychange')); };
   const connectivity = (online: boolean) => { navigator.onLine = online; window.dispatchEvent(new Event(online ? 'online' : 'offline')); };
   const respond = async (index: number, price: string = '83000') => {
@@ -121,6 +121,53 @@ test('heartbeats do not keep a stale ticker live; reconnects use bounded backoff
   }
   h.stop();
   assert.equal(h.timeouts.size, 0);
+});
+
+test('background title subscriptions keep receiving prices and check freshness immediately on return', () => {
+  const h = harness(true, true, true);
+  assert.equal(h.sockets.length, 1);
+  h.sockets[0].tick(85000);
+  assert.equal(h.states.at(-1), 'live');
+  h.visibility(false);
+  h.visibility(true);
+  assert.equal(h.sockets.length, 1);
+  assert.equal(h.intervals.size, 2);
+  h.sockets[0].tick(86000);
+  assert.equal(h.points.at(-1)!.price, 86000);
+  h.advance(60_001);
+  h.visibility(false);
+  assert.equal(h.sockets[0].readyState, 3);
+  assert.equal(h.states.at(-1), 'delayed');
+  assert.equal(h.sockets.length, 2);
+  h.sockets[1].tick(87000);
+  h.connectivity(false);
+  assert.equal(h.states.at(-1), 'offline');
+  assert.equal(h.intervals.size, 0);
+  h.connectivity(true);
+  h.stop();
+  h.sockets[2].tick(90000);
+  assert.equal(h.points.at(-1)!.price, 87000);
+  assert.equal(h.intervals.size, 0);
+  assert.equal(h.timeouts.size, 0);
+});
+
+test('a live subscription follows changes to the background price-title preference', () => {
+  let enabled = false;
+  const h = harness(false, true, () => enabled);
+  h.sockets[0].tick(85000);
+  enabled = true;
+  h.visibility(true);
+  h.sockets[0].tick(86000);
+  assert.equal(h.points.at(-1)!.price, 86000);
+  assert.equal(h.intervals.size, 2);
+  h.visibility(false);
+  enabled = false;
+  h.visibility(true);
+  assert.equal(h.sockets[0].readyState, 3);
+  assert.equal(h.intervals.size, 0);
+  h.sockets[0].tick(90000);
+  assert.equal(h.points.at(-1)!.price, 86000);
+  h.stop();
 });
 
 test('offline and background subscriptions resume once, and cleanup is permanent', async () => {

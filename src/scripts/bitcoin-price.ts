@@ -9,8 +9,9 @@ import { readRangePreferences, saveRangePreferences } from '../lib/bitcoin-range
 import { CurrencyRates, isCurrency, type Currency } from '../lib/bitcoin-currency';
 import { readDisplayPreferences, saveDisplayPreferences } from '../lib/bitcoin-display-preferences';
 import type { ChartSettingsCopy } from '../i18n/chart-settings';
-import { subscribeBitcoinPrice } from '../lib/bitcoin-live-price';
+import { subscribeBitcoinPrice, type PriceFeedState } from '../lib/bitcoin-live-price';
 import { createCurrencyPicker } from '../lib/currency-picker';
+import { createPriceTabTitle } from '../lib/price-tab-title';
 import type { PartyCopy } from '../i18n/party';
 
 const root = document.querySelector<HTMLElement>('[data-bitcoin-tracker]');
@@ -65,6 +66,7 @@ function startTracker(root: HTMLElement) {
 
   let history: HistoryPoint[] = [];
   let livePoint: HistoryPoint | undefined;
+  let priceFeedState: PriceFeedState = 'connecting';
   let plottedPoints: HistoryPoint[] = [];
   let plottedPositions: { x: number; y: number }[] = [];
   let selectionRatio: number | undefined;
@@ -76,6 +78,7 @@ function startTracker(root: HTMLElement) {
   let plottedRangeKey = '';
   const motion = new ChartMotion();
   const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+  const priceTabTitle = createPriceTabTitle(root);
   if (currency !== 'USD') {
     line.setAttribute('d', '');
     area.setAttribute('d', '');
@@ -184,6 +187,14 @@ function startTracker(root: HTMLElement) {
     if (livePoint && rate) priceEl.removeAttribute('aria-label');
     else priceEl.setAttribute('aria-label', t.unavailable);
     priceChangeEl.textContent = formatPriceChange(plottedPoints);
+  }
+
+  function updatePageTitle(immediate = false) {
+    const rate = exchangeRates.current(currency);
+    // Historical selections and unavailable/stale feeds must not become a live tab price.
+    priceTabTitle.update(!stopped && priceFeedState === 'live' && livePoint && rate
+      ? money.format(livePoint.price * rate.rate)
+      : undefined, immediate);
   }
 
   function clearSelection() {
@@ -333,6 +344,7 @@ function startTracker(root: HTMLElement) {
     area.setAttribute('d', '');
     void refreshCurrency();
     updatePriceDisplay();
+    updatePageTitle(true);
     updateCurrencyStatus();
     scheduleDraw();
   });
@@ -395,7 +407,7 @@ function startTracker(root: HTMLElement) {
     currencyError = undefined;
     updateCurrencyStatus();
     const requests = [
-      exchangeRates.refreshLatest().finally(() => { if (!stopped && target === currency) { updatePriceDisplay(); scheduleDraw(); } }),
+      exchangeRates.refreshLatest().finally(() => { if (!stopped && target === currency) { updatePageTitle(); updatePriceDisplay(); scheduleDraw(); } }),
       exchangeRates.refreshHistory(target, historyStart),
     ];
     const results = await Promise.allSettled(requests);
@@ -485,8 +497,13 @@ function startTracker(root: HTMLElement) {
   })();
 
   const stopPriceFeed = subscribeBitcoinPrice({
-    onPrice(point) { livePoint = point; updatePriceDisplay(); scheduleDraw(); },
-    onState() {},
+    keepAliveWhenHidden: () => priceTabTitle.enabled,
+    onPrice(point) {
+      livePoint = point;
+      updatePageTitle();
+      if (!document.hidden) { updatePriceDisplay(); scheduleDraw(); }
+    },
+    onState(state) { priceFeedState = state; if (state !== 'live') updatePageTitle(); },
   });
   void refreshCurrency();
   let timers: ReturnType<typeof setInterval>[] = [];
@@ -517,6 +534,7 @@ function startTracker(root: HTMLElement) {
   });
   window.addEventListener('pagehide', () => {
     stopped = true;
+    priceTabTitle.destroy();
     resizeObserver.disconnect();
     cancelAnimationFrame(paintFrame);
     cancelAnimationFrame(motionFrame);

@@ -5,10 +5,11 @@ export type PriceFeedState = 'connecting' | 'live' | 'delayed' | 'offline';
 interface PriceSubscriber {
   onPrice: (point: HistoryPoint) => void;
   onState: (state: PriceFeedState) => void;
+  keepAliveWhenHidden?: boolean | (() => boolean);
 }
 
-/** A live BTC/USD subscription, paused whenever its page is hidden. */
-export function subscribeBitcoinPrice({ onPrice, onState }: PriceSubscriber): () => void {
+/** A live BTC/USD subscription; background work is opt-in for tab price titles. */
+export function subscribeBitcoinPrice({ onPrice, onState, keepAliveWhenHidden = false }: PriceSubscriber): () => void {
   let socket: WebSocket | undefined;
   let reconnectTimer: ReturnType<typeof setTimeout> | undefined;
   let timers: ReturnType<typeof setInterval>[] = [];
@@ -30,7 +31,11 @@ export function subscribeBitcoinPrice({ onPrice, onState }: PriceSubscriber): ()
   }
 
   function active() {
-    return !stopped && !document.hidden && navigator.onLine;
+    return !stopped && (!document.hidden || backgroundEnabled()) && navigator.onLine;
+  }
+
+  function backgroundEnabled() {
+    return typeof keepAliveWhenHidden === 'function' ? keepAliveWhenHidden() : keepAliveWhenHidden;
   }
 
   function streamIsLive() {
@@ -163,8 +168,13 @@ export function subscribeBitcoinPrice({ onPrice, onState }: PriceSubscriber): ()
   }
 
   function onVisibilityChange() {
-    if (document.hidden) pause();
-    else resume();
+    if (document.hidden) {
+      if (!backgroundEnabled()) pause();
+    } else {
+      // A suspended browser may resume before its stale-stream timer runs.
+      checkStream();
+      resume();
+    }
   }
 
   function stop() {

@@ -5,7 +5,7 @@ import { createContext, runInContext } from 'node:vm';
 import ts from 'typescript';
 import { tracker } from '../src/i18n/tracker.ts';
 
-const names = ['bitcoin-price', 'bitcoin-live-price', 'bitcoin-chart', 'bitcoin-chart-motion', 'bitcoin-price-change', 'bitcoin-range', 'bitcoin-range-preferences', 'bitcoin-range-pill', 'bitcoin-currency', 'bitcoin-display-preferences', 'currency-picker'];
+const names = ['bitcoin-price', 'bitcoin-live-price', 'bitcoin-chart', 'bitcoin-chart-motion', 'bitcoin-price-change', 'bitcoin-range', 'bitcoin-range-preferences', 'bitcoin-range-pill', 'bitcoin-currency', 'bitcoin-display-preferences', 'currency-picker', 'price-tab-title'];
 const scripts = Object.fromEntries(names.map(name => [name, ts.transpileModule(
   readFileSync(new URL(`../src/${['bitcoin-price', 'bitcoin-range-pill'].includes(name) ? 'scripts' : 'lib'}/${name}.ts`, import.meta.url), 'utf8'),
   { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 } },
@@ -30,6 +30,8 @@ class Control extends EventTarget {
   disabled = false;
   tabIndex = -1;
   open = false;
+  showModal() { this.open = true; }
+  close() { this.open = false; this.dispatchEvent(new Event('close')); }
   contains(node: Control | null) {
     while (node) { if (node === this) return true; node = node.parent ?? null; }
     return false;

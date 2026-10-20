@@ -1,0 +1,130 @@
+const preferenceKey = 'bitcoin-tracker-price-tab';
+const refreshPreferenceKey = 'bitcoin-tracker-price-tab-refresh';
+export const priceTabRefreshSeconds = [1, 5, 15, 30, 60] as const;
+const validRefresh = (value: string | null) => priceTabRefreshSeconds.find(seconds => String(seconds) === value);
+
+/** Optional price-only tab title, enabled only after the explanation is confirmed. */
+export function createPriceTabTitle(root: HTMLElement) {
+  const pageTitle = document.title;
+  const toggle = root.querySelector<HTMLButtonElement>('[data-price-tab-toggle]')!;
+  const dialog = root.querySelector<HTMLDialogElement>('[data-price-tab-dialog]')!;
+  const heading = dialog.querySelector<HTMLElement>('[data-price-tab-heading]')!;
+  const confirm = dialog.querySelector<HTMLButtonElement>('[data-price-tab-confirm]')!;
+  const cancel = dialog.querySelector<HTMLButtonElement>('[data-price-tab-cancel]')!;
+  const menu = root.querySelector<HTMLDetailsElement>('[data-chart-settings]')!;
+  const menuTrigger = root.querySelector<HTMLElement>('[data-settings-trigger]')!;
+  const refreshRow = root.querySelector<HTMLElement>('[data-price-tab-refresh-row]')!;
+  const refreshSelect = root.querySelector<HTMLSelectElement>('[data-price-tab-refresh]')!;
+  const dialogRefresh = dialog.querySelector<HTMLSelectElement>('[data-price-tab-dialog-refresh]')!;
+  let enabled = false;
+  let refreshSeconds: number = 1;
+  let price: string | undefined;
+  let destroyed = false;
+  let lastPricePaint = -Infinity;
+  let refreshTimer: ReturnType<typeof setTimeout> | undefined;
+  try { enabled = window.localStorage.getItem(preferenceKey) === 'true'; }
+  catch { /* Remain off by default if storage is unavailable. */ }
+  try { refreshSeconds = validRefresh(window.localStorage.getItem(refreshPreferenceKey)) ?? 1; }
+  catch { /* Use the default interval when storage is unavailable. */ }
+  refreshSelect.value = dialogRefresh.value = String(refreshSeconds);
+
+  function clearRefresh() {
+    clearTimeout(refreshTimer);
+    refreshTimer = undefined;
+  }
+
+  function paint(immediate = false) {
+    const title = !destroyed && enabled && price ? price : pageTitle;
+    toggle.setAttribute('aria-pressed', String(enabled));
+    refreshRow.hidden = !enabled;
+    if (title === pageTitle) {
+      clearRefresh();
+      lastPricePaint = -Infinity;
+      if (document.title !== title) document.title = title;
+      return;
+    }
+    if (title === document.title) { clearRefresh(); return; }
+    const remaining = refreshSeconds * 1000 - (Date.now() - lastPricePaint);
+    if (immediate || remaining <= 0) {
+      clearRefresh();
+      document.title = title;
+      lastPricePaint = Date.now();
+    } else if (refreshTimer === undefined) {
+      // Coalesce ticks and show the newest price once the chosen interval elapses.
+      refreshTimer = setTimeout(() => { refreshTimer = undefined; paint(); }, remaining);
+    }
+  }
+
+  function savePreferences() {
+    try {
+      window.localStorage.setItem(preferenceKey, String(enabled));
+      window.localStorage.setItem(refreshPreferenceKey, String(refreshSeconds));
+    } catch { /* The choice still works for this visit when storage is blocked. */ }
+  }
+
+  function setEnabled(value: boolean) {
+    enabled = value;
+    savePreferences();
+    paint(true);
+  }
+
+  function onToggle() {
+    menu.open = false;
+    if (enabled) {
+      setEnabled(false);
+      menuTrigger.focus({ preventScroll: true });
+    } else if (!dialog.open) {
+      dialogRefresh.value = String(refreshSeconds);
+      dialog.showModal();
+      heading.focus({ preventScroll: true });
+    }
+  }
+
+  function onConfirm() {
+    if (!dialog.open || destroyed) return;
+    refreshSeconds = validRefresh(dialogRefresh.value) ?? refreshSeconds;
+    refreshSelect.value = String(refreshSeconds);
+    setEnabled(true);
+    dialog.close();
+  }
+
+  function onCancel(event: Event) {
+    event.preventDefault();
+    dialog.close();
+  }
+
+  function onClose() {
+    if (!destroyed) menuTrigger.focus({ preventScroll: true });
+  }
+
+  function onRefreshChange() {
+    refreshSeconds = validRefresh(refreshSelect.value) ?? refreshSeconds;
+    refreshSelect.value = String(refreshSeconds);
+    savePreferences();
+    paint(true);
+  }
+
+  toggle.addEventListener('click', onToggle);
+  confirm.addEventListener('click', onConfirm);
+  cancel.addEventListener('click', onCancel);
+  dialog.addEventListener('cancel', onCancel);
+  dialog.addEventListener('close', onClose);
+  refreshSelect.addEventListener('change', onRefreshChange);
+  paint();
+
+  return {
+    get enabled() { return enabled; },
+    update(value?: string, immediate = false) { price = value; paint(immediate); },
+    destroy() {
+      destroyed = true;
+      toggle.removeEventListener('click', onToggle);
+      confirm.removeEventListener('click', onConfirm);
+      cancel.removeEventListener('click', onCancel);
+      dialog.removeEventListener('cancel', onCancel);
+      dialog.removeEventListener('close', onClose);
+      refreshSelect.removeEventListener('change', onRefreshChange);
+      if (dialog.open) dialog.close();
+      paint();
+    },
+  };
+}
