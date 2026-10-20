@@ -460,14 +460,14 @@ test('nested currency dismissal keeps settings open until Escape reaches the par
   p.close();
 });
 
-test('the settings close button dismisses the panel and returns focus to its trigger', () => {
+test('Escape dismisses settings and returns focus to its trigger', () => {
   const p = page(new Map());
   const menu = p.root.querySelector('[data-chart-settings]');
   const trigger = p.root.querySelector('[data-settings-trigger]');
   let focused = false;
   trigger.focus = () => { focused = true; };
   menu.open = true;
-  p.root.querySelector('[data-settings-close]').dispatchEvent(new Event('click'));
+  menu.dispatchEvent(Object.assign(new Event('keydown', { cancelable: true }), { key: 'Escape' }));
   assert.equal(menu.open, false);
   assert.equal(focused, true);
   p.close();

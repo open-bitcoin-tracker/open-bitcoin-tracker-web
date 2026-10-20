@@ -33,9 +33,12 @@ export function createPriceTabTitle(root: HTMLElement) {
     selectors: { trigger: '[data-refresh-trigger]', value: '[data-refresh-value]', list: '[data-refresh-list]', option: '[data-refresh-option]', optionKey: 'refreshOption' },
     displayOptionLabel: true, openAttribute: 'data-refresh-open', toggleEvent: 'refreshtoggle',
   };
-  const refreshWrapper = refreshRow.querySelector<HTMLElement>('[data-refresh-picker]')!;
   const dialogWrapper = dialog.querySelector<HTMLElement>('[data-refresh-picker]')!;
-  const refreshPicker = createOptionPicker(refreshWrapper, refreshSelect, { ...pickerOptions, wrapper: refreshWrapper });
+  const refreshPicker = createOptionPicker(menu, refreshSelect, {
+    ...pickerOptions, wrapper: menu,
+    panel: menu.querySelector<HTMLElement>('[data-refresh-panel]')!,
+    back: menu.querySelector<HTMLButtonElement>('[data-refresh-back]')!,
+  });
   const dialogPicker = createOptionPicker(dialogWrapper, dialogRefresh, { ...pickerOptions, wrapper: dialogWrapper });
 
   function clearRefresh() {

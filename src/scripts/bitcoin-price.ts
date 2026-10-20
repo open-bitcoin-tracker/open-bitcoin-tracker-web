@@ -315,7 +315,6 @@ function startTracker(root: HTMLElement) {
     settingsMenu.open = false;
     settingsTrigger.focus({ preventScroll: true });
   }
-  root.querySelector<HTMLButtonElement>('[data-settings-close]')!.addEventListener('click', closeSettings);
   for (const option of scaleOptions) {
     option.checked = option.value === scale;
     option.addEventListener('change', () => {

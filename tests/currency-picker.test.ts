@@ -134,6 +134,33 @@ test('refresh pickers use localized option labels, selected checks, and the same
   h.picker.destroy();
 });
 
+test('the refresh subpanel supports Back, keyboard selection, and Escape without changing an unconfirmed interval', () => {
+  const h = harness({ currency: '30', refresh: true, standalone: true, explicitWrapper: true });
+  assert.equal(h.panel!.hidden, true);
+  h.trigger.click();
+  assert.equal(h.panel!.hidden, false);
+  assert.equal(h.focused(), '30');
+  h.back!.click();
+  assert.equal(h.panel!.hidden, true);
+  assert.equal(h.select.value, '30');
+  assert.equal(h.document.activeElement, h.trigger);
+  assert.equal(h.root.hasAttribute('data-refresh-open'), false);
+  h.trigger.click();
+  h.key(h.option('30'), 'End');
+  h.key(h.option('60'), 'Enter');
+  assert.equal(h.select.value, '60');
+  assert.equal(h.value.textContent, '60 seconds');
+  assert.equal(h.panel!.hidden, true);
+  assert.equal(h.document.activeElement, h.trigger);
+  h.trigger.click();
+  h.key(h.option('60'), 'Home');
+  h.key(h.option('1'), 'Escape');
+  assert.equal(h.select.value, '60');
+  assert.equal(h.panel!.hidden, true);
+  assert.equal(h.document.activeElement, h.trigger);
+  h.picker.destroy();
+});
+
 test('refresh pickers synchronize a reset draft without committing it and preserve translated labels', () => {
   const h = harness({ currency: '30', refresh: true, explicitWrapper: true });
   h.option('5').textContent = '5 Sekunden';

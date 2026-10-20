@@ -1,0 +1,23 @@
+---
+import { priceTabRefreshSeconds } from '../../lib/price-tab-title';
+import CheckIcon from './CheckIcon.astro';
+import '../../styles/currency-picker.css';
+
+interface Props {
+  id: string;
+  locale: string;
+  labelledby: string;
+  class?: string;
+}
+const { id, locale, labelledby, class: className } = Astro.props;
+const interval = new Intl.NumberFormat(locale, { style: 'unit', unit: 'second', unitDisplay: 'long' });
+---
+
+<div id={id} class:list={['refresh-options', 'currency-options', className]} data-refresh-list role="listbox" aria-labelledby={labelledby} hidden>
+  {priceTabRefreshSeconds.map(seconds => (
+    <button type="button" class="currency-option" data-refresh-option={seconds} role="option" aria-selected={seconds === 1 ? 'true' : 'false'} tabindex="-1">
+      <span class="currency-option-name">{interval.format(seconds)}</span>
+      <CheckIcon />
+    </button>
+  ))}
+</div>

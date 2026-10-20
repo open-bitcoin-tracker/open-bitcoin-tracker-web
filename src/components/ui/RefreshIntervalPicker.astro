@@ -1,7 +1,6 @@
 ---
 import { priceTabRefreshSeconds } from '../../lib/price-tab-title';
-import CheckIcon from './CheckIcon.astro';
-import '../../styles/currency-picker.css';
+import RefreshIntervalOptions from './RefreshIntervalOptions.astro';
 
 interface Props {
   id: string;
@@ -21,16 +20,9 @@ const interval = new Intl.NumberFormat(locale, { style: 'unit', unit: 'second', 
   <div class="refresh-control">
     <button type="button" class="refresh-trigger" data-refresh-trigger aria-haspopup="listbox" aria-expanded="false" aria-controls={`${id}-options`} aria-labelledby={`${id}-label ${id}-value`}>
       <span id={`${id}-value`} data-refresh-value>{interval.format(1)}</span>
-      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6" /></svg>
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d={variant === 'menu' ? 'm9 6 6 6-6 6' : 'm6 9 6 6 6-6'} /></svg>
     </button>
-    <div class="refresh-options currency-options" id={`${id}-options`} data-refresh-list role="listbox" aria-labelledby={`${id}-label`} hidden>
-      {priceTabRefreshSeconds.map(seconds => (
-        <button type="button" class="currency-option" data-refresh-option={seconds} role="option" aria-selected={seconds === 1 ? 'true' : 'false'} tabindex="-1">
-          <span class="currency-option-name">{interval.format(seconds)}</span>
-          <CheckIcon />
-        </button>
-      ))}
-    </div>
+    {variant === 'dialog' && <RefreshIntervalOptions id={`${id}-options`} locale={locale} labelledby={`${id}-label`} />}
   </div>
 </div>
 
@@ -38,20 +30,19 @@ const interval = new Intl.NumberFormat(locale, { style: 'unit', unit: 'second', 
   .refresh-picker { position: relative; display: grid; gap: .5rem; width: 100%; min-width: 0; color: var(--menu-link-ink); font-size: .875rem; }
   .refresh-label { min-width: 0; line-height: 1.4; }
   .refresh-control { position: relative; min-width: 0; }
-  .refresh-trigger { display: flex; align-items: center; justify-content: space-between; gap: .75rem; width: 100%; min-width: 0; min-height: 48px; padding: .75rem; border: 1px solid var(--menu-dropdown-border); border-radius: .625rem; background: var(--menu-option-hover); color: var(--menu-link-ink); font-size: .875rem; text-align: start; cursor: pointer; transition: color 150ms ease, background-color 150ms ease; }
+  .refresh-trigger { display: flex; align-items: center; justify-content: space-between; gap: .75rem; width: 100%; min-width: 0; min-height: 48px; padding: .75rem; border: 0; border-radius: .625rem; background: var(--menu-option-hover); color: var(--menu-link-ink); font-size: .875rem; text-align: start; cursor: pointer; transition: color 150ms ease, background-color 150ms ease; }
   .refresh-trigger:hover, .refresh-trigger[aria-expanded='true'] { color: var(--menu-primary-ink); background: var(--hover-tint); }
   .refresh-trigger svg { flex-shrink: 0; color: var(--color-ink-muted); transition: transform 160ms ease; }
-  .refresh-trigger[aria-expanded='true'] svg { transform: rotate(180deg); }
-  .refresh-options { position: static; margin-top: .5rem; max-height: min(12rem, calc(100dvh - 4rem)); overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; scrollbar-color: var(--menu-dropdown-border) transparent; padding: .5rem; border: 1px solid var(--menu-dropdown-border); border-radius: var(--radius-lg); background: var(--menu-dropdown-bg); color: var(--menu-ink); box-shadow: var(--menu-dropdown-shadow); animation: refresh-options-enter 160ms var(--ease-out); }
-  .refresh-options .currency-option { min-height: 44px; }
+  .refresh-picker--dialog .refresh-trigger[aria-expanded='true'] svg { transform: rotate(180deg); }
+  .refresh-control :global(.refresh-options) { position: static; margin-top: .5rem; max-height: min(12rem, calc(100dvh - 4rem)); overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; scrollbar-color: var(--menu-dropdown-border) transparent; padding: .5rem; border: 1px solid var(--menu-dropdown-border); border-radius: var(--radius-lg); background: var(--menu-dropdown-bg); color: var(--menu-ink); box-shadow: var(--menu-dropdown-shadow); animation: refresh-options-enter 160ms var(--ease-out); }
+  .refresh-control :global(.refresh-options .currency-option) { min-height: 44px; }
   .refresh-picker--menu { grid-template-columns: minmax(0, 1fr) auto; align-items: center; font-size: .8125rem; }
   .refresh-picker--menu .refresh-label { overflow-wrap: anywhere; }
   .refresh-picker--menu .refresh-control { display: contents; }
   .refresh-picker--menu .refresh-trigger { min-height: 44px; padding: .5rem; border: 0; background: transparent; font-size: .8125rem; }
-  .refresh-picker--menu .refresh-options { grid-column: 1 / -1; margin-top: 0; max-height: 15rem; box-shadow: none; }
   @keyframes refresh-options-enter { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: translateY(0); } }
   @media (prefers-reduced-motion: reduce) {
     .refresh-trigger, .refresh-trigger svg { transition: none; }
-    .refresh-options { animation: none; }
+    .refresh-control :global(.refresh-options) { animation: none; }
   }
 </style>
