@@ -42,14 +42,14 @@ const interval = new Intl.NumberFormat(locale, { style: 'unit', unit: 'second', 
   .refresh-trigger:hover, .refresh-trigger[aria-expanded='true'] { color: var(--menu-primary-ink); background: var(--hover-tint); }
   .refresh-trigger svg { flex-shrink: 0; color: var(--color-ink-muted); transition: transform 160ms ease; }
   .refresh-trigger[aria-expanded='true'] svg { transform: rotate(180deg); }
-  .refresh-options { position: absolute; inset-inline: 0; bottom: calc(100% + .5rem); z-index: 2; max-height: min(16rem, calc(100dvh - 4rem)); overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; scrollbar-color: var(--menu-dropdown-border) transparent; padding: .5rem; border: 1px solid var(--menu-dropdown-border); border-radius: var(--radius-lg); background: var(--menu-dropdown-bg); color: var(--menu-ink); box-shadow: var(--menu-dropdown-shadow); animation: refresh-options-enter 160ms var(--ease-out); }
+  .refresh-options { position: static; margin-top: .5rem; max-height: min(12rem, calc(100dvh - 4rem)); overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; scrollbar-color: var(--menu-dropdown-border) transparent; padding: .5rem; border: 1px solid var(--menu-dropdown-border); border-radius: var(--radius-lg); background: var(--menu-dropdown-bg); color: var(--menu-ink); box-shadow: var(--menu-dropdown-shadow); animation: refresh-options-enter 160ms var(--ease-out); }
   .refresh-options .currency-option { min-height: 44px; }
   .refresh-picker--menu { grid-template-columns: minmax(0, 1fr) auto; align-items: center; font-size: .8125rem; }
   .refresh-picker--menu .refresh-label { overflow-wrap: anywhere; }
   .refresh-picker--menu .refresh-control { display: contents; }
   .refresh-picker--menu .refresh-trigger { min-height: 44px; padding: .5rem; border: 0; background: transparent; font-size: .8125rem; }
-  .refresh-picker--menu .refresh-options { position: static; grid-column: 1 / -1; max-height: 15rem; box-shadow: none; }
-  @keyframes refresh-options-enter { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+  .refresh-picker--menu .refresh-options { grid-column: 1 / -1; margin-top: 0; max-height: 15rem; box-shadow: none; }
+  @keyframes refresh-options-enter { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: translateY(0); } }
   @media (prefers-reduced-motion: reduce) {
     .refresh-trigger, .refresh-trigger svg { transition: none; }
     .refresh-options { animation: none; }

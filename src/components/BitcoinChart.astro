@@ -180,6 +180,7 @@ const lastDate = new Intl.DateTimeFormat(lang, { year: 'numeric', month: 'short'
   .chart-settings-menu { scrollbar-width: thin; scrollbar-color: var(--menu-dropdown-border) transparent; }
   .price-tab-dialog { position: fixed; inset: 0; width: min(460px, calc(100vw - 32px)); max-width: none; max-height: calc(100dvh - 32px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)); margin: auto; padding: 0; overflow-y: auto; overscroll-behavior: contain; border: 1px solid var(--menu-dropdown-border); border-radius: 20px; background: var(--menu-dropdown-bg); color: var(--menu-ink); box-shadow: 0 24px 80px #0006; }
   .price-tab-dialog::backdrop { background: #000b; }
+  .price-tab-dialog { scrollbar-width: thin; scrollbar-color: var(--menu-dropdown-border) transparent; }
   .price-tab-dialog[open], .price-tab-dialog[open]::backdrop { animation: price-tab-enter 240ms ease-out; }
   @keyframes price-tab-enter { from { opacity: 0; } to { opacity: 1; } }
   .price-tab-header { padding: 28px 28px 16px; }
