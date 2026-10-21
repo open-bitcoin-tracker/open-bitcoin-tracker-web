@@ -109,11 +109,11 @@ const locale = htmlLang(Astro.currentLocale);
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="3" /><path d="M7 3v18M17 3v18M3 8h4m-4 8h4M17 8h4m-4 8h4" /></svg>
         <span>{t.changeVideo}</span>
       </button>
-      <div class="video-share">
+      <div class="video-setup-link">
         <IconButton type="button" class="video-icon-button" data-share-setup aria-label={t.shareSetup} title={t.shareSetup} hidden disabled>
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="18" cy="5" r="3" /><circle cx="6" cy="12" r="3" /><circle cx="18" cy="19" r="3" /><path d="m8.6 10.5 6.8-4m-6.8 7 6.8 4" /></svg>
         </IconButton>
-        <p class="video-share-status video-message" data-share-status role="status" hidden></p>
+        <p class="video-setup-link-status video-message" data-share-status role="status" hidden></p>
       </div>
       <dialog id="video-picker" class="video-picker" data-video-picker aria-labelledby="video-picker-title">
         <h2 id="video-picker-title" class="sr-only" tabindex="-1" autofocus>{t.pickVideo}</h2>
@@ -189,7 +189,7 @@ const locale = htmlLang(Astro.currentLocale);
         </div>
         <p class="sr-only" data-video-status role="status" hidden></p>
         <p class="video-message" data-control-status role="status" hidden></p>
-        <div class="video-share-fallback video-message" data-share-fallback hidden>
+        <div class="video-setup-link-fallback video-message" data-share-fallback hidden>
           <label for="video-share-url">{t.copyLinkManually}</label>
           <input id="video-share-url" data-share-url type="text" readonly />
         </div>
@@ -394,16 +394,16 @@ const locale = htmlLang(Astro.currentLocale);
   .video-change svg { flex-shrink: 0; }
   .video-change:hover { background: rgb(50 50 50 / .85); }
   .video-message { margin-top: .75rem; padding: .4rem .7rem; font-size: .75rem; line-height: 1.5; color: #ddd; background: rgb(8 8 8 / .85); border-radius: 8px; }
-  .video-share { position: fixed; top: var(--menu-control-top); right: calc(var(--menu-control-right) + var(--menu-control-size) + .75rem); z-index: 5; }
-  .video-share:has([data-share-setup][hidden]) { display: none; }
-  .video-share-status { position: absolute; top: 100%; right: 0; width: max-content; max-width: calc(100vw - var(--menu-control-right) - var(--menu-control-size) - .75rem - var(--menu-control-gutter)); pointer-events: none; }
-  .video-share-fallback input { margin-top: .25rem; padding: .5rem; border: 1px solid #ffffff40; border-radius: 4px; }
+  .video-setup-link { position: fixed; top: var(--menu-control-top); right: calc(var(--menu-control-right) + var(--menu-control-size) + .75rem); z-index: 5; }
+  .video-setup-link:has([data-share-setup][hidden]) { display: none; }
+  .video-setup-link-status { position: absolute; top: 100%; right: 0; width: max-content; max-width: calc(100vw - var(--menu-control-right) - var(--menu-control-size) - .75rem - var(--menu-control-gutter)); pointer-events: none; }
+  .video-setup-link-fallback input { margin-top: .25rem; padding: .5rem; border: 1px solid #ffffff40; border-radius: 4px; }
   .video-error { color: #ffc2b2; }
-  .video-change, .video-share, .video-dock, .video-page :global(.site-nav) { transition: opacity var(--video-ui-fade) ease; }
+  .video-change, .video-setup-link, .video-dock, .video-page :global(.site-nav) { transition: opacity var(--video-ui-fade) ease; }
   .video-page[data-ui-idle] { cursor: none; }
   .video-page[data-ui-idle] .video-price-position { cursor: none; }
   .video-page[data-ui-idle] .video-change,
-  .video-page[data-ui-idle] .video-share,
+  .video-page[data-ui-idle] .video-setup-link,
   .video-page[data-ui-idle] .video-dock,
   .video-page[data-ui-idle] :global(.site-nav) { opacity: 0; pointer-events: none; }
   .video-page[data-ui-idle] .video-price-style { opacity: 0; visibility: hidden; pointer-events: none; }
@@ -451,6 +451,6 @@ const locale = htmlLang(Astro.currentLocale);
     .video-picker, .video-picker::backdrop { transition: none; }
     .video-playback:not([hidden]) { animation: none; }
     .video-price-style { transition: none; }
-    .video-change, .video-share, .video-dock, .video-style-chevron, .video-currency-chevron, .video-volume-reveal, .video-price-editing, .video-page :global(.site-nav) { transition: none; }
+    .video-change, .video-setup-link, .video-dock, .video-style-chevron, .video-currency-chevron, .video-volume-reveal, .video-price-editing, .video-page :global(.site-nav) { transition: none; }
   }
 </style>
