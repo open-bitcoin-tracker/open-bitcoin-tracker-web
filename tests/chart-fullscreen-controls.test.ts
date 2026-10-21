@@ -34,6 +34,7 @@ function harness() {
   let nextId = 0;
   const module = browserModule('lib/chart-fullscreen-controls', {
     window, document,
+    Date: class extends Date { static now() { return now; } },
     setTimeout(run: () => void, delay: number) {
       const id = ++nextId;
       timers.set(id, { at: now + delay, run });
@@ -104,15 +105,38 @@ test('fullscreen entry fades controls and pointer movement restarts the full thr
   assert.equal(h.timers.size, 0);
 });
 
-test('touch taps reveal controls for three seconds and retained pointer focus does not pin them', () => {
+test('entry focus, clicks, touch, and lifecycle events cannot reveal fullscreen controls', () => {
+  const h = harness();
+  h.focus(h.button);
+  h.panel(false, true);
+  h.fullscreen(true);
+  assert.equal(h.idle(), true, 'fullscreen entry hides even keyboard-focused settings');
+  h.panel(false, false);
+  h.focus(null);
+  h.tick(0);
+  h.focus(h.button);
+  h.window.dispatchEvent(Object.assign(new Event('keydown'), { key: 'Enter' }));
+  h.pointer('pointermove', 'touch');
+  h.pointer('pointerdown');
+  h.pointer('pointerup');
+  h.pointer('pointercancel');
+  h.visibility(true);
+  h.visibility(false);
+  h.tick(10000);
+  assert.equal(h.idle(), true);
+  assert.equal(h.timers.size, 0);
+});
+
+test('clicks and retained entry focus do not extend the three-second mouse reveal', () => {
   const h = harness();
   h.fullscreen(true);
-  h.pointer('pointermove', 'touch');
-  assert.equal(h.idle(), true);
-  h.pointer('pointerdown', 'touch');
-  h.focus(h.button, false);
-  h.pointer('pointerup', 'touch');
-  h.tick(2999);
+  h.focus(h.button);
+  h.pointer();
+  h.tick(2000);
+  h.pointer('pointerdown');
+  h.pointer('pointerup');
+  h.focus(h.navigation);
+  h.tick(999);
   assert.equal(h.idle(), false);
   h.tick(1);
   assert.equal(h.idle(), true);
@@ -122,7 +146,7 @@ test('keyboard access reveals the UI and protects focused chart and navigation c
   for (const target of ['button', 'navigation'] as const) {
     const h = harness();
     h.fullscreen(true);
-    h.window.dispatchEvent(new Event('keydown'));
+    h.window.dispatchEvent(Object.assign(new Event('keydown'), { key: 'Tab' }));
     assert.equal(h.idle(), false);
     h.focus(h[target]);
     h.pointer();
@@ -130,30 +154,26 @@ test('keyboard access reveals the UI and protects focused chart and navigation c
     assert.equal(h.idle(), false);
     assert.equal(h.timers.size, 0);
     h.focus(null);
-    h.tick(2999);
-    assert.equal(h.idle(), false);
-    h.tick(1);
+    h.tick(0);
     assert.equal(h.idle(), true);
   }
 });
 
-test('open chart panels and navigation remain visible until three seconds after dismissal', () => {
+test('open chart panels and navigation stay usable without creating a new mouse reveal', () => {
   for (const navigation of [false, true]) {
     const h = harness();
     h.fullscreen(true);
+    h.pointer();
     h.panel(navigation, true);
     h.tick(10000);
     assert.equal(h.idle(), false);
     assert.equal(h.timers.size, 0);
     h.panel(navigation, false);
-    h.tick(2999);
-    assert.equal(h.idle(), false);
-    h.tick(1);
     assert.equal(h.idle(), true);
   }
 });
 
-test('background tabs stop idle work, returning restarts the delay, and destruction removes listeners', () => {
+test('background tabs stop idle work without restarting the mouse reveal, and destruction removes listeners', () => {
   const h = harness();
   h.fullscreen(true);
   h.pointer();
@@ -161,9 +181,6 @@ test('background tabs stop idle work, returning restarts the delay, and destruct
   assert.equal(h.timers.size, 0);
   h.tick(10000);
   h.visibility(false);
-  h.tick(2999);
-  assert.equal(h.idle(), false);
-  h.tick(1);
   assert.equal(h.idle(), true);
   h.pointer();
   h.controls.destroy();
