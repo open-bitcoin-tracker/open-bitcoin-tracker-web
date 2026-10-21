@@ -116,6 +116,7 @@ function harness(options: Options = {}) {
     CurrencyRates: Rates,
     isCurrency: (value: string) => ['USD', 'EUR', 'GBP', 'AUD', 'CAD', 'CHF', 'JPY'].includes(value),
     readDisplayPreferences: () => ({ ...preferences }),
+    subscribeCurrencyPreference: () => () => {},
     saveDisplayPreferences: (next: DisplayPreferences) => { preferences = { ...next }; saved.push({ ...next }); },
     subscribeBitcoinPrice: (callbacks: typeof feed) => {
       feed = callbacks;

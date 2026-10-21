@@ -7,7 +7,7 @@ import { candleWindow, historyForRange, parseCandles, stepRange, type BitcoinRan
 import { createRangePill } from './bitcoin-range-pill';
 import { readRangePreferences, saveRangePreferences } from '../lib/bitcoin-range-preferences';
 import { CurrencyRates, isCurrency, type Currency } from '../lib/bitcoin-currency';
-import { readDisplayPreferences, saveDisplayPreferences } from '../lib/bitcoin-display-preferences';
+import { readDisplayPreferences, saveDisplayPreferences, subscribeCurrencyPreference } from '../lib/bitcoin-display-preferences';
 import type { ChartSettingsCopy } from '../i18n/chart-settings';
 import { subscribeBitcoinPrice, type PriceFeedState } from '../lib/bitcoin-live-price';
 import { createCurrencyPicker } from '../lib/currency-picker';
@@ -327,13 +327,12 @@ function startTracker(root: HTMLElement) {
   }
   currencySelect.value = currency;
   currencySelect.disabled = false;
-  currencySelect.addEventListener('change', () => {
-    if (!isCurrency(currencySelect.value) || currencySelect.value === currency) return;
+  function applyCurrency(next: Currency) {
     clearSelection();
-    currency = currencySelect.value;
+    currency = next;
+    currencySelect.value = next;
     money = new Intl.NumberFormat(locale, { style: 'currency', currency, currencyDisplay: 'narrowSymbol', useGrouping: true, maximumFractionDigits: 0 });
     formatPriceChange = createPriceChangeFormatter(locale, currency);
-    saveDisplayPreferences({ scale, currency });
     currencyError = undefined;
     currencyLoading = false;
     // Discard the old currency's scene immediately, including under reduced motion.
@@ -347,6 +346,11 @@ function startTracker(root: HTMLElement) {
     updatePageTitle(true);
     updateCurrencyStatus();
     scheduleDraw();
+  }
+  currencySelect.addEventListener('change', () => {
+    if (!isCurrency(currencySelect.value) || currencySelect.value === currency) return;
+    applyCurrency(currencySelect.value);
+    saveDisplayPreferences({ scale, currency });
   });
   const currencyPicker = createCurrencyPicker(root, currencySelect, {
     panel: root.querySelector<HTMLElement>('[data-currency-panel]')!,
@@ -354,6 +358,11 @@ function startTracker(root: HTMLElement) {
   });
   const priceCurrency = root.querySelector<HTMLElement>('[data-price-currency-picker]')!;
   const priceCurrencyPicker = createCurrencyPicker(priceCurrency, currencySelect, { wrapper: priceCurrency });
+  const stopCurrency = subscribeCurrencyPreference(next => {
+    if (next === currency) return;
+    applyCurrency(next);
+    currencySelect.dispatchEvent(new Event('change', { bubbles: true }));
+  });
   settingsMenu.addEventListener('toggle', () => {
     if (!settingsMenu.open) currencyPicker.close();
   });
@@ -534,6 +543,7 @@ function startTracker(root: HTMLElement) {
   });
   window.addEventListener('pagehide', () => {
     stopped = true;
+    stopCurrency();
     priceTabTitle.destroy();
     resizeObserver.disconnect();
     cancelAnimationFrame(paintFrame);

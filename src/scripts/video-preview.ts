@@ -1,5 +1,7 @@
 import { subscribeBitcoinPrice, type PriceFeedState } from '../lib/bitcoin-live-price';
 import type { HistoryPoint } from '../lib/bitcoin-chart';
+import { CurrencyRates } from '../lib/bitcoin-currency';
+import { readDisplayPreferences, subscribeCurrencyPreference } from '../lib/bitcoin-display-preferences';
 
 export function startVideoPreview(root: HTMLElement) {
   const copy: Record<string, string> = JSON.parse(root.dataset.copy!);
@@ -16,7 +18,10 @@ export function startVideoPreview(root: HTMLElement) {
   const playIcon = toggle.querySelector<SVGElement>('[data-motion-play]')!;
   const pauseIcon = toggle.querySelector<SVGElement>('[data-motion-pause]')!;
   const motion = window.matchMedia('(prefers-reduced-motion: reduce)');
-  const money = new Intl.NumberFormat(locale, { style: 'currency', currency: 'USD', currencyDisplay: 'narrowSymbol', maximumFractionDigits: 0 });
+  let currency = readDisplayPreferences().currency;
+  const rates = new CurrencyRates();
+  const formatMoney = () => new Intl.NumberFormat(locale, { style: 'currency', currency, currencyDisplay: 'narrowSymbol', maximumFractionDigits: 0 });
+  let money = formatMoney();
   const date = new Intl.DateTimeFormat(locale, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
   let point: HistoryPoint | undefined;
   let state: PriceFeedState = 'connecting';
@@ -25,15 +30,32 @@ export function startVideoPreview(root: HTMLElement) {
   let suspended = false;
   let stopped = false;
   let stopPrice: (() => void) | undefined;
+  let rateTimer: ReturnType<typeof setInterval> | undefined;
+  let rateRequest: Promise<void> | undefined;
 
   function paintPrice() {
-    if (point) {
-      const formatted = money.format(point.price);
+    if (stopped || suspended || document.hidden) return;
+    const rate = rates.current(currency);
+    if (point && rate) {
+      const formatted = money.format(point.price * rate.rate);
       price.textContent = formatted;
       price.title = `${copy.updated}: ${date.format(point.time)}`;
-      price.setAttribute('aria-label', `${copy.price}: ${formatted} USD. ${price.title}`);
+      price.setAttribute('aria-label', `${copy.price}: ${formatted} ${currency}. ${price.title}`);
+    } else {
+      price.textContent = '—';
+      price.title = '';
+      price.setAttribute('aria-label', copy.unavailable);
     }
-    status.textContent = !navigator.onLine ? copy.offline : (point || state === 'connecting') ? copy[state] : copy.unavailable;
+    status.textContent = !navigator.onLine ? copy.offline : !rate ? copy.unavailable : (point || state === 'connecting') ? copy[state] : copy.unavailable;
+  }
+
+  async function refreshRates() {
+    if (stopped || suspended || !visible || document.hidden || !navigator.onLine || currency === 'USD') return;
+    rateRequest ??= rates.refreshLatest().catch(() => {
+      // Missing FX stays unavailable until a real rate arrives.
+    }).finally(() => { rateRequest = undefined; });
+    await rateRequest;
+    paintPrice();
   }
 
   function startPrice() {
@@ -42,18 +64,22 @@ export function startVideoPreview(root: HTMLElement) {
       onPrice(value) { point = value; paintPrice(); },
       onState(value) { state = value; paintPrice(); },
     });
+    rateTimer = setInterval(() => { void refreshRates(); }, 60_000);
+    void refreshRates();
   }
 
   function syncPrice() {
     if (stopped || suspended || !visible || document.hidden) {
       stopPrice?.();
       stopPrice = undefined;
+      clearInterval(rateTimer);
+      rateTimer = undefined;
     } else {
       startPrice();
     }
   }
 
-  function syncVisibility() { syncPrice(); syncMotion(); }
+  function syncVisibility() { syncPrice(); syncMotion(); paintPrice(); }
 
   function paintMotion() {
     const playing = !video.paused;
@@ -97,7 +123,9 @@ export function startVideoPreview(root: HTMLElement) {
   function stop() {
     if (stopped) return;
     stopped = true;
+    stopCurrency();
     stopPrice?.();
+    clearInterval(rateTimer);
     observer.disconnect();
     video.pause();
     toggle.removeEventListener('click', toggleMotion);
@@ -108,6 +136,7 @@ export function startVideoPreview(root: HTMLElement) {
     document.removeEventListener('visibilitychange', syncVisibility);
     window.removeEventListener('pagehide', pagehide);
     window.removeEventListener('pageshow', pageshow);
+    window.removeEventListener('online', refreshRates);
   }
   toggle.hidden = false;
   next.hidden = false;
@@ -119,6 +148,13 @@ export function startVideoPreview(root: HTMLElement) {
   document.addEventListener('visibilitychange', syncVisibility);
   window.addEventListener('pagehide', pagehide);
   window.addEventListener('pageshow', pageshow);
+  window.addEventListener('online', refreshRates);
+  const stopCurrency = subscribeCurrencyPreference(next => {
+    currency = next;
+    money = formatMoney();
+    paintPrice();
+    void refreshRates();
+  });
   observer.observe(root);
   paintMotion();
   return stop;

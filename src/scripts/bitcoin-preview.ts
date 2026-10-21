@@ -1,6 +1,8 @@
 import { DAY_MS, type HistoryPoint } from '../lib/bitcoin-chart';
 import { mergePreviewHistory, previewPaths, type PreviewHistory } from '../lib/bitcoin-preview';
 import { parseCandles } from '../lib/bitcoin-range';
+import { CurrencyRates } from '../lib/bitcoin-currency';
+import { readDisplayPreferences, subscribeCurrencyPreference } from '../lib/bitcoin-display-preferences';
 
 /** Homepage-only polling: no sockets, full CSV download, controls or chart runtime. */
 export function startBitcoinPreview(root: HTMLElement) {
@@ -13,18 +15,59 @@ export function startBitcoinPreview(root: HTMLElement) {
   const historyStatus = root.querySelector<HTMLElement>('[data-preview-history-status]')!;
   const line = root.querySelector<SVGPathElement>('[data-preview-line]')!;
   const area = root.querySelector<SVGPathElement>('[data-preview-area]')!;
-  const money = new Intl.NumberFormat(locale, { style: 'currency', currency: 'USD', currencyDisplay: 'narrowSymbol', maximumFractionDigits: 0 });
+  let currency = readDisplayPreferences().currency;
+  const rates = new CurrencyRates();
+  const formatMoney = () => new Intl.NumberFormat(locale, { style: 'currency', currency, currencyDisplay: 'narrowSymbol', maximumFractionDigits: 0 });
+  let money = formatMoney();
   const date = new Intl.DateTimeFormat(locale, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+  const historyDate = new Intl.DateTimeFormat(locale, { year: 'numeric', month: 'short', day: 'numeric', timeZone: 'UTC' });
   let current: HistoryPoint | undefined;
   let controller: AbortController | undefined;
   let stopped = false;
+  let suspended = false;
   let timer: ReturnType<typeof setInterval> | undefined;
   let historyFetchedAt = 0;
+  let priceFailed = false;
+  let historyFailed = false;
+
+  function paintPrice() {
+    if (stopped || suspended || document.hidden) return;
+    const point = current ?? history.at(-1)!.at(-1)!;
+    const rate = rates.current(currency);
+    const value = current ? (rate ? current.price * rate.rate : undefined)
+      : rates.convert(history.at(-1)!, currency)?.at(-1)?.price;
+    if (value !== undefined) {
+      const formatted = money.format(value);
+      price.textContent = formatted;
+      price.title = `${copy.updated}: ${current ? date.format(point.time) : historyDate.format(point.time)}`;
+      price.setAttribute('aria-label', `${copy.price}: ${formatted} ${currency}. ${price.title}`);
+    } else {
+      price.textContent = '—';
+      price.title = '';
+      price.setAttribute('aria-label', copy.unavailable);
+    }
+    status.textContent = copy.unavailable;
+    status.hidden = value !== undefined && !priceFailed;
+  }
 
   function draw() {
-    const paths = previewPaths(history, current);
+    if (stopped || suspended || document.hidden) return;
+    const converted = history.flatMap(segment => {
+      const points = rates.convert(segment, currency);
+      return points ? [points] : [];
+    });
+    const rate = rates.current(currency);
+    const paths = previewPaths(converted, current && rate ? { ...current, price: current.price * rate.rate } : undefined);
     line.setAttribute('d', paths.line);
     area.setAttribute('d', paths.area);
+    historyStatus.hidden = !historyFailed && converted.length === history.length && Date.now() - history.at(-1)!.at(-1)!.time < 2 * DAY_MS;
+  }
+
+  async function refreshCurrency() {
+    if (stopped || suspended || document.hidden || !navigator.onLine || !rates.needsRefresh(currency)) return;
+    await Promise.allSettled([rates.refreshLatest(), rates.refreshHistory(currency, history[0][0].time)]);
+    paintPrice();
+    draw();
   }
 
   async function getJson(url: string, signal: AbortSignal) {
@@ -36,7 +79,7 @@ export function startBitcoinPreview(root: HTMLElement) {
   }
 
   async function refresh() {
-    if (stopped || document.hidden || !navigator.onLine || controller) return;
+    if (stopped || suspended || document.hidden || !navigator.onLine || controller) return;
     const request = new AbortController();
     controller = request;
     const active = () => !stopped && !request.signal.aborted && !document.hidden && navigator.onLine;
@@ -48,14 +91,11 @@ export function startBitcoinPreview(root: HTMLElement) {
         if (!Number.isFinite(value) || value <= 0) throw new Error('Missing price');
         if (!active()) return;
         current = { time: Date.now(), price: value };
-        price.textContent = money.format(value);
-        const updated = `${copy.updated}: ${date.format(current.time)}`;
-        price.setAttribute('aria-label', `${copy.price}: ${money.format(value)} USD. ${updated}`);
-        price.title = updated;
-        status.hidden = true;
+        priceFailed = false;
+        paintPrice();
         draw();
       } catch {
-        if (active()) { status.textContent = copy.unavailable; status.hidden = false; }
+        if (active()) { priceFailed = true; status.textContent = copy.unavailable; status.hidden = false; }
       }
     })();
     const recent = (async () => {
@@ -67,11 +107,10 @@ export function startBitcoinPreview(root: HTMLElement) {
         if (!active()) return;
         history = mergePreviewHistory(history, points);
         historyFetchedAt = Date.now();
-        const last = points.at(-1)!;
-        historyStatus.hidden = Date.now() - last.time < 2 * DAY_MS;
+        historyFailed = false;
         draw();
       } catch {
-        if (active()) historyStatus.hidden = false;
+        if (active()) { historyFailed = true; historyStatus.hidden = false; }
       }
     })();
     await Promise.allSettled([ticker, recent]);
@@ -83,27 +122,41 @@ export function startBitcoinPreview(root: HTMLElement) {
     controller?.abort(); controller = undefined;
   }
   function resume() {
-    if (stopped || document.hidden || !navigator.onLine) return;
-    if (timer === undefined) timer = setInterval(() => { void refresh(); }, 60_000);
+    if (stopped || suspended || document.hidden || !navigator.onLine) return;
+    if (timer === undefined) timer = setInterval(() => { void refresh(); void refreshCurrency(); }, 60_000);
+    paintPrice();
+    draw();
+    void refreshCurrency();
     void refresh();
   }
   function visibility() { if (document.hidden) pause(); else resume(); }
-  function offline() { pause(); status.textContent = copy.unavailable; status.hidden = false; }
-  function pagehide(event: PageTransitionEvent) { if (event.persisted) pause(); else stop(); }
+  function offline() { pause(); priceFailed = true; status.textContent = copy.unavailable; status.hidden = false; }
+  function pagehide(event: PageTransitionEvent) { if (event.persisted) { suspended = true; pause(); } else stop(); }
+  function pageshow() { suspended = false; resume(); }
   function stop() {
     if (stopped) return;
     stopped = true; pause();
+    stopCurrency();
     document.removeEventListener('visibilitychange', visibility);
     window.removeEventListener('online', resume);
     window.removeEventListener('offline', offline);
     window.removeEventListener('pagehide', pagehide);
-    window.removeEventListener('pageshow', resume);
+    window.removeEventListener('pageshow', pageshow);
   }
   document.addEventListener('visibilitychange', visibility);
   window.addEventListener('online', resume);
   window.addEventListener('offline', offline);
   window.addEventListener('pagehide', pagehide);
-  window.addEventListener('pageshow', resume);
+  window.addEventListener('pageshow', pageshow);
+  const stopCurrency = subscribeCurrencyPreference(next => {
+    currency = next;
+    money = formatMoney();
+    paintPrice();
+    draw();
+    void refreshCurrency();
+  });
+  paintPrice();
+  draw();
   if (!navigator.onLine) offline();
   resume();
   return stop;

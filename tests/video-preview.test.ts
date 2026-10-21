@@ -6,12 +6,13 @@ import { setImmediate } from 'node:timers/promises';
 import ts from 'typescript';
 import type { HistoryPoint } from '../src/lib/bitcoin-chart.ts';
 import type { PriceFeedState } from '../src/lib/bitcoin-live-price.ts';
+import { browserModule } from './support/browser-module.ts';
 
 const script = ts.transpileModule(readFileSync(new URL('../src/scripts/video-preview.ts', import.meta.url), 'utf8'), {
   compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 },
 }).outputText;
 
-function harness(reduced = false, locale = 'en') {
+function harness(reduced = false, locale = 'en', currency = 'USD', fxFailure = false) {
   class Element extends EventTarget {
     textContent = '—'; hidden = true; title = '';
     attributes = new Map<string, string>();
@@ -38,7 +39,12 @@ function harness(reduced = false, locale = 'en') {
   const video = new Video();
   const document = Object.assign(new EventTarget(), { hidden: false });
   const motion = Object.assign(new EventTarget(), { matches: reduced });
-  const window = Object.assign(new EventTarget(), { matchMedia: () => motion });
+  const storage = new Map([['bitcoin-tracker-display', JSON.stringify({ currency, scale: 'linear' })]]);
+  const window = Object.assign(new EventTarget(), { matchMedia: () => motion, localStorage: { getItem: (key: string) => storage.get(key) ?? null } });
+  const preferences = browserModule('lib/bitcoin-display-preferences', { window, document, Event }, { isCurrency: (code: string) => ['USD', 'EUR', 'GBP'].includes(code) });
+  const rates = new Map<string, number>();
+  const intervals = new Map<number, () => void>();
+  let intervalId = 0;
   const navigator = { onLine: true };
   const subscriptions: { onPrice: (p: HistoryPoint) => void; onState: (s: PriceFeedState) => void; stopped: boolean }[] = [];
   let intersect: (entries: { isIntersecting: boolean }[]) => void = () => {};
@@ -51,12 +57,17 @@ function harness(reduced = false, locale = 'en') {
   const module: { startVideoPreview?: (root: unknown) => () => void } = {};
   runInNewContext(script, {
     exports: module, document, window, navigator, Intl,
+    setInterval: (run: () => void) => { intervals.set(++intervalId, run); return intervalId; },
+    clearInterval: (id: number) => intervals.delete(id),
     IntersectionObserver: class {
       constructor(callback: typeof intersect) { intersect = callback; }
       observe() {}
       disconnect() { disconnected = true; }
     },
-    require: () => ({ subscribeBitcoinPrice(callbacks: typeof subscriptions[number]) {
+    require: () => ({ ...preferences, CurrencyRates: class {
+      current(code: string) { const rate = code === 'USD' ? 1 : rates.get(code); return rate ? { rate } : undefined; }
+      async refreshLatest() { if (fxFailure) throw Error('No rates'); rates.set('EUR', .9); rates.set('GBP', .75); }
+    }, subscribeBitcoinPrice(callbacks: typeof subscriptions[number]) {
       const subscription = { ...callbacks, stopped: false };
       subscriptions.push(subscription);
       callbacks.onState('connecting');
@@ -65,7 +76,11 @@ function harness(reduced = false, locale = 'en') {
   });
   const stop = module.startVideoPreview!(root);
   const visibility = (hidden: boolean) => { document.hidden = hidden; document.dispatchEvent(new Event('visibilitychange')); };
-  return { price, status, video, toggle, next, play, pause, motion, window, navigator, subscriptions, stop, visibility,
+  return { price, status, video, toggle, next, play, pause, motion, window, navigator, subscriptions, stop, visibility, intervals,
+    currency(code: string, event = 'storage') {
+      storage.set('bitcoin-tracker-display', JSON.stringify({ currency: code, scale: 'linear' }));
+      window.dispatchEvent(Object.assign(new Event(event), { key: 'bitcoin-tracker-display' }));
+    },
     intersect: (value: boolean) => intersect([{ isIntersecting: value }]), disconnected: () => disconnected };
 }
 
@@ -87,6 +102,48 @@ test('video card draws only received quotes, formats for the locale, and retains
   h.subscriptions[0].onState('offline');
   assert.equal(h.status.textContent, 'Offline');
   assert.equal(h.price.textContent, lastPrice);
+  h.stop();
+});
+
+test('video card follows the global currency across tabs and cached-page returns', async () => {
+  const h = harness(false, 'de', 'EUR');
+  assert.equal(h.intervals.size, 0);
+  h.intersect(true);
+  h.subscriptions[0].onPrice({ time: Date.now(), price: 100_000 });
+  await setImmediate();
+  const formatted = (currency: string, value: number) => new Intl.NumberFormat('de', { style: 'currency', currency, currencyDisplay: 'narrowSymbol', maximumFractionDigits: 0 }).format(value);
+  assert.equal(h.price.textContent, formatted('EUR', 90_000));
+  assert.match(h.price.attributes.get('aria-label')!, /EUR/);
+  h.currency('GBP');
+  assert.equal(h.price.textContent, formatted('GBP', 75_000));
+  h.visibility(true);
+  assert.equal(h.intervals.size, 0);
+  h.currency('USD');
+  h.visibility(false);
+  assert.equal(h.price.textContent, formatted('USD', 100_000));
+  h.window.dispatchEvent(Object.assign(new Event('pagehide'), { persisted: true }));
+  h.currency('EUR', 'unobserved');
+  h.window.dispatchEvent(new Event('pageshow'));
+  assert.equal(h.price.textContent, formatted('EUR', 90_000));
+  assert.equal(h.intervals.size, 1);
+  h.stop();
+  h.currency('USD');
+  assert.equal(h.price.textContent, formatted('EUR', 90_000));
+  assert.equal(h.intervals.size, 0);
+});
+
+test('video card shows unavailable FX without relabeling USD and restores USD immediately', async () => {
+  const h = harness(false, 'en', 'EUR', true);
+  h.intersect(true);
+  h.subscriptions[0].onPrice({ time: Date.now(), price: 100_000 });
+  h.subscriptions[0].onState('live');
+  await setImmediate();
+  assert.equal(h.price.textContent, '—');
+  assert.equal(h.status.textContent, 'Unavailable');
+  assert.equal(h.price.attributes.get('aria-label'), 'Unavailable');
+  h.currency('USD');
+  assert.equal(h.price.textContent, '$100,000');
+  assert.equal(h.status.textContent, 'Live');
   h.stop();
 });
 

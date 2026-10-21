@@ -107,6 +107,7 @@ function harness(hidden = false, fullscreenEnabled = false, options: { locale?: 
     candleWindow: () => undefined,
     readRangePreferences: () => ({ selected: 'all', counts: {} }),
     readDisplayPreferences: () => ({ currency: options.currency ?? 'USD', scale: 'logarithmic' }),
+    subscribeCurrencyPreference: () => () => {},
     createRangePill: () => ({ select() {}, destroy() {} }),
     createCurrencyPicker: () => ({ close() {}, destroy() { pickerDestroyed = true; } }),
     isCurrency: (value: string) => ['USD', 'EUR', 'GBP', 'AUD', 'CAD', 'CHF', 'JPY'].includes(value),

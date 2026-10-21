@@ -174,7 +174,7 @@ function page(stored: Map<string, string>, locale = 'en', blocked: 'read' | 'wri
     return event;
   }
   return {
-    root, slots, pill, requests, document, scaleOptions, currencyOptions, currencySelect, currencyTrigger, currencyList, releaseRequests,
+    root, slots, pill, requests, document, window, scaleOptions, currencyOptions, currencySelect, currencyTrigger, currencyList, releaseRequests,
     priceCurrencyPicker, priceCurrencyTrigger, priceCurrencyList, priceCurrencyOptions,
     currency(code: string) {
       if (currencyTrigger.attributes['aria-expanded'] !== 'true') currencyTrigger.dispatchEvent(new Event('click'));
@@ -405,6 +405,38 @@ test('the price currency picker shares selection with settings and dismisses wit
   p.close();
   p.priceCurrencyTrigger.dispatchEvent(new Event('click'));
   assert.equal(p.priceCurrencyList.hidden, true, 'page teardown removes the price picker listeners');
+});
+
+test('open charts follow currency changes from other tabs and keep both pickers synchronized', async () => {
+  const storage = new Map<string, string>();
+  const first = page(storage);
+  const second = page(storage, 'es');
+  await Promise.all([first.ready(), second.ready()]);
+  first.currency('EUR');
+  const saved = storage.get('bitcoin-tracker-display');
+  second.window.dispatchEvent(Object.assign(new Event('storage'), { key: 'bitcoin-tracker-display' }));
+  await second.ready();
+  assert.equal(second.currencySelect.value, 'EUR');
+  assert.match(second.root.querySelector('[data-price]').textContent, /€/);
+  for (const options of [second.currencyOptions, second.priceCurrencyOptions]) {
+    assert.equal(options.find(option => option.dataset.currencyOption === 'EUR')!.attributes['aria-selected'], 'true');
+    assert.equal(options.find(option => option.dataset.currencyOption === 'USD')!.attributes['aria-selected'], 'false');
+  }
+  assert.equal(storage.get('bitcoin-tracker-display'), saved, 'external currency changes do not write preferences back');
+  second.scale('linear');
+  assert.equal(JSON.parse(storage.get('bitcoin-tracker-display')!).currency, 'EUR');
+  second.document.hidden = true;
+  first.currency('GBP');
+  second.document.hidden = false;
+  second.document.dispatchEvent(new Event('visibilitychange'));
+  await second.ready();
+  assert.equal(second.currencySelect.value, 'GBP');
+  assert.match(second.root.querySelector('[data-price]').textContent, /£/);
+  first.close();
+  second.close();
+  storage.set('bitcoin-tracker-display', '{"currency":"USD"}');
+  second.window.dispatchEvent(Object.assign(new Event('storage'), { key: 'bitcoin-tracker-display' }));
+  assert.equal(second.currencySelect.value, 'GBP', 'page teardown removes the global currency subscription');
 });
 
 test('FX failures never relabel USD prices, and switching back to USD restores the chart', async () => {

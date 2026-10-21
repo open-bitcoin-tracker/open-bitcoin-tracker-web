@@ -4,6 +4,7 @@ import ts from 'typescript';
 import { readFileSync } from 'node:fs';
 import { runInNewContext } from 'node:vm';
 import { setImmediate } from 'node:timers/promises';
+import { browserModule } from './support/browser-module.ts';
 import * as chart from '../src/lib/bitcoin-chart.ts';
 import * as preview from '../src/lib/bitcoin-preview.ts';
 import { DAY_MS, type HistoryPoint } from '../src/lib/bitcoin-chart.ts';
@@ -53,10 +54,14 @@ const script = ts.transpileModule(readFileSync(new URL('../src/scripts/bitcoin-p
   compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 },
 }).outputText;
 
-function harness() {
+function harness(currency = 'USD', fxFailure = false, online = true) {
   const document = Object.assign(new EventTarget(), { hidden: false });
-  const window = new EventTarget();
-  const navigator = { onLine: true };
+  const storage = new Map([['bitcoin-tracker-display', JSON.stringify({ currency, scale: 'linear' })]]);
+  const window = Object.assign(new EventTarget(), { localStorage: { getItem: (key: string) => storage.get(key) ?? null } });
+  const preferences = browserModule('lib/bitcoin-display-preferences', { window, document, Event }, { isCurrency: (code: string) => ['USD', 'EUR', 'GBP'].includes(code) });
+  const rates = new Map<string, number>();
+  let historyCurrency: string | undefined;
+  const navigator = { onLine: online };
   const now = 20_000 * DAY_MS + 3600_000;
   class Element {
     textContent = 'initial'; hidden = true; title = '';
@@ -78,6 +83,14 @@ function harness() {
     require(name: string) {
       if (name.endsWith('bitcoin-chart')) return chart;
       if (name.endsWith('bitcoin-preview')) return preview;
+      if (name.endsWith('bitcoin-display-preferences')) return preferences;
+      if (name.endsWith('bitcoin-currency')) return { CurrencyRates: class {
+        needsRefresh(code: string) { return code !== 'USD' && !rates.has(code); }
+        current(code: string) { const rate = code === 'USD' ? 1 : rates.get(code); return rate ? { rate } : undefined; }
+        convert(points: HistoryPoint[], code: string) { return code === 'USD' ? points : historyCurrency === code ? points.map(point => ({ ...point, price: point.price * rates.get(code)! })) : undefined; }
+        async refreshLatest() { if (fxFailure) throw Error('No rates'); rates.set('EUR', .9); rates.set('GBP', .75); }
+        async refreshHistory(code: string) { if (fxFailure) throw Error('No history'); historyCurrency = code; }
+      } };
       return { parseCandles: (result: { points: HistoryPoint[] }) => result.points };
     },
     fetch: (url: string, options: { signal: AbortSignal }) => new Promise(resolve => requests.push({ url, signal: options.signal, resolve })),
@@ -90,7 +103,12 @@ function harness() {
     await setImmediate();
   };
   const visibility = (hidden: boolean) => { document.hidden = hidden; document.dispatchEvent(new Event('visibilitychange')); };
-  return { document, window, navigator, elements, requests, intervals, stop, respond, visibility, now };
+  return { document, window, navigator, elements, requests, intervals, stop, respond, visibility, now,
+    currency(code: string, event = 'storage') {
+      storage.set('bitcoin-tracker-display', JSON.stringify({ currency: code, scale: 'linear' }));
+      window.dispatchEvent(Object.assign(new Event(event), { key: 'bitcoin-tracker-display' }));
+    },
+  };
 }
 
 test('homepage polls only ticker/recent daily data, retains failures and throttles history', async () => {
@@ -123,7 +141,7 @@ test('hidden/offline pages cancel requests, reject late results and resume after
   h.visibility(false);
   assert.equal(h.requests.length, 4);
   await h.respond(0, { XBTUSD: { c: ['99999'] } });
-  assert.equal(h.elements.get('[data-preview-price]')!.textContent, 'initial');
+  assert.equal(h.elements.get('[data-preview-price]')!.textContent, '$100');
   await h.respond(1, { points: [] });
   await h.respond(2, { XBTUSD: { c: ['84000'] } });
   await h.respond(3, { points: [] }, false);
@@ -140,4 +158,60 @@ test('hidden/offline pages cancel requests, reject late results and resume after
   h.navigator.onLine = true;
   h.window.dispatchEvent(new Event('online'));
   assert.equal(h.intervals.size, 0);
+});
+
+test('homepage chart restores global currency and follows cross-tab changes and browser back', async () => {
+  const h = harness('EUR');
+  assert.equal(h.elements.get('[data-preview-price]')!.textContent, '—');
+  await h.respond(0, { XBTUSD: { c: ['100000'] } });
+  await h.respond(1, { points: [19_998, 19_999, 20_000].map(day => ({ time: day * DAY_MS, price: 80000 })) });
+  assert.equal(h.elements.get('[data-preview-price]')!.textContent, '€90,000');
+  assert.match(h.elements.get('[data-preview-price]')!.attributes.get('aria-label')!, /EUR/);
+  assert.ok(h.elements.get('[data-preview-line]')!.attributes.get('d'));
+  h.currency('GBP');
+  await setImmediate();
+  assert.equal(h.elements.get('[data-preview-price]')!.textContent, '£75,000');
+  h.window.dispatchEvent(Object.assign(new Event('pagehide'), { persisted: true }));
+  h.currency('USD', 'unobserved');
+  h.window.dispatchEvent(new Event('pageshow'));
+  assert.equal(h.elements.get('[data-preview-price]')!.textContent, '$100,000');
+  h.stop();
+  h.currency('EUR');
+  assert.equal(h.elements.get('[data-preview-price]')!.textContent, '$100,000');
+});
+
+test('homepage never displays USD prices or history as a selected currency when FX fails', async () => {
+  const h = harness('EUR', true);
+  await h.respond(0, { XBTUSD: { c: ['100000'] } });
+  assert.equal(h.elements.get('[data-preview-price]')!.textContent, '—');
+  assert.equal(h.elements.get('[data-preview-line]')!.attributes.get('d'), '');
+  assert.equal(h.elements.get('[data-preview-status]')!.hidden, false);
+  assert.equal(h.elements.get('[data-preview-history-status]')!.hidden, false);
+  h.currency('USD');
+  assert.equal(h.elements.get('[data-preview-price]')!.textContent, '$100,000');
+  assert.ok(h.elements.get('[data-preview-line]')!.attributes.get('d'));
+  h.stop();
+});
+
+test('offline homepage never leaves its bundled USD price under a different global currency', () => {
+  const h = harness('EUR', false, false);
+  assert.equal(h.requests.length, 0);
+  assert.equal(h.elements.get('[data-preview-price]')!.textContent, '—');
+  assert.equal(h.elements.get('[data-preview-line]')!.attributes.get('d'), '');
+  h.currency('USD');
+  assert.equal(h.elements.get('[data-preview-price]')!.textContent, '$100');
+  assert.equal(h.elements.get('[data-preview-status]')!.hidden, false);
+  h.stop();
+});
+
+test('currency changes preserve the homepage history warning after a failed history request', async () => {
+  const h = harness('EUR');
+  await h.respond(0, { XBTUSD: { c: ['100000'] } });
+  await h.respond(1, {}, false);
+  assert.equal(h.elements.get('[data-preview-history-status]')!.hidden, false);
+  h.currency('GBP');
+  await setImmediate();
+  assert.equal(h.elements.get('[data-preview-price]')!.textContent, '£75,000');
+  assert.equal(h.elements.get('[data-preview-history-status]')!.hidden, false);
+  h.stop();
 });

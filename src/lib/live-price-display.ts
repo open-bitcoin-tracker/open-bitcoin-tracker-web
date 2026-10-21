@@ -1,5 +1,5 @@
 import { CurrencyRates, isCurrency, type Currency } from './bitcoin-currency';
-import { readDisplayPreferences, saveDisplayPreferences } from './bitcoin-display-preferences';
+import { readDisplayPreferences, saveDisplayPreferences, subscribeCurrencyPreference } from './bitcoin-display-preferences';
 import { subscribeBitcoinPrice, type PriceFeedState } from './bitcoin-live-price';
 import type { HistoryPoint } from './bitcoin-chart';
 import type { PartyCopy } from '../i18n/party';
@@ -56,15 +56,24 @@ export function createLivePriceDisplay(root: HTMLElement, { copy: t, locale, onP
 
   currencySelect.value = currency;
   currencySelect.disabled = false;
-  const onCurrencyChange = () => {
-    if (!isCurrency(currencySelect.value)) return;
-    currency = currencySelect.value;
+  const applyCurrency = (next: Currency) => {
+    currency = next;
+    currencySelect.value = next;
     money = formatMoney();
-    saveDisplayPreferences({ ...readDisplayPreferences(), currency });
     paintPrice();
     void refreshRates();
   };
+  const onCurrencyChange = () => {
+    if (!isCurrency(currencySelect.value) || currencySelect.value === currency) return;
+    applyCurrency(currencySelect.value);
+    saveDisplayPreferences({ ...readDisplayPreferences(), currency });
+  };
   currencySelect.addEventListener('change', onCurrencyChange);
+  const stopCurrency = subscribeCurrencyPreference(next => {
+    if (next === currency) return;
+    applyCurrency(next);
+    currencySelect.dispatchEvent(new Event('change', { bubbles: true }));
+  });
   const stopPrice = subscribeBitcoinPrice({
     onPrice(point) { livePoint = point; paintPrice(); },
     onState(value) { state = value; paintPrice(); },
@@ -92,6 +101,7 @@ export function createLivePriceDisplay(root: HTMLElement, { copy: t, locale, onP
     destroy() {
       if (destroyed) return;
       destroyed = true;
+      stopCurrency();
       stopPrice();
       if (rateRefresh !== undefined) clearInterval(rateRefresh);
       currencySelect.removeEventListener('change', onCurrencyChange);
