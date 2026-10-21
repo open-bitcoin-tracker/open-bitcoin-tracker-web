@@ -13,6 +13,8 @@ import type { VideoCopy } from '../i18n/video';
 
 const VIDEO_SELECTION_KEY = 'obt-video-selection';
 const VIDEO_PLAYBACK_KEY = 'obt-video-playback';
+const SHARE_CONFIRMATION_DELAY = 2000;
+const SHARE_CONFIRMATION_FADE = 250;
 
 const root = document.querySelector<HTMLElement>('[data-video-mode]');
 if (root) startVideoMode(root);
@@ -73,6 +75,7 @@ function startVideoMode(root: HTMLElement) {
   let duration = 0;
   let progressRefresh: ReturnType<typeof setInterval> | undefined;
   let pickerCloseTimer: ReturnType<typeof setTimeout> | undefined;
+  let shareStatusTimer: ReturnType<typeof setTimeout> | undefined;
   let restorePickerFocus = false;
   let pendingVideo: YouTubeVideo | undefined;
   let recentOnPlayback: string | undefined;
@@ -115,7 +118,8 @@ function startVideoMode(root: HTMLElement) {
     const hash = sharedHash();
     if (!hash) return;
     if (window.location.hash === hash) return;
-    shareStatus.hidden = shareFallback.hidden = true;
+    hideShareStatus();
+    shareFallback.hidden = true;
     updateIdle();
     try { window.history.replaceState(window.history.state, '', `${window.location.pathname}${window.location.search}${hash}`); }
     catch {}
@@ -126,18 +130,37 @@ function startVideoMode(root: HTMLElement) {
   const onSharedUrlChange = () => { if (!destroyed && readVideoSetup(window.location.hash)) window.location.reload(); };
   window.addEventListener('hashchange', onSharedUrlChange);
 
+  function hideShareStatus() {
+    if (shareStatusTimer !== undefined) clearTimeout(shareStatusTimer);
+    shareStatusTimer = undefined;
+    shareStatus.hidden = true;
+    shareStatus.removeAttribute('data-fading');
+    shareStatus.textContent = '';
+  }
+
+  function showShareStatus() {
+    shareStatus.textContent = t.linkCopied;
+    shareStatus.hidden = false;
+    shareStatusTimer = setTimeout(() => {
+      shareStatusTimer = undefined;
+      if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) { hideShareStatus(); return; }
+      shareStatus.setAttribute('data-fading', '');
+      shareStatusTimer = setTimeout(hideShareStatus, SHARE_CONFIRMATION_FADE);
+    }, SHARE_CONFIRMATION_DELAY);
+  }
+
   async function copySetupLink() {
     if (shareButton.disabled) return;
     const hash = sharedHash();
     if (!hash) return;
     const url = `${window.location.origin}${window.location.pathname}${window.location.search}${hash}`;
     shareButton.disabled = true;
-    shareStatus.hidden = shareFallback.hidden = true;
+    hideShareStatus();
+    shareFallback.hidden = true;
     try {
       await navigator.clipboard.writeText(url);
       if (destroyed) return;
-      shareStatus.textContent = t.linkCopied;
-      shareStatus.hidden = false;
+      showShareStatus();
     } catch {
       if (destroyed) return;
       shareUrl.value = url;
@@ -583,6 +606,7 @@ function startVideoMode(root: HTMLElement) {
   window.addEventListener('pagehide', () => {
     if (destroyed) return;
     destroyed = true;
+    hideShareStatus();
     root.removeEventListener('pricelayoutchange', syncSharedUrl);
     root.removeEventListener('pricestylechange', syncSharedUrl);
     currencySelect.removeEventListener('change', syncSharedUrl);

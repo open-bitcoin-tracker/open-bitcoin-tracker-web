@@ -225,6 +225,7 @@ function harness(options: Options = {}) {
   const intervals = new Map<number, () => void>();
   const intervalDurations = new Map<number, number>();
   const timeouts = new Map<number, () => void>();
+  const timeoutDurations = new Map<number, number>();
   let timerId = 0;
   let feed: { onPrice(point: HistoryPoint): void; onState(state: PriceFeedState): void };
   let feedStops = 0;
@@ -356,8 +357,8 @@ function harness(options: Options = {}) {
     require: () => modules, exports: {}, document, window, navigator, Intl, URLSearchParams,
     setInterval: (callback: () => void, duration: number) => { intervals.set(++timerId, callback); intervalDurations.set(timerId, duration); return timerId; },
     clearInterval: (id: number) => { intervals.delete(id); intervalDurations.delete(id); },
-    setTimeout: (callback: () => void) => { timeouts.set(++timerId, callback); return timerId; },
-    clearTimeout: (id: number) => { timeouts.delete(id); },
+    setTimeout: (callback: () => void, duration: number) => { timeouts.set(++timerId, callback); timeoutDurations.set(timerId, duration); return timerId; },
+    clearTimeout: (id: number) => { timeouts.delete(id); timeoutDurations.delete(id); },
   };
   Object.assign(modules, browserModule('lib/live-price-display', globals, modules));
   Object.assign(modules, browserModule('lib/video-share', globals, modules));
@@ -368,6 +369,15 @@ function harness(options: Options = {}) {
     clipboardWrites,
     async finishCopy() { finishCopy?.(); await setImmediate(); },
     sharedUrls,
+    timeoutCount: (duration: number) => [...timeoutDurations.values()].filter(value => value === duration).length,
+    runTimeout(duration: number) {
+      for (const [id, callback] of [...timeouts]) {
+        if (timeoutDurations.get(id) !== duration) continue;
+        timeouts.delete(id);
+        timeoutDurations.delete(id);
+        callback();
+      }
+    },
     layoutState: () => layoutState,
     styleState: () => styleState,
     changeLayout(next: typeof layoutState) { layoutState = { ...next }; root.dispatchEvent(new Event('pricelayoutchange')); },
@@ -2066,6 +2076,63 @@ test('Share setup copies the complete current setup and confirms success without
   h.close();
 });
 
+test('copy confirmation fades after two seconds and is removed after the fade', async () => {
+  const h = harness({ url: `https://openbitcointracker.com/video-mode/${videoSetupHash(sharedSetup)}` });
+  h.click('[data-share-setup]');
+  await setImmediate();
+  const status = h.control('[data-share-status]');
+  assert.equal(status.hidden, false);
+  assert.equal(status.hasAttribute('data-fading'), false);
+  assert.equal(h.timeoutCount(2000), 1);
+  h.runTimeout(2000);
+  assert.equal(status.hidden, false);
+  assert.equal(status.hasAttribute('data-fading'), true);
+  assert.equal(h.timeoutCount(250), 1);
+  h.runTimeout(250);
+  assert.equal(status.hidden, true);
+  assert.equal(status.textContent, '');
+  assert.equal(status.hasAttribute('data-fading'), false);
+  assert.equal(h.timeouts.size, 0);
+  h.close();
+});
+
+test('re-copying restarts the confirmation and settings changes or teardown cancel its timers', async () => {
+  const h = harness({ url: `https://openbitcointracker.com/video-mode/${videoSetupHash(sharedSetup)}` });
+  const status = h.control('[data-share-status]');
+  h.click('[data-share-setup]');
+  await setImmediate();
+  h.runTimeout(2000);
+  h.click('[data-share-setup]');
+  await setImmediate();
+  assert.equal(status.hidden, false);
+  assert.equal(status.hasAttribute('data-fading'), false);
+  assert.equal(h.timeoutCount(2000), 1);
+  assert.equal(h.timeoutCount(250), 0);
+  h.runTimeout(250);
+  assert.equal(status.hidden, false, 'the previous fade must not hide a new confirmation');
+  h.runTimeout(2000);
+  h.changeLayout({ ...sharedSetup.layout, x: 10 });
+  assert.equal(status.hidden, true);
+  assert.equal(h.timeouts.size, 0);
+  h.click('[data-share-setup]');
+  await setImmediate();
+  assert.equal(h.timeoutCount(2000), 1);
+  h.close();
+  assert.equal(h.timeouts.size, 0);
+  assert.equal(status.hidden, true);
+});
+
+test('reduced motion dismisses the confirmation after the delay without a fade', async () => {
+  const h = harness({ reducedMotion: true, url: `https://openbitcointracker.com/video-mode/${videoSetupHash(sharedSetup)}` });
+  h.click('[data-share-setup]');
+  await setImmediate();
+  h.runTimeout(2000);
+  assert.equal(h.control('[data-share-status]').hidden, true);
+  assert.equal(h.control('[data-share-status]').hasAttribute('data-fading'), false);
+  assert.equal(h.timeouts.size, 0);
+  h.close();
+});
+
 test('denied or missing clipboard access exposes a selected link and keeps controls visible for manual copying', async () => {
   for (const clipboard of ['denied', 'unavailable'] as const) {
     const h = harness({ clipboard, url: `https://openbitcointracker.com/video-mode/${videoSetupHash(sharedSetup)}` });
@@ -2079,6 +2146,7 @@ test('denied or missing clipboard access exposes a selected link and keeps contr
     assert.equal(input.selectCount, 1);
     assert.equal(h.control('[data-share-setup]').disabled, false);
     assert.equal(h.idleEnabled(), false);
+    assert.equal(h.timeouts.size, 0, 'manual copying must not have an expiry timer');
     h.changeLayout({ ...sharedSetup.layout, x: 40 });
     assert.equal(h.control('[data-share-fallback]').hidden, true);
     assert.equal(h.idleEnabled(), true);
