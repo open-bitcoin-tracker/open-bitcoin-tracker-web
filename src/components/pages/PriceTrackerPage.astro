@@ -25,6 +25,8 @@ const pageTitle = `${t.priceChart} — Open Bitcoin Tracker`;
   :global(.tracker-page .nav-menu-trigger), :global(.tracker-page .chart-controls) { transition: opacity 250ms ease; }
   :global(.tracker-page:has([data-fullscreen-idle]) .nav-menu-trigger),
   :global(.tracker-page:has([data-fullscreen-idle]) .chart-controls) { opacity: 0; pointer-events: none; }
+  :global(html:has(.tracker-page [data-fullscreen-idle])),
+  :global(html:has(.tracker-page [data-fullscreen-idle]) *) { cursor: none !important; }
   @media (prefers-reduced-motion: reduce) {
     :global(.tracker-page .nav-menu-trigger), :global(.tracker-page .chart-controls) { transition: none; }
   }
