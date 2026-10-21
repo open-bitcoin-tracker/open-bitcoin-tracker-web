@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs';
 import { runInNewContext } from 'node:vm';
 import test from 'node:test';
 import ts from 'typescript';
-import type { createVideoPriceLayout } from '../src/lib/video-price-layout.ts';
+import type { createVideoPriceLayout, VideoPriceLayoutState } from '../src/lib/video-price-layout.ts';
 
 const script = ts.transpileModule(readFileSync(new URL('../src/lib/video-price-layout.ts', import.meta.url), 'utf8'), {
   compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 },
@@ -11,7 +11,7 @@ const script = ts.transpileModule(readFileSync(new URL('../src/lib/video-price-l
 const storageKey = 'obt-video-price-layout';
 type Corner = 'nw' | 'ne' | 'sw' | 'se';
 interface Rect { left: number; top: number; width: number; height: number }
-interface Options { saved?: string; blockedStorage?: boolean; viewport?: Partial<Rect>; width?: number; height?: number; observer?: boolean; editingMenu?: boolean }
+interface Options { saved?: string; blockedStorage?: boolean; viewport?: Partial<Rect>; width?: number; height?: number; observer?: boolean; editingMenu?: boolean; initial?: VideoPriceLayoutState }
 const close = (actual: number, expected: number) => assert.ok(Math.abs(actual - expected) < .001, `${actual} should equal ${expected}`);
 
 function harness(options: Options = {}) {
@@ -139,7 +139,7 @@ function harness(options: Options = {}) {
   root.addEventListener('pricelayoutchange', () => { notifications++; });
   const module: { createVideoPriceLayout?: typeof createVideoPriceLayout } = {};
   runInNewContext(script, { exports: module, window, document, Event, ResizeObserver: options.observer === false ? undefined : Observer });
-  const layout = module.createVideoPriceLayout!(root as unknown as HTMLElement);
+  const layout = module.createVideoPriceLayout!(root as unknown as HTMLElement, options.initial);
   return {
     root, stage, position, style, menu, reset, handles, document, window, outside, saved, layout, viewport, observed, timers,
     notifications: () => notifications,
@@ -206,6 +206,26 @@ test('price layout stays centered and restores validated bounded preferences ind
   blocked.key(blocked.position, 'ArrowRight');
   close(blocked.left(), 416);
   blocked.layout.destroy();
+});
+
+test('shared positioning overrides storage without saving on arrival and stays relative across screen sizes', () => {
+  const initial = { x: 20, y: 75, size: 150 };
+  for (const blockedStorage of [false, true]) {
+    const h = harness({ blockedStorage, initial, saved: JSON.stringify({ version: 1, x: 90, y: 10, size: 25 }) });
+    assert.equal(JSON.stringify(h.layout.getState()), JSON.stringify(initial));
+    assert.equal(h.scale(), 1.5);
+    close(h.left(), 140);
+    close(h.top(), 337.5);
+    assert.equal(h.saved.length, 0);
+    h.viewport.width = 320;
+    h.viewport.height = 180;
+    h.layout.refresh();
+    assert.equal(JSON.stringify(h.layout.getState()), JSON.stringify(initial));
+    assert.ok(h.position.getBoundingClientRect().width <= 320);
+    h.key(h.position, 'ArrowRight');
+    assert.equal(h.layout.getState().x, 22);
+    h.layout.destroy();
+  }
 });
 
 test('the frame follows price hover rather than general page UI visibility', () => {

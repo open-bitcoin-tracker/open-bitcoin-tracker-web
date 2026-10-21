@@ -3,13 +3,13 @@ import { readFileSync } from 'node:fs';
 import { runInNewContext } from 'node:vm';
 import test from 'node:test';
 import ts from 'typescript';
-import type { createVideoPriceStyle } from '../src/lib/video-price-style.ts';
+import type { createVideoPriceStyle, VideoPriceStyleState } from '../src/lib/video-price-style.ts';
 
 const script = ts.transpileModule(readFileSync(new URL('../src/lib/video-price-style.ts', import.meta.url), 'utf8'), {
   compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 },
 }).outputText;
 
-function harness({ saved, blocked = false }: { saved?: string; blocked?: boolean } = {}) {
+function harness({ saved, blocked = false, initial }: { saved?: string; blocked?: boolean; initial?: VideoPriceStyleState } = {}) {
   class Element extends EventTarget {
     attributes = new Map<string, string>();
     dataset: Record<string, string> = {};
@@ -79,7 +79,7 @@ function harness({ saved, blocked = false }: { saved?: string; blocked?: boolean
   });
   const module: { createVideoPriceStyle?: typeof createVideoPriceStyle } = {};
   runInNewContext(script, { exports: module, window, document, Event });
-  const style = module.createVideoPriceStyle!(root as unknown as HTMLElement, () => { refreshes++; });
+  const style = module.createVideoPriceStyle!(root as unknown as HTMLElement, () => { refreshes++; }, initial);
   return {
     root, wrapper, position, window, settingsTrigger, trigger, panel, menu, colour, font, stroke, strokeWidth, strokeColour, strokeOptions, strokeValue, swatches, document, style,
     writes: () => writes, refreshes: () => refreshes, toggles: () => toggles,
@@ -101,6 +101,27 @@ function harness({ saved, blocked = false }: { saved?: string; blocked?: boolean
     },
   };
 }
+
+test('shared styling overrides storage without saving on arrival and reports subsequent edits', () => {
+  const initial = { colour: '#90c7ff', font: 'digital', stroke: true, strokeWidth: 3.5, strokeColour: '#123456' };
+  for (const blocked of [false, true]) {
+    const h = harness({ blocked, initial, saved: JSON.stringify({ version: 1, colour: '#ff981e', font: 'mono' }) });
+    assert.equal(JSON.stringify(h.style.getState()), JSON.stringify(initial));
+    assert.equal(h.colour.value, initial.colour);
+    assert.equal(h.font.value, initial.font);
+    assert.equal(h.stroke.checked, true);
+    assert.equal(h.writes(), 0);
+    let changes = 0;
+    h.root.addEventListener('pricestylechange', () => { changes++; });
+    h.changeColour('#ffffff');
+    assert.equal(h.style.getState().colour, '#ffffff');
+    assert.equal(changes, 1);
+    h.restore();
+    assert.equal(h.style.getState().font, 'modern');
+    assert.equal(changes, 2);
+    h.style.destroy();
+  }
+});
 
 test('style controls preview choices immediately, save them, and restore them on a fresh page', () => {
   const h = harness();

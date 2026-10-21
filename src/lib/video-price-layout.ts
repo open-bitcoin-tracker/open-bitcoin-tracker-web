@@ -6,6 +6,7 @@ const SNAP_DISTANCE = 8;
 const SNAP_RELEASE_DISTANCE = 16;
 const CLICK_DRAG_DISTANCE = 4;
 const DEFAULTS = { version: 1, x: 50, y: 50, size: 100 };
+export type VideoPriceLayoutState = Omit<typeof DEFAULTS, 'version'>;
 const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value));
 type Corner = 'nw' | 'ne' | 'sw' | 'se';
 type Resize = { corner: Corner; centered: boolean; width: number; height: number; anchorX: number; anchorY: number; effectiveSize: number };
@@ -15,7 +16,7 @@ type Operation = { pointerId: number; capture: HTMLElement; clientX: number; cli
 );
 
 /** Move and resize the live price without changing playback or currency settings. */
-export function createVideoPriceLayout(root: HTMLElement) {
+export function createVideoPriceLayout(root: HTMLElement, initial?: VideoPriceLayoutState) {
   const stage = root.querySelector<HTMLElement>('[data-price-stage]')!;
   const position = root.querySelector<HTMLElement>('[data-price-position]')!;
   const styleControls = root.querySelector<HTMLElement>('[data-price-style]')!;
@@ -44,7 +45,7 @@ export function createVideoPriceLayout(root: HTMLElement) {
   let snappedY = false;
 
   try {
-    const saved = JSON.parse(window.localStorage.getItem(STORAGE_KEY) ?? 'null');
+    const saved = initial ? { ...initial, version: 1 } : JSON.parse(window.localStorage.getItem(STORAGE_KEY) ?? 'null');
     if (saved?.version === 1 && ['x', 'y', 'size'].every(axis => typeof saved[axis] === 'number' && Number.isFinite(saved[axis]))) {
       state = { version: 1, x: clamp(saved.x, 0, 100), y: clamp(saved.y, 0, 100), size: Math.max(25, saved.size) };
     }
@@ -388,6 +389,7 @@ export function createVideoPriceLayout(root: HTMLElement) {
 
   return {
     refresh,
+    getState(): VideoPriceLayoutState { return { x: state.x, y: state.y, size: state.size }; },
     destroy() {
       if (destroyed) return;
       finish(false);

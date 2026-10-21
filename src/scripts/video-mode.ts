@@ -6,6 +6,8 @@ import { createVideoPriceLayout } from '../lib/video-price-layout';
 import { createVideoPriceStyle } from '../lib/video-price-style';
 import { createVideoPickerTabs } from '../lib/video-picker-tabs';
 import { videoSuggestions } from '../lib/video-suggestions';
+import { readVideoSetup, videoSetupHash } from '../lib/video-share';
+import { isCurrency } from '../lib/bitcoin-currency';
 import type { PartyCopy } from '../i18n/party';
 import type { VideoCopy } from '../i18n/video';
 
@@ -18,10 +20,11 @@ if (root) startVideoMode(root);
 function startVideoMode(root: HTMLElement) {
   const t: PartyCopy & VideoCopy = JSON.parse(root.dataset.copy!);
   const locale = root.dataset.locale || 'en';
+  const sharedSetup = readVideoSetup(window.location.hash);
   let destroyed = false;
   let priceLayout: ReturnType<typeof createVideoPriceLayout> | undefined;
   const currencySelect = root.querySelector<HTMLSelectElement>('[data-currency]')!;
-  const priceDisplay = createLivePriceDisplay(root, { copy: t, locale, onPaint: () => priceLayout?.refresh() });
+  const priceDisplay = createLivePriceDisplay(root, { copy: t, locale, initialCurrency: sharedSetup?.currency, onPaint: () => priceLayout?.refresh() });
   const currencyPicker = createCurrencyPicker(root, currencySelect, { closeOnSelect: false });
   const dismissCurrency = () => currencyPicker.close();
   const onSettingsToggle = () => { if (!root.hasAttribute('data-price-settings-open')) currencyPicker.close(); };
@@ -29,8 +32,8 @@ function startVideoMode(root: HTMLElement) {
   const onStyleToggle = () => { if (root.hasAttribute('data-price-style-open')) currencyPicker.close(); };
   root.addEventListener('pricestyletoggle', onStyleToggle);
   root.addEventListener('videouidismiss', dismissCurrency);
-  priceLayout = createVideoPriceLayout(root);
-  const priceStyle = createVideoPriceStyle(root, () => priceLayout?.refresh());
+  priceLayout = createVideoPriceLayout(root, sharedSetup?.layout);
+  const priceStyle = createVideoPriceStyle(root, () => priceLayout?.refresh(), sharedSetup?.style);
 
   const form = root.querySelector<HTMLFormElement>('[data-video-form]')!;
   const picker = root.querySelector<HTMLDialogElement>('[data-video-picker]')!;
@@ -44,6 +47,10 @@ function startVideoMode(root: HTMLElement) {
   const muteButton = root.querySelector<HTMLButtonElement>('[data-mute]')!;
   const volumeInput = root.querySelector<HTMLInputElement>('[data-video-volume]')!;
   const changeButton = root.querySelector<HTMLButtonElement>('[data-change-video]')!;
+  const shareButton = root.querySelector<HTMLButtonElement>('[data-share-setup]')!;
+  const shareStatus = root.querySelector<HTMLElement>('[data-share-status]')!;
+  const shareFallback = root.querySelector<HTMLElement>('[data-share-fallback]')!;
+  const shareUrl = root.querySelector<HTMLInputElement>('[data-share-url]')!;
   const seek = root.querySelector<HTMLInputElement>('[data-video-seek]')!;
   const currentTime = root.querySelector<HTMLElement>('[data-video-current]')!;
   const totalTime = root.querySelector<HTMLElement>('[data-video-duration]')!;
@@ -69,6 +76,7 @@ function startVideoMode(root: HTMLElement) {
   let restorePickerFocus = false;
   let pendingVideo: YouTubeVideo | undefined;
   let recentOnPlayback: string | undefined;
+  let selectedVideo: YouTubeVideo | undefined;
 
   try {
     const saved = JSON.parse(window.localStorage.getItem(VIDEO_PLAYBACK_KEY) ?? 'null');
@@ -84,13 +92,70 @@ function startVideoMode(root: HTMLElement) {
       looping = saved.looping === true;
     }
   } catch { /* Keep playback usable when saved settings are malformed or storage is blocked. */ }
+  if (sharedSetup) {
+    ({ volume, muted, looping } = sharedSetup.playback);
+    lastAudibleVolume = volume > 0 ? volume : 100;
+    muted ||= volume === 0;
+  }
   const mobileAudio = window.matchMedia('(hover: none) and (pointer: coarse)');
   let phoneAudio = mobileAudio.matches;
   let desktopAudio = { volume, muted, lastAudibleVolume };
   if (phoneAudio) { volume = lastAudibleVolume = 100; muted = false; }
 
+  function sharedHash() {
+    if (destroyed || !selectedVideo || !priceLayout || !isCurrency(currencySelect.value)) return;
+    const audio = phoneAudio ? desktopAudio : { volume, muted };
+    return videoSetupHash({
+      video: selectedVideo, currency: currencySelect.value,
+      layout: priceLayout.getState(), style: priceStyle.getState(),
+      playback: { ...audio, looping },
+    });
+  }
+  function syncSharedUrl() {
+    const hash = sharedHash();
+    if (!hash) return;
+    if (window.location.hash === hash) return;
+    shareStatus.hidden = shareFallback.hidden = true;
+    updateIdle();
+    try { window.history.replaceState(window.history.state, '', `${window.location.pathname}${window.location.search}${hash}`); }
+    catch {}
+  }
+  root.addEventListener('pricelayoutchange', syncSharedUrl);
+  root.addEventListener('pricestylechange', syncSharedUrl);
+  currencySelect.addEventListener('change', syncSharedUrl);
+  const onSharedUrlChange = () => { if (!destroyed && readVideoSetup(window.location.hash)) window.location.reload(); };
+  window.addEventListener('hashchange', onSharedUrlChange);
+
+  async function copySetupLink() {
+    if (shareButton.disabled) return;
+    const hash = sharedHash();
+    if (!hash) return;
+    const url = `${window.location.origin}${window.location.pathname}${window.location.search}${hash}`;
+    shareButton.disabled = true;
+    shareStatus.hidden = shareFallback.hidden = true;
+    try {
+      await navigator.clipboard.writeText(url);
+      if (destroyed) return;
+      shareStatus.textContent = t.linkCopied;
+      shareStatus.hidden = false;
+    } catch {
+      if (destroyed) return;
+      shareUrl.value = url;
+      shareFallback.hidden = false;
+      shareUrl.focus();
+      shareUrl.select();
+    } finally {
+      if (!destroyed) {
+        shareButton.disabled = false;
+        updateIdle();
+      }
+    }
+  }
+  shareButton.addEventListener('click', copySetupLink);
+
   function savePlaybackPreferences() {
     if (destroyed) return;
+    syncSharedUrl();
     try {
       window.localStorage.setItem(VIDEO_PLAYBACK_KEY, JSON.stringify({
         version: 1, ...(phoneAudio ? desktopAudio : { volume, muted, lastAudibleVolume }), looping,
@@ -99,7 +164,7 @@ function startVideoMode(root: HTMLElement) {
   }
 
   function updateIdle() {
-    uiVisibility.setEnabled(hasVideo && !picker.open && !scrubbing && !adjustingVolume);
+    uiVisibility.setEnabled(hasVideo && !picker.open && !scrubbing && !adjustingVolume && shareFallback.hidden);
   }
 
   function showForm(show: boolean, focus = true) {
@@ -298,6 +363,8 @@ function startVideoMode(root: HTMLElement) {
 
   function loadSelectedVideo(video: YouTubeVideo, { focus = true, persist = true, remember = false, rememberOnPlayback = false } = {}) {
     if (destroyed) return;
+    selectedVideo = { ...video };
+    syncSharedUrl();
     // Store only the validated ID and requested start time, without share tracking.
     const url = `https://www.youtube.com/watch?v=${video.id}${video.startSeconds > 0 ? `&t=${video.startSeconds}s` : ''}`;
     recentOnPlayback = rememberOnPlayback ? url : undefined;
@@ -322,7 +389,7 @@ function startVideoMode(root: HTMLElement) {
     seek.value = seek.max = '0';
     seek.disabled = true;
     renderPosition(0);
-    playButton.disabled = loopButton.disabled = false;
+    playButton.disabled = loopButton.disabled = shareButton.disabled = false;
     silentVideo = videoSuggestions.some(suggestion => suggestion.id === video.id && suggestion.isSilent);
     paintAudio();
     setPlaying(false);
@@ -507,13 +574,19 @@ function startVideoMode(root: HTMLElement) {
     }
   }
   document.addEventListener('visibilitychange', onVisibility);
-  restoreSelectedVideo();
+  if (sharedSetup) loadSelectedVideo(sharedSetup.video, { focus: false, persist: false });
+  else restoreSelectedVideo();
   if (!hasVideo) showForm(true, false);
   onVisibility();
   priceDisplay.start();
   window.addEventListener('pagehide', () => {
     if (destroyed) return;
     destroyed = true;
+    root.removeEventListener('pricelayoutchange', syncSharedUrl);
+    root.removeEventListener('pricestylechange', syncSharedUrl);
+    currencySelect.removeEventListener('change', syncSharedUrl);
+    window.removeEventListener('hashchange', onSharedUrlChange);
+    shareButton.removeEventListener('click', copySetupLink);
     priceDisplay.destroy();
     currencyPicker.destroy();
     root.removeEventListener('pricesettingstoggle', onSettingsToggle);

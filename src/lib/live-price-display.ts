@@ -7,16 +7,17 @@ import type { PartyCopy } from '../i18n/party';
 type PriceCopy = Pick<PartyCopy, 'unavailable' | 'offline' | 'fxLoading' | 'fxUnavailable' | 'loadingPrice' | PriceFeedState>;
 
 /** Shared live-price presentation; charts retain their separate history/selection model. */
-export function createLivePriceDisplay(root: HTMLElement, { copy: t, locale, onPaint }: {
+export function createLivePriceDisplay(root: HTMLElement, { copy: t, locale, onPaint, initialCurrency }: {
   copy: PriceCopy;
   locale: string;
   onPaint?: (currency: Currency) => void;
+  initialCurrency?: Currency;
 }) {
   const price = root.querySelector<HTMLElement>('[data-price]')!;
   const status = root.querySelector<HTMLElement>('[data-price-status]')!;
   const currencySelect = root.querySelector<HTMLSelectElement>('[data-currency]')!;
   const rates = new CurrencyRates();
-  let currency: Currency = readDisplayPreferences().currency;
+  let currency: Currency = initialCurrency ?? readDisplayPreferences().currency;
   const formatMoney = () => new Intl.NumberFormat(locale, { style: 'currency', currency, currencyDisplay: 'narrowSymbol', useGrouping: true, minimumFractionDigits: 0, maximumFractionDigits: 0 });
   let money = formatMoney();
   let livePoint: HistoryPoint | undefined;

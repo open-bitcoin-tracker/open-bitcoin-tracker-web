@@ -13,6 +13,8 @@ import { parseYouTubeVideo } from '../src/lib/youtube-player.ts';
 import { videoSections, videoSuggestions } from '../src/lib/video-suggestions.ts';
 import { video as videoCopy } from '../src/i18n/video.ts';
 import type { createVideoPickerTabs } from '../src/lib/video-picker-tabs.ts';
+import { isColour, isFont } from '../src/lib/video-price-style.ts';
+import type { VideoSetup } from '../src/lib/video-share.ts';
 
 const script = ts.transpileModule(readFileSync(new URL('../src/scripts/video-mode.ts', import.meta.url), 'utf8'), {
   compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 },
@@ -32,12 +34,22 @@ const copy = {
   seek: 'Video progress', loop: 'Loop video', volume: 'Volume',
   playbackPosition: '{current} of {duration}',
   fullscreen: 'Fullscreen', exitFullscreen: 'Exit fullscreen', fullscreenUnavailable: 'Fullscreen unavailable',
+  shareSetup: 'Share setup', linkCopied: 'Link copied', copyLinkManually: 'Copy this link',
 };
 const firstUrl = 'https://www.youtube.com/watch?v=abcdefghijk';
 const secondUrl = 'https://youtu.be/ZYXWVUTSRQP?t=30';
 const canonicalSecondUrl = 'https://www.youtube.com/watch?v=ZYXWVUTSRQP&t=30s';
 const videoSelectionKey = 'obt-video-selection';
 const videoPlaybackKey = 'obt-video-playback';
+const { readVideoSetup, videoSetupHash } = browserModule('lib/video-share', { URLSearchParams }, {
+  isColour, isFont, isCurrency: (value: unknown) => ['USD', 'EUR', 'GBP', 'AUD', 'CAD', 'CHF', 'JPY'].includes(value as string),
+}) as typeof import('../src/lib/video-share.ts');
+const sharedSetup: VideoSetup = {
+  video: { id: 'ZYXWVUTSRQP', startSeconds: 30 }, currency: 'GBP',
+  layout: { x: 12.5, y: 86, size: 75 },
+  style: { colour: '#ff981e', font: 'bungee', stroke: true, strokeWidth: 2.5, strokeColour: '#123456' },
+  playback: { volume: 42, muted: true, looping: true },
+};
 type Video = { id: string; startSeconds: number };
 type Progress = { currentTime: number; duration: number; isLive?: boolean };
 type Captions = { enabled: boolean; available: boolean };
@@ -108,16 +120,19 @@ interface Options {
   reducedMotion?: boolean;
   realPicker?: boolean;
   storedRecents?: string;
+  url?: string;
+  blockedHistory?: boolean;
+  clipboard?: 'unavailable' | 'denied' | 'pending';
 }
 
 function harness(options: Options = {}) {
   const root = new Control();
   Object.assign(root.querySelector('[data-video-card-template]'), videoCardTemplate(Control));
   root.dataset = { copy: JSON.stringify(copy), locale: options.locale ?? 'en-US' };
-  for (const selector of ['[data-video-controls]', '[data-video-error]', '[data-video-status]', '[data-control-status]']) {
+  for (const selector of ['[data-video-controls]', '[data-video-error]', '[data-video-status]', '[data-control-status]', '[data-share-status]', '[data-share-fallback]']) {
     root.querySelector(selector).hidden = true;
   }
-  for (const selector of ['[data-currency]', '[data-video-url]', '[data-load-video]', '[data-play-pause]', '[data-mute]', '[data-change-video]', '[data-video-seek]', '[data-video-volume]', '[data-loop]']) {
+  for (const selector of ['[data-currency]', '[data-video-url]', '[data-load-video]', '[data-play-pause]', '[data-mute]', '[data-change-video]', '[data-video-seek]', '[data-video-volume]', '[data-loop]', '[data-share-setup]']) {
     root.querySelector(selector).disabled = true;
   }
   root.querySelector('[data-mute]').setAttribute('aria-label', copy.mute);
@@ -155,6 +170,8 @@ function harness(options: Options = {}) {
     },
   });
   let reloads = 0;
+  const location = new URL(options.url ?? 'https://openbitcointracker.com/video-mode/');
+  const sharedUrls: string[] = [];
   const storage = new Map<string, string>();
   if (options.storedSelection !== undefined) storage.set(videoSelectionKey, options.storedSelection);
   if (options.storedPlayback !== undefined) storage.set(videoPlaybackKey, options.storedPlayback);
@@ -169,7 +186,16 @@ function harness(options: Options = {}) {
         ? Object.assign(new EventTarget(), { matches: (options.viewportWidth ?? 1280) <= Number(maxWidth[1]) })
         : mobileAudio;
     },
-    location: { reload() { reloads++; } },
+    location: Object.assign(location, { reload() { reloads++; } }),
+    history: {
+      state: { retained: true },
+      replaceState(state: unknown, _title: string, url: string) {
+        if (options.blockedHistory) throw Error('History blocked');
+        assert.deepEqual(state, { retained: true });
+        location.href = new URL(url, location).href;
+        sharedUrls.push(location.href);
+      },
+    },
     localStorage: {
       getItem(key: string) { if (options.blockedStorage) throw Error('Storage blocked'); return storage.get(key) ?? null; },
       setItem(key: string, value: string) {
@@ -179,7 +205,18 @@ function harness(options: Options = {}) {
       },
     },
   });
-  const navigator = { onLine: true };
+  const clipboardWrites: string[] = [];
+  let finishCopy: (() => void) | undefined;
+  const navigator = {
+    onLine: true,
+    clipboard: options.clipboard === 'unavailable' ? undefined : {
+      async writeText(url: string) {
+        if (options.clipboard === 'denied') throw Error('Clipboard denied');
+        clipboardWrites.push(url);
+        if (options.clipboard === 'pending') await new Promise<void>(resolve => { finishCopy = resolve; });
+      },
+    },
+  };
   let preferences: DisplayPreferences = { ...options.preferences ?? { currency: 'USD', scale: 'logarithmic' } };
   const saved: DisplayPreferences[] = [];
   const rates = new Map<Currency, number>();
@@ -212,6 +249,8 @@ function harness(options: Options = {}) {
   let pickerTabDestroys = 0;
   const layoutRoots: unknown[] = [];
   const layoutRefreshes: { price: string; currency: string }[] = [];
+  let layoutState = { x: 50, y: 50, size: 100 };
+  let styleState = { colour: '#ffffff', font: 'modern', stroke: false, strokeWidth: 1, strokeColour: '#000000' };
   let priceLayoutDestroys = 0;
   let revealCalls = 0;
   const idleStates: boolean[] = [];
@@ -233,6 +272,7 @@ function harness(options: Options = {}) {
   }
   const modules = {
     videoSuggestions,
+    isColour, isFont,
     CurrencyRates: Rates,
     isCurrency: (value: string) => ['USD', 'EUR', 'GBP', 'AUD', 'CAD', 'CHF', 'JPY'].includes(value),
     readDisplayPreferences: () => ({ ...preferences }),
@@ -252,10 +292,12 @@ function harness(options: Options = {}) {
       initializations.push('currencyPicker');
       return { close() { currencyPickerCloses++; }, destroy() { currencyPickerDestroys++; } };
     },
-    createVideoPriceLayout: (input: unknown) => {
+    createVideoPriceLayout: (input: unknown, initial?: typeof layoutState) => {
+      layoutState = { ...initial ?? layoutState };
       initializations.push('priceLayout');
       layoutRoots.push(input);
       return {
+        getState: () => ({ ...layoutState }),
         refresh() {
           layoutRefreshes.push({
             price: root.querySelector('[data-price]').textContent,
@@ -265,9 +307,10 @@ function harness(options: Options = {}) {
         destroy() { priceLayoutDestroys++; },
       };
     },
-    createVideoPriceStyle: (_root: unknown, refreshLayout: () => void) => {
+    createVideoPriceStyle: (_root: unknown, refreshLayout: () => void, initial?: typeof styleState) => {
+      styleState = { ...initial ?? styleState };
       refreshLayout();
-      return { destroy() {} };
+      return { getState: () => ({ ...styleState }), destroy() {} };
     },
     createVideoPickerTabs: (pickerRoot: HTMLElement, pickerOptions: Parameters<typeof createVideoPickerTabs>[1]) => {
       let picker: ReturnType<typeof createVideoPickerTabs> | undefined;
@@ -310,17 +353,25 @@ function harness(options: Options = {}) {
     },
   };
   const globals = {
-    require: () => modules, exports: {}, document, window, navigator, Intl,
+    require: () => modules, exports: {}, document, window, navigator, Intl, URLSearchParams,
     setInterval: (callback: () => void, duration: number) => { intervals.set(++timerId, callback); intervalDurations.set(timerId, duration); return timerId; },
     clearInterval: (id: number) => { intervals.delete(id); intervalDurations.delete(id); },
     setTimeout: (callback: () => void) => { timeouts.set(++timerId, callback); return timerId; },
     clearTimeout: (id: number) => { timeouts.delete(id); },
   };
   Object.assign(modules, browserModule('lib/live-price-display', globals, modules));
+  Object.assign(modules, browserModule('lib/video-share', globals, modules));
   runInNewContext(script, globals);
   const control = (selector: string) => root.querySelector(selector);
   const finishPickerTransition = () => control('[data-video-picker]').dispatchEvent(Object.assign(new Event('transitionend'), { propertyName: 'transform' }));
   return {
+    clipboardWrites,
+    async finishCopy() { finishCopy?.(); await setImmediate(); },
+    sharedUrls,
+    layoutState: () => layoutState,
+    styleState: () => styleState,
+    changeLayout(next: typeof layoutState) { layoutState = { ...next }; root.dispatchEvent(new Event('pricelayoutchange')); },
+    changeStyle(next: typeof styleState) { styleState = { ...next }; root.dispatchEvent(new Event('pricestylechange')); },
     root, window, requests, intervals, timeouts, loaded, muted, volumes, sought, loopStates, captionStates, playbackAtLoad, control, storage, storageWrites, finishPickerTransition,
     mobile(matches: boolean) { mobileAudio.matches = matches; mobileAudio.dispatchEvent(new Event('change')); },
     initializations, layoutRoots, layoutRefreshes, rememberedUrls, pickerTabDestroys: () => pickerTabDestroys, priceLayoutDestroys: () => priceLayoutDestroys,
@@ -1825,7 +1876,7 @@ test('suggestions have unique validated video IDs and consistent translated cont
   const keys = Object.keys(videoCopy.en).sort();
   for (const translation of Object.values(videoCopy)) {
     assert.deepEqual(Object.keys(translation).sort(), keys);
-    for (const key of ['pickVideo', 'recentTab', 'partyTab', 'chillTab', 'noSound', 'removeRecent', 'recentTitleLoading', 'recentTitleUnavailable'] as const) assert.ok(translation[key].trim());
+    for (const key of ['pickVideo', 'recentTab', 'partyTab', 'chillTab', 'noSound', 'removeRecent', 'recentTitleLoading', 'recentTitleUnavailable', 'shareSetup', 'linkCopied', 'copyLinkManually'] as const) assert.ok(translation[key].trim());
   }
 });
 
@@ -1873,4 +1924,198 @@ test('closing price settings closes currency and cleanup removes the settings ad
   h.close();
   h.root.dispatchEvent(new Event('pricesettingstoggle'));
   assert.equal(h.currencyPickerCloses(), 1);
+});
+
+test('the address captures a complete setup and opens it on a localized route ahead of saved preferences', () => {
+  const sender = harness({ url: 'https://openbitcointracker.com/es/video-mode/?example=1', preferences: { currency: 'GBP', scale: 'linear' } });
+  assert.equal(sender.sharedUrls.length, 0);
+  sender.changeLayout(sharedSetup.layout);
+  sender.changeStyle(sharedSetup.style);
+  assert.equal(sender.sharedUrls.length, 0, 'a share setup requires a selected video');
+  sender.submit(secondUrl);
+  sender.control('[data-video-volume]').value = '42';
+  sender.control('[data-video-volume]').dispatchEvent(new Event('input'));
+  sender.click('[data-mute]');
+  sender.click('[data-loop]');
+  const url = new URL(sender.sharedUrls.at(-1)!);
+  assert.equal(url.pathname, '/es/video-mode/');
+  assert.equal(url.search, '?example=1');
+  assert.equal(JSON.stringify(readVideoSetup(url.hash)), JSON.stringify(sharedSetup));
+  const receiver = harness({
+    url: url.href, preferences: { currency: 'EUR', scale: 'linear' },
+    storedSelection: JSON.stringify({ version: 1, url: firstUrl }),
+    storedPlayback: JSON.stringify({ version: 1, volume: 90, muted: false, looping: false }),
+  });
+  assert.deepEqual(JSON.parse(JSON.stringify(receiver.loaded)), [sharedSetup.video]);
+  assert.equal(receiver.control('[data-currency]').value, 'GBP');
+  assert.equal(JSON.stringify(receiver.layoutState()), JSON.stringify(sharedSetup.layout));
+  assert.equal(JSON.stringify(receiver.styleState()), JSON.stringify(sharedSetup.style));
+  assert.deepEqual(receiver.playbackAtLoad, [{ volume: 42, muted: true, looping: true, subtitlesWanted: false }]);
+  assert.deepEqual(receiver.preferences(), { currency: 'EUR', scale: 'linear' });
+  assert.equal(receiver.storageWrites.length, 0, 'arrival must not overwrite personal preferences');
+  assert.equal(receiver.control('[data-video-picker]').showModalCount, 0);
+  assert.equal(receiver.control('[data-change-video]').focusCount, 0);
+  sender.close(); receiver.close();
+});
+
+test('layout, style, currency and video changes update the URL while progress and unsubmitted inputs do not', () => {
+  const h = harness({ url: `https://openbitcointracker.com/video-mode/${videoSetupHash(sharedSetup)}` });
+  const setup = () => readVideoSetup(new URL(h.sharedUrls.at(-1) ?? h.window.location.href).hash)!;
+  h.changeLayout({ x: 80, y: 20, size: 120 });
+  h.changeStyle({ ...sharedSetup.style, font: 'serif', stroke: false });
+  h.currency('JPY');
+  h.submit(firstUrl);
+  assert.equal(JSON.stringify(setup().layout), JSON.stringify({ x: 80, y: 20, size: 120 }));
+  assert.equal(setup().style.font, 'serif');
+  assert.equal(setup().style.stroke, false);
+  assert.equal(setup().currency, 'JPY');
+  assert.deepEqual(JSON.parse(JSON.stringify(setup().video)), { id: 'abcdefghijk', startSeconds: 0 });
+  const writes = h.sharedUrls.length;
+  h.setProgress({ currentTime: 99, duration: 300 });
+  h.tick(500);
+  h.click('[data-change-video]');
+  h.control('[data-video-url]').value = secondUrl;
+  h.control('[data-video-url]').dispatchEvent(new Event('input'));
+  h.submit('https://example.com/invalid');
+  assert.equal(h.sharedUrls.length, writes);
+  h.close();
+  h.changeLayout(sharedSetup.layout);
+  h.changeStyle(sharedSetup.style);
+  h.currency('USD');
+  assert.equal(h.sharedUrls.length, writes, 'cleanup removes URL listeners');
+});
+
+test('shared setups work without storage and a blocked History API does not break playback or editing', () => {
+  for (const blockedHistory of [false, true]) {
+    const h = harness({ blockedStorage: true, blockedHistory, url: `https://openbitcointracker.com/video-mode/${videoSetupHash(sharedSetup)}` });
+    assert.deepEqual(JSON.parse(JSON.stringify(h.loaded)), [sharedSetup.video]);
+    assert.equal(h.control('[data-currency]').value, 'GBP');
+    assert.equal(h.volumes.at(-1), 42);
+    h.changeLayout({ x: 0, y: 100, size: 25 });
+    h.changeStyle({ ...sharedSetup.style, colour: '#ffffff' });
+    h.submit(firstUrl);
+    assert.equal(h.loaded.at(-1)?.id, 'abcdefghijk');
+    assert.equal(h.storageWrites.length, 0);
+    assert.equal(h.sharedUrls.length > 0, !blockedHistory);
+    h.close();
+  }
+});
+
+test('shared audio respects phone controls and restores the shared volume on desktop', () => {
+  const h = harness({ mobile: true, url: `https://openbitcointracker.com/video-mode/${videoSetupHash(sharedSetup)}` });
+  assert.equal(h.control('[data-video-volume]').disabled, true);
+  assert.equal(h.volumes.at(-1), 100);
+  h.changeLayout({ ...sharedSetup.layout, x: 40 });
+  const setup = readVideoSetup(new URL(h.sharedUrls.at(-1)!).hash)!;
+  assert.equal(JSON.stringify(setup.playback), JSON.stringify(sharedSetup.playback));
+  h.mobile(false);
+  assert.equal(h.volumes.at(-1), 42);
+  assert.equal(h.muted.at(-1), true);
+  h.close();
+});
+
+test('following another setup within the same page reloads it, while unrelated fragments and stale pages do not', () => {
+  const h = harness();
+  h.window.location.hash = '#unrelated';
+  h.window.dispatchEvent(new Event('hashchange'));
+  assert.equal(h.reloads(), 0);
+  h.window.location.hash = videoSetupHash(sharedSetup);
+  h.window.dispatchEvent(new Event('hashchange'));
+  assert.equal(h.reloads(), 1);
+  h.close();
+  h.window.dispatchEvent(new Event('hashchange'));
+  assert.equal(h.reloads(), 1);
+});
+
+test('Share setup copies the complete current setup and confirms success without changing playback', async () => {
+  const h = harness({ url: 'https://openbitcointracker.com/es/video-mode/?example=1', blockedHistory: true });
+  assert.equal(h.control('[data-share-setup]').disabled, true);
+  h.click('[data-share-setup]');
+  assert.equal(h.clipboardWrites.length, 0);
+  h.submit(secondUrl);
+  h.changeLayout(sharedSetup.layout);
+  h.changeStyle(sharedSetup.style);
+  h.currency('GBP');
+  h.control('[data-video-volume]').value = '42';
+  h.control('[data-video-volume]').dispatchEvent(new Event('input'));
+  h.click('[data-mute]');
+  h.click('[data-loop]');
+  const storedWrites = h.storageWrites.length;
+  h.click('[data-share-setup]');
+  await setImmediate();
+  const url = new URL(h.clipboardWrites[0]);
+  assert.equal(url.pathname, '/es/video-mode/');
+  assert.equal(url.search, '?example=1');
+  assert.equal(JSON.stringify(readVideoSetup(url.hash)), JSON.stringify(sharedSetup));
+  assert.equal(h.control('[data-share-status]').textContent, copy.linkCopied);
+  assert.equal(h.control('[data-share-status]').hidden, false);
+  assert.equal(h.control('[data-share-fallback]').hidden, true);
+  assert.equal(h.control('[data-share-setup]').disabled, false);
+  assert.equal(h.pauseCalls(), 0);
+  assert.equal(h.playCalls(), 0);
+  assert.equal(h.storageWrites.length, storedWrites);
+  h.changeLayout({ ...sharedSetup.layout, x: 90 });
+  assert.equal(h.control('[data-share-status]').hidden, true);
+  h.click('[data-share-setup]');
+  await setImmediate();
+  assert.equal(readVideoSetup(new URL(h.clipboardWrites[1]).hash)?.layout.x, 90);
+  h.close();
+});
+
+test('denied or missing clipboard access exposes a selected link and keeps controls visible for manual copying', async () => {
+  for (const clipboard of ['denied', 'unavailable'] as const) {
+    const h = harness({ clipboard, url: `https://openbitcointracker.com/video-mode/${videoSetupHash(sharedSetup)}` });
+    h.click('[data-share-setup]');
+    await setImmediate();
+    assert.equal(h.control('[data-share-status]').hidden, true);
+    assert.equal(h.control('[data-share-fallback]').hidden, false);
+    const input = h.control('[data-share-url]');
+    assert.equal(JSON.stringify(readVideoSetup(new URL(input.value).hash)), JSON.stringify(sharedSetup));
+    assert.equal(input.focusCount, 1);
+    assert.equal(input.selectCount, 1);
+    assert.equal(h.control('[data-share-setup]').disabled, false);
+    assert.equal(h.idleEnabled(), false);
+    h.changeLayout({ ...sharedSetup.layout, x: 40 });
+    assert.equal(h.control('[data-share-fallback]').hidden, true);
+    assert.equal(h.idleEnabled(), true);
+    h.close();
+  }
+});
+
+test('copying prevents duplicate requests and pending copies cannot update a destroyed page', async () => {
+  const h = harness({ clipboard: 'pending', url: `https://openbitcointracker.com/video-mode/${videoSetupHash(sharedSetup)}` });
+  h.click('[data-share-setup]');
+  assert.equal(h.control('[data-share-setup]').disabled, true);
+  h.click('[data-share-setup]');
+  assert.equal(h.clipboardWrites.length, 1);
+  h.close();
+  await h.finishCopy();
+  assert.equal(h.control('[data-share-status]').hidden, true);
+  assert.equal(h.control('[data-share-fallback]').hidden, true);
+  h.click('[data-share-setup]');
+  assert.equal(h.clipboardWrites.length, 1);
+});
+
+test('malformed, incomplete, duplicate and unsupported shared settings fall back to saved selection', () => {
+  const valid = videoSetupHash(sharedSetup);
+  const changes: [string, string | null][] = [
+    ['setup', '2'], ['setup', null], ['video', 'https://example.com/'], ['video', 'bad'],
+    ['start', '-1'], ['start', '1.5'], ['currency', 'BTC'], ['currency', null],
+    ['x', '-1'], ['x', '101'], ['x', 'NaN'], ['y', 'Infinity'], ['size', '24'], ['size', ''],
+    ['font', 'constructor'], ['colour', 'red'], ['strokeColour', '#123'], ['strokeWidth', '6.5'],
+    ['strokeWidth', '1.2'], ['stroke', 'true'], ['volume', '101'], ['volume', '2.3'], ['muted', null], ['loop', 'yes'],
+  ];
+  const invalid = changes.map(([key, value]) => {
+    const params = new URLSearchParams(valid.slice(1));
+    if (value === null) params.delete(key); else params.set(key, value);
+    return `#${params}`;
+  });
+  invalid.push(`${valid}&video=abcdefghijk`, `#${'x'.repeat(2048)}`, '#setup=%E0%A4%A', '#unrelated-anchor');
+  for (const hash of invalid) {
+    assert.equal(readVideoSetup(hash), undefined, hash);
+    const h = harness({ url: `https://openbitcointracker.com/video-mode/${hash}`, storedSelection: JSON.stringify({ version: 1, url: firstUrl }) });
+    assert.deepEqual(h.loaded, [{ id: 'abcdefghijk', startSeconds: 0 }]);
+    assert.equal(h.control('[data-currency]').value, 'USD');
+    h.close();
+  }
 });

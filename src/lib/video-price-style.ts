@@ -1,5 +1,6 @@
 const STORAGE_KEY = 'obt-video-price-style';
 const DEFAULTS = { version: 1, colour: '#ffffff', font: 'modern', stroke: false, strokeWidth: 1, strokeColour: '#000000' };
+export type VideoPriceStyleState = Omit<typeof DEFAULTS, 'version'>;
 const FONTS: Record<string, string> = {
   modern: 'var(--font-sans)',
   condensed: '"Barlow Condensed", var(--font-sans)',
@@ -10,11 +11,11 @@ const FONTS: Record<string, string> = {
   slab: '"Roboto Slab", Georgia, serif',
   bungee: '"Bungee", var(--font-sans)',
 };
-const isColour = (value: unknown): value is string => typeof value === 'string' && /^#[\da-f]{6}$/i.test(value);
-const isFont = (value: unknown): value is string => typeof value === 'string' && Object.hasOwn(FONTS, value);
+export const isColour = (value: unknown): value is string => typeof value === 'string' && /^#[\da-f]{6}$/i.test(value);
+export const isFont = (value: unknown): value is string => typeof value === 'string' && Object.hasOwn(FONTS, value);
 
 /** A small disclosure for locally saved price styling, independent of its layout. */
-export function createVideoPriceStyle(root: HTMLElement, refreshLayout: () => void) {
+export function createVideoPriceStyle(root: HTMLElement, refreshLayout: () => void, initial?: VideoPriceStyleState) {
   const wrapper = root.querySelector<HTMLElement>('[data-price-style]')!;
   const settingsTrigger = wrapper.querySelector<HTMLButtonElement>('[data-price-settings-trigger]')!;
   const trigger = wrapper.querySelector<HTMLButtonElement>('[data-price-style-trigger]')!;
@@ -37,7 +38,7 @@ export function createVideoPriceStyle(root: HTMLElement, refreshLayout: () => vo
   let dismissingPointerClick = false;
 
   try {
-    const saved = JSON.parse(window.localStorage.getItem(STORAGE_KEY) ?? 'null');
+    const saved = initial ? { ...initial, version: 1 } : JSON.parse(window.localStorage.getItem(STORAGE_KEY) ?? 'null');
     if (saved?.version === 1) {
       if (isColour(saved.colour)) state.colour = saved.colour.toLowerCase();
       if (isFont(saved.font)) state.font = saved.font;
@@ -101,6 +102,7 @@ export function createVideoPriceStyle(root: HTMLElement, refreshLayout: () => vo
 
   function save() {
     paint();
+    root.dispatchEvent(new Event('pricestylechange'));
     try { window.localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
     catch { /* Preview and controls keep working when storage is blocked or full. */ }
   }
@@ -235,6 +237,10 @@ export function createVideoPriceStyle(root: HTMLElement, refreshLayout: () => vo
   }
 
   return {
+    getState(): VideoPriceStyleState {
+      const { version, ...style } = state;
+      return style;
+    },
     destroy() {
       if (destroyed) return;
       destroyed = true;
