@@ -113,6 +113,7 @@ const locale = htmlLang(Astro.currentLocale);
         <IconButton type="button" class="video-icon-button" data-share-setup aria-label={t.shareSetup} title={t.shareSetup} hidden disabled>
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="18" cy="5" r="3" /><circle cx="6" cy="12" r="3" /><circle cx="18" cy="19" r="3" /><path d="m8.6 10.5 6.8-4m-6.8 7 6.8 4" /></svg>
         </IconButton>
+        <p class="video-share-status video-message" data-share-status role="status" hidden></p>
       </div>
       <dialog id="video-picker" class="video-picker" data-video-picker aria-labelledby="video-picker-title">
         <h2 id="video-picker-title" class="sr-only" tabindex="-1" autofocus>{t.pickVideo}</h2>
@@ -188,7 +189,6 @@ const locale = htmlLang(Astro.currentLocale);
         </div>
         <p class="sr-only" data-video-status role="status" hidden></p>
         <p class="video-message" data-control-status role="status" hidden></p>
-        <p class="video-message" data-share-status role="status" hidden></p>
         <div class="video-share-fallback video-message" data-share-fallback hidden>
           <label for="video-share-url">{t.copyLinkManually}</label>
           <input id="video-share-url" data-share-url type="text" readonly />
@@ -396,6 +396,7 @@ const locale = htmlLang(Astro.currentLocale);
   .video-message { margin-top: .75rem; padding: .4rem .7rem; font-size: .75rem; line-height: 1.5; color: #ddd; background: rgb(8 8 8 / .85); border-radius: 8px; }
   .video-share { position: fixed; top: var(--menu-control-top); right: calc(var(--menu-control-right) + var(--menu-control-size) + .75rem); z-index: 5; }
   .video-share:has([data-share-setup][hidden]) { display: none; }
+  .video-share-status { position: absolute; top: 100%; right: 0; width: max-content; max-width: calc(100vw - var(--menu-control-right) - var(--menu-control-size) - .75rem - var(--menu-control-gutter)); pointer-events: none; }
   .video-share-fallback input { margin-top: .25rem; padding: .5rem; border: 1px solid #ffffff40; border-radius: 4px; }
   .video-error { color: #ffc2b2; }
   .video-change, .video-share, .video-dock, .video-page :global(.site-nav) { transition: opacity var(--video-ui-fade) ease; }
@@ -416,6 +417,7 @@ const locale = htmlLang(Astro.currentLocale);
     .video-price-stage { padding: 5rem 1rem 6rem; }
     .video-dock { width: min(18rem, calc(100% - 2rem)); }
     .video-dock:has(.video-time[hidden]) { width: min(16rem, calc(100% - 2rem)); }
+    .video-page[data-video-controls-top]:has([data-share-status]:not([hidden])) .video-dock { margin-top: calc(var(--menu-control-top) + var(--menu-control-size) + 3.5rem); }
     .video-controls { flex-wrap: wrap; justify-content: space-between; gap: .25rem; }
     .video-controls .video-icon-button { width: 100%; max-width: 4rem; height: 4rem; }
     .video-controls > .video-icon-button, .video-volume-control { flex: 1 1 0; min-width: 0; max-width: 4rem; }
