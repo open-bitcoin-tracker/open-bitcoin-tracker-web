@@ -12,6 +12,7 @@ import type { ChartSettingsCopy } from '../i18n/chart-settings';
 import { subscribeBitcoinPrice, type PriceFeedState } from '../lib/bitcoin-live-price';
 import { createCurrencyPicker } from '../lib/currency-picker';
 import { createPriceTabTitle } from '../lib/price-tab-title';
+import { createChartFullscreenControls } from '../lib/chart-fullscreen-controls';
 import type { PartyCopy } from '../i18n/party';
 
 const root = document.querySelector<HTMLElement>('[data-bitcoin-tracker]');
@@ -398,6 +399,7 @@ function startTracker(root: HTMLElement) {
   });
   document.addEventListener('fullscreenchange', updateFullscreen);
   updateFullscreen();
+  const fullscreenControls = createChartFullscreenControls(root);
 
   function updateCurrencyStatus() {
     const rate = exchangeRates.current(currency);
@@ -553,6 +555,7 @@ function startTracker(root: HTMLElement) {
     currencyPicker.destroy();
     priceCurrencyPicker.destroy();
     document.removeEventListener('fullscreenchange', updateFullscreen);
+    fullscreenControls.destroy();
     stopTimers();
     stopPriceFeed();
   });

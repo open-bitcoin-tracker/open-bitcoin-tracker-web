@@ -103,6 +103,7 @@ function harness(hidden = false, fullscreenEnabled = false, options: { locale?: 
   }
   const savedPreferences: unknown[] = [];
   let pickerDestroyed = false;
+  let fullscreenControlsDestroyed = false;
   const modules = {
     candleWindow: () => undefined,
     readRangePreferences: () => ({ selected: 'all', counts: {} }),
@@ -110,6 +111,7 @@ function harness(hidden = false, fullscreenEnabled = false, options: { locale?: 
     subscribeCurrencyPreference: () => () => {},
     createRangePill: () => ({ select() {}, destroy() {} }),
     createCurrencyPicker: () => ({ close() {}, destroy() { pickerDestroyed = true; } }),
+    createChartFullscreenControls: () => ({ destroy() { fullscreenControlsDestroyed = true; } }),
     isCurrency: (value: string) => ['USD', 'EUR', 'GBP', 'AUD', 'CAD', 'CHF', 'JPY'].includes(value),
     saveDisplayPreferences: (preferences: unknown) => savedPreferences.push(preferences),
     createPriceChangeFormatter: () => () => '',
@@ -146,7 +148,7 @@ function harness(hidden = false, fullscreenEnabled = false, options: { locale?: 
       now += ms;
       for (const [id, timer] of [...timeouts]) if (timer.at <= now) { timeouts.delete(id); timer.run(); }
     },
-    fullscreenRequests: () => fullscreenRequests, fullscreenExits: () => fullscreenExits,
+    fullscreenRequests: () => fullscreenRequests, fullscreenExits: () => fullscreenExits, fullscreenControlsDestroyed: () => fullscreenControlsDestroyed,
     rejectFullscreen() { rejectFullscreen = true; },
   };
 }
@@ -400,6 +402,7 @@ test('the chart fullscreen button enters, exits, updates its label, and reports 
   assert.equal(status.hidden, false);
   assert.equal(status.textContent, 'Fullscreen unavailable');
   h.window.dispatchEvent(new Event('pagehide'));
+  assert.equal(h.fullscreenControlsDestroyed(), true);
   h.document.fullscreenElement = h.document.documentElement;
   h.document.dispatchEvent(new Event('fullscreenchange'));
   assert.equal(button.title, 'Fullscreen');
