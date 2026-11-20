@@ -40,7 +40,8 @@ function startTracker(root: HTMLElement) {
   const historyStatus = root.querySelector<HTMLElement>('[data-history-status]')!;
   const chartLoading = root.querySelector<HTMLElement>('[data-chart-loading]')!;
   const loadingDescription = root.querySelector<HTMLElement>('[data-loading-description]')!;
-  let money = new Intl.NumberFormat(locale, { style: 'currency', currency, currencyDisplay: 'narrowSymbol', useGrouping: true, minimumFractionDigits: 0, maximumFractionDigits: 0 });
+  const moneyFormat = (code: Currency) => new Intl.NumberFormat(locale, { style: 'currency', currency: code, currencyDisplay: 'narrowSymbol', useGrouping: true, minimumFractionDigits: 0, maximumFractionDigits: 0 });
+  let money = moneyFormat(currency);
   const date = new Intl.DateTimeFormat(locale, { year: 'numeric', month: 'short', day: 'numeric', timeZone: 'UTC' });
   const dateTime = new Intl.DateTimeFormat(locale, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit', timeZone: 'UTC' });
   const rangeBar = root.querySelector<HTMLElement>('[data-range-bar]')!;
@@ -332,7 +333,7 @@ function startTracker(root: HTMLElement) {
     clearSelection();
     currency = next;
     currencySelect.value = next;
-    money = new Intl.NumberFormat(locale, { style: 'currency', currency, currencyDisplay: 'narrowSymbol', useGrouping: true, maximumFractionDigits: 0 });
+    money = moneyFormat(next);
     formatPriceChange = createPriceChangeFormatter(locale, currency);
     currencyError = undefined;
     currencyLoading = false;
