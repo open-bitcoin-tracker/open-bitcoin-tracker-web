@@ -1,6 +1,6 @@
 # Open Bitcoin Tracker
 
-[openbitcointracker.com](https://openbitcointracker.com) — Bitcoin price tools, supply visualizations, and the [Android app](https://github.com/Max-Hodler/open-bitcoin-tracker). Built with Astro, TypeScript, Tailwind CSS, and React.
+[openbitcointracker.com](https://openbitcointracker.com) — Bitcoin price tools, supply visualizations, and the [Android app](https://github.com/open-bitcoin-tracker/open-bitcoin-tracker). Built with Astro, TypeScript, Tailwind CSS, and React.
 
 ## Development
 

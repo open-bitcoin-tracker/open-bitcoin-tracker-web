@@ -20,7 +20,7 @@ const icons = ['user-x', 'eye-off', 'lock', 'code'] as const;
         {t.privacy.cards.map((card, i) => (
           <div class="privacy-card" data-reveal>
             <FeatureCard title={card.title} body={card.body} icon={icons[i]} />
-            {i === 3 && <a class="text-link source-link" href="https://github.com/Max-Hodler/open-bitcoin-tracker" target="_blank" rel="noopener noreferrer">{t.hero.viewGithub}</a>}
+            {i === 3 && <a class="text-link source-link" href="https://github.com/open-bitcoin-tracker/open-bitcoin-tracker" target="_blank" rel="noopener noreferrer">{t.hero.viewGithub}</a>}
           </div>
         ))}
       </div>

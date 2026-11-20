@@ -9,7 +9,7 @@ import Footer from '../Footer.astro';
 import BrandText from '../BrandText.astro';
 import { useTranslations } from '../../i18n/utils';
 
-const repoUrl = 'https://github.com/Max-Hodler/open-bitcoin-tracker';
+const repoUrl = 'https://github.com/open-bitcoin-tracker/open-bitcoin-tracker';
 
 const t = useTranslations(Astro.currentLocale);
 const p = t.policy;
@@ -44,12 +44,12 @@ const p = t.policy;
             {('parasAfter' in section ? section.parasAfter : []).map((para) => <p>{para}</p>)}
             {'repoLabel' in section && section.repoLabel && (
               <p>
-                {section.repoLabel} <a href={repoUrl} rel="noopener noreferrer" target="_blank">github.com/Max-Hodler/open-bitcoin-tracker</a>
+                {section.repoLabel} <a href={repoUrl} rel="noopener noreferrer" target="_blank">github.com/open-bitcoin-tracker/open-bitcoin-tracker</a>
               </p>
             )}
             {'contactBefore' in section && section.contactBefore && (
               <p>
-                {section.contactBefore} <a href={`${repoUrl}/issues`} rel="noopener noreferrer" target="_blank">github.com/Max-Hodler/open-bitcoin-tracker/issues</a>{section.contactAfter}
+                {section.contactBefore} <a href={`${repoUrl}/issues`} rel="noopener noreferrer" target="_blank">github.com/open-bitcoin-tracker/open-bitcoin-tracker/issues</a>{section.contactAfter}
               </p>
             )}
           </>

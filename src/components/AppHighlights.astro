@@ -14,7 +14,7 @@ const highlights = [t.hero.highlights.fast, t.hero.highlights.secure, t.hero.hig
   const linked = linkSource && index === 2;
   const Tag = linked ? 'a' : 'span';
   return (
-    <Tag class="app-highlight" href={linked ? 'https://github.com/Max-Hodler/open-bitcoin-tracker' : undefined} target={linked ? '_blank' : undefined} rel={linked ? 'noopener noreferrer' : undefined}>
+    <Tag class="app-highlight" href={linked ? 'https://github.com/open-bitcoin-tracker/open-bitcoin-tracker' : undefined} target={linked ? '_blank' : undefined} rel={linked ? 'noopener noreferrer' : undefined}>
       <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="m5 12 4 4 10-10" /></svg>{label}
     </Tag>
   );
