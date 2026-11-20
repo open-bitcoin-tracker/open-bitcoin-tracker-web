@@ -50,6 +50,7 @@ export interface VideoCopy {
   noScript: string;
   controlsLabel: string;
   backgroundTitle: string;
+  nextPreviewAnimation: string;
 }
 
 const en: VideoCopy = {
@@ -102,6 +103,7 @@ const en: VideoCopy = {
   noScript: 'JavaScript is required for live prices and YouTube playback.',
   controlsLabel: 'Video controls',
   backgroundTitle: 'YouTube background video',
+  nextPreviewAnimation: 'Next animation',
 };
 
 export const video: Record<Lang, VideoCopy> = {
@@ -156,6 +158,7 @@ export const video: Record<Lang, VideoCopy> = {
     noScript: 'El precio en directo y la reproducción de YouTube requieren JavaScript.',
     controlsLabel: 'Controles del vídeo',
     backgroundTitle: 'Vídeo de YouTube de fondo',
+    nextPreviewAnimation: 'Siguiente animación',
   },
   'pt-BR': {
     title: 'Price on Video',
@@ -207,6 +210,7 @@ export const video: Record<Lang, VideoCopy> = {
     noScript: 'O preço ao vivo e a reprodução do YouTube precisam de JavaScript.',
     controlsLabel: 'Controles do vídeo',
     backgroundTitle: 'Vídeo do YouTube de fundo',
+    nextPreviewAnimation: 'Próxima animação',
   },
   fr: {
     title: 'Price on Video',
@@ -258,6 +262,7 @@ export const video: Record<Lang, VideoCopy> = {
     noScript: 'JavaScript est nécessaire pour le cours en direct et la lecture YouTube.',
     controlsLabel: 'Commandes de la vidéo',
     backgroundTitle: 'Vidéo YouTube en arrière-plan',
+    nextPreviewAnimation: 'Animation suivante',
   },
   de: {
     title: 'Price on Video',
@@ -309,6 +314,7 @@ export const video: Record<Lang, VideoCopy> = {
     noScript: 'Live-Kurse und YouTube-Wiedergabe benötigen JavaScript.',
     controlsLabel: 'Videosteuerung',
     backgroundTitle: 'YouTube-Video im Hintergrund',
+    nextPreviewAnimation: 'Nächste Animation',
   },
   it: {
     title: 'Price on Video',
@@ -360,6 +366,7 @@ export const video: Record<Lang, VideoCopy> = {
     noScript: 'JavaScript è necessario per il prezzo in tempo reale e la riproduzione di YouTube.',
     controlsLabel: 'Controlli del video',
     backgroundTitle: 'Video di YouTube sullo sfondo',
+    nextPreviewAnimation: 'Animazione successiva',
   },
   ru: {
     title: 'Price on Video',
@@ -411,6 +418,7 @@ export const video: Record<Lang, VideoCopy> = {
     noScript: 'Для текущего курса и воспроизведения YouTube нужен JavaScript.',
     controlsLabel: 'Управление видео',
     backgroundTitle: 'Фоновое видео YouTube',
+    nextPreviewAnimation: 'Следующая анимация',
   },
   tr: {
     title: 'Price on Video',
@@ -462,6 +470,7 @@ export const video: Record<Lang, VideoCopy> = {
     noScript: 'Canlı fiyatlar ve YouTube oynatma için JavaScript gerekir.',
     controlsLabel: 'Video kontrolleri',
     backgroundTitle: 'YouTube arka plan videosu',
+    nextPreviewAnimation: 'Sonraki animasyon',
   },
   vi: {
     title: 'Price on Video',
@@ -513,6 +522,7 @@ export const video: Record<Lang, VideoCopy> = {
     noScript: 'Giá trực tiếp và tính năng phát YouTube cần JavaScript.',
     controlsLabel: 'Điều khiển video',
     backgroundTitle: 'Video YouTube làm nền',
+    nextPreviewAnimation: 'Hoạt ảnh tiếp theo',
   },
   ja: {
     title: 'Price on Video',
@@ -564,5 +574,6 @@ export const video: Record<Lang, VideoCopy> = {
     noScript: 'リアルタイム価格とYouTubeの再生にはJavaScriptが必要です。',
     controlsLabel: '動画の操作',
     backgroundTitle: '背景のYouTube動画',
+    nextPreviewAnimation: '次のアニメーション',
   },
 };

@@ -3,10 +3,12 @@ import { videoPreviewBackgrounds } from '../lib/video-preview-backgrounds';
 import { resolveLang } from '../i18n/utils';
 import { tracker } from '../i18n/tracker';
 import { party } from '../i18n/party';
+import { video } from '../i18n/video';
 
 const lang = resolveLang(Astro.currentLocale);
 const t = tracker[lang];
 const { play, pause } = party[lang];
+const next = video[lang].nextPreviewAnimation;
 const copy = { price: t.price, updated: t.updated, unavailable: t.unavailable, connecting: t.connecting, offline: t.offline, play, pause };
 ---
 
@@ -21,7 +23,7 @@ const copy = { price: t.price, updated: t.updated, unavailable: t.unavailable, c
       <svg data-motion-play width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="m8 5 11 7-11 7z" /></svg>
       <svg data-motion-pause width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" hidden><path d="M6 5h4v14H6zm8 0h4v14h-4z" /></svg>
     </button>
-    <button class="video-preview-control" type="button" data-preview-next aria-label="Next animation" lang="en" hidden>
+    <button class="video-preview-control" type="button" data-preview-next aria-label={next} title={next} hidden>
       <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="m5 5 10 7L5 19zm12 0h2v14h-2z" /></svg>
     </button>
   </div>
