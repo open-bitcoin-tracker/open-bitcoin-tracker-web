@@ -77,10 +77,16 @@ function harness(currency = 'USD', fxFailure = false, online = true) {
   const intervals = new Map<number, { run: () => void; delay: number }>();
   let nextId = 0;
   const module: { startBitcoinPreview?: (root: unknown) => () => void } = {};
+  const DateNow = class extends Date { static now() { return now; } };
+  const fetch = (url: string, options: { signal: AbortSignal }) => new Promise(resolve => requests.push({ url, signal: options.signal, resolve }));
+  const setInterval = (run: () => void, delay: number) => { intervals.set(++nextId, { run, delay }); return nextId; };
+  const clearInterval = (id: number) => intervals.delete(id);
+  const poll = browserModule('lib/bitcoin-price-poll', { document, navigator, AbortController, AbortSignal, Date: DateNow, fetch, setInterval, clearInterval });
   runInNewContext(script, {
     exports: module, document, window, navigator, Intl, AbortController, AbortSignal,
-    Date: class extends Date { static now() { return now; } },
+    Date: DateNow,
     require(name: string) {
+      if (name.endsWith('bitcoin-price-poll')) return poll;
       if (name.endsWith('bitcoin-chart')) return chart;
       if (name.endsWith('bitcoin-preview')) return preview;
       if (name.endsWith('bitcoin-display-preferences')) return preferences;
@@ -93,9 +99,7 @@ function harness(currency = 'USD', fxFailure = false, online = true) {
       } };
       return { parseCandles: (result: { points: HistoryPoint[] }) => result.points };
     },
-    fetch: (url: string, options: { signal: AbortSignal }) => new Promise(resolve => requests.push({ url, signal: options.signal, resolve })),
-    setInterval: (run: () => void, delay: number) => { intervals.set(++nextId, { run, delay }); return nextId; },
-    clearInterval: (id: number) => intervals.delete(id),
+    fetch, setInterval, clearInterval,
   });
   const stop = module.startBitcoinPreview!(root);
   const respond = async (index: number, result: unknown, ok = true) => {
@@ -116,7 +120,7 @@ test('homepage polls only ticker/recent daily data, retains failures and throttl
   assert.equal(h.requests.length, 2);
   assert.ok(h.requests[0].url.includes('/Ticker?'));
   assert.ok(h.requests[1].url.includes('interval=1440&since='));
-  assert.equal([...h.intervals.values()][0].delay, 60_000);
+  assert.deepEqual([...h.intervals.values()].map(timer => timer.delay), [60_000, 60_000]);
   await h.respond(0, { XBTUSD: { c: ['83000'] } });
   await h.respond(1, { points: [19_998, 19_999, 20_000].map(day => ({ time: day * DAY_MS, price: 80000 })) });
   assert.equal(h.elements.get('[data-preview-price]')!.textContent, '$83,000');
@@ -124,8 +128,12 @@ test('homepage polls only ticker/recent daily data, retains failures and throttl
   assert.equal(h.elements.get('[data-preview-status]')!.hidden, true);
   assert.equal(h.elements.get('[data-preview-history-status]')!.hidden, true);
   const path = h.elements.get('[data-preview-line]')!.attributes.get('d');
-  [...h.intervals.values()][0].run();
+  const [historyTimer, priceTimer] = [...h.intervals.values()];
+  historyTimer.run();
+  assert.equal(h.requests.length, 2, 'recent history is throttled');
+  priceTimer.run();
   assert.equal(h.requests.length, 3);
+  assert.ok(h.requests[2].url.includes('/Ticker?'));
   await h.respond(2, {}, false);
   assert.equal(h.elements.get('[data-preview-price]')!.textContent, '$83,000');
   assert.equal(h.elements.get('[data-preview-line]')!.attributes.get('d'), path);
@@ -149,7 +157,7 @@ test('hidden/offline pages cancel requests, reject late results and resume after
   h.window.dispatchEvent(Object.assign(new Event('pagehide'), { persisted: true }));
   assert.equal(h.intervals.size, 0);
   h.window.dispatchEvent(new Event('pageshow'));
-  assert.equal(h.intervals.size, 1);
+  assert.equal(h.intervals.size, 2);
   h.navigator.onLine = false;
   h.window.dispatchEvent(new Event('offline'));
   assert.equal(h.intervals.size, 0);

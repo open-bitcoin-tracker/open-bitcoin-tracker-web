@@ -3,8 +3,9 @@ import { mergePreviewHistory, previewPaths, type PreviewHistory } from '../lib/b
 import { parseCandles } from '../lib/bitcoin-range';
 import { CurrencyRates } from '../lib/bitcoin-currency';
 import { readDisplayPreferences, subscribeCurrencyPreference } from '../lib/bitcoin-display-preferences';
+import { PRICE_POLL_MS, subscribeBitcoinPricePoll, type PricePollState } from '../lib/bitcoin-price-poll';
 
-/** Homepage-only polling: no sockets, full CSV download, controls or chart runtime. */
+/** Homepage-only polling: no sockets, full CSV download, controls or chart runtime. The price poll is shared with the video card. */
 export function startBitcoinPreview(root: HTMLElement) {
   const locale = root.dataset.locale || 'en';
   const copy: { price: string; updated: string; unavailable: string } = JSON.parse(root.dataset.copy!);
@@ -26,8 +27,9 @@ export function startBitcoinPreview(root: HTMLElement) {
   let stopped = false;
   let suspended = false;
   let timer: ReturnType<typeof setInterval> | undefined;
+  let stopPrice: (() => void) | undefined;
+  let priceState: PricePollState = 'connecting';
   let historyFetchedAt = 0;
-  let priceFailed = false;
   let historyFailed = false;
 
   function paintPrice() {
@@ -47,7 +49,7 @@ export function startBitcoinPreview(root: HTMLElement) {
       price.setAttribute('aria-label', copy.unavailable);
     }
     status.textContent = copy.unavailable;
-    status.hidden = value !== undefined && !priceFailed;
+    status.hidden = value !== undefined && priceState !== 'unavailable' && navigator.onLine;
   }
 
   function draw() {
@@ -78,59 +80,52 @@ export function startBitcoinPreview(root: HTMLElement) {
     return body.result as Record<string, unknown>;
   }
 
-  async function refresh() {
+  function startPrice() {
+    if (stopPrice) return;
+    stopPrice = subscribeBitcoinPricePoll({
+      onPrice(point) { current = point; paintPrice(); draw(); },
+      onState(next) { priceState = next; paintPrice(); },
+    });
+  }
+
+  async function refreshHistory() {
     if (stopped || suspended || document.hidden || !navigator.onLine || controller) return;
+    if (Date.now() - historyFetchedAt < 15 * 60_000) return;
     const request = new AbortController();
     controller = request;
     const active = () => !stopped && !request.signal.aborted && !document.hidden && navigator.onLine;
-    const ticker = (async () => {
-      try {
-        const result = await getJson('https://api.kraken.com/0/public/Ticker?pair=XBTUSD', request.signal);
-        const entry = Object.values(result)[0] as { c?: string[] } | undefined;
-        const value = Number(entry?.c?.[0]);
-        if (!Number.isFinite(value) || value <= 0) throw new Error('Missing price');
-        if (!active()) return;
-        current = { time: Date.now(), price: value };
-        priceFailed = false;
-        paintPrice();
-        draw();
-      } catch {
-        if (active()) { priceFailed = true; status.textContent = copy.unavailable; status.hidden = false; }
-      }
-    })();
-    const recent = (async () => {
-      if (Date.now() - historyFetchedAt < 15 * 60_000) return;
-      try {
-        const since = Math.floor(history.at(-1)!.at(-1)!.time / 1000) - 86_400;
-        const result = await getJson(`https://api.kraken.com/0/public/OHLC?pair=XBTUSD&interval=1440&since=${since}`, request.signal);
-        const points = parseCandles(result);
-        if (!active()) return;
-        history = mergePreviewHistory(history, points);
-        historyFetchedAt = Date.now();
-        historyFailed = false;
-        draw();
-      } catch {
-        if (active()) { historyFailed = true; historyStatus.hidden = false; }
-      }
-    })();
-    await Promise.allSettled([ticker, recent]);
-    if (controller === request) controller = undefined;
+    try {
+      const since = Math.floor(history.at(-1)!.at(-1)!.time / 1000) - 86_400;
+      const result = await getJson(`https://api.kraken.com/0/public/OHLC?pair=XBTUSD&interval=1440&since=${since}`, request.signal);
+      const points = parseCandles(result);
+      if (!active()) return;
+      history = mergePreviewHistory(history, points);
+      historyFetchedAt = Date.now();
+      historyFailed = false;
+      draw();
+    } catch {
+      if (active()) { historyFailed = true; historyStatus.hidden = false; }
+    } finally {
+      if (controller === request) controller = undefined;
+    }
   }
 
   function pause() {
     clearInterval(timer); timer = undefined;
     controller?.abort(); controller = undefined;
+    stopPrice?.(); stopPrice = undefined;
   }
   function resume() {
     if (stopped || suspended || document.hidden || !navigator.onLine) return;
-    if (timer === undefined) timer = setInterval(() => { void refresh(); void refreshCurrency(); }, 60_000);
+    if (timer === undefined) timer = setInterval(() => { void refreshHistory(); void refreshCurrency(); }, PRICE_POLL_MS);
+    startPrice();
     paintPrice();
     draw();
     void refreshCurrency();
-    void refresh();
+    void refreshHistory();
   }
   function visibility() { if (document.hidden) pause(); else resume(); }
-  function offline() { pause(); priceFailed = true; status.textContent = copy.unavailable; status.hidden = false; }
+  function offline() { pause(); status.textContent = copy.unavailable; status.hidden = false; }
   function pagehide(event: PageTransitionEvent) { if (event.persisted) { suspended = true; pause(); } else stop(); }
   function pageshow() { suspended = false; resume(); }
   function stop() {

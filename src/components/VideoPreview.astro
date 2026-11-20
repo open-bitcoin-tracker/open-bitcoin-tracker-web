@@ -7,7 +7,7 @@ import { party } from '../i18n/party';
 const lang = resolveLang(Astro.currentLocale);
 const t = tracker[lang];
 const { play, pause } = party[lang];
-const copy = { price: t.price, updated: t.updated, unavailable: t.unavailable, connecting: t.connecting, live: t.live, delayed: t.delayed, offline: t.offline, play, pause };
+const copy = { price: t.price, updated: t.updated, unavailable: t.unavailable, connecting: t.connecting, offline: t.offline, play, pause };
 ---
 
 <figure class="video-preview" data-video-preview data-locale={lang} data-copy={JSON.stringify(copy)} data-backgrounds={JSON.stringify(videoPreviewBackgrounds)}>

@@ -5,7 +5,7 @@ import { runInNewContext } from 'node:vm';
 import { setImmediate } from 'node:timers/promises';
 import ts from 'typescript';
 import type { HistoryPoint } from '../src/lib/bitcoin-chart.ts';
-import type { PriceFeedState } from '../src/lib/bitcoin-live-price.ts';
+import type { PricePollState } from '../src/lib/bitcoin-price-poll.ts';
 import { browserModule } from './support/browser-module.ts';
 
 const script = ts.transpileModule(readFileSync(new URL('../src/scripts/video-preview.ts', import.meta.url), 'utf8'), {
@@ -46,11 +46,11 @@ function harness(reduced = false, locale = 'en', currency = 'USD', fxFailure = f
   const intervals = new Map<number, () => void>();
   let intervalId = 0;
   const navigator = { onLine: true };
-  const subscriptions: { onPrice: (p: HistoryPoint) => void; onState: (s: PriceFeedState) => void; stopped: boolean }[] = [];
+  const subscriptions: { onPrice: (p: HistoryPoint) => void; onState: (s: PricePollState) => void; stopped: boolean }[] = [];
   let intersect: (entries: { isIntersecting: boolean }[]) => void = () => {};
   let disconnected = false;
   const root = {
-    dataset: { locale, copy: JSON.stringify({ price: 'Bitcoin price', updated: 'Updated', connecting: 'Connecting', live: 'Live', delayed: 'Reconnecting', offline: 'Offline', unavailable: 'Unavailable', play: 'Play', pause: 'Pause' }),
+    dataset: { locale, copy: JSON.stringify({ price: 'Bitcoin price', updated: 'Updated', connecting: 'Connecting', offline: 'Offline', unavailable: 'Unavailable', play: 'Play', pause: 'Pause' }),
       backgrounds: JSON.stringify(['fireplace', 'gandalf', 'kido'].map(name => ({ src: `/video-preview-${name}.mp4`, poster: `/posters/${name}.webp` }))) },
     querySelector: (s: string) => ({ '[data-video-price]': price, '[data-video-price-status]': status, '[data-preview-video]': video, '[data-preview-motion]': toggle, '[data-preview-next]': next })[s],
   };
@@ -67,7 +67,7 @@ function harness(reduced = false, locale = 'en', currency = 'USD', fxFailure = f
     require: () => ({ ...preferences, CurrencyRates: class {
       current(code: string) { const rate = code === 'USD' ? 1 : rates.get(code); return rate ? { rate } : undefined; }
       async refreshLatest() { if (fxFailure) throw Error('No rates'); rates.set('EUR', .9); rates.set('GBP', .75); }
-    }, subscribeBitcoinPrice(callbacks: typeof subscriptions[number]) {
+    }, subscribeBitcoinPricePoll(callbacks: typeof subscriptions[number]) {
       const subscription = { ...callbacks, stopped: false };
       subscriptions.push(subscription);
       callbacks.onState('connecting');
@@ -88,18 +88,19 @@ test('video card draws only received quotes, formats for the locale, and retains
   const h = harness(false, 'de');
   assert.equal(h.price.textContent, '—');
   h.intersect(true);
-  h.subscriptions[0].onState('delayed');
+  assert.equal(h.status.textContent, 'Connecting');
+  h.subscriptions[0].onState('unavailable');
   assert.equal(h.status.textContent, 'Unavailable');
   h.subscriptions[0].onPrice({ time: Date.now(), price: 83456.7 });
   assert.equal(h.price.textContent, new Intl.NumberFormat('de', { style: 'currency', currency: 'USD', currencyDisplay: 'narrowSymbol', maximumFractionDigits: 0 }).format(83456.7));
   assert.match(h.price.attributes.get('aria-label')!, /Bitcoin price:.*USD.*Updated:/);
-  h.subscriptions[0].onState('live');
-  assert.equal(h.status.textContent, 'Live');
+  h.subscriptions[0].onState('updated');
+  assert.match(h.status.textContent, /^Updated:/);
   const lastPrice = h.price.textContent;
-  h.subscriptions[0].onState('delayed');
-  assert.equal(h.status.textContent, 'Reconnecting');
+  h.subscriptions[0].onState('unavailable');
+  assert.equal(h.status.textContent, 'Unavailable');
   h.navigator.onLine = false;
-  h.subscriptions[0].onState('offline');
+  h.subscriptions[0].onState('unavailable');
   assert.equal(h.status.textContent, 'Offline');
   assert.equal(h.price.textContent, lastPrice);
   h.stop();
@@ -136,14 +137,14 @@ test('video card shows unavailable FX without relabeling USD and restores USD im
   const h = harness(false, 'en', 'EUR', true);
   h.intersect(true);
   h.subscriptions[0].onPrice({ time: Date.now(), price: 100_000 });
-  h.subscriptions[0].onState('live');
+  h.subscriptions[0].onState('updated');
   await setImmediate();
   assert.equal(h.price.textContent, '—');
   assert.equal(h.status.textContent, 'Unavailable');
   assert.equal(h.price.attributes.get('aria-label'), 'Unavailable');
   h.currency('USD');
   assert.equal(h.price.textContent, '$100,000');
-  assert.equal(h.status.textContent, 'Live');
+  assert.match(h.status.textContent, /^Updated:/);
   h.stop();
 });
 

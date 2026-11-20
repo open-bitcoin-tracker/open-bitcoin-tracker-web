@@ -1,4 +1,4 @@
-import { subscribeBitcoinPrice, type PriceFeedState } from '../lib/bitcoin-live-price';
+import { subscribeBitcoinPricePoll, type PricePollState } from '../lib/bitcoin-price-poll';
 import type { HistoryPoint } from '../lib/bitcoin-chart';
 import { CurrencyRates } from '../lib/bitcoin-currency';
 import { readDisplayPreferences, subscribeCurrencyPreference } from '../lib/bitcoin-display-preferences';
@@ -24,7 +24,7 @@ export function startVideoPreview(root: HTMLElement) {
   let money = formatMoney();
   const date = new Intl.DateTimeFormat(locale, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
   let point: HistoryPoint | undefined;
-  let state: PriceFeedState = 'connecting';
+  let state: PricePollState = 'connecting';
   let visible = false;
   let paused = motion.matches;
   let suspended = false;
@@ -46,7 +46,9 @@ export function startVideoPreview(root: HTMLElement) {
       price.title = '';
       price.setAttribute('aria-label', copy.unavailable);
     }
-    status.textContent = !navigator.onLine ? copy.offline : !rate ? copy.unavailable : (point || state === 'connecting') ? copy[state] : copy.unavailable;
+    status.textContent = !navigator.onLine ? copy.offline
+      : !rate || state === 'unavailable' ? copy.unavailable
+      : point ? price.title : copy.connecting;
   }
 
   async function refreshRates() {
@@ -60,7 +62,8 @@ export function startVideoPreview(root: HTMLElement) {
 
   function startPrice() {
     if (stopPrice || stopped || suspended || !visible || document.hidden) return;
-    stopPrice = subscribeBitcoinPrice({
+    // Shared with the chart card so both show the same quote.
+    stopPrice = subscribeBitcoinPricePoll({
       onPrice(value) { point = value; paintPrice(); },
       onState(value) { state = value; paintPrice(); },
     });
