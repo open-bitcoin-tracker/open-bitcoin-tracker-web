@@ -37,7 +37,7 @@ const sourceFor = (id: AssetId) => id === 'bitcoin' ? snapshot.bitcoin.source : 
             const rect = rects[id];
             const cut = notches[id];
             const notch = cut ? `clip-path:polygon(${percent(cut.w, rect.w)} 0, 100% 0, 100% 100%, 0 100%, 0 ${percent(cut.h, rect.h)}, ${percent(cut.w, rect.w)} ${percent(cut.h, rect.h)})` : undefined;
-            return <li class="tile" data-tile={id} style={`left:${percent(rect.x, 160)};top:${percent(rect.y, 90)};width:${percent(rect.w, 160)};height:${percent(rect.h, 90)}`}>
+            return <li class="tile" data-tile={id} style={`left:${percent(rect.x, 160)};top:${percent(rect.y, 90)};width:calc(${percent(rect.w, 160)} + ${rect.w > 0 ? 1 : 0}px);height:calc(${percent(rect.h, 90)} + ${rect.h > 0 ? 1 : 0}px)`}>
               <div class="tile-body" style={notch}>
                 <div class="tile-label">
                   {id === 'bitcoin' && <span class="tile-glyph" aria-hidden="true">₿</span>}
@@ -146,7 +146,7 @@ const sourceFor = (id: AssetId) => id === 'bitcoin' ? snapshot.bitcoin.source : 
   /* The chart sits on the page; the controls use the standard OBT card: square corners, a divider border and the surface colour. */
   .treemap-area { position: relative; display: flex; flex-direction: column; min-height: 0; }
   .simulator { padding: clamp(1rem, 1.6vw, 1.5rem); border: 1px solid var(--color-divider); background: var(--color-surface); }
-  .treemap { position: relative; flex: 1; aspect-ratio: 16 / 9; list-style: none; }
+  .treemap { position: relative; flex: 1; aspect-ratio: 16 / 9; overflow: hidden; list-style: none; }
   .tile { position: absolute; }
   .tile-body { display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; padding: .25rem; overflow: hidden; background: var(--tile-color); color: var(--tile-ink); text-align: center; container-type: size; }
   .tile[data-tile='realEstate'] { --tile-color: var(--tile-realEstate); }

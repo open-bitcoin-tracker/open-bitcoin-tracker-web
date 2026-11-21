@@ -84,8 +84,9 @@ if (root && json) {
       wrapAround(body, rect, notches[id]);
       tile.style.left = `${rect.x / width * 100}%`;
       tile.style.top = `${rect.y / height * 100}%`;
-      tile.style.width = `${rect.w / width * 100}%`;
-      tile.style.height = `${rect.h / height * 100}%`;
+      // A 1px overlap keeps the page background from showing through at fractional seams.
+      tile.style.width = `calc(${rect.w / width * 100}% + ${rect.w > 0 ? 1 : 0}px)`;
+      tile.style.height = `calc(${rect.h / height * 100}% + ${rect.h > 0 ? 1 : 0}px)`;
       tile.toggleAttribute('data-empty', rect.w <= 0 || rect.h <= 0);
     }
     // Mirror the tile label's container query: tile minus its inner padding.
