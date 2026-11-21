@@ -4,6 +4,7 @@ import { resolveLang, stripLocale } from '../i18n/utils';
 import { tracker } from '../i18n/tracker';
 import { video } from '../i18n/video';
 import { aBitOfEarth } from '../lib/projects';
+import { wealth } from '../i18n/wealth';
 
 const lang = resolveLang(Astro.currentLocale);
 const t = tracker[lang];
@@ -12,6 +13,7 @@ const pages = [
   { path: 'price-tracker', label: t.priceChart, english: false },
   { path: 'video-mode', label: video[lang].title, english: true },
   { path: aBitOfEarth.path, label: aBitOfEarth.title, english: true },
+  { path: 'global-wealth', label: wealth.title, english: true },
   { path: 'android-app', label: t.app, english: false },
 ];
 ---

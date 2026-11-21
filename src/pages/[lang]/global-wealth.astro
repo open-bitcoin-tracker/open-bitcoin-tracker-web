@@ -1,0 +1,9 @@
+---
+import WealthPage from '../../components/pages/WealthPage.astro';
+import { getLocalizedStaticPaths } from '../../i18n/languages';
+
+export function getStaticPaths() {
+  return getLocalizedStaticPaths();
+}
+---
+<WealthPage />

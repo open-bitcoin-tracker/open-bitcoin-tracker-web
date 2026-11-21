@@ -1,0 +1,314 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import Nav from '../Nav.astro';
+import CheckIcon from '../ui/CheckIcon.astro';
+import '../../styles/currency-picker.css';
+import { getRelativeLocaleUrl } from 'astro:i18n';
+import { resolveLang } from '../../i18n/utils';
+import { wealth as t, assetNames } from '../../i18n/wealth';
+import rawSnapshot from '../../features/wealth/snapshot.json';
+import rawSupply from '../../features/supply/snapshot.json';
+import { formatDate, formatNumber, interpolate, isValidSnapshot, type SupplySnapshot } from '../../features/supply/model';
+import { ASSET_IDS, baseValues, broadMoneyUsd, circulatingSupply, estimateHeight, formatCompactUsd, formatUsd, isValidWealthSnapshot, SLIDER_STEPS, layoutAssets, totalValue, type AssetId, type WealthSnapshot } from '../../features/wealth/model';
+
+const snapshot = rawSnapshot as WealthSnapshot;
+const supplySnapshot = rawSupply as SupplySnapshot;
+if (!isValidWealthSnapshot(snapshot) || !isValidSnapshot(supplySnapshot)) throw new Error('Invalid wealth snapshot. Verify the sources before building.');
+
+const locale = 'en-US';
+const date = (value: string) => formatDate(value, locale);
+const fiat = broadMoneyUsd(supplySnapshot, snapshot.fiat.usdRates);
+if (!Number.isFinite(fiat)) throw new Error('Broad money conversion failed. Check the exchange rates.');
+// Static HTML uses the reviewed fallback prices and the supply at its reference block.
+const supply = circulatingSupply(estimateHeight(snapshot.bitcoin, Date.parse(snapshot.bitcoin.referenceTime)));
+const base = baseValues(snapshot, fiat, snapshot.bitcoin.fallbackPrice, snapshot.gold.fallbackPrice, supply);
+const total = totalValue(base);
+const { rects, notches } = layoutAssets(base, 160, 90);
+const percent = (value: number, of: number) => `${(value / of * 100).toFixed(4)}%`;
+const presets = ['gold', 'fiat', 'equities', 'bonds', 'realEstate'] as const;
+const listed = Object.fromEntries(snapshot.assets.map((asset) => [asset.id, asset]));
+const clientCopy = { ...t, assetNames };
+const yearOf = (value: string) => value.slice(0, 4);
+const sourceFor = (id: AssetId) => id === 'bitcoin' ? snapshot.bitcoin.source : id === 'gold' ? snapshot.gold.source : id === 'fiat' ? `${getRelativeLocaleUrl(resolveLang(Astro.currentLocale), 'bitcoin-and-the-dollar')}#sources` : listed[id].source;
+---
+<Layout title={`${t.title} — Open Bitcoin Tracker`} description={t.description}>
+  <Nav />
+  <main id="main-content" class="wealth-page" lang="en" data-wealth>
+    <header class="wealth-header">
+      <h1>{t.title}</h1>
+    </header>
+
+    <div class="wealth-stage">
+      <section class="treemap-card" aria-label={t.treemapLabel}>
+        <div class="treemap-labels">
+          <p class="bitcoin-callout" data-callout data-visible aria-hidden="true">{assetNames.bitcoin} <strong data-callout-value>{formatCompactUsd(base.bitcoin)}</strong></p>
+          <p class="wealth-total"><span>{t.total}</span> <strong data-total>{formatCompactUsd(total, 3)}</strong></p>
+        </div>
+        <ul class="treemap" data-treemap>
+          {ASSET_IDS.map((id) => {
+            const rect = rects[id];
+            const cut = notches[id];
+            const notch = cut ? `clip-path:polygon(${percent(cut.w, rect.w)} 0, 100% 0, 100% 100%, 0 100%, 0 ${percent(cut.h, rect.h)}, ${percent(cut.w, rect.w)} ${percent(cut.h, rect.h)})` : undefined;
+            return <li class="tile" data-tile={id} style={`left:${percent(rect.x, 160)};top:${percent(rect.y, 90)};width:${percent(rect.w, 160)};height:${percent(rect.h, 90)}`}>
+              <div class="tile-body" style={notch}>
+                {id === 'bitcoin' && <span class="tile-glyph" aria-hidden="true">₿</span>}
+                <span class="tile-name">{assetNames[id]}</span>
+                <span class="tile-value" data-tile-value>{formatCompactUsd(base[id])}</span>
+                <span class="tile-change" data-tile-change></span>
+              </div>
+            </li>;
+          })}
+        </ul>
+      </section>
+
+      <section class="simulator" aria-label={t.simulatorTitle}>
+        <!-- The slider sets the price per bitcoin; the market cap follows and shows on the chart. -->
+        <div class="sim-section sim-price">
+          <div class="cap-row">
+            <label for="bitcoin-cap" class="section-label">{t.priceLabel}</label>
+            <button type="button" class="reset" data-reset aria-label={t.resetLabel} title={t.resetLabel} hidden>
+              <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/></svg>
+              <span>{t.reset}</span>
+            </button>
+          </div>
+          <div class="price-line">
+            <output class="cap-value" for="bitcoin-cap" data-price>{formatUsd(snapshot.bitcoin.fallbackPrice)}</output>
+            <span class="multiplier" data-multiplier aria-hidden="true"></span>
+          </div>
+          <input id="bitcoin-cap" class="cap-slider" type="range" min="0" max={SLIDER_STEPS} step="1" value="0" style="--fill:0%" data-slider disabled
+            aria-valuetext={interpolate(t.sliderValue, { cap: formatCompactUsd(base.bitcoin, 4), price: formatUsd(snapshot.bitcoin.fallbackPrice) })} />
+        </div>
+        <div class="sim-section source-row" data-source-picker>
+            <span id="source-label" class="section-label">{t.sourceLabel}</span>
+            <select hidden tabindex="-1" aria-hidden="true" data-source disabled>
+              <option value="">{t.allAssets}</option>
+              {presets.map((id) => <option value={id}>{assetNames[id]}</option>)}
+            </select>
+            <div class="source-control">
+              <button type="button" class="source-trigger" data-source-trigger aria-haspopup="listbox" aria-expanded="false" aria-controls="source-options" aria-labelledby="source-label source-value" disabled>
+                <span class="source-dot" data-source-dot aria-hidden="true"></span>
+                <span id="source-value" data-source-value>{t.allAssets}</span>
+                <svg viewBox="0 0 24 24" width="12" height="12" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+              </button>
+              <div id="source-options" class="currency-options source-menu" data-source-list role="listbox" aria-labelledby="source-label" hidden>
+                {[['', t.allAssets] as const, ...presets.map((id) => [id, assetNames[id]] as const)].map(([id, name]) => (
+                  <button type="button" class="currency-option" data-source-option={id} role="option" aria-selected={id === '' ? 'true' : 'false'} tabindex="-1">
+                    <span class="source-dot" style={id ? `--chip-color:var(--tile-${id})` : undefined} aria-hidden="true"></span>
+                    <span class="currency-option-name">{name}</span>
+                    <CheckIcon />
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        <div class="sim-section presets-block">
+          <span id="presets-label" class="section-label">{t.presetsLabel}</span>
+          <div class="presets" role="group" aria-labelledby="presets-label">
+            {presets.map((id) => <button type="button" class="preset" data-preset={id} style={`--chip-color:var(--tile-${id})`} aria-pressed="false" disabled><span class="preset-dot" aria-hidden="true"></span>{assetNames[id]}</button>)}
+          </div>
+        </div>
+        <div class="simulator-footer">
+          <p class="simulator-status" data-status>{interpolate(t.priceUnavailable, { date: date(snapshot.bitcoin.fallbackPriceDate) })}</p>
+          <noscript><p class="simulator-status">{interpolate(t.nojs, { date: date(snapshot.checkedAt) })}</p></noscript>
+        </div>
+      </section>
+    </div>
+
+    <details class="method" id="sources">
+      <summary><span>{t.methodTitle}</span><span class="details-plus" aria-hidden="true">+</span></summary>
+      <div class="method-content">
+        <p>{t.methodIntro}</p>
+        <p>{t.simulationMethod}</p>
+        <dl class="source-list">
+          {ASSET_IDS.map((id) => {
+            const asset = listed[id];
+            const detail = id === 'bitcoin'
+              ? interpolate(t.bitcoinMethod, { height: formatNumber(snapshot.bitcoin.referenceHeight, locale), date: date(snapshot.bitcoin.referenceTime) })
+              : id === 'gold'
+                ? interpolate(t.goldMethod, { tonnes: formatNumber(snapshot.gold.tonnes, locale), year: yearOf(snapshot.gold.asOf) })
+                : id === 'fiat'
+                  ? interpolate(t.fiatMethod, { date: date(snapshot.fiat.fxDate) })
+                  : `${asset.publisher}, ${interpolate(t.asOf, { date: date(asset.asOf) })}. ${asset.note}`;
+            return <div class="source-item">
+              <dt><span class="source-swatch" data-swatch={id} aria-hidden="true"></span>{assetNames[id]}</dt>
+              <dd>{detail} <a href={sourceFor(id)} aria-label={`${assetNames[id]} source`}>{t.sourceLink} ↗</a>{id === 'fiat' && <> <a href={snapshot.fiat.fxSource} aria-label="ECB reference rates">ECB ↗</a></>}</dd>
+            </div>;
+          })}
+        </dl>
+      </div>
+    </details>
+  </main>
+  <script id="wealth-data" type="application/json" set:html={JSON.stringify({ snapshot, fiat, copy: clientCopy }).replace(/</g, '\\u003c')} />
+  <script>import '../../scripts/wealth';</script>
+</Layout>
+<style>
+  .wealth-page {
+    --wealth-radius: var(--radius-md);
+    --wealth-gap: 1rem;
+    --tile-realEstate: #e39c9c;
+    --tile-bonds: #e8b79c;
+    --tile-equities: #9fb9ef;
+    --tile-fiat: #cfe3ae;
+    --tile-gold: #f0cf7f;
+    --tile-bitcoin: var(--color-accent);
+    --tile-ink: #1f1b14;
+    width: 100%;
+    max-width: 120rem;
+    margin: 0 auto;
+    padding: var(--menu-control-top) clamp(1rem, 3vw, 2.5rem) 2rem;
+  }
+  :global(html.dark) .wealth-page {
+    --tile-realEstate: #d68e8e;
+    --tile-bonds: #dca98d;
+    --tile-equities: #8eaae3;
+    --tile-fiat: #bed69b;
+    --tile-gold: #e4c06c;
+  }
+  /* The title shares the menu button's row. */
+  .wealth-header { display: flex; align-items: center; gap: 1rem; min-height: var(--menu-control-size); margin-bottom: var(--wealth-gap); padding-right: calc(var(--menu-control-size) + 1rem); }
+  .wealth-header h1 { font-size: clamp(1.375rem, 2.4vw, 2rem); font-weight: 650; letter-spacing: -.03em; line-height: 1.15; }
+  /* Labels above the chart: Bitcoin's callout on the left, the total on the right. */
+  .treemap-labels { display: flex; justify-content: space-between; align-items: flex-end; gap: 1rem; min-height: 1.75rem; margin-bottom: .5rem; font-size: .875rem; color: var(--color-ink-muted); white-space: nowrap; }
+  .treemap-labels strong { color: var(--color-ink); font-weight: 650; font-variant-numeric: tabular-nums; }
+  .wealth-total { margin-left: auto; }
+  .wealth-total strong { font-size: 1rem; }
+  /* A bracket from the label down to Bitcoin's box when the box is too small for its own label. */
+  /* An elbow rises from the middle of Bitcoin's box (--callout-x, set by the script) to the label. */
+  .bitcoin-callout { --callout-x: .5rem; position: relative; padding-left: calc(var(--callout-x) + .625rem); visibility: hidden; }
+  .bitcoin-callout::before { content: ''; position: absolute; left: calc(var(--callout-x) - .75px); top: .62em; bottom: -.5rem; width: .375rem; border-top: 1.5px solid var(--color-accent); border-left: 1.5px solid var(--color-accent); border-top-left-radius: .3rem; }
+  .bitcoin-callout[data-visible] { visibility: visible; }
+  .wealth-stage { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--wealth-gap); }
+  .treemap-card, .simulator { padding: clamp(.75rem, 1.5vw, 1.25rem); border: 1px solid var(--color-divider); border-radius: var(--wealth-radius); background: var(--color-surface); }
+  .treemap-card { display: flex; flex-direction: column; min-height: 0; }
+  .treemap { position: relative; flex: 1; aspect-ratio: 16 / 9; list-style: none; }
+  .tile { position: absolute; }
+  .tile-body { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: .15em; width: 100%; height: 100%; padding: .25rem; overflow: hidden; background: var(--tile-color); color: var(--tile-ink); text-align: center; container-type: size; }
+  .tile[data-tile='realEstate'] { --tile-color: var(--tile-realEstate); }
+  .tile[data-tile='bonds'] { --tile-color: var(--tile-bonds); }
+  .tile[data-tile='equities'] { --tile-color: var(--tile-equities); }
+  .tile[data-tile='fiat'] { --tile-color: var(--tile-fiat); }
+  .tile[data-tile='gold'] { --tile-color: var(--tile-gold); }
+  .tile[data-tile='bitcoin'] { --tile-color: var(--tile-bitcoin); z-index: 1; }
+  .tile[data-empty] { visibility: hidden; }
+  .tile-name { font-size: clamp(.75rem, 1.2vw, 1.125rem); line-height: 1.2; }
+  .tile-value { font-size: clamp(.875rem, 1.4vw, 1.375rem); font-weight: 700; font-variant-numeric: tabular-nums; line-height: 1.2; }
+  .tile-change { font-size: clamp(.6875rem, 1vw, .875rem); font-variant-numeric: tabular-nums; opacity: .8; }
+  .tile-change:empty { display: none; }
+  .tile-glyph { font-size: clamp(.75rem, 1.4vw, 1.25rem); font-weight: 700; line-height: 1; }
+  .tile-name, .tile-value { white-space: nowrap; }
+  .tile-glyph { display: none; }
+  /* Short, wide boxes put the label on one line. */
+  /* Labels that do not fit stay available to screen readers. */
+  @container (max-height: 3.25rem) { .tile-body { flex-direction: row; gap: .4em; } .tile-change { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); } }
+  @container (max-width: 4rem) or (max-height: 1.25rem) { .tile-name, .tile-change { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); } }
+  @container (max-width: 3.75rem) or (max-height: 1.1rem) { .tile-value { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); } .tile-glyph { display: block; } }
+  @container (max-width: .9rem) or (max-height: .9rem) { .tile-glyph { display: none; } }
+  /* Three sections, each with the same small heading and a divider between them. */
+  .simulator { display: flex; flex-direction: column; gap: 1rem; min-width: 0; }
+  .sim-section { display: grid; gap: .625rem; }
+  .sim-section + .sim-section { padding-top: 1rem; border-top: 1px solid var(--color-divider); }
+  .section-label { color: var(--color-ink-muted); font-size: .75rem; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; }
+  .sim-price { gap: 0; }
+  .cap-row { display: flex; align-items: center; justify-content: space-between; gap: .75rem; min-height: 2rem; }
+  .price-line { display: flex; align-items: baseline; flex-wrap: wrap; gap: .1rem .6rem; margin-top: .1rem; }
+  .cap-value { font-size: clamp(1.75rem, 2.6vw, 2.5rem); font-weight: 650; line-height: 1.15; font-variant-numeric: tabular-nums; letter-spacing: -.03em; white-space: nowrap; }
+  .multiplier { color: var(--color-ink-muted); font-size: .875rem; font-weight: 600; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .multiplier:empty { display: none; }
+  .reset { display: inline-flex; align-items: center; gap: .35rem; min-height: 2rem; padding: .25rem .75rem .25rem .6rem; border: 1px solid var(--color-divider); border-radius: 999px; background: var(--color-surface); color: var(--color-ink); font-size: .8125rem; font-weight: 600; white-space: nowrap; cursor: pointer; box-shadow: 0 1px 2px rgb(0 0 0 / .12); animation: reset-in .2s ease-out; transition: border-color .15s ease, background-color .15s ease; }
+  .reset svg { color: var(--color-accent); transition: transform .3s ease; }
+  .reset:hover { border-color: var(--color-accent); }
+  .reset:hover svg { transform: rotate(-60deg); }
+  .reset:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 2px; }
+  .reset[hidden] { display: none; }
+  @keyframes reset-in { from { opacity: 0; transform: scale(.92); } }
+  /* A custom slider: a thicker track filled up to the thumb (--fill, set by the script). */
+  .cap-slider { --track: color-mix(in srgb, var(--color-ink) 16%, transparent); width: 100%; height: 2.75rem; margin: .25rem 0 0; background: transparent; appearance: none; -webkit-appearance: none; cursor: pointer; }
+  .cap-slider:disabled { cursor: default; }
+  .cap-slider:focus { outline: none; }
+  .cap-slider::-webkit-slider-runnable-track { height: .5rem; border-radius: 999px; background: linear-gradient(to right, var(--color-accent) var(--fill), var(--track) var(--fill)); }
+  .cap-slider::-moz-range-track { height: .5rem; border-radius: 999px; background: var(--track); }
+  .cap-slider::-moz-range-progress { height: .5rem; border-radius: 999px; background: var(--color-accent); }
+  .cap-slider::-webkit-slider-thumb { width: 1.375rem; height: 1.375rem; margin-top: -.4375rem; border: 3px solid var(--color-accent); border-radius: 50%; background: #fff; box-shadow: 0 2px 6px rgb(0 0 0 / .3); -webkit-appearance: none; appearance: none; transition: transform .15s ease, box-shadow .15s ease; }
+  .cap-slider::-moz-range-thumb { width: 1rem; height: 1rem; border: 3px solid var(--color-accent); border-radius: 50%; background: #fff; box-shadow: 0 2px 6px rgb(0 0 0 / .3); transition: transform .15s ease, box-shadow .15s ease; }
+  .cap-slider:not(:disabled):hover::-webkit-slider-thumb, .cap-slider:not(:disabled):active::-webkit-slider-thumb { transform: scale(1.1); }
+  .cap-slider:not(:disabled):hover::-moz-range-thumb, .cap-slider:not(:disabled):active::-moz-range-thumb { transform: scale(1.1); }
+  .cap-slider:focus-visible::-webkit-slider-thumb { box-shadow: 0 0 0 5px color-mix(in srgb, var(--color-accent) 30%, transparent); }
+  .cap-slider:focus-visible::-moz-range-thumb { box-shadow: 0 0 0 5px color-mix(in srgb, var(--color-accent) 30%, transparent); }
+  .source-control { position: relative; justify-self: start; }
+  /* Matches the site's option menus (currency, refresh interval). */
+  .source-trigger { display: inline-flex; align-items: center; gap: .45rem; min-height: 40px; padding: .4rem .7rem .4rem .8rem; border: 1px solid var(--color-divider); border-radius: .625rem; background: var(--color-surface); color: var(--color-ink); font-size: .875rem; font-weight: 600; white-space: nowrap; cursor: pointer; transition: border-color 150ms ease, background-color 150ms ease; }
+  /* No outline ring; keyboard focus shows the same treatment as hover. */
+  .source-trigger:hover:not(:disabled), .source-trigger:focus-visible, .source-trigger[aria-expanded='true'] { border-color: var(--color-ink-muted); background: var(--menu-option-hover); }
+  .source-trigger:disabled { cursor: default; }
+  .source-trigger:focus, .source-menu .currency-option:focus { outline: none; }
+  .source-trigger svg { color: var(--color-ink-muted); transition: transform 150ms ease; }
+  .source-trigger[aria-expanded='true'] svg { transform: rotate(180deg); }
+  .source-menu { position: absolute; z-index: 20; top: calc(100% + .35rem); left: 0; width: max-content; min-width: 12rem; padding: .375rem; border: 1px solid var(--menu-dropdown-border); border-radius: var(--radius-lg); background: var(--menu-dropdown-bg); box-shadow: var(--menu-dropdown-shadow); animation: source-menu-in 160ms ease-out; }
+  .source-menu .currency-option { min-height: 40px; padding: .45rem .625rem; border: 0; background: transparent; font: inherit; }
+  .source-menu .currency-option:focus { background: var(--menu-option-hover); }
+  .source-dot { width: .625rem; height: .625rem; flex: none; border-radius: 999px; background: var(--chip-color, conic-gradient(var(--tile-realEstate) 0 25%, var(--tile-equities) 0 50%, var(--tile-fiat) 0 75%, var(--tile-gold) 0)); }
+  @keyframes source-menu-in { from { opacity: 0; transform: translateY(-.25rem); } }
+  .presets { display: flex; flex-wrap: wrap; gap: .5rem; }
+  .preset-dot { width: .625rem; height: .625rem; flex: none; border-radius: 999px; background: var(--chip-color); }
+  .preset { display: inline-flex; flex: 1 1 auto; align-items: center; justify-content: center; gap: .45rem; min-height: 40px; padding: .4rem .8rem; border: 1px solid var(--color-divider); border-radius: .625rem; background: var(--color-surface); color: var(--color-ink); font-size: .875rem; white-space: nowrap; cursor: pointer; transition: border-color .15s ease, background-color .15s ease, opacity .15s ease; }
+  .preset:hover:not(:disabled) { border-color: var(--color-ink-muted); background: var(--menu-option-hover); }
+  .preset[aria-pressed='true'] { border-color: var(--color-accent); background: var(--color-accent-soft); font-weight: 600; }
+  .preset:disabled { cursor: not-allowed; opacity: .4; }
+  .simulator-footer { display: grid; gap: .35rem; margin-top: auto; }
+  .simulator-status { color: var(--color-ink-muted); font-size: .8125rem; line-height: 1.45; }
+  .simulator-status:empty { display: none; }
+  .method { margin-top: var(--wealth-gap); }
+  summary { display: flex; align-items: center; justify-content: space-between; gap: 1rem; min-height: 44px; padding: .75rem .125rem; cursor: pointer; list-style: none; color: var(--color-ink-muted); font-size: .9375rem; }
+  summary::-webkit-details-marker { display: none; }
+  .details-plus { font-size: 1.25rem; transition: transform .2s ease; }
+  details[open] .details-plus { transform: rotate(45deg); }
+  .method-content { max-width: 76ch; padding-bottom: 1.5rem; color: var(--color-ink-muted); font-size: .9375rem; line-height: 1.75; }
+  .method-content > p + p { margin-top: .75rem; }
+  .source-list { display: grid; gap: 1rem; margin-top: 1.25rem; }
+  .source-item dt { display: flex; align-items: center; gap: .5rem; color: var(--color-ink); font-weight: 600; }
+  .source-swatch { width: .75rem; height: .75rem; border-radius: .2rem; background: var(--swatch); }
+  .source-swatch[data-swatch='realEstate'] { --swatch: var(--tile-realEstate); }
+  .source-swatch[data-swatch='bonds'] { --swatch: var(--tile-bonds); }
+  .source-swatch[data-swatch='equities'] { --swatch: var(--tile-equities); }
+  .source-swatch[data-swatch='fiat'] { --swatch: var(--tile-fiat); }
+  .source-swatch[data-swatch='gold'] { --swatch: var(--tile-gold); }
+  .source-swatch[data-swatch='bitcoin'] { --swatch: var(--tile-bitcoin); }
+  .source-item a { color: var(--color-emphasis-ink); text-decoration: underline; text-decoration-color: var(--color-accent); text-underline-offset: .25rem; white-space: nowrap; }
+  a:focus-visible, summary:focus-visible, button:focus-visible, input:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 4px; }
+  /* Desktop: the chart and controls fill one screen, so the slider and the boxes are visible together. */
+  @media (min-width: 900px) and (min-height: 520px) {
+    .wealth-stage {
+      grid-template-columns: minmax(0, 1fr) clamp(20rem, 26vw, 28rem);
+      height: calc(100dvh - var(--menu-control-top) - var(--menu-control-size) - var(--wealth-gap) * 2);
+    }
+    .treemap { aspect-ratio: auto; }
+    .simulator { overflow-y: auto; }
+  }
+  @media (min-width: 900px) and (max-height: 780px) {
+    .wealth-page { --wealth-gap: .625rem; }
+    .simulator { gap: .75rem; padding: .875rem; }
+    .cap-slider { height: 2.25rem; }
+    .cap-value { font-size: 1.625rem; }
+    .simulator { gap: .75rem; }
+    .sim-section:not(.sim-price) { gap: .5rem; }
+    .sim-section + .sim-section { padding-top: .75rem; }
+    .preset { min-height: 34px; padding: .25rem .6rem; font-size: .8125rem; }
+    .source-trigger { min-height: 34px; padding: .25rem .6rem .25rem .7rem; font-size: .8125rem; }
+    .presets { gap: .375rem; }
+  }
+  @media (max-width: 899px) {
+    .wealth-page { padding-bottom: 1.5rem; }
+    .treemap { aspect-ratio: 4 / 3; }
+  }
+  @media (max-width: 600px) {
+    .wealth-header { flex-wrap: wrap; row-gap: .25rem; }
+    .treemap { aspect-ratio: 4 / 5; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .preset, .details-plus, .reset, .reset svg, .source-trigger, .source-trigger svg { transition: none; }
+    .cap-slider::-webkit-slider-thumb, .cap-slider::-moz-range-thumb { transition: none; }
+    .source-menu { animation: none; }
+    .reset { animation: none; }
+    .reset:hover svg { transform: none; }
+  }
+</style>

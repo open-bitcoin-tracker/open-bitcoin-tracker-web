@@ -15,7 +15,7 @@ npm run dev
 | --- | --- |
 | `npm run build` / `npm run preview` | Build to `dist/` / preview |
 | `npm run check` | TypeScript checks; excludes Astro templates |
-| `npm test` | Chart, currency, preferences, browser, supply tests |
+| `npm test` | Chart, currency, preferences, browser, supply, wealth tests |
 | `npm run test:earth` / `npm run check:earth` | Earth tests / types |
 | `npm run check:supply` | Supply and refresh types |
 
@@ -23,13 +23,14 @@ Builds do not perform a full TypeScript check. After UI changes, rebuild; after 
 
 ## Structure and data
 
-- Routes: `/`, `/price-tracker/`, `/party-mode/`, `/video-mode/`, `/android-app/`, `/a-bit-of-earth/`, `/bitcoin-and-the-dollar/`, `/about/`, `/android-app/about/`, `/privacy/`. Money per Person is hidden from navigation.
-- Pages: `src/pages/`, `src/components/pages/`; shared UI: `src/components/ui/`, `src/layouts/`, `src/styles/`; browser logic: `src/lib/`, `src/scripts/`; Earth/supply: `src/features/`; assets: `public/`.
+- Routes: `/`, `/price-tracker/`, `/party-mode/`, `/video-mode/`, `/android-app/`, `/a-bit-of-earth/`, `/global-wealth/`, `/bitcoin-and-the-dollar/`, `/about/`, `/android-app/about/`, `/privacy/`. Money per Person is hidden from navigation.
+- Pages: `src/pages/`, `src/components/pages/`; shared UI: `src/components/ui/`, `src/layouts/`, `src/styles/`; browser logic: `src/lib/`, `src/scripts/`; Earth/supply/wealth: `src/features/`; assets: `public/`.
 - Prices: Kraken and bundled Coin Metrics history. FX: ECB rates through Frankfurter. Maps: MapLibre and OpenFreeMap. Place search runs locally; the tile provider receives IP addresses and viewed map areas.
 - Fiat currency is a global browser preference shared by the price chart, Party Mode, Price on Video, and homepage previews, including localized pages and other open tabs. Currency changes update existing displays immediately; unavailable FX stays unavailable.
 - Price on Video keeps the current setup in the address bar after a video is selected. Use Share setup beside the menu button to copy a link with the video and its requested start time, currency, price position and size, font, colours, outline, volume, mute, and loop settings. If clipboard access is unavailable, a selected link appears for manual copying. The versioned URL fragment takes priority over saved browser settings without overwriting them on arrival; invalid setups fall back to browser preferences. Position and size adapt to the visitor's screen. Playback progress and fullscreen are not shared; autoplay and phone audio remain subject to browser/device controls.
 - The price chart offers a saved, opt-in price-only tab title in Chart settings, with an explanation before enabling it. Users can choose a title refresh interval of 1 (default), 5, 15, 30, or 60 seconds in the confirmation panel or the enabled setting. The interval controls title updates; only opted-in tickers stay connected in background tabs while chart rendering and history refreshes pause. Currency changes, disabling the option, and unavailable live prices or FX update the title immediately. The descriptive title remains the default and the static/social metadata title. Browsers may suspend background updates.
 - Supply definitions, units, dates, and official sources: [snapshot.json](src/features/supply/snapshot.json).
+- Global Wealth prices Bitcoin (Kraken BTC/USD × circulating supply estimated from a reference block) and gold (Kraken PAXG/USD × above-ground tonnes) live; real estate, bonds, and equities come from annual reports, and fiat reuses the supply page's broad money converted at ECB rates. Sources and dates: [snapshot.json](src/features/wealth/snapshot.json). The slider starts at today's Bitcoin market cap and only increases it, redistributing value proportionally (or from one chosen asset) so the total stays fixed.
 
 ## Maintenance
 
@@ -38,6 +39,8 @@ Builds do not perform a full TypeScript check. After UI changes, rebuild; after 
 **Supply:** Run `npm run refresh:supply`, review, then `npm run check:supply`, `npm test`, and `npm run build`. Refresh updates seasonally adjusted US M2 only. Use `-- --file downloaded-h6.html` or `-- --import reviewed-money.json`; imports follow [ReviewedMoneyImport](src/features/supply/refresh.ts) in source units. Verify definitions, series, adjustments, units, dates, and release vintage against official sources. Validation cannot authenticate observations; definition changes need model/metadata review. Failed refreshes preserve the snapshot.
 
 Review population annually or after UN WPP revisions: World / Medium / both sexes / Total Population as of 1 July, converting thousands to people. Update `points`, fallback `persons`/`date`, and `checkedAt` together. Keep `scenarioPoints` covering today's UTC date through 15 years ahead with adjacent endpoints from one revision/source. Run supply checks and rebuild; monetary refreshes leave population untouched.
+
+**Global Wealth:** Review yearly, or when Savills (world real estate), SIFMA (Capital Markets Fact Book bonds and equities), or the World Gold Council (above-ground stocks) publish new editions. Update each value with its `asOf` date and source together, refresh the reference block (`referenceHeight`/`referenceTime`), fallback BTC and PAXG prices, and ECB `usdRates`/`fxDate` together, and set `checkedAt`. Broad money follows the supply refresh automatically. Run `npm test` and rebuild; invalid snapshots fail the build.
 
 **Earth:** Review capital names and coordinates together in `src/features/earth/lib/capitals.json`. Regenerate cities with `python3 scripts/import-earth-cities.py <geojson>` using the exact download in [cities-source.json](src/features/earth/lib/cities-source.json). New releases require review of the importer's revision, checksum, names, country codes, coordinates, and date. Run Earth tests/types, `npm test`, and build.
 

@@ -1,0 +1,54 @@
+{
+  "checkedAt": "2026-11-20",
+  "bitcoin": {
+    "referenceHeight": 976789,
+    "referenceTime": "2026-11-20T22:10:29Z",
+    "fallbackPrice": 59048.3,
+    "fallbackPriceDate": "2026-11-20",
+    "source": "https://mempool.space/block/976789"
+  },
+  "gold": {
+    "tonnes": 220700,
+    "asOf": "2025-12-31",
+    "source": "https://www.gold.org/goldhub/research/market-primer/gold-market-primer-market-size-and-structure",
+    "fallbackPrice": 3527.97,
+    "fallbackPriceDate": "2026-11-20",
+    "note": "World Gold Council estimate of all gold ever mined, rounded to the nearest 100 tonnes."
+  },
+  "fiat": {
+    "fxDate": "2026-11-20",
+    "usdRates": {
+      "EUR": 0.90992,
+      "JPY": 158.64,
+      "CNY": 6.6777,
+      "GBP": 0.76192
+    },
+    "fxSource": "https://www.ecb.europa.eu/stats/policy_and_exchange_rates/euro_reference_exchange_rates/html/index.en.html"
+  },
+  "assets": [
+    {
+      "id": "realEstate",
+      "valueUsd": 393300000000000,
+      "asOf": "2024-12-31",
+      "publisher": "Savills",
+      "source": "https://www.savills.us/insight-and-opinion/savills-news/381209/world-s-real-estate-worth-$393.3-trillion-and-is-the-world-s-largest-store-of-wealth",
+      "note": "Residential, commercial and agricultural."
+    },
+    {
+      "id": "bonds",
+      "valueUsd": 160700000000000,
+      "asOf": "2025-12-31",
+      "publisher": "SIFMA Capital Markets Fact Book 2026",
+      "source": "https://www.sifma.org/research/statistics/fact-book",
+      "note": "Debt securities outstanding; loans excluded."
+    },
+    {
+      "id": "equities",
+      "valueUsd": 157800000000000,
+      "asOf": "2025-12-31",
+      "publisher": "SIFMA Capital Markets Fact Book 2026",
+      "source": "https://www.sifma.org/research/statistics/fact-book",
+      "note": "Listed market capitalization."
+    }
+  ]
+}
