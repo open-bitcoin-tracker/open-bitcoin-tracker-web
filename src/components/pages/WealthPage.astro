@@ -6,23 +6,14 @@ import '../../styles/currency-picker.css';
 import { getRelativeLocaleUrl } from 'astro:i18n';
 import { resolveLang } from '../../i18n/utils';
 import { wealth as t, assetNames } from '../../i18n/wealth';
-import rawSnapshot from '../../features/wealth/snapshot.json';
-import rawSupply from '../../features/supply/snapshot.json';
-import { formatDate, formatNumber, interpolate, isValidSnapshot, type SupplySnapshot } from '../../features/supply/model';
-import { ASSET_IDS, baseValues, broadMoneyUsd, circulatingSupply, estimateHeight, formatCompactUsd, formatUsd, isValidWealthSnapshot, SLIDER_STEPS, layoutAssets, totalValue, type AssetId, type WealthSnapshot } from '../../features/wealth/model';
-
-const snapshot = rawSnapshot as WealthSnapshot;
-const supplySnapshot = rawSupply as SupplySnapshot;
-if (!isValidWealthSnapshot(snapshot) || !isValidSnapshot(supplySnapshot)) throw new Error('Invalid wealth snapshot. Verify the sources before building.');
+import '../../features/wealth/tiles.css';
+import { formatDate, formatNumber, interpolate } from '../../features/supply/model';
+import { ASSET_IDS, formatCompactUsd, formatUsd, SLIDER_STEPS, layoutAssets, type AssetId } from '../../features/wealth/model';
+import { staticWealth } from '../../features/wealth/static';
 
 const locale = 'en-US';
 const date = (value: string) => formatDate(value, locale);
-const fiat = broadMoneyUsd(supplySnapshot, snapshot.fiat.usdRates);
-if (!Number.isFinite(fiat)) throw new Error('Broad money conversion failed. Check the exchange rates.');
-// Static HTML uses the reviewed fallback prices and the supply at its reference block.
-const supply = circulatingSupply(estimateHeight(snapshot.bitcoin, Date.parse(snapshot.bitcoin.referenceTime)));
-const base = baseValues(snapshot, fiat, snapshot.bitcoin.fallbackPrice, snapshot.gold.fallbackPrice, supply);
-const total = totalValue(base);
+const { snapshot, fiat, supply, base, total } = staticWealth();
 const { rects, notches } = layoutAssets(base, 160, 90);
 const percent = (value: number, of: number) => `${(value / of * 100).toFixed(4)}%`;
 const presets = ['gold', 'fiat', 'equities', 'bonds', 'realEstate'] as const;
@@ -33,7 +24,7 @@ const sourceFor = (id: AssetId) => id === 'bitcoin' ? snapshot.bitcoin.source : 
 ---
 <Layout title={`${t.title} — Open Bitcoin Tracker`} description={t.description}>
   <Nav />
-  <main id="main-content" class="wealth-page" lang="en" data-wealth>
+  <main id="main-content" class="wealth-page wealth-tiles" lang="en" data-wealth>
     <header class="wealth-header">
       <h1>{t.title}</h1>
     </header>
@@ -145,24 +136,10 @@ const sourceFor = (id: AssetId) => id === 'bitcoin' ? snapshot.bitcoin.source : 
   .wealth-page {
     --wealth-radius: var(--radius-md);
     --wealth-gap: 1rem;
-    --tile-realEstate: #e39c9c;
-    --tile-bonds: #e8b79c;
-    --tile-equities: #9fb9ef;
-    --tile-fiat: #cfe3ae;
-    --tile-gold: #f0cf7f;
-    --tile-bitcoin: var(--color-accent);
-    --tile-ink: #1f1b14;
     width: 100%;
     max-width: 120rem;
     margin: 0 auto;
     padding: var(--menu-control-top) clamp(1rem, 3vw, 2.5rem) 2rem;
-  }
-  :global(html.dark) .wealth-page {
-    --tile-realEstate: #d68e8e;
-    --tile-bonds: #dca98d;
-    --tile-equities: #8eaae3;
-    --tile-fiat: #bed69b;
-    --tile-gold: #e4c06c;
   }
   /* The title shares the menu button's row. */
   .wealth-header { display: flex; align-items: center; gap: 1rem; min-height: var(--menu-control-size); margin-bottom: var(--wealth-gap); padding-right: calc(var(--menu-control-size) + 1rem); }

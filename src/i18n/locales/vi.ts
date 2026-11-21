@@ -28,6 +28,7 @@ export const vi: Dict = {
     toolsLabel: 'Khám phá công cụ',
     openChart: 'Mở biểu đồ',
     openEarth: 'Khám phá bản đồ',
+    openWealth: 'Mở trình mô phỏng',
     openVideo: 'Tạo không gian riêng',
     appTitle: 'OBT cho Android',
     openApp: 'Tìm hiểu thêm về ứng dụng',
@@ -35,6 +36,7 @@ export const vi: Dict = {
     priceTracker: 'Theo dõi giá',
     priceDescription: 'Giá Bitcoin trực tiếp và lịch sử giá từ năm 2010.',
     earthDescription: 'Khám phá Bitcoin như một phần diện tích đất liền trên Trái Đất.',
+    wealthDescription: 'Xem Bitcoin nhỏ bé thế nào so với tài sản thế giới, rồi làm nó lớn lên.',
     supplyDescription: 'Xem cung tiền pháp định tăng mỗi năm, còn cung bitcoin thì không.',
   },
 

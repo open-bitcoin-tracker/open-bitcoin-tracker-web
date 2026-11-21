@@ -28,6 +28,7 @@ export const ptBR: Dict = {
     toolsLabel: 'Explore as ferramentas',
     openChart: 'Abrir o gráfico',
     openEarth: 'Explorar o mapa',
+    openWealth: 'Abrir o simulador',
     openVideo: 'Entre no clima',
     appTitle: 'OBT para Android',
     openApp: 'Mais sobre o app',
@@ -35,6 +36,7 @@ export const ptBR: Dict = {
     priceTracker: 'Trackeador de preço',
     priceDescription: 'Preço do Bitcoin ao vivo e histórico desde 2010.',
     earthDescription: 'Explore o Bitcoin como uma parcela da superfície terrestre.',
+    wealthDescription: 'Veja como o Bitcoin é pequeno perto da riqueza mundial e faça ele crescer.',
     supplyDescription: 'Veja como a oferta de moeda fiduciária aumenta a cada ano e a de bitcoin não.',
   },
 

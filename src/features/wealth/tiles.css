@@ -1,0 +1,17 @@
+/* Asset colours shared by the Global Wealth page and its homepage preview. */
+.wealth-tiles {
+  --tile-realEstate: #e39c9c;
+  --tile-bonds: #e8b79c;
+  --tile-equities: #9fb9ef;
+  --tile-fiat: #cfe3ae;
+  --tile-gold: #f0cf7f;
+  --tile-bitcoin: var(--color-accent);
+  --tile-ink: #1f1b14;
+}
+html.dark .wealth-tiles {
+  --tile-realEstate: #d68e8e;
+  --tile-bonds: #dca98d;
+  --tile-equities: #8eaae3;
+  --tile-fiat: #bed69b;
+  --tile-gold: #e4c06c;
+}

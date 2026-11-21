@@ -13,6 +13,8 @@ import { video } from '../../i18n/video';
 import { aBitOfEarth } from '../../lib/projects';
 import BitcoinPreview from '../BitcoinPreview.astro';
 import VideoPreview from '../VideoPreview.astro';
+import WealthPreview from '../WealthPreview.astro';
+import { wealth } from '../../i18n/wealth';
 import ProjectFooter from '../ProjectFooter.astro';
 import earthLightPreview from '../../assets/previews/earth-light.png';
 import earthDarkPreview from '../../assets/previews/earth-dark.png';
@@ -65,6 +67,13 @@ const href = (path: string) => getRelativeLocaleUrl(lang, path);
               <Image class="earth-preview-dark" src={earthDarkPreview} alt="" widths={[480, 800, 1280]} sizes="(max-width: 700px) 100vw, 50vw" format="webp" quality={85} loading="lazy" />
             </figure>
             <div class="tool-description"><p>{home.earthDescription}</p><span class="text-action">{home.openEarth}<span aria-hidden="true">↗</span></span></div>
+          </a>
+        </article>
+        <article class="wealth-tool">
+          <a class="tool-link secondary-tool" href={href('global-wealth')}>
+            <div class="tool-heading"><h2 lang="en">{wealth.title}</h2></div>
+            <figure class="secondary-preview"><WealthPreview /></figure>
+            <div class="tool-description"><p>{home.wealthDescription}</p><span class="text-action">{home.openWealth}<span aria-hidden="true">↗</span></span></div>
           </a>
         </article>
       </div>
@@ -151,7 +160,7 @@ const href = (path: string) => getRelativeLocaleUrl(lang, path);
   .chart-copy h2 { font-size: clamp(2.5rem, 3.8vw, 3.75rem); line-height: 1; letter-spacing: -.015em; }
   .chart-copy > p { margin-top: 1rem; max-width: 20ch; color: var(--color-ink-muted); font-size: .875rem; line-height: 1.65; }
   .chart-copy .text-action { margin-top: auto; padding-top: 2rem; }
-  .explore-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 2.5rem; padding-block: 3rem; }
+  .explore-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 2.5rem; padding-block: 3rem; }
   .tool-heading { display: flex; align-items: center; gap: .75rem; padding-block: 0 1.2rem; }
   .tool-heading h2 { font-size: clamp(1.75rem, 2.6vw, 2.5rem); line-height: 1.1; }
   .secondary-preview { position: relative; height: var(--landing-secondary-height, clamp(200px, 23vw, 280px)); border: 1px solid var(--color-divider); background: #202629; overflow: hidden; }
@@ -194,7 +203,8 @@ const href = (path: string) => getRelativeLocaleUrl(lang, path);
   @media (max-width: 1000px) {
     .masthead { grid-template-columns: minmax(0, 1fr); }
     .chart-feature { grid-template-columns: 1fr 1.8fr; }
-    .explore-grid { gap: 1.5rem; }
+    .explore-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1.5rem; }
+    .wealth-tool { grid-column: 1 / -1; }
     .tool-description { flex-direction: column; gap: .6rem; }
     .tool-description p { max-width: 32ch; }
   }
@@ -210,6 +220,7 @@ const href = (path: string) => getRelativeLocaleUrl(lang, path);
     .chart-copy > p { grid-column: 1 / -1; margin: 0; max-width: none; font-size: .75rem; }
     .chart-copy .text-action { grid-column: 1 / -1; padding-top: .4rem; margin: 0; font-size: .75rem; }
     .explore-grid { grid-template-columns: 1fr; gap: 2rem; padding-block: 2rem; }
+    .wealth-tool { grid-column: auto; }
     .tool-heading { padding-bottom: .8rem; }
     .tool-heading h2 { font-size: 2rem; }
     .secondary-preview { height: auto; aspect-ratio: 1.8; }

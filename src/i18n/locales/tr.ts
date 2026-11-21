@@ -28,6 +28,7 @@ export const tr: Dict = {
     toolsLabel: 'Araçları keşfet',
     openChart: 'Grafiği aç',
     openEarth: 'Haritayı keşfet',
+    openWealth: 'Simülatörü aç',
     openVideo: 'Ortamını oluştur',
     appTitle: 'Android için OBT',
     openApp: 'Uygulama hakkında daha fazla bilgi',
@@ -35,6 +36,7 @@ export const tr: Dict = {
     priceTracker: 'Fiyat takibi',
     priceDescription: 'Canlı Bitcoin fiyatı ve 2010’dan bu yana fiyat geçmişi.',
     earthDescription: 'Bitcoin’i Dünya’nın kara yüzeyinin bir payı olarak keşfet.',
+    wealthDescription: 'Bitcoin’in dünya servetinin yanında ne kadar küçük olduğunu gör, sonra onu büyüt.',
     supplyDescription: 'İtibari para arzının her yıl nasıl arttığını ve bitcoin arzının artmadığını gör.',
   },
 

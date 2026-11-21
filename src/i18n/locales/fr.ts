@@ -28,6 +28,7 @@ export const fr: Dict = {
     toolsLabel: 'Explore les outils',
     openChart: 'Ouvrir le graphique',
     openEarth: 'Explorer la carte',
+    openWealth: 'Ouvrir le simulateur',
     openVideo: 'Crée ton ambiance',
     appTitle: 'OBT pour Android',
     openApp: 'En savoir plus sur l’appli',
@@ -35,6 +36,7 @@ export const fr: Dict = {
     priceTracker: 'Tracker de prix',
     priceDescription: 'Le cours du Bitcoin en direct et son historique depuis 2010.',
     earthDescription: 'Explore Bitcoin comme une part des terres émergées de la planète.',
+    wealthDescription: 'Vois à quel point Bitcoin est petit face à la richesse mondiale, puis fais-le grandir.',
     supplyDescription: 'Découvre comment la masse monétaire des monnaies fiat augmente chaque année, tandis que celle du bitcoin reste inchangée.',
   },
 

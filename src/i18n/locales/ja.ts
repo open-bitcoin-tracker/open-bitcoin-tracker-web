@@ -28,6 +28,7 @@ export const ja: Dict = {
     toolsLabel: 'ツールを使ってみる',
     openChart: 'チャートを開く',
     openEarth: '地図を探索',
+    openWealth: 'シミュレーターを開く',
     openVideo: '雰囲気をつくる',
     appTitle: 'Android版OBT',
     openApp: 'アプリについて詳しく見る',
@@ -35,6 +36,7 @@ export const ja: Dict = {
     priceTracker: '価格トラッカー',
     priceDescription: 'ビットコインのリアルタイム価格と2010年からの価格履歴。',
     earthDescription: 'ビットコインを地球の陸地の割合として見てみよう。',
+    wealthDescription: '世界の富と比べたビットコインの小ささを見て、大きくしてみよう。',
     supplyDescription: '法定通貨の供給量が毎年増える一方、ビットコインの供給量は増えないことを見てみよう。',
   },
 

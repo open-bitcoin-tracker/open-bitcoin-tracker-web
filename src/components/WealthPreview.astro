@@ -1,0 +1,42 @@
+---
+import '../features/wealth/tiles.css';
+import { assetNames } from '../i18n/wealth';
+import { ASSET_IDS, layoutAssets } from '../features/wealth/model';
+import { staticWealth } from '../features/wealth/static';
+
+// A static miniature of the Global Wealth treemap, drawn from the bundled snapshot. It has a
+// regular and a wide layout so Bitcoin stays square when the homepage card spans the full row.
+const { base } = staticWealth();
+const layouts = [{ name: 'regular', width: 160, height: 110 }, { name: 'wide', width: 400, height: 110 }].map((size) => ({ ...size, ...layoutAssets(base, size.width, size.height) }));
+const percent = (value: number, of: number) => `${(value / of * 100).toFixed(3)}%`;
+const labelled = new Set(['realEstate', 'bonds', 'equities', 'fiat']);
+---
+
+{layouts.map(({ name, width, height, rects, notches }) => (
+  <div class:list={['wealth-preview', 'wealth-tiles', `wealth-preview--${name}`]} aria-hidden="true">
+    {ASSET_IDS.map((id) => {
+      const rect = rects[id];
+      const cut = notches[id];
+      const clip = cut ? `clip-path:polygon(${percent(cut.w, rect.w)} 0, 100% 0, 100% 100%, 0 100%, 0 ${percent(cut.h, rect.h)}, ${percent(cut.w, rect.w)} ${percent(cut.h, rect.h)});` : '';
+      return <span class="preview-tile" data-tile={id} style={`left:${percent(rect.x, width)};top:${percent(rect.y, height)};width:${percent(rect.w, width)};height:${percent(rect.h, height)};${clip}`}>
+        {labelled.has(id) && <span lang="en">{assetNames[id]}</span>}
+      </span>;
+    })}
+  </div>
+))}
+
+<style>
+  .wealth-preview { position: absolute; inset: 0; }
+  .wealth-preview--wide { display: none; }
+  @media (min-width: 701px) and (max-width: 1000px) {
+    .wealth-preview--regular { display: none; }
+    .wealth-preview--wide { display: block; }
+  }
+  .preview-tile { position: absolute; display: flex; align-items: center; justify-content: center; background: var(--tile-color); color: var(--tile-ink); font-size: .75rem; font-weight: 600; }
+  .preview-tile[data-tile='realEstate'] { --tile-color: var(--tile-realEstate); }
+  .preview-tile[data-tile='bonds'] { --tile-color: var(--tile-bonds); }
+  .preview-tile[data-tile='equities'] { --tile-color: var(--tile-equities); }
+  .preview-tile[data-tile='fiat'] { --tile-color: var(--tile-fiat); }
+  .preview-tile[data-tile='gold'] { --tile-color: var(--tile-gold); }
+  .preview-tile[data-tile='bitcoin'] { --tile-color: var(--tile-bitcoin); }
+</style>
