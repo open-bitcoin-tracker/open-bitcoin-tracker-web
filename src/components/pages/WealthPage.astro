@@ -62,8 +62,10 @@ const sourceFor = (id: AssetId) => id === 'bitcoin' ? snapshot.bitcoin.source : 
             <label for="bitcoin-cap" class="section-label">{t.priceLabel}</label>
             <output class="cap-value" for="bitcoin-cap" data-price>{formatUsd(snapshot.bitcoin.fallbackPrice)}</output>
           </div>
-          <input id="bitcoin-cap" class="cap-slider" type="range" min="0" max={SLIDER_STEPS} step="1" value="0" style="--fill:0%" data-slider disabled
-            aria-valuetext={interpolate(t.sliderValue, { cap: formatCompactUsd(base.bitcoin, 4), price: formatUsd(snapshot.bitcoin.fallbackPrice) })} />
+          <div class="slider-hit" data-slider-hit>
+            <input id="bitcoin-cap" class="cap-slider" type="range" min="0" max={SLIDER_STEPS} step="1" value="0" style="--fill:0%" data-slider disabled
+              aria-valuetext={interpolate(t.sliderValue, { cap: formatCompactUsd(base.bitcoin, 4), price: formatUsd(snapshot.bitcoin.fallbackPrice) })} />
+          </div>
         </div>
         <div class="sim-section source-row" data-source-picker>
             <span id="source-label" class="section-label">{t.sourceLabel}</span>
@@ -199,18 +201,20 @@ const sourceFor = (id: AssetId) => id === 'bitcoin' ? snapshot.bitcoin.source : 
   .price-head { display: flex; align-items: center; justify-content: space-between; gap: .75rem; }
   .cap-value { font-size: clamp(1.625rem, 2.3vw, 2.25rem); font-weight: 650; line-height: 1.15; font-variant-numeric: tabular-nums; letter-spacing: -.03em; white-space: nowrap; }
   /* A custom slider: a thicker track filled up to the thumb (--fill, set by the script). */
-  .cap-slider { --track: color-mix(in srgb, var(--color-ink) 16%, transparent); --thumb: 22px; width: 100%; touch-action: none; height: 2.75rem; margin: .25rem 0 0; background: transparent; appearance: none; -webkit-appearance: none; cursor: default; }
-  .cap-slider::-webkit-slider-thumb { cursor: grab; }
-  .cap-slider::-moz-range-thumb { cursor: grab; }
-  .cap-slider:disabled::-webkit-slider-thumb { cursor: default; }
+  .cap-slider { --track: color-mix(in srgb, var(--color-ink) 16%, transparent); --thumb: 22px; width: 100%; pointer-events: none; height: 2.75rem; margin: .25rem 0 0; background: transparent; appearance: none; -webkit-appearance: none; cursor: default; }
+  /* The wrapper takes the pointer so vertical swipes still scroll the page; the script drags the thumb. */
+  .slider-hit { margin-top: .25rem; touch-action: pan-y; -webkit-user-select: none; user-select: none; }
+  .slider-hit .cap-slider { margin: 0; }
+  .slider-hit[data-over-thumb] { cursor: grab; }
+  .slider-hit[data-dragging] { cursor: grabbing; }
   .cap-slider:focus { outline: none; }
   .cap-slider::-webkit-slider-runnable-track { height: .5rem; border-radius: 999px; background: linear-gradient(to right, var(--color-accent) var(--fill), var(--track) var(--fill)); }
   .cap-slider::-moz-range-track { height: .5rem; border-radius: 999px; background: var(--track); }
   .cap-slider::-moz-range-progress { height: .5rem; border-radius: 999px; background: var(--color-accent); }
   .cap-slider::-webkit-slider-thumb { width: var(--thumb); height: var(--thumb); margin-top: calc((.5rem - var(--thumb)) / 2); border: 3px solid var(--color-accent); border-radius: 50%; background: #fff; box-shadow: 0 2px 6px rgb(0 0 0 / .3); -webkit-appearance: none; appearance: none; transition: transform .15s ease, box-shadow .15s ease; }
   .cap-slider::-moz-range-thumb { width: 1rem; height: 1rem; border: 3px solid var(--color-accent); border-radius: 50%; background: #fff; box-shadow: 0 2px 6px rgb(0 0 0 / .3); transition: transform .15s ease, box-shadow .15s ease; }
-  .cap-slider:not(:disabled):hover::-webkit-slider-thumb, .cap-slider:not(:disabled):active::-webkit-slider-thumb { transform: scale(1.1); }
-  .cap-slider:not(:disabled):hover::-moz-range-thumb, .cap-slider:not(:disabled):active::-moz-range-thumb { transform: scale(1.1); }
+  .slider-hit:is([data-over-thumb], [data-dragging]) .cap-slider::-webkit-slider-thumb { transform: scale(1.1); }
+  .slider-hit:is([data-over-thumb], [data-dragging]) .cap-slider::-moz-range-thumb { transform: scale(1.1); }
   .cap-slider:focus-visible::-webkit-slider-thumb { box-shadow: 0 0 0 5px color-mix(in srgb, var(--color-accent) 30%, transparent); }
   .cap-slider:focus-visible::-moz-range-thumb { box-shadow: 0 0 0 5px color-mix(in srgb, var(--color-accent) 30%, transparent); }
   /* The source title and its dropdown share one line. */
