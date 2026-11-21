@@ -93,7 +93,7 @@ if (root && json) {
     const bitcoin = rects.bitcoin;
     const rem = parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
     const inset = rem * .5;
-    callout.toggleAttribute('data-visible', bitcoin.w - inset <= 4 * rem || bitcoin.h - inset <= 1.25 * rem);
+    callout.toggleAttribute('data-visible', bitcoin.w - inset <= 4 * rem || bitcoin.h - inset <= 1.9 * rem);
     callout.style.setProperty('--callout-x', `${bitcoin.w / 2}px`);
   }
 
