@@ -161,20 +161,21 @@ if (root && json) {
   /**
    * The slider moves only by dragging its thumb: taps or clicks elsewhere on the track do nothing.
    * The input ignores the pointer; its wrapper takes it with `touch-action: pan-y`, so a vertical
-   * swipe that starts on the slider still scrolls the page (the browser then cancels the drag).
+   * swipe that starts beside the thumb still scrolls the page. A touch that starts on the thumb
+   * cancels the browser's own gesture, so dragging it down never scrolls or pulls to refresh.
    * A drag keeps its grab offset, so the thumb never jumps. Keyboard control stays native.
    */
   const sliderHit = root.querySelector<HTMLElement>('[data-slider-hit]')!;
   let dragId: number | null = null;
   let grabOffset = 0;
   const thumbWidth = () => parseFloat(getComputedStyle(slider).getPropertyValue('--thumb')) || 22;
-  const thumbOffset = (event: PointerEvent) => {
+  const thumbOffset = (event: { clientX: number }) => {
     const { left, width } = slider.getBoundingClientRect();
     const thumb = thumbWidth();
     return event.clientX - (left + thumb / 2 + Number(slider.value) / SLIDER_STEPS * (width - thumb));
   };
   // Fingers get a larger hit area around the thumb than the mouse.
-  const onThumb = (event: PointerEvent) => Math.abs(thumbOffset(event)) <= thumbWidth() / 2 + (event.pointerType === 'touch' ? 14 : 4);
+  const onThumb = (event: { clientX: number }, touch: boolean) => Math.abs(thumbOffset(event)) <= thumbWidth() / 2 + (touch ? 14 : 4);
   function followPointer(event: PointerEvent) {
     const { left, width } = slider.getBoundingClientRect();
     const thumb = thumbWidth();
@@ -185,7 +186,7 @@ if (root && json) {
     slider.dispatchEvent(new Event('input', { bubbles: true }));
   }
   sliderHit.addEventListener('pointerdown', (event) => {
-    if (slider.disabled || dragId !== null || !onThumb(event)) return;
+    if (slider.disabled || dragId !== null || !onThumb(event, event.pointerType === 'touch')) return;
     if (event.pointerType === 'mouse') event.preventDefault();
     dragId = event.pointerId;
     grabOffset = thumbOffset(event);
@@ -194,9 +195,13 @@ if (root && json) {
     // Keep receiving moves when the pointer leaves the track; capture can fail if the press already ended.
     try { sliderHit.setPointerCapture(event.pointerId); } catch { /* moves on the track still work */ }
   });
+  // Pointer events still fire after this, so the drag itself is unaffected.
+  sliderHit.addEventListener('touchstart', (event) => {
+    if (!slider.disabled && event.touches.length === 1 && onThumb(event.touches[0], true)) event.preventDefault();
+  }, { passive: false });
   sliderHit.addEventListener('pointermove', (event) => {
     if (event.pointerId === dragId) followPointer(event);
-    else if (event.pointerType === 'mouse') sliderHit.toggleAttribute('data-over-thumb', !slider.disabled && onThumb(event));
+    else if (event.pointerType === 'mouse') sliderHit.toggleAttribute('data-over-thumb', !slider.disabled && onThumb(event, false));
   });
   sliderHit.addEventListener('pointerleave', () => sliderHit.removeAttribute('data-over-thumb'));
   const endDrag = (event: PointerEvent) => {
