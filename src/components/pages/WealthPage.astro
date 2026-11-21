@@ -30,7 +30,7 @@ const sourceFor = (id: AssetId) => id === 'bitcoin' ? snapshot.bitcoin.source : 
     </header>
 
     <div class="wealth-stage">
-      <section class="treemap-card" aria-label={t.treemapLabel}>
+      <section class="treemap-area" aria-label={t.treemapLabel}>
         <div class="treemap-labels">
           <p class="bitcoin-callout" data-callout data-visible aria-hidden="true">{assetNames.bitcoin} <strong data-callout-value>{formatCompactUsd(base.bitcoin)}</strong></p>
           <p class="wealth-total"><span>{t.total}</span> <strong data-total>{formatCompactUsd(total, 3)}</strong></p>
@@ -134,7 +134,6 @@ const sourceFor = (id: AssetId) => id === 'bitcoin' ? snapshot.bitcoin.source : 
 </Layout>
 <style>
   .wealth-page {
-    --wealth-radius: var(--radius-md);
     --wealth-gap: 1rem;
     width: 100%;
     max-width: 120rem;
@@ -149,14 +148,14 @@ const sourceFor = (id: AssetId) => id === 'bitcoin' ? snapshot.bitcoin.source : 
   .treemap-labels strong { color: var(--color-ink); font-weight: 650; font-variant-numeric: tabular-nums; }
   .wealth-total { margin-left: auto; }
   .wealth-total strong { font-size: 1rem; }
-  /* A bracket from the label down to Bitcoin's box when the box is too small for its own label. */
   /* An elbow rises from the middle of Bitcoin's box (--callout-x, set by the script) to the label. */
   .bitcoin-callout { --callout-x: .5rem; position: relative; padding-left: calc(var(--callout-x) + .625rem); visibility: hidden; }
   .bitcoin-callout::before { content: ''; position: absolute; left: calc(var(--callout-x) - .75px); top: .62em; bottom: -.5rem; width: .375rem; border-top: 1.5px solid var(--color-accent); border-left: 1.5px solid var(--color-accent); border-top-left-radius: .3rem; }
   .bitcoin-callout[data-visible] { visibility: visible; }
   .wealth-stage { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--wealth-gap); }
-  .treemap-card, .simulator { padding: clamp(.75rem, 1.5vw, 1.25rem); border: 1px solid var(--color-divider); border-radius: var(--wealth-radius); background: var(--color-surface); }
-  .treemap-card { display: flex; flex-direction: column; min-height: 0; }
+  /* The chart sits on the page; the controls use the standard OBT card: square corners, a divider border and the surface colour. */
+  .treemap-area { display: flex; flex-direction: column; min-height: 0; }
+  .simulator { padding: clamp(1rem, 1.6vw, 1.5rem); border: 1px solid var(--color-divider); background: var(--color-surface); }
   .treemap { position: relative; flex: 1; aspect-ratio: 16 / 9; list-style: none; }
   .tile { position: absolute; }
   .tile-body { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: .15em; width: 100%; height: 100%; padding: .25rem; overflow: hidden; background: var(--tile-color); color: var(--tile-ink); text-align: center; container-type: size; }
@@ -256,6 +255,7 @@ const sourceFor = (id: AssetId) => id === 'bitcoin' ? snapshot.bitcoin.source : 
   @media (min-width: 900px) and (min-height: 520px) {
     .wealth-stage {
       grid-template-columns: minmax(0, 1fr) clamp(20rem, 26vw, 28rem);
+      column-gap: clamp(1.25rem, 2vw, 2rem);
       height: calc(100dvh - var(--menu-control-top) - var(--menu-control-size) - var(--wealth-gap) * 2);
     }
     .treemap { aspect-ratio: auto; }
@@ -266,7 +266,6 @@ const sourceFor = (id: AssetId) => id === 'bitcoin' ? snapshot.bitcoin.source : 
     .simulator { gap: .75rem; padding: .875rem; }
     .cap-slider { height: 2.25rem; }
     .cap-value { font-size: 1.625rem; }
-    .simulator { gap: .75rem; }
     .sim-section:not(.sim-price) { gap: .5rem; }
     .sim-section + .sim-section { padding-top: .75rem; }
     .preset { min-height: 34px; padding: .25rem .6rem; font-size: .8125rem; }
