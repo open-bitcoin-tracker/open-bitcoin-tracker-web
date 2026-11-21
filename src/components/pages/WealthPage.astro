@@ -199,8 +199,10 @@ const sourceFor = (id: AssetId) => id === 'bitcoin' ? snapshot.bitcoin.source : 
   .price-head { display: flex; align-items: center; justify-content: space-between; gap: .75rem; }
   .cap-value { font-size: clamp(1.625rem, 2.3vw, 2.25rem); font-weight: 650; line-height: 1.15; font-variant-numeric: tabular-nums; letter-spacing: -.03em; white-space: nowrap; }
   /* A custom slider: a thicker track filled up to the thumb (--fill, set by the script). */
-  .cap-slider { --track: color-mix(in srgb, var(--color-ink) 16%, transparent); --thumb: 22px; width: 100%; touch-action: none; height: 2.75rem; margin: .25rem 0 0; background: transparent; appearance: none; -webkit-appearance: none; cursor: pointer; }
-  .cap-slider:disabled { cursor: default; }
+  .cap-slider { --track: color-mix(in srgb, var(--color-ink) 16%, transparent); --thumb: 22px; width: 100%; touch-action: none; height: 2.75rem; margin: .25rem 0 0; background: transparent; appearance: none; -webkit-appearance: none; cursor: default; }
+  .cap-slider::-webkit-slider-thumb { cursor: grab; }
+  .cap-slider::-moz-range-thumb { cursor: grab; }
+  .cap-slider:disabled::-webkit-slider-thumb { cursor: default; }
   .cap-slider:focus { outline: none; }
   .cap-slider::-webkit-slider-runnable-track { height: .5rem; border-radius: 999px; background: linear-gradient(to right, var(--color-accent) var(--fill), var(--track) var(--fill)); }
   .cap-slider::-moz-range-track { height: .5rem; border-radius: 999px; background: var(--track); }
