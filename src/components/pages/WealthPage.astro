@@ -239,7 +239,7 @@ const sourceFor = (id: AssetId) => id === 'bitcoin' ? snapshot.bitcoin.source : 
   summary { display: flex; align-items: center; justify-content: space-between; gap: 1rem; min-height: 44px; padding: .75rem .125rem; cursor: pointer; list-style: none; color: var(--color-ink-muted); font-size: .9375rem; }
   summary::-webkit-details-marker { display: none; }
   .details-plus { font-size: 1.25rem; transition: transform .2s ease; }
-  details[open] .details-plus { transform: rotate(45deg); }
+  details[open]:not([data-closing]) .details-plus { transform: rotate(45deg); }
   .method-content { max-width: 76ch; padding-bottom: 1.5rem; color: var(--color-ink-muted); font-size: .9375rem; line-height: 1.75; }
   .method-content > p + p { margin-top: .75rem; }
   .source-list { display: grid; gap: 1rem; margin-top: 1.25rem; }

@@ -253,6 +253,23 @@ if (root && json) {
     if (!method.open || method.getBoundingClientRect().bottom <= window.innerHeight) return;
     method.scrollIntoView({ block: 'start', behavior: reducedMotion.matches ? 'auto' : 'smooth' });
   });
+  // Closing collapses the section smoothly instead of removing it at once, so the page glides up.
+  const methodSummary = method?.querySelector('summary');
+  let closing: Animation | null = null;
+  methodSummary?.addEventListener('click', (event) => {
+    if (!method!.open || reducedMotion.matches) return;
+    event.preventDefault();
+    if (closing) return;
+    method!.style.overflow = 'hidden';
+    method!.toggleAttribute('data-closing', true);
+    closing = method!.animate([{ height: `${method!.offsetHeight}px` }, { height: `${methodSummary.offsetHeight}px` }], { duration: 280, easing: 'cubic-bezier(.4, 0, .2, 1)' });
+    closing.onfinish = closing.oncancel = () => {
+      method!.open = false;
+      method!.style.removeProperty('overflow');
+      method!.removeAttribute('data-closing');
+      closing = null;
+    };
+  });
   new ResizeObserver(() => render()).observe(treemap);
   slider.disabled = false;
   sourceSelect.disabled = false;
