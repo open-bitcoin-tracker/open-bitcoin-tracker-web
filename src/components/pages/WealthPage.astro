@@ -182,19 +182,21 @@ const sourceFor = (id: AssetId) => id === 'bitcoin' ? snapshot.bitcoin.source : 
   .price-head { display: flex; align-items: center; justify-content: space-between; gap: .75rem; }
   .cap-value { font-size: clamp(1.625rem, 2.3vw, 2.25rem); font-weight: 650; line-height: 1.15; font-variant-numeric: tabular-nums; letter-spacing: -.03em; white-space: nowrap; }
   /* A custom slider: a thicker track filled up to the thumb (--fill, set by the script). */
-  .cap-slider { --track: color-mix(in srgb, var(--color-ink) 16%, transparent); width: 100%; height: 2.75rem; margin: .25rem 0 0; background: transparent; appearance: none; -webkit-appearance: none; cursor: pointer; }
+  .cap-slider { --track: color-mix(in srgb, var(--color-ink) 16%, transparent); --thumb: 22px; width: 100%; touch-action: none; height: 2.75rem; margin: .25rem 0 0; background: transparent; appearance: none; -webkit-appearance: none; cursor: pointer; }
   .cap-slider:disabled { cursor: default; }
   .cap-slider:focus { outline: none; }
   .cap-slider::-webkit-slider-runnable-track { height: .5rem; border-radius: 999px; background: linear-gradient(to right, var(--color-accent) var(--fill), var(--track) var(--fill)); }
   .cap-slider::-moz-range-track { height: .5rem; border-radius: 999px; background: var(--track); }
   .cap-slider::-moz-range-progress { height: .5rem; border-radius: 999px; background: var(--color-accent); }
-  .cap-slider::-webkit-slider-thumb { width: 1.375rem; height: 1.375rem; margin-top: -.4375rem; border: 3px solid var(--color-accent); border-radius: 50%; background: #fff; box-shadow: 0 2px 6px rgb(0 0 0 / .3); -webkit-appearance: none; appearance: none; transition: transform .15s ease, box-shadow .15s ease; }
+  .cap-slider::-webkit-slider-thumb { width: var(--thumb); height: var(--thumb); margin-top: calc((.5rem - var(--thumb)) / 2); border: 3px solid var(--color-accent); border-radius: 50%; background: #fff; box-shadow: 0 2px 6px rgb(0 0 0 / .3); -webkit-appearance: none; appearance: none; transition: transform .15s ease, box-shadow .15s ease; }
   .cap-slider::-moz-range-thumb { width: 1rem; height: 1rem; border: 3px solid var(--color-accent); border-radius: 50%; background: #fff; box-shadow: 0 2px 6px rgb(0 0 0 / .3); transition: transform .15s ease, box-shadow .15s ease; }
   .cap-slider:not(:disabled):hover::-webkit-slider-thumb, .cap-slider:not(:disabled):active::-webkit-slider-thumb { transform: scale(1.1); }
   .cap-slider:not(:disabled):hover::-moz-range-thumb, .cap-slider:not(:disabled):active::-moz-range-thumb { transform: scale(1.1); }
   .cap-slider:focus-visible::-webkit-slider-thumb { box-shadow: 0 0 0 5px color-mix(in srgb, var(--color-accent) 30%, transparent); }
   .cap-slider:focus-visible::-moz-range-thumb { box-shadow: 0 0 0 5px color-mix(in srgb, var(--color-accent) 30%, transparent); }
-  .source-control { position: relative; justify-self: start; }
+  /* The source title and its dropdown share one line. */
+  .source-row { display: flex; align-items: center; justify-content: space-between; gap: .75rem; }
+  .source-control { position: relative; }
   /* Matches the site's option menus (currency, refresh interval). */
   .source-trigger { display: inline-flex; align-items: center; gap: .45rem; min-height: 40px; padding: .4rem .7rem .4rem .8rem; border: 1px solid var(--color-divider); border-radius: .625rem; background: var(--color-surface); color: var(--color-ink); font-size: .875rem; font-weight: 600; white-space: nowrap; cursor: pointer; transition: border-color 150ms ease, background-color 150ms ease; }
   /* No outline ring; keyboard focus shows the same treatment as hover. */
@@ -203,7 +205,7 @@ const sourceFor = (id: AssetId) => id === 'bitcoin' ? snapshot.bitcoin.source : 
   .source-trigger:focus, .source-menu .currency-option:focus { outline: none; }
   .source-trigger svg { color: var(--color-ink-muted); transition: transform 150ms ease; }
   .source-trigger[aria-expanded='true'] svg { transform: rotate(180deg); }
-  .source-menu { position: absolute; z-index: 20; top: calc(100% + .35rem); left: 0; width: max-content; min-width: 12rem; padding: .375rem; border: 1px solid var(--menu-dropdown-border); border-radius: var(--radius-lg); background: var(--menu-dropdown-bg); box-shadow: var(--menu-dropdown-shadow); animation: source-menu-in 160ms ease-out; }
+  .source-menu { position: absolute; z-index: 20; top: calc(100% + .35rem); right: 0; width: max-content; min-width: 12rem; padding: .375rem; border: 1px solid var(--menu-dropdown-border); border-radius: var(--radius-lg); background: var(--menu-dropdown-bg); box-shadow: var(--menu-dropdown-shadow); animation: source-menu-in 160ms ease-out; }
   .source-menu .currency-option { min-height: 40px; padding: .45rem .625rem; border: 0; background: transparent; font: inherit; }
   .source-menu .currency-option:focus { background: var(--menu-option-hover); }
   .source-dot { width: .625rem; height: .625rem; flex: none; border-radius: 999px; background: var(--chip-color, conic-gradient(var(--tile-realEstate) 0 25%, var(--tile-equities) 0 50%, var(--tile-fiat) 0 75%, var(--tile-gold) 0)); }

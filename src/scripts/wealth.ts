@@ -171,6 +171,40 @@ if (root && json) {
     render();
   });
   slider.addEventListener('change', () => render());
+
+  /**
+   * Touch browsers (notably iOS Safari) only move a range input by dragging its thumb. On touch,
+   * the whole track follows the finger instead: a tap jumps there and a drag continues from it.
+   */
+  let touchId: number | null = null;
+  const thumbWidth = () => parseFloat(getComputedStyle(slider).getPropertyValue('--thumb')) || 22;
+  function followTouch(event: PointerEvent) {
+    const { left, width } = slider.getBoundingClientRect();
+    const thumb = thumbWidth();
+    const ratio = Math.min(1, Math.max(0, (event.clientX - left - thumb / 2) / (width - thumb)));
+    const value = String(Math.round(ratio * SLIDER_STEPS));
+    if (value === slider.value) return;
+    slider.value = value;
+    slider.dispatchEvent(new Event('input', { bubbles: true }));
+  }
+  slider.addEventListener('touchstart', (event) => event.preventDefault(), { passive: false });
+  slider.addEventListener('pointerdown', (event) => {
+    if (event.pointerType !== 'touch' || slider.disabled) return;
+    event.preventDefault();
+    touchId = event.pointerId;
+    slider.focus({ preventScroll: true });
+    followTouch(event);
+    // Keep receiving moves when the finger leaves the track; capture can fail if the touch already ended.
+    try { slider.setPointerCapture(event.pointerId); } catch { /* the move above still applied */ }
+  });
+  slider.addEventListener('pointermove', (event) => { if (event.pointerId === touchId) followTouch(event); });
+  const endTouch = (event: PointerEvent) => {
+    if (event.pointerId !== touchId) return;
+    touchId = null;
+    slider.dispatchEvent(new Event('change', { bubbles: true }));
+  };
+  slider.addEventListener('pointerup', endTouch);
+  slider.addEventListener('pointercancel', endTouch);
   const reset = () => {
     activePreset = null;
     selectedCap = null;
