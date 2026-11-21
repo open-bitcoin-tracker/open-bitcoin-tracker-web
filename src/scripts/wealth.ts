@@ -247,6 +247,12 @@ if (root && json) {
     if (!activePreset && selectedCap !== null) selectedCap = Math.min(selectedCap, maxCap(base, source));
     render(true);
   });
+  // Sources & method sits at the bottom; when it opens below the fold, bring it into view.
+  const method = root.querySelector<HTMLDetailsElement>('#sources');
+  method?.addEventListener('toggle', () => {
+    if (!method.open || method.getBoundingClientRect().bottom <= window.innerHeight) return;
+    method.scrollIntoView({ block: 'start', behavior: reducedMotion.matches ? 'auto' : 'smooth' });
+  });
   new ResizeObserver(() => render()).observe(treemap);
   slider.disabled = false;
   sourceSelect.disabled = false;

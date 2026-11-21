@@ -235,7 +235,7 @@ const sourceFor = (id: AssetId) => id === 'bitcoin' ? snapshot.bitcoin.source : 
   .simulator-footer { display: grid; gap: .35rem; margin-top: auto; }
   .simulator-status { color: var(--color-ink-muted); font-size: .8125rem; line-height: 1.45; }
   .simulator-status:empty { display: none; }
-  .method { margin-top: var(--wealth-gap); }
+  .method { margin-top: var(--wealth-gap); scroll-margin-top: calc(var(--menu-control-top) + var(--menu-control-size) + .5rem); }
   summary { display: flex; align-items: center; justify-content: space-between; gap: 1rem; min-height: 44px; padding: .75rem .125rem; cursor: pointer; list-style: none; color: var(--color-ink-muted); font-size: .9375rem; }
   summary::-webkit-details-marker { display: none; }
   .details-plus { font-size: 1.25rem; transition: transform .2s ease; }
