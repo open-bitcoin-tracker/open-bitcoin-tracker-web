@@ -176,7 +176,9 @@ const sourceFor = (id: AssetId) => id === 'bitcoin' ? snapshot.bitcoin.source : 
   @container (max-width: 4rem) { .tile-change, .tile:is([data-tile='realEstate'], [data-tile='equities'], [data-tile='bitcoin']) .tile-name { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); } }
   @container (max-width: 2rem) or (max-height: .7rem) { .tile-name, .tile-change { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); } }
   @container (max-width: 2.9rem) or (max-height: .7rem) or ((max-width: 6rem) and (max-height: 1.9rem)) { .tile-value { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); } .tile-glyph { display: block; } }
-  @container (max-width: .9rem) or (max-height: .9rem) { .tile-glyph { display: none; } }
+  .tile[data-label-outside] :is(.tile-name, .tile-value, .tile-change) { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+  .tile[data-label-outside] .tile-glyph { display: block; }
+  @container (max-width: .9rem) or (max-height: .9rem) { .tile-glyph, .tile[data-label-outside] .tile-glyph { display: none; } }
   /* Tall, narrow strips turn the name and value sideways, reading bottom to top. */
   @container (max-width: 2.9rem) and (min-width: 1rem) and (min-height: 4.5rem) {
     .tile-label { flex-direction: row; gap: .35em; writing-mode: vertical-rl; transform: rotate(180deg); }

@@ -92,7 +92,10 @@ if (root && json) {
     const bitcoin = rects.bitcoin;
     const rem = parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
     const inset = rem * .5;
-    callout.toggleAttribute('data-visible', bitcoin.w - inset <= 4 * rem || bitcoin.h - inset <= 1.9 * rem);
+    const outside = bitcoin.w - inset <= 4 * rem || bitcoin.h - inset <= 1.9 * rem;
+    callout.toggleAttribute('data-visible', outside);
+    // While the label sits outside, the box shows only the ₿ glyph so the value appears once.
+    tiles.get('bitcoin')!.tile.toggleAttribute('data-label-outside', outside);
     callout.style.left = `${bitcoin.w + 4}px`;
   }
 
