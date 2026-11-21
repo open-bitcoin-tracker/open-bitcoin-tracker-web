@@ -38,10 +38,8 @@ if (root && json) {
   const calloutValue = root.querySelector<HTMLElement>('[data-callout-value]')!;
   const status = root.querySelector<HTMLElement>('[data-status]')!;
   const presetButtons = Array.from(root.querySelectorAll<HTMLButtonElement>('[data-preset]'));
-  const resetButton = root.querySelector<HTMLButtonElement>('[data-reset]')!;
   const sourceSelect = root.querySelector<HTMLSelectElement>('[data-source]')!;
   const sourceDot = root.querySelector<HTMLElement>('[data-source-dot]')!;
-  const multiplierOutput = root.querySelector<HTMLElement>('[data-multiplier]')!;
   const date = (value: string) => formatDate(value, 'en-US');
 
   let bitcoinPrice = snapshot.bitcoin.fallbackPrice;
@@ -150,8 +148,6 @@ if (root && json) {
     const position = Math.round(positionFromCap(cap, base.bitcoin, max));
     slider.value = String(position);
     slider.style.setProperty('--fill', `${position / SLIDER_STEPS * 100}%`);
-    const times = cap / base.bitcoin;
-    multiplierOutput.textContent = times > 1.0005 ? interpolate(copy.multiplier, { n: times.toLocaleString('en-US', { maximumFractionDigits: times < 10 ? 1 : 0 }) }) : '';
     slider.setAttribute('aria-valuetext', interpolate(copy.sliderValue, { cap: formatCompactUsd(cap, 4), price: formatUsd(price) }));
     for (const button of presetButtons) {
       // A preset the source cannot fund, or one Bitcoin already passes, is unavailable.
@@ -159,7 +155,6 @@ if (root && json) {
       button.disabled = target === null || target <= base.bitcoin;
       button.setAttribute('aria-pressed', String(button.dataset.preset === activePreset));
     }
-    resetButton.hidden = cap <= base.bitcoin;
 
     const lines = [
       bitcoinState === 'unavailable' ? interpolate(copy.priceUnavailable, { date: date(snapshot.bitcoin.fallbackPriceDate) }) : '',
@@ -176,22 +171,19 @@ if (root && json) {
     render();
   });
   slider.addEventListener('change', () => render());
-  for (const button of presetButtons) {
-    button.addEventListener('click', () => {
-      activePreset = button.dataset.preset as Preset;
-      render(true);
-    });
-  }
   const reset = () => {
     activePreset = null;
     selectedCap = null;
     render(true);
   };
-  // The reset button hides itself, so focus moves to the slider instead of being lost.
-  resetButton.addEventListener('click', () => {
-    reset();
-    slider.focus();
-  });
+  // Clicking the selected preset again returns to today's value.
+  for (const button of presetButtons) {
+    button.addEventListener('click', () => {
+      if (activePreset === button.dataset.preset) return reset();
+      activePreset = button.dataset.preset as Preset;
+      render(true);
+    });
+  }
   // Keyboard users can also return to today's value from the slider.
   slider.addEventListener('keydown', (event) => {
     if (event.key === 'Escape') reset();
