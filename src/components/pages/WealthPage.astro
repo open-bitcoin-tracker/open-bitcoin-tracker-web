@@ -168,7 +168,7 @@ const sourceFor = (id: AssetId) => id === 'bitcoin' ? snapshot.bitcoin.source : 
   .tile-glyph { display: none; }
   /* Short, wide boxes put the label on one line. */
   /* Labels that do not fit stay available to screen readers. */
-  @container (max-height: 4.75rem) { .tile-change { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); } }
+  @container (max-height: 5.25rem) or (max-width: 6rem) { .tile-change { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); } }
   @container (max-height: 3.25rem) and (min-width: 6rem) { .tile-label { flex-direction: row; align-items: baseline; gap: .4em; } }
   /* Small tiles shrink their text before hiding it; short names (Fiat, Gold, Bonds) stay on narrower tiles than long ones. */
   @container (max-width: 5rem) or (max-height: 2rem) { .tile-name { font-size: .6875rem; } .tile-value { font-size: .75rem; } .tile-change { font-size: .625rem; } }
