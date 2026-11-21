@@ -134,7 +134,7 @@
   .gallery-label { font-size: .875rem; }
   .theme-controls { gap: .375rem; }
   .theme-choice { padding: .625rem .8rem; }
-  .privacy-section { padding-top: 0; }
+  .privacy-section { padding-top: 2.5rem; }
   .privacy-panel { grid-template-columns: 1fr; gap: 2.5rem; }
   .privacy-intro .section-heading { max-width: none; }
   .privacy-symbol { width: 88px; height: 88px; margin-left: 12px; }
