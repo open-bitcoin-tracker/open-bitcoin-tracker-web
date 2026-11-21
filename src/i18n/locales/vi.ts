@@ -36,7 +36,7 @@ export const vi: Dict = {
     priceTracker: 'Theo dõi giá',
     priceDescription: 'Giá Bitcoin trực tiếp và lịch sử giá từ năm 2010.',
     earthDescription: 'Khám phá Bitcoin như một phần diện tích đất liền trên Trái Đất.',
-    wealthDescription: 'Xem Bitcoin nhỏ bé thế nào so với tài sản thế giới, rồi làm nó lớn lên.',
+    wealthDescription: 'So sánh vốn hóa thị trường của Bitcoin với các tài sản khác.',
     supplyDescription: 'Xem cung tiền pháp định tăng mỗi năm, còn cung bitcoin thì không.',
   },
 

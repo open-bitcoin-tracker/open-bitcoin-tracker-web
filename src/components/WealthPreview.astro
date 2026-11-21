@@ -9,7 +9,7 @@ import { staticWealth } from '../features/wealth/static';
 // Gold and Bitcoin are enlarged beyond their true share so every area can carry its label.
 const { base } = staticWealth();
 const total = totalValue(base);
-const values = { ...base, gold: Math.max(base.gold, total * .07), bitcoin: Math.max(base.bitcoin, total * .012) };
+const values = { ...base, gold: Math.max(base.gold, total * .07), bitcoin: Math.max(base.bitcoin, total * .005) };
 const layouts = [{ name: 'regular', width: 160, height: 110 }, { name: 'wide', width: 400, height: 110 }].map((size) => ({ ...size, ...layoutAssets(values, size.width, size.height) }));
 const percent = (value: number, of: number) => `${(value / of * 100).toFixed(3)}%`;
 ---
@@ -41,5 +41,5 @@ const percent = (value: number, of: number) => `${(value / of * 100).toFixed(3)}
   .preview-tile[data-tile='fiat'] { --tile-color: var(--tile-fiat); }
   .preview-tile[data-tile='gold'] { --tile-color: var(--tile-gold); }
   .preview-tile[data-tile='bitcoin'] { --tile-color: var(--tile-bitcoin); }
-  .preview-glyph { font-size: .8125rem; font-weight: 700; line-height: 1; }
+  .preview-glyph { font-size: .6875rem; font-weight: 700; line-height: 1; }
 </style>

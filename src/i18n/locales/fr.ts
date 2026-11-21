@@ -36,7 +36,7 @@ export const fr: Dict = {
     priceTracker: 'Tracker de prix',
     priceDescription: 'Le cours du Bitcoin en direct et son historique depuis 2010.',
     earthDescription: 'Explore Bitcoin comme une part des terres émergées de la planète.',
-    wealthDescription: 'Vois à quel point Bitcoin est petit face à la richesse mondiale, puis fais-le grandir.',
+    wealthDescription: 'Compare la capitalisation de Bitcoin à celle des autres actifs.',
     supplyDescription: 'Découvre comment la masse monétaire des monnaies fiat augmente chaque année, tandis que celle du bitcoin reste inchangée.',
   },
 

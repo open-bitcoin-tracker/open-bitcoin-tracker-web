@@ -36,7 +36,7 @@ export const de: Dict = {
     priceTracker: 'Preis-Tracker',
     priceDescription: 'Bitcoin-Livekurs und Kurshistorie seit 2010.',
     earthDescription: 'Entdecke Bitcoin als Anteil an der Landfläche der Erde.',
-    wealthDescription: 'Sieh, wie klein Bitcoin neben dem Weltvermögen ist – und lass es wachsen.',
+    wealthDescription: 'Vergleiche die Marktkapitalisierung von Bitcoin mit anderen Anlagen.',
     supplyDescription: 'Sieh, wie die Fiat-Geldmenge jedes Jahr steigt und die von Bitcoin nicht.',
   },
 

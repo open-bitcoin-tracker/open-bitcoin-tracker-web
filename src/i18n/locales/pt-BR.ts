@@ -36,7 +36,7 @@ export const ptBR: Dict = {
     priceTracker: 'Trackeador de preço',
     priceDescription: 'Preço do Bitcoin ao vivo e histórico desde 2010.',
     earthDescription: 'Explore o Bitcoin como uma parcela da superfície terrestre.',
-    wealthDescription: 'Veja como o Bitcoin é pequeno perto da riqueza mundial e faça ele crescer.',
+    wealthDescription: 'Compare o valor de mercado do Bitcoin com outros ativos.',
     supplyDescription: 'Veja como a oferta de moeda fiduciária aumenta a cada ano e a de bitcoin não.',
   },
 
