@@ -33,7 +33,6 @@ if (root && json) {
   }));
   const slider = root.querySelector<HTMLInputElement>('[data-slider]')!;
   const priceOutput = root.querySelector<HTMLElement>('[data-price]')!;
-  const totalOutput = root.querySelector<HTMLElement>('[data-total]')!;
   const callout = root.querySelector<HTMLElement>('[data-callout]')!;
   const calloutValue = root.querySelector<HTMLElement>('[data-callout-value]')!;
   const status = root.querySelector<HTMLElement>('[data-status]')!;
@@ -94,7 +93,7 @@ if (root && json) {
     const rem = parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
     const inset = rem * .5;
     callout.toggleAttribute('data-visible', bitcoin.w - inset <= 4 * rem || bitcoin.h - inset <= 1.9 * rem);
-    callout.style.setProperty('--callout-x', `${bitcoin.w / 2}px`);
+    callout.style.left = `${bitcoin.w + 4}px`;
   }
 
   const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
@@ -142,7 +141,6 @@ if (root && json) {
       const ratio = base[id] > 0 ? values[id] / base[id] - 1 : 0;
       change.textContent = simulated && Math.abs(ratio) > 1e-9 ? formatChange(ratio) : '';
     }
-    totalOutput.textContent = formatCompactUsd(total);
     calloutValue.textContent = formatCompactUsd(values.bitcoin);
     priceOutput.textContent = formatUsd(price);
     const position = Math.round(positionFromCap(cap, base.bitcoin, max));

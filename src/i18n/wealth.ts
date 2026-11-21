@@ -2,7 +2,6 @@
 export const wealth = {
   title: 'Global Wealth',
   description: 'Bitcoin next to the world’s largest stores of value. Move the slider to see what one bitcoin would be worth if it drew value from everything else.',
-  total: 'Total',
   treemapLabel: 'Global wealth by asset, each box sized by value',
   simulatorTitle: 'Bitcoin market cap simulator',
   priceLabel: 'Price per bitcoin',
