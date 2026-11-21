@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { readFileSync } from 'node:fs';
 import type { SupplySnapshot } from '../src/features/supply/model.ts';
-import { ASSET_IDS, baseValues, layoutAssets, broadMoneyUsd, capFromPosition, circulatingSupply, estimateHeight, goldOunces, isValidWealthSnapshot, maxCap, parityCap, positionFromCap, redistribute, SLIDER_STEPS, squarify, totalValue, type AssetValues, type WealthSnapshot } from '../src/features/wealth/model.ts';
+import { ASSET_IDS, baseValues, layoutAssets, broadMoneyUsd, capFromPosition, circulatingSupply, estimateHeight, goldOunces, isValidWealthSnapshot, positionFromCap, redistribute, SLIDER_STEPS, squarify, totalValue, type AssetValues, type WealthSnapshot } from '../src/features/wealth/model.ts';
 
 const read = <T>(path: string) => JSON.parse(readFileSync(new URL(path, import.meta.url), 'utf8')) as T;
 const snapshot = read<WealthSnapshot>('../src/features/wealth/snapshot.json');
@@ -57,36 +57,6 @@ test('redistribution keeps the total fixed and moves value proportionally', () =
   assert.equal(all.bitcoin, total);
   for (const id of ASSET_IDS) if (id !== 'bitcoin') assert.equal(all[id], 0);
   assert.equal(redistribute(base, -10).bitcoin, 0);
-});
-
-test('parity presets equal the asset after it shrinks', () => {
-  for (const id of ['gold', 'fiat', 'equities', 'bonds', 'realEstate'] as const) {
-    const cap = parityCap(base, id)!;
-    close(redistribute(base, cap)[id], cap);
-  }
-});
-
-test('a single source funds Bitcoin alone, up to its whole value', () => {
-  const total = totalValue(base);
-  const fromGold = redistribute(base, 20, 'gold');
-  assert.deepEqual(fromGold, { ...base, bitcoin: 20, gold: 10 });
-  close(totalValue(fromGold), total);
-  assert.equal(maxCap(base, 'gold'), 30);
-  assert.equal(maxCap(base), total);
-  const drained = redistribute(base, 1000, 'gold');
-  assert.deepEqual([drained.bitcoin, drained.gold], [30, 0]);
-  assert.equal(redistribute(base, 10, null).gold, base.gold * (total - 10) / (total - base.bitcoin));
-});
-
-test('single-source parity meets halfway, keeps other assets whole, or is out of reach', () => {
-  const halfway = parityCap(base, 'gold', 'gold')!;
-  assert.equal(halfway, 15);
-  const values = redistribute(base, halfway, 'gold');
-  assert.equal(values.bitcoin, values.gold);
-  assert.equal(parityCap(base, 'gold', 'fiat'), 25);
-  assert.equal(redistribute(base, 25, 'fiat').gold, 25);
-  assert.equal(parityCap(base, 'fiat', 'gold'), null);
-  assert.equal(parityCap(base, 'realEstate', 'bonds'), null);
 });
 
 test('the logarithmic slider starts at today\'s market cap, round-trips and clamps', () => {

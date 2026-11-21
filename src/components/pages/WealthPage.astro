@@ -1,8 +1,6 @@
 ---
 import Layout from '../../layouts/Layout.astro';
 import Nav from '../Nav.astro';
-import CheckIcon from '../ui/CheckIcon.astro';
-import '../../styles/currency-picker.css';
 import { getRelativeLocaleUrl } from 'astro:i18n';
 import { resolveLang } from '../../i18n/utils';
 import { wealth as t, assetNames } from '../../i18n/wealth';
@@ -16,7 +14,6 @@ const date = (value: string) => formatDate(value, locale);
 const { snapshot, fiat, supply, base, total } = staticWealth();
 const { rects, notches } = layoutAssets(base, 160, 90);
 const percent = (value: number, of: number) => `${(value / of * 100).toFixed(4)}%`;
-const presets = ['gold', 'fiat', 'equities', 'bonds', 'realEstate'] as const;
 const listed = Object.fromEntries(snapshot.assets.map((asset) => [asset.id, asset]));
 const clientCopy = { ...t, assetNames };
 const yearOf = (value: string) => value.slice(0, 4);
@@ -25,8 +22,20 @@ const sourceFor = (id: AssetId) => id === 'bitcoin' ? snapshot.bitcoin.source : 
 <Layout title={`${t.title} — Open Bitcoin Tracker`} description={t.description}>
   <Nav />
   <main id="main-content" class="wealth-page wealth-tiles" lang="en" data-wealth>
+    <div class="wealth-screen">
     <header class="wealth-header">
       <h1>{t.title}</h1>
+      <!-- The slider sets the price per bitcoin; the market cap follows and shows on the chart. -->
+      <div class="header-price">
+        <div class="price-head">
+          <label for="bitcoin-cap" class="section-label">{t.priceLabel}</label>
+          <output class="cap-value" for="bitcoin-cap" data-price>{formatUsd(snapshot.bitcoin.fallbackPrice)}</output>
+        </div>
+        <div class="slider-hit" data-slider-hit>
+          <input id="bitcoin-cap" class="cap-slider" type="range" min="0" max={SLIDER_STEPS} step="1" value="0" style="--fill:0%" data-slider disabled
+            aria-valuetext={interpolate(t.sliderValue, { cap: formatCompactUsd(base.bitcoin, 4), price: formatUsd(snapshot.bitcoin.fallbackPrice) })} />
+        </div>
+      </div>
     </header>
 
     <div class="wealth-stage">
@@ -51,53 +60,12 @@ const sourceFor = (id: AssetId) => id === 'bitcoin' ? snapshot.bitcoin.source : 
         </ul>
       </section>
 
-      <section class="simulator" aria-label={t.simulatorTitle}>
-        <!-- The slider sets the price per bitcoin; the market cap follows and shows on the chart. -->
-        <div class="sim-section sim-price">
-          <!-- Label on the left, the price on the right. -->
-          <div class="price-head">
-            <label for="bitcoin-cap" class="section-label">{t.priceLabel}</label>
-            <output class="cap-value" for="bitcoin-cap" data-price>{formatUsd(snapshot.bitcoin.fallbackPrice)}</output>
-          </div>
-          <div class="slider-hit" data-slider-hit>
-            <input id="bitcoin-cap" class="cap-slider" type="range" min="0" max={SLIDER_STEPS} step="1" value="0" style="--fill:0%" data-slider disabled
-              aria-valuetext={interpolate(t.sliderValue, { cap: formatCompactUsd(base.bitcoin, 4), price: formatUsd(snapshot.bitcoin.fallbackPrice) })} />
-          </div>
-        </div>
-        <div class="sim-section source-row" data-source-picker>
-            <span id="source-label" class="section-label">{t.sourceLabel}</span>
-            <select hidden tabindex="-1" aria-hidden="true" data-source disabled>
-              <option value="">{t.allAssets}</option>
-              {presets.map((id) => <option value={id}>{assetNames[id]}</option>)}
-            </select>
-            <div class="source-control">
-              <button type="button" class="source-trigger" data-source-trigger aria-haspopup="listbox" aria-expanded="false" aria-controls="source-options" aria-labelledby="source-label source-value" disabled>
-                <span class="source-dot" data-source-dot aria-hidden="true"></span>
-                <span id="source-value" data-source-value>{t.allAssets}</span>
-                <svg viewBox="0 0 24 24" width="12" height="12" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
-              </button>
-              <div id="source-options" class="currency-options source-menu" data-source-list role="listbox" aria-labelledby="source-label" hidden>
-                {[['', t.allAssets] as const, ...presets.map((id) => [id, assetNames[id]] as const)].map(([id, name]) => (
-                  <button type="button" class="currency-option" data-source-option={id} role="option" aria-selected={id === '' ? 'true' : 'false'} tabindex="-1">
-                    <span class="source-dot" style={id ? `--chip-color:var(--tile-${id})` : undefined} aria-hidden="true"></span>
-                    <span class="currency-option-name">{name}</span>
-                    <CheckIcon />
-                  </button>
-                ))}
-              </div>
-            </div>
-          </div>
-        <div class="sim-section presets-block">
-          <span id="presets-label" class="section-label">{t.presetsLabel}</span>
-          <div class="presets" role="group" aria-labelledby="presets-label">
-            {presets.map((id) => <button type="button" class="preset" data-preset={id} style={`--chip-color:var(--tile-${id})`} aria-pressed="false" disabled><span class="preset-dot" aria-hidden="true"></span>{assetNames[id]}</button>)}
-          </div>
-        </div>
-        <div class="simulator-footer">
-          <p class="simulator-status" data-status>{interpolate(t.priceUnavailable, { date: date(snapshot.bitcoin.fallbackPriceDate) })}</p>
-          <noscript><p class="simulator-status">{interpolate(t.nojs, { date: date(snapshot.checkedAt) })}</p></noscript>
-        </div>
-      </section>
+    </div>
+
+    <div class="simulator-footer">
+      <p class="simulator-status" data-status>{interpolate(t.priceUnavailable, { date: date(snapshot.bitcoin.fallbackPriceDate) })}</p>
+      <noscript><p class="simulator-status">{interpolate(t.nojs, { date: date(snapshot.checkedAt) })}</p></noscript>
+    </div>
     </div>
 
     <details class="method" id="sources">
@@ -135,18 +103,21 @@ const sourceFor = (id: AssetId) => id === 'bitcoin' ? snapshot.bitcoin.source : 
     margin: 0 auto;
     padding: var(--menu-control-top) clamp(1rem, 3vw, 2.5rem) 2rem;
   }
-  /* The title shares the menu button's row. */
-  .wealth-header { display: flex; align-items: center; gap: 1rem; min-height: var(--menu-control-size); margin-bottom: var(--wealth-gap); padding-right: calc(var(--menu-control-size) + 1rem); }
+  /* The title and the price slider share the menu button's row. */
+  .wealth-header { position: relative; display: flex; align-items: center; gap: .75rem clamp(1rem, 2.5vw, 2.5rem); min-height: var(--menu-control-size); margin-bottom: var(--wealth-gap); padding-right: calc(var(--menu-control-size) + 1rem); }
+  .wealth-header h1 { flex: none; }
+  .header-price { display: flex; flex: 1 1 22rem; align-items: center; gap: clamp(.75rem, 1.5vw, 1.5rem); min-width: 0; max-width: 48rem; }
+  .header-price .price-head { display: grid; justify-items: start; gap: .05rem; flex: none; min-width: 9.5rem; }
+  .header-price .slider-hit { flex: 1; min-width: 8rem; margin-top: 0; }
   .wealth-header h1 { font-size: clamp(1.375rem, 2.4vw, 2rem); font-weight: 650; letter-spacing: -.03em; line-height: 1.15; }
   /* When Bitcoin's box is too small for its own label, its name and value sit beside it, over the neighbouring tile. */
   .bitcoin-callout { position: absolute; z-index: 2; top: 0; display: flex; flex-direction: column; align-items: flex-start; gap: .05em; padding: .2rem .25rem; color: var(--tile-ink); font-size: .75rem; line-height: 1.2; white-space: nowrap; pointer-events: none; visibility: hidden; }
   .bitcoin-callout strong { font-weight: 700; font-variant-numeric: tabular-nums; }
   .bitcoin-callout[data-visible] { visibility: visible; }
-  .wealth-stage { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--wealth-gap); }
+  .wealth-stage { display: flex; flex-direction: column; min-height: 0; }
   /* The chart sits on the page; the controls use the standard OBT card: square corners, a divider border and the surface colour. */
   .treemap-area { position: relative; display: flex; flex-direction: column; min-height: 0; }
-  .simulator { padding: clamp(1rem, 1.6vw, 1.5rem); border: 1px solid var(--color-divider); background: var(--color-surface); }
-  .treemap { position: relative; flex: 1; aspect-ratio: 16 / 9; overflow: hidden; list-style: none; }
+  .treemap { position: relative; flex: 1; aspect-ratio: 16 / 9; overflow: hidden; background: var(--tile-seam); list-style: none; }
   .tile { position: absolute; }
   .tile-body { display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; padding: .25rem; overflow: hidden; background: var(--tile-color); color: var(--tile-ink); text-align: center; container-type: size; }
   .tile[data-tile='realEstate'] { --tile-color: var(--tile-realEstate); }
@@ -187,14 +158,9 @@ const sourceFor = (id: AssetId) => id === 'bitcoin' ? snapshot.bitcoin.source : 
     .tile-value { font-size: .8125rem; }
     .tile-glyph { display: none; }
   }
-  /* Three sections, each with the same small heading and a divider between them. */
-  .simulator { display: flex; flex-direction: column; gap: 1rem; min-width: 0; }
-  .sim-section { display: grid; gap: .625rem; }
-  .sim-section + .sim-section { padding-top: 1rem; border-top: 1px solid var(--color-divider); }
   .section-label { color: var(--color-ink-muted); font-size: .75rem; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; }
-  .sim-price { gap: 0; }
   .price-head { display: flex; align-items: center; justify-content: space-between; gap: .75rem; }
-  .cap-value { font-size: clamp(1.625rem, 2.3vw, 2.25rem); font-weight: 650; line-height: 1.15; font-variant-numeric: tabular-nums; letter-spacing: -.03em; white-space: nowrap; }
+  .cap-value { font-size: clamp(1.25rem, 1.9vw, 1.75rem); font-weight: 650; line-height: 1.15; font-variant-numeric: tabular-nums; letter-spacing: -.03em; white-space: nowrap; }
   /* A custom slider: a thicker track filled up to the thumb (--fill, set by the script). */
   .cap-slider { --track: color-mix(in srgb, var(--color-ink) 16%, transparent); --thumb: 22px; width: 100%; pointer-events: none; height: 2.75rem; margin: .25rem 0 0; background: transparent; appearance: none; -webkit-appearance: none; cursor: default; }
   /* The wrapper takes the pointer so vertical swipes still scroll the page; the script drags the thumb. */
@@ -212,29 +178,7 @@ const sourceFor = (id: AssetId) => id === 'bitcoin' ? snapshot.bitcoin.source : 
   .slider-hit:is([data-over-thumb], [data-dragging]) .cap-slider::-moz-range-thumb { transform: scale(1.1); }
   .cap-slider:focus-visible::-webkit-slider-thumb { box-shadow: 0 0 0 5px color-mix(in srgb, var(--color-accent) 30%, transparent); }
   .cap-slider:focus-visible::-moz-range-thumb { box-shadow: 0 0 0 5px color-mix(in srgb, var(--color-accent) 30%, transparent); }
-  /* The source title and its dropdown share one line. */
-  .source-row { display: flex; align-items: center; justify-content: space-between; gap: .75rem; }
-  .source-control { position: relative; }
-  /* Matches the site's option menus (currency, refresh interval). */
-  .source-trigger { display: inline-flex; align-items: center; gap: .45rem; min-height: 40px; padding: .4rem .7rem .4rem .8rem; border: 1px solid var(--color-divider); border-radius: .625rem; background: var(--color-surface); color: var(--color-ink); font-size: .875rem; font-weight: 600; white-space: nowrap; cursor: pointer; transition: border-color 150ms ease, background-color 150ms ease; }
-  /* No outline ring; keyboard focus shows the same treatment as hover. */
-  .source-trigger:hover:not(:disabled), .source-trigger:focus-visible, .source-trigger[aria-expanded='true'] { border-color: var(--color-ink-muted); background: var(--menu-option-hover); }
-  .source-trigger:disabled { cursor: default; }
-  .source-trigger:focus, .source-menu .currency-option:focus { outline: none; }
-  .source-trigger svg { color: var(--color-ink-muted); transition: transform 150ms ease; }
-  .source-trigger[aria-expanded='true'] svg { transform: rotate(180deg); }
-  .source-menu { position: absolute; z-index: 20; top: calc(100% + .35rem); right: 0; width: max-content; min-width: 12rem; padding: .375rem; border: 1px solid var(--menu-dropdown-border); border-radius: var(--radius-lg); background: var(--menu-dropdown-bg); box-shadow: var(--menu-dropdown-shadow); animation: source-menu-in 160ms ease-out; }
-  .source-menu .currency-option { min-height: 40px; padding: .45rem .625rem; border: 0; background: transparent; font: inherit; }
-  .source-menu .currency-option:focus { background: var(--menu-option-hover); }
-  .source-dot { width: .625rem; height: .625rem; flex: none; border-radius: 999px; background: var(--chip-color, conic-gradient(var(--tile-realEstate) 0 25%, var(--tile-equities) 0 50%, var(--tile-fiat) 0 75%, var(--tile-gold) 0)); }
-  @keyframes source-menu-in { from { opacity: 0; transform: translateY(-.25rem); } }
-  .presets { display: flex; flex-wrap: wrap; gap: .5rem; }
-  .preset-dot { width: .625rem; height: .625rem; flex: none; border-radius: 999px; background: var(--chip-color); }
-  .preset { display: inline-flex; flex: 1 1 auto; align-items: center; justify-content: center; gap: .45rem; min-height: 40px; padding: .4rem .8rem; border: 1px solid var(--color-divider); border-radius: .625rem; background: var(--color-surface); color: var(--color-ink); font-size: .875rem; white-space: nowrap; cursor: pointer; transition: border-color .15s ease, background-color .15s ease, opacity .15s ease; }
-  .preset:hover:not(:disabled) { border-color: var(--color-ink-muted); background: var(--menu-option-hover); }
-  .preset[aria-pressed='true'] { border-color: var(--color-accent); background: var(--color-accent-soft); font-weight: 600; }
-  .preset:disabled { cursor: not-allowed; opacity: .4; }
-  .simulator-footer { display: grid; gap: .35rem; margin-top: auto; }
+  .simulator-footer { display: grid; gap: .35rem; margin-top: .5rem; }
   .simulator-status { color: var(--color-ink-muted); font-size: .8125rem; line-height: 1.45; }
   .simulator-status:empty { display: none; }
   .method { margin-top: var(--wealth-gap); scroll-margin-top: calc(var(--menu-control-top) + var(--menu-control-size) + .5rem); }
@@ -257,36 +201,29 @@ const sourceFor = (id: AssetId) => id === 'bitcoin' ? snapshot.bitcoin.source : 
   a:focus-visible, summary:focus-visible, button:focus-visible, input:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 4px; }
   /* Desktop: the chart and controls fill one screen, so the slider and the boxes are visible together. */
   @media (min-width: 900px) and (min-height: 520px) {
-    .wealth-stage {
-      grid-template-columns: minmax(0, 1fr) clamp(20rem, 26vw, 28rem);
-      column-gap: clamp(1.25rem, 2vw, 2rem);
-      height: calc(100dvh - var(--menu-control-top) - var(--menu-control-size) - var(--wealth-gap) * 2);
-    }
+    .wealth-screen { display: flex; flex-direction: column; height: calc(100dvh - var(--menu-control-top) - var(--wealth-gap)); }
+    .wealth-stage, .treemap-area { flex: 1; }
     .treemap { aspect-ratio: auto; }
-    .simulator { overflow-y: auto; }
   }
   @media (min-width: 900px) and (max-height: 780px) {
     .wealth-page { --wealth-gap: .625rem; }
-    .simulator { gap: .75rem; padding: .875rem; }
-    .cap-slider { height: 2.25rem; }
-    .cap-value { font-size: 1.625rem; }
-    .sim-section:not(.sim-price) { gap: .5rem; }
-    .sim-section + .sim-section { padding-top: .75rem; }
-    .preset { min-height: 34px; padding: .25rem .6rem; font-size: .8125rem; }
-    .source-trigger { min-height: 34px; padding: .25rem .6rem .25rem .7rem; font-size: .8125rem; }
-    .presets { gap: .375rem; }
-  }
+      .cap-slider { height: 2.25rem; }
+            }
   @media (max-width: 899px) {
     .wealth-page { padding-bottom: 1.5rem; }
     .treemap { aspect-ratio: 4 / 3; }
   }
+  /* Phones: the title on the first row, the price slider across the next. */
+  @media (max-width: 700px) {
+    .wealth-header { flex-wrap: wrap; }
+    .wealth-header h1 { flex: 1; }
+    .header-price { order: 3; flex-basis: 100%; max-width: none; margin-right: calc((var(--menu-control-size) + 1rem) * -1); }
+    }
   @media (max-width: 600px) {
-    .wealth-header { flex-wrap: wrap; row-gap: .25rem; }
     .treemap { aspect-ratio: 4 / 5; }
   }
   @media (prefers-reduced-motion: reduce) {
-    .preset, .details-plus, .source-trigger, .source-trigger svg { transition: none; }
-    .cap-slider::-webkit-slider-thumb, .cap-slider::-moz-range-thumb { transition: none; }
-    .source-menu { animation: none; }
-      }
+    .details-plus { transition: none; }
+      .cap-slider::-webkit-slider-thumb, .cap-slider::-moz-range-thumb { transition: none; }
+        }
 </style>

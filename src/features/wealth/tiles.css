@@ -7,6 +7,8 @@
   --tile-gold: #f0cf7f;
   --tile-bitcoin: var(--color-accent);
   --tile-ink: #1f1b14;
+  /* Behind the tiles: a light blend of their colours, so an edge that falls between pixels never shows a dark line. */
+  --tile-seam: color-mix(in srgb, var(--tile-realEstate) 50%, var(--tile-fiat));
 }
 html.dark .wealth-tiles {
   --tile-realEstate: #d68e8e;

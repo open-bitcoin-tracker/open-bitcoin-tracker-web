@@ -1,11 +1,9 @@
 import { subscribeBitcoinPricePoll } from '../lib/bitcoin-price-poll';
-import { createOptionPicker } from '../lib/currency-picker';
 import { formatDate, interpolate } from '../features/supply/model';
-import { ASSET_IDS, baseValues, capFromPosition, circulatingSupply, estimateHeight, formatChange, formatCompactUsd, formatUsd, maxCap, parityCap, positionFromCap, redistribute, SLIDER_STEPS, layoutAssets, totalValue, type AssetId, type AssetValues, type Notch, type Rect, type ValueSource, type WealthSnapshot } from '../features/wealth/model';
+import { ASSET_IDS, baseValues, capFromPosition, circulatingSupply, estimateHeight, formatChange, formatCompactUsd, formatUsd, positionFromCap, redistribute, SLIDER_STEPS, layoutAssets, totalValue, type AssetValues, type Notch, type Rect, type WealthSnapshot } from '../features/wealth/model';
 import type { WealthCopy, assetNames } from '../i18n/wealth';
 
 type Copy = WealthCopy & { assetNames: typeof assetNames };
-type Preset = Exclude<AssetId, 'bitcoin'>;
 
 const root = document.querySelector<HTMLElement>('[data-wealth]');
 const json = document.getElementById('wealth-data');
@@ -36,9 +34,6 @@ if (root && json) {
   const callout = root.querySelector<HTMLElement>('[data-callout]')!;
   const calloutValue = root.querySelector<HTMLElement>('[data-callout-value]')!;
   const status = root.querySelector<HTMLElement>('[data-status]')!;
-  const presetButtons = Array.from(root.querySelectorAll<HTMLButtonElement>('[data-preset]'));
-  const sourceSelect = root.querySelector<HTMLSelectElement>('[data-source]')!;
-  const sourceDot = root.querySelector<HTMLElement>('[data-source-dot]')!;
   const date = (value: string) => formatDate(value, 'en-US');
 
   let bitcoinPrice = snapshot.bitcoin.fallbackPrice;
@@ -47,8 +42,6 @@ if (root && json) {
   let goldLive: boolean | undefined;
   // `null` follows today's live market cap; a number is the visitor's hypothetical market cap.
   let selectedCap: number | null = null;
-  let activePreset: Preset | null = null;
-  let source: ValueSource = null;
 
   const current = () => {
     const supply = circulatingSupply(estimateHeight(snapshot.bitcoin, Date.now()));
@@ -105,7 +98,7 @@ if (root && json) {
   let frame = 0;
 
   /**
-   * Presets glide between layouts by interpolating values and laying out every frame,
+   * Resetting glides between layouts by interpolating values and laying out every frame,
    * so notches always match their boxes. Dragging and reduced motion update at once.
    */
   function draw(values: AssetValues, animate: boolean) {
@@ -130,12 +123,10 @@ if (root && json) {
 
   function render(animate = false) {
     const { supply, base, total } = current();
-    const max = maxCap(base, source);
-    if (activePreset) selectedCap = parityCap(base, activePreset, source);
-    // Bitcoin can only grow from today's live market cap, up to what the source can fund.
-    const cap = Math.min(max, Math.max(base.bitcoin, selectedCap ?? base.bitcoin));
+    // Bitcoin can only grow from today's live market cap, up to all global wealth.
+    const cap = Math.min(total, Math.max(base.bitcoin, selectedCap ?? base.bitcoin));
     const simulated = selectedCap !== null;
-    const values: AssetValues = simulated ? redistribute(base, cap, source) : base;
+    const values: AssetValues = simulated ? redistribute(base, cap) : base;
     const price = cap / supply;
 
     draw(values, animate);
@@ -147,16 +138,10 @@ if (root && json) {
     }
     calloutValue.textContent = formatCompactUsd(values.bitcoin);
     priceOutput.textContent = formatUsd(price);
-    const position = Math.round(positionFromCap(cap, base.bitcoin, max));
+    const position = Math.round(positionFromCap(cap, base.bitcoin, total));
     slider.value = String(position);
     slider.style.setProperty('--fill', `${position / SLIDER_STEPS * 100}%`);
     slider.setAttribute('aria-valuetext', interpolate(copy.sliderValue, { cap: formatCompactUsd(cap, 4), price: formatUsd(price) }));
-    for (const button of presetButtons) {
-      // A preset the source cannot fund, or one Bitcoin already passes, is unavailable.
-      const target = parityCap(base, button.dataset.preset as Preset, source);
-      button.disabled = target === null || target <= base.bitcoin;
-      button.setAttribute('aria-pressed', String(button.dataset.preset === activePreset));
-    }
 
     const lines = [
       bitcoinState === 'unavailable' ? interpolate(copy.priceUnavailable, { date: date(snapshot.bitcoin.fallbackPriceDate) }) : '',
@@ -166,10 +151,9 @@ if (root && json) {
   }
 
   slider.addEventListener('input', () => {
-    const { base } = current();
+    const { base, total } = current();
     const position = Number(slider.value);
-    selectedCap = position <= 0 ? null : capFromPosition(position, base.bitcoin, maxCap(base, source));
-    activePreset = null;
+    selectedCap = position <= 0 ? null : capFromPosition(position, base.bitcoin, total);
     render();
   });
   slider.addEventListener('change', () => render());
@@ -223,32 +207,10 @@ if (root && json) {
   };
   sliderHit.addEventListener('pointerup', endDrag);
   sliderHit.addEventListener('pointercancel', endDrag);
-  const reset = () => {
-    activePreset = null;
-    selectedCap = null;
-    render(true);
-  };
-  // Clicking the selected preset again returns to today's value.
-  for (const button of presetButtons) {
-    button.addEventListener('click', () => {
-      if (activePreset === button.dataset.preset) return reset();
-      activePreset = button.dataset.preset as Preset;
-      render(true);
-    });
-  }
-  // Keyboard users can also return to today's value from the slider.
+  // Keyboard users can return to today's value from the slider.
   slider.addEventListener('keydown', (event) => {
-    if (event.key === 'Escape') reset();
-  });
-  // Switching the source keeps the chosen price where the new source can fund it.
-  sourceSelect.addEventListener('change', () => {
-    source = (sourceSelect.value || null) as ValueSource;
-    if (source) sourceDot.style.setProperty('--chip-color', `var(--tile-${source})`);
-    else sourceDot.style.removeProperty('--chip-color');
-    const { base } = current();
-    if (activePreset && parityCap(base, activePreset, source) === null) activePreset = null;
-    // A price beyond the new source's reach settles at its limit, so switching back does not jump.
-    if (!activePreset && selectedCap !== null) selectedCap = Math.min(selectedCap, maxCap(base, source));
+    if (event.key !== 'Escape') return;
+    selectedCap = null;
     render(true);
   });
   // Sources & method sits at the bottom; when it opens below the fold, bring it into view.
@@ -276,14 +238,6 @@ if (root && json) {
   });
   new ResizeObserver(() => render()).observe(treemap);
   slider.disabled = false;
-  sourceSelect.disabled = false;
-  createOptionPicker(root, sourceSelect, {
-    wrapper: root.querySelector<HTMLElement>('[data-source-picker]')!,
-    selectors: { trigger: '[data-source-trigger]', value: '[data-source-value]', list: '[data-source-list]', option: '[data-source-option]', optionKey: 'sourceOption' },
-    displayOptionLabel: true,
-    openAttribute: 'data-source-open',
-    toggleEvent: 'sourcetoggle',
-  });
 
   subscribeBitcoinPricePoll({
     onPrice: (point) => { bitcoinPrice = point.price; },

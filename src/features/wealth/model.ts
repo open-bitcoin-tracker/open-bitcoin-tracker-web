@@ -4,8 +4,6 @@ export const ASSET_IDS = ['realEstate', 'bonds', 'equities', 'fiat', 'gold', 'bi
 export type AssetId = typeof ASSET_IDS[number];
 export type SnapshotAssetId = 'realEstate' | 'bonds' | 'equities';
 export type AssetValues = Record<AssetId, number>;
-/** The asset Bitcoin takes value from; `null` takes it from all of them in proportion. */
-export type ValueSource = Exclude<AssetId, 'bitcoin'> | null;
 
 export interface WealthSnapshot {
   checkedAt: string;
@@ -80,37 +78,17 @@ export function totalValue(values: AssetValues): number {
 }
 
 /**
- * Bitcoin takes its new market cap from the other assets in proportion to their size, or from one
- * source asset only; the total stays fixed, and a lower market cap returns value the same way.
+ * Bitcoin takes its new market cap from the other assets in proportion to their size;
+ * the total stays fixed, and a lower market cap returns value the same way.
  */
-export function redistribute(base: AssetValues, bitcoinCap: number, source: ValueSource = null): AssetValues {
+export function redistribute(base: AssetValues, bitcoinCap: number): AssetValues {
   const total = totalValue(base);
-  if (source) {
-    const target = Math.min(maxCap(base, source), Math.max(0, bitcoinCap));
-    return { ...base, bitcoin: target, [source]: base[source] + base.bitcoin - target };
-  }
   const target = Math.min(total, Math.max(0, bitcoinCap));
   const others = total - base.bitcoin;
   const factor = others > 0 ? (total - target) / others : 0;
   const next = { bitcoin: target } as AssetValues;
   for (const id of ASSET_IDS) if (id !== 'bitcoin') next[id] = base[id] * factor;
   return next;
-}
-
-/** The largest market cap the source can fund: all of it, or all global wealth. */
-export function maxCap(base: AssetValues, source: ValueSource = null): number {
-  return source ? base.bitcoin + base[source] : totalValue(base);
-}
-
-/**
- * The market cap at which Bitcoin equals an asset after the transfer, or `null` when the source
- * cannot fund it. Taking from the asset itself meets halfway; another source leaves it unchanged.
- */
-export function parityCap(base: AssetValues, asset: Exclude<AssetId, 'bitcoin'>, source: ValueSource = null): number | null {
-  if (source === asset) return (base.bitcoin + base[asset]) / 2;
-  if (source) return base[asset] <= maxCap(base, source) ? base[asset] : null;
-  const total = totalValue(base);
-  return base[asset] * total / (total - base.bitcoin + base[asset]);
 }
 
 /** The slider is logarithmic, from today's market cap (it can only grow) up to all global wealth. */
