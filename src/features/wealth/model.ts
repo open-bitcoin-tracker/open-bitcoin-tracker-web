@@ -1,6 +1,6 @@
 import type { SupplySnapshot } from '../supply/model';
 
-export const ASSET_IDS = ['realEstate', 'bonds', 'equities', 'fiat', 'gold', 'bitcoin'] as const;
+export const ASSET_IDS = ['realEstate', 'bonds', 'equities', 'fiat', 'gold', 'silver', 'bitcoin'] as const;
 export type AssetId = typeof ASSET_IDS[number];
 export type SnapshotAssetId = 'realEstate' | 'bonds' | 'equities';
 export type AssetValues = Record<AssetId, number>;
@@ -9,6 +9,7 @@ export interface WealthSnapshot {
   checkedAt: string;
   bitcoin: { referenceHeight: number; referenceTime: string; fallbackPrice: number; fallbackPriceDate: string; source: string };
   gold: { tonnes: number; asOf: string; source: string; fallbackPrice: number; fallbackPriceDate: string; note: string };
+  silver: { ounces: number; asOf: string; source: string; fallbackPrice: number; fallbackPriceDate: string; note: string };
   fiat: { fxDate: string; usdRates: Record<'EUR' | 'JPY' | 'CNY' | 'GBP', number>; fxSource: string };
   assets: { id: SnapshotAssetId; valueUsd: number; asOf: string; publisher: string; source: string; note: string }[];
 }
@@ -24,11 +25,12 @@ const isoDate = (value: unknown) => typeof value === 'string' && /^\d{4}-\d{2}-\
 const url = (value: unknown) => typeof value === 'string' && value.startsWith('https://');
 
 export function isValidWealthSnapshot(snapshot: WealthSnapshot): boolean {
-  const { bitcoin, gold, fiat, assets } = snapshot;
+  const { bitcoin, gold, silver, fiat, assets } = snapshot;
   return isoDate(snapshot.checkedAt)
     && Number.isInteger(bitcoin.referenceHeight) && bitcoin.referenceHeight > 0 && isoDate(bitcoin.referenceTime)
     && positive(bitcoin.fallbackPrice) && isoDate(bitcoin.fallbackPriceDate) && url(bitcoin.source)
     && positive(gold.tonnes) && isoDate(gold.asOf) && url(gold.source) && positive(gold.fallbackPrice) && isoDate(gold.fallbackPriceDate)
+    && !!silver && positive(silver.ounces) && isoDate(silver.asOf) && url(silver.source) && positive(silver.fallbackPrice) && isoDate(silver.fallbackPriceDate)
     && isoDate(fiat.fxDate) && url(fiat.fxSource) && (['EUR', 'JPY', 'CNY', 'GBP'] as const).every((code) => positive(fiat.usdRates[code]))
     && assets.length === 3 && new Set(assets.map(({ id }) => id)).size === 3
     && assets.every((asset) => ['realEstate', 'bonds', 'equities'].includes(asset.id) && positive(asset.valueUsd) && isoDate(asset.asOf) && url(asset.source) && !!asset.publisher);
@@ -68,9 +70,9 @@ export function broadMoneyUsd(supply: SupplySnapshot, rates: WealthSnapshot['fia
   }, 0);
 }
 
-export function baseValues(snapshot: WealthSnapshot, fiat: number, bitcoinPrice: number, goldPrice: number, supply: number): AssetValues {
+export function baseValues(snapshot: WealthSnapshot, fiat: number, bitcoinPrice: number, goldPrice: number, silverPrice: number, supply: number): AssetValues {
   const listed = Object.fromEntries(snapshot.assets.map(({ id, valueUsd }) => [id, valueUsd])) as Record<SnapshotAssetId, number>;
-  return { ...listed, fiat, gold: goldOunces(snapshot.gold.tonnes) * goldPrice, bitcoin: bitcoinPrice * supply };
+  return { ...listed, fiat, gold: goldOunces(snapshot.gold.tonnes) * goldPrice, silver: snapshot.silver.ounces * silverPrice, bitcoin: bitcoinPrice * supply };
 }
 
 export function totalValue(values: AssetValues): number {
@@ -118,7 +120,8 @@ export function priceMilestones(minPrice: number, maxPrice: number): number[] {
 
 /**
  * The cap for a slider position, pulled onto a round price when the position lies within
- * `snapSteps` of one, so prices like $200,000 or $1,000,000 are easy to hit.
+ * `snapSteps` of one, so prices like $200,000 or $1,000,000 are easy to hit. Either end of the
+ * track wins over a round price next to it, so all global wealth stays reachable.
  */
 export function snapCap(position: number, min: number, max: number, supply: number, snapSteps: number): { cap: number; milestone?: number } {
   let best: { price: number; distance: number } | undefined;
@@ -126,6 +129,10 @@ export function snapCap(position: number, min: number, max: number, supply: numb
     const distance = Math.abs(positionFromCap(price * supply, min, max) - position);
     if (!best || distance < best.distance) best = { price, distance };
   }
+  // The ends of the track (today, all global wealth) pull harder than any round price beside them.
+  const toEnd = SLIDER_STEPS - position;
+  if (position <= snapSteps && (!best || position <= best.distance)) return { cap: min };
+  if (toEnd <= snapSteps && (!best || toEnd <= best.distance)) return { cap: max };
   if (best && best.distance <= snapSteps) return { cap: best.price * supply, milestone: best.price };
   return { cap: capFromPosition(position, min, max) };
 }
@@ -196,13 +203,27 @@ export function squarify<T extends string>(items: { id: T; value: number }[], wi
 export interface Notch { w: number; h: number }
 export interface AssetLayout {
   rects: Record<AssetId, Rect>;
-  /** Tiles that wrap around Bitcoin's square; each rectangle includes its notch. */
+  /** Tiles that wrap around a square in their top-left corner (Bitcoin's, or silver's inside gold); each rectangle includes its notch. */
   notches: Partial<Record<AssetId, Notch>>;
+  /** A square cut from a tile's bottom-right corner: silver, when Bitcoin already takes gold's top-left. */
+  corners: Partial<Record<AssetId, Notch>>;
+}
+
+/** A tile's clip path: its rectangle minus an optional top-left notch and bottom-right corner. */
+export function tileClipPath(rect: Rect, notch: Notch | undefined, corner: Notch | undefined, unit: (value: number, of: number) => string): string {
+  if (!notch && !corner) return '';
+  const tl = notch ?? { w: 0, h: 0 };
+  const br = corner ?? { w: 0, h: 0 };
+  const left = unit(tl.w, rect.w), top = unit(tl.h, rect.h);
+  const right = corner ? `calc(100% - ${unit(br.w, rect.w)})` : '100%';
+  const bottom = corner ? `calc(100% - ${unit(br.h, rect.h)})` : '100%';
+  return `polygon(${left} 0, 100% 0, 100% ${bottom}, ${right} ${bottom}, ${right} 100%, 0 100%, 0 ${top}, ${left} ${top})`;
 }
 
 /** Assets closest in spirit to Bitcoin share its corner of the chart. */
 export const MONETARY_ASSETS = ['bitcoin', 'fiat', 'gold'] as const satisfies readonly AssetId[];
-const OTHER_ASSETS = ASSET_IDS.filter((id) => !(MONETARY_ASSETS as readonly AssetId[]).includes(id));
+/** Silver is drawn inside gold's box, so the treemap lays out the two metals as one. */
+const OTHER_ASSETS = ASSET_IDS.filter((id) => id !== 'silver' && !(MONETARY_ASSETS as readonly AssetId[]).includes(id));
 
 /** Two-level treemap: the monetary block first (top-left), then real estate, bonds and equities. */
 function groupedTreemap(values: Partial<AssetValues>, monetary: readonly AssetId[], width: number, height: number): Record<AssetId, Rect> {
@@ -227,14 +248,14 @@ const overlap = (rect: Rect, side: number): Notch => ({
  * wraps around it with a notch and is enlarged by exactly the area it gives up, found by iterating
  * the layout until those areas settle. If the square cannot fit, Bitcoin leads a plain treemap.
  */
-export function layoutAssets(values: AssetValues, width: number, height: number): AssetLayout {
-  const fallback = (): AssetLayout => ({ rects: groupedTreemap(values, MONETARY_ASSETS, width, height), notches: {} });
+function layoutCore(values: AssetValues, width: number, height: number): AssetLayout {
+  const fallback = (): AssetLayout => ({ rects: groupedTreemap(values, MONETARY_ASSETS, width, height), notches: {}, corners: {} });
   const total = totalValue(values);
   if (!(values.bitcoin > 0) || !(total > 0) || width <= 0 || height <= 0) return fallback();
   const scale = width * height / total;
   const side = Math.sqrt(values.bitcoin * scale);
   if (side > Math.min(width, height) * 0.95) return fallback();
-  const hosts = ASSET_IDS.filter((id) => id !== 'bitcoin');
+  const hosts = ASSET_IDS.filter((id) => id !== 'bitcoin' && id !== 'silver');
   const extra = Object.fromEntries(hosts.map((id) => [id, 0])) as Record<AssetId, number>;
   for (let iteration = 0; iteration < 60; iteration++) {
     const inflated = Object.fromEntries(hosts.map((id) => [id, values[id] + extra[id]])) as Partial<AssetValues>;
@@ -256,9 +277,53 @@ export function layoutAssets(values: AssetValues, width: number, height: number)
       notches[id] = cut;
     }
     rects.bitcoin = { x: 0, y: 0, w: side, h: side };
-    return { rects, notches };
+    return { rects, notches, corners: {} };
   }
   return fallback();
+}
+
+/**
+ * Silver sits inside gold's box as a square in its top-left corner, so gold becomes an L shape.
+ * If Bitcoin's square already cuts that corner, silver takes the bottom-right one instead; a box
+ * too small for the square gives silver a strip along its bottom.
+ */
+function nestSilver(layout: AssetLayout, silver: number, scale: number): AssetLayout {
+  const { rects, notches, corners } = layout;
+  const gold = rects.gold;
+  const area = Math.max(0, silver) * scale;
+  if (!(area > 0) || gold.w <= 0 || gold.h <= 0) {
+    rects.silver = { x: gold.x, y: gold.y, w: 0, h: 0 };
+    return layout;
+  }
+  const side = Math.sqrt(area);
+  const notch = notches.gold;
+  if (side < gold.w && side < gold.h) {
+    if (!notch) {
+      rects.silver = { x: gold.x, y: gold.y, w: side, h: side };
+      notches.gold = { w: side, h: side };
+      return layout;
+    }
+    if (side <= gold.w - notch.w || side <= gold.h - notch.h) {
+      rects.silver = { x: gold.x + gold.w - side, y: gold.y + gold.h - side, w: side, h: side };
+      corners.gold = { w: side, h: side };
+      return layout;
+    }
+  }
+  const h = Math.min(gold.h, area / gold.w);
+  rects.silver = { x: gold.x, y: gold.y + gold.h - h, w: gold.w, h };
+  rects.gold = { ...gold, h: gold.h - h };
+  return layout;
+}
+
+/**
+ * Bitcoin's square leads the top-left corner (see `layoutCore`) and silver nests inside gold.
+ * Every area stays proportional to its value.
+ */
+export function layoutAssets(values: AssetValues, width: number, height: number): AssetLayout {
+  const total = totalValue(values);
+  const merged = { ...values, gold: values.gold + Math.max(0, values.silver), silver: 0 };
+  const layout = layoutCore(merged, width, height);
+  return nestSilver(layout, values.silver, total > 0 ? width * height / total : 0);
 }
 
 const compactFormatters = new Map<number, Intl.NumberFormat>();

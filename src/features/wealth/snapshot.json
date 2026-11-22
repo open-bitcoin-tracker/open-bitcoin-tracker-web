@@ -15,6 +15,14 @@
     "fallbackPriceDate": "2026-11-20",
     "note": "World Gold Council estimate of all gold ever mined, rounded to the nearest 100 tonnes."
   },
+  "silver": {
+    "ounces": 19300000000,
+    "asOf": "2023-12-31",
+    "source": "https://silverinstitute.org/wp-content/uploads/2025/02/Final_Price_Sensitivity_of_Above-Ground-Silver-Stocks.pdf",
+    "fallbackPrice": 41.08,
+    "fallbackPriceDate": "2026-11-22",
+    "note": "Silver Institute estimate of above-ground stocks: bullion plus recoverable silverware, jewelry and other fabricated products; silver lost in industrial use is excluded."
+  },
   "fiat": {
     "fxDate": "2026-11-20",
     "usdRates": {

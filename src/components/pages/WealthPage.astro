@@ -6,18 +6,18 @@ import { resolveLang } from '../../i18n/utils';
 import { wealth as t, assetNames } from '../../i18n/wealth';
 import '../../features/wealth/tiles.css';
 import { formatDate, formatNumber, interpolate } from '../../features/supply/model';
-import { ASSET_IDS, formatCompactUsd, formatUsd, SLIDER_STEPS, layoutAssets, type AssetId } from '../../features/wealth/model';
+import { ASSET_IDS, formatCompactUsd, formatUsd, SLIDER_STEPS, layoutAssets, tileClipPath, type AssetId } from '../../features/wealth/model';
 import { staticWealth } from '../../features/wealth/static';
 
 const locale = 'en-US';
 const date = (value: string) => formatDate(value, locale);
 const { snapshot, fiat, supply, base, total } = staticWealth();
-const { rects, notches } = layoutAssets(base, 160, 90);
+const { rects, notches, corners } = layoutAssets(base, 160, 90);
 const percent = (value: number, of: number) => `${(value / of * 100).toFixed(4)}%`;
 const listed = Object.fromEntries(snapshot.assets.map((asset) => [asset.id, asset]));
 const clientCopy = { ...t, assetNames };
 const yearOf = (value: string) => value.slice(0, 4);
-const sourceFor = (id: AssetId) => id === 'bitcoin' ? snapshot.bitcoin.source : id === 'gold' ? snapshot.gold.source : id === 'fiat' ? `${getRelativeLocaleUrl(resolveLang(Astro.currentLocale), 'bitcoin-and-the-dollar')}#sources` : listed[id].source;
+const sourceFor = (id: AssetId) => id === 'bitcoin' ? snapshot.bitcoin.source : id === 'gold' ? snapshot.gold.source : id === 'silver' ? snapshot.silver.source : id === 'fiat' ? `${getRelativeLocaleUrl(resolveLang(Astro.currentLocale), 'bitcoin-and-the-dollar')}#sources` : listed[id].source;
 ---
 <Layout title={`${t.title} — Open Bitcoin Tracker`} description={t.description}>
   <Nav />
@@ -41,12 +41,14 @@ const sourceFor = (id: AssetId) => id === 'bitcoin' ? snapshot.bitcoin.source : 
 
     <div class="wealth-stage">
       <section class="treemap-area" aria-label={t.treemapLabel}>
-        <p class="bitcoin-callout" data-callout data-visible aria-hidden="true" style={`left:calc(${percent(rects.bitcoin.w, 160)} + 4px)`}>{assetNames.bitcoin} <strong data-callout-value>{formatCompactUsd(base.bitcoin)}</strong></p>
+        {(['bitcoin', 'silver'] as const).map((id) => (
+          <p class="tile-callout" data-callout={id} data-visible aria-hidden="true" style={`left:calc(${percent(rects[id].x + rects[id].w, 160)} + 4px);top:${percent(rects[id].y, 90)}`}>{assetNames[id]} <strong data-callout-value>{formatCompactUsd(base[id])}</strong></p>
+        ))}
         <ul class="treemap" data-treemap>
           {ASSET_IDS.map((id) => {
             const rect = rects[id];
-            const cut = notches[id];
-            const notch = cut ? `clip-path:polygon(${percent(cut.w, rect.w)} 0, 100% 0, 100% 100%, 0 100%, 0 ${percent(cut.h, rect.h)}, ${percent(cut.w, rect.w)} ${percent(cut.h, rect.h)})` : undefined;
+            const clip = tileClipPath(rect, notches[id], corners[id], percent);
+            const notch = clip ? `clip-path:${clip}` : undefined;
             return <li class="tile" data-tile={id} style={`left:${percent(rect.x, 160)};top:${percent(rect.y, 90)};width:calc(${percent(rect.w, 160)} + ${rect.w > 0 ? 1 : 0}px);height:calc(${percent(rect.h, 90)} + ${rect.h > 0 ? 1 : 0}px)`}>
               <div class="tile-body" style={notch}>
                 <div class="tile-label">
@@ -81,6 +83,8 @@ const sourceFor = (id: AssetId) => id === 'bitcoin' ? snapshot.bitcoin.source : 
               ? interpolate(t.bitcoinMethod, { height: formatNumber(snapshot.bitcoin.referenceHeight, locale), date: date(snapshot.bitcoin.referenceTime) })
               : id === 'gold'
                 ? interpolate(t.goldMethod, { tonnes: formatNumber(snapshot.gold.tonnes, locale), year: yearOf(snapshot.gold.asOf) })
+                : id === 'silver'
+                  ? interpolate(t.silverMethod, { ounces: (snapshot.silver.ounces / 1e9).toLocaleString(locale, { maximumFractionDigits: 1 }), year: yearOf(snapshot.silver.asOf), date: date(snapshot.silver.fallbackPriceDate), price: snapshot.silver.fallbackPrice.toFixed(2) })
                 : id === 'fiat'
                   ? interpolate(t.fiatMethod, { date: date(snapshot.fiat.fxDate) })
                   : `${asset.publisher}, ${interpolate(t.asOf, { date: date(asset.asOf) })}. ${asset.note}`;
@@ -114,10 +118,10 @@ const sourceFor = (id: AssetId) => id === 'bitcoin' ? snapshot.bitcoin.source : 
   .header-price .cap-value { min-width: 11ch; }
   .header-price .slider-hit { flex: 1; min-width: 8rem; margin-top: 0; }
   .wealth-header h1 { font-size: clamp(1.375rem, 2.4vw, 2rem); font-weight: 650; letter-spacing: -.03em; line-height: 1.15; }
-  /* When Bitcoin's box is too small for its own label, its name and value sit beside it, over the neighbouring tile. */
-  .bitcoin-callout { position: absolute; z-index: 2; top: 0; display: flex; flex-direction: column; align-items: flex-start; gap: .05em; padding: .2rem .25rem; color: var(--tile-ink); font-size: .75rem; line-height: 1.2; white-space: nowrap; pointer-events: none; visibility: hidden; }
-  .bitcoin-callout strong { font-weight: 700; font-variant-numeric: tabular-nums; }
-  .bitcoin-callout[data-visible] { visibility: visible; }
+  /* When Bitcoin's or silver's box is too small for its own label, its name and value sit beside it, over the neighbouring tile. */
+  .tile-callout { position: absolute; z-index: 2; display: flex; flex-direction: column; align-items: flex-start; gap: .05em; padding: .2rem .25rem; color: var(--tile-ink); font-size: .75rem; line-height: 1.2; white-space: nowrap; pointer-events: none; visibility: hidden; }
+  .tile-callout strong { font-weight: 700; font-variant-numeric: tabular-nums; }
+  .tile-callout[data-visible] { visibility: visible; }
   .wealth-stage { display: flex; flex-direction: column; min-height: 0; }
   /* The chart sits on the page; the controls use the standard OBT card: square corners, a divider border and the surface colour. */
   .treemap-area { position: relative; display: flex; flex-direction: column; min-height: 0; }
@@ -129,6 +133,7 @@ const sourceFor = (id: AssetId) => id === 'bitcoin' ? snapshot.bitcoin.source : 
   .tile[data-tile='equities'] { --tile-color: var(--tile-equities); }
   .tile[data-tile='fiat'] { --tile-color: var(--tile-fiat); }
   .tile[data-tile='gold'] { --tile-color: var(--tile-gold); }
+  .tile[data-tile='silver'] { --tile-color: var(--tile-silver); z-index: 1; }
   .tile[data-tile='bitcoin'] { --tile-color: var(--tile-bitcoin); z-index: 1; }
   .tile[data-empty] { visibility: hidden; }
   /* The label is laid out inside the tile's container, so container queries can switch it to one line. */
@@ -208,6 +213,7 @@ const sourceFor = (id: AssetId) => id === 'bitcoin' ? snapshot.bitcoin.source : 
   .source-swatch[data-swatch='equities'] { --swatch: var(--tile-equities); }
   .source-swatch[data-swatch='fiat'] { --swatch: var(--tile-fiat); }
   .source-swatch[data-swatch='gold'] { --swatch: var(--tile-gold); }
+  .source-swatch[data-swatch='silver'] { --swatch: var(--tile-silver); }
   .source-swatch[data-swatch='bitcoin'] { --swatch: var(--tile-bitcoin); }
   .source-item a { color: var(--color-emphasis-ink); text-decoration: underline; text-decoration-color: var(--color-accent); text-underline-offset: .25rem; white-space: nowrap; }
   a:focus-visible, summary:focus-visible, button:focus-visible, input:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 4px; }

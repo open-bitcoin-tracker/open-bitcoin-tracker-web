@@ -1,6 +1,6 @@
 import { subscribeBitcoinPricePoll } from '../lib/bitcoin-price-poll';
 import { formatDate, interpolate } from '../features/supply/model';
-import { ASSET_IDS, baseValues, capFromPosition, circulatingSupply, estimateHeight, formatChange, formatCompactUsd, formatUsd, positionFromCap, priceMilestones, redistribute, SLIDER_STEPS, snapCap, layoutAssets, totalValue, type AssetValues, type Notch, type Rect, type WealthSnapshot } from '../features/wealth/model';
+import { ASSET_IDS, baseValues, tileClipPath, capFromPosition, circulatingSupply, estimateHeight, formatChange, formatCompactUsd, formatUsd, positionFromCap, priceMilestones, redistribute, SLIDER_STEPS, snapCap, layoutAssets, totalValue, type AssetValues, type Notch, type Rect, type WealthSnapshot } from '../features/wealth/model';
 import type { WealthCopy, assetNames } from '../i18n/wealth';
 
 type Copy = WealthCopy & { assetNames: typeof assetNames };
@@ -31,8 +31,11 @@ if (root && json) {
   }));
   const slider = root.querySelector<HTMLInputElement>('[data-slider]')!;
   const priceOutput = root.querySelector<HTMLElement>('[data-price]')!;
-  const callout = root.querySelector<HTMLElement>('[data-callout]')!;
-  const calloutValue = root.querySelector<HTMLElement>('[data-callout-value]')!;
+  const CALLOUT_IDS = ['bitcoin', 'silver'] as const;
+  const callouts = new Map(CALLOUT_IDS.map((id) => {
+    const callout = root.querySelector<HTMLElement>(`[data-callout="${id}"]`)!;
+    return [id, { callout, value: callout.querySelector<HTMLElement>('[data-callout-value]')! }];
+  }));
   const status = root.querySelector<HTMLElement>('[data-status]')!;
   const date = (value: string) => formatDate(value, 'en-US');
 
@@ -45,23 +48,22 @@ if (root && json) {
 
   const current = () => {
     const supply = circulatingSupply(estimateHeight(snapshot.bitcoin, Date.now()));
-    const base = baseValues(snapshot, fiat, bitcoinPrice, goldPrice, supply);
+    const base = baseValues(snapshot, fiat, bitcoinPrice, goldPrice, snapshot.silver.fallbackPrice, supply);
     return { supply, base, total: totalValue(base) };
   };
 
   /**
-   * A tile under Bitcoin's square keeps its full rectangle and cuts the square out of its corner,
-   * leaving an L shape. Its label moves into the larger remaining arm.
+   * A tile under Bitcoin's square (or gold around silver's) keeps its full rectangle and cuts the
+   * square out of its corner, leaving an L shape. Its label moves into the larger remaining arm.
    */
-  function wrapAround(body: HTMLElement, rect: Rect, notch: Notch | undefined) {
+  function wrapAround(body: HTMLElement, rect: Rect, notch: Notch | undefined, corner: Notch | undefined) {
+    body.style.clipPath = tileClipPath(rect, notch, corner, (value) => `${value}px`);
     if (!notch) {
-      body.style.removeProperty('clip-path');
       body.style.removeProperty('padding-left');
       body.style.removeProperty('padding-top');
       return;
     }
     const { w, h } = notch;
-    body.style.clipPath = `polygon(${w}px 0, 100% 0, 100% 100%, 0 100%, 0 ${h}px, ${w}px ${h}px)`;
     const rightArm = w < rect.w - 1 && (h >= rect.h - 1 || (rect.w - w) * rect.h >= rect.w * (rect.h - h));
     body.style.paddingLeft = rightArm ? `calc(${w}px + .25rem)` : '';
     body.style.paddingTop = rightArm ? '' : `calc(${h}px + .25rem)`;
@@ -70,11 +72,11 @@ if (root && json) {
   function layout(values: AssetValues) {
     const { width, height } = treemap.getBoundingClientRect();
     if (!width || !height) return;
-    const { rects, notches } = layoutAssets(values, width, height);
+    const { rects, notches, corners } = layoutAssets(values, width, height);
     for (const id of ASSET_IDS) {
       const rect = rects[id];
       const { tile, body } = tiles.get(id)!;
-      wrapAround(body, rect, notches[id]);
+      wrapAround(body, rect, notches[id], corners[id]);
       tile.style.left = `${rect.x / width * 100}%`;
       tile.style.top = `${rect.y / height * 100}%`;
       // A 1px overlap keeps the page background from showing through at fractional seams.
@@ -83,14 +85,29 @@ if (root && json) {
       tile.toggleAttribute('data-empty', rect.w <= 0 || rect.h <= 0);
     }
     // Mirror the tile label's container query: tile minus its inner padding.
-    const bitcoin = rects.bitcoin;
     const rem = parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
     const inset = rem * .5;
-    const outside = bitcoin.w - inset <= 4 * rem || bitcoin.h - inset <= 1.9 * rem;
-    callout.toggleAttribute('data-visible', outside);
-    // While the label sits outside, the box shows only the ₿ glyph so the value appears once.
-    tiles.get('bitcoin')!.tile.toggleAttribute('data-label-outside', outside);
-    callout.style.left = `${bitcoin.w + 4}px`;
+    for (const id of CALLOUT_IDS) {
+      const rect = rects[id];
+      const { callout } = callouts.get(id)!;
+      const outside = rect.w > 0 && rect.h > 0 && (rect.w - inset <= 4 * rem || rect.h - inset <= 1.9 * rem);
+      callout.toggleAttribute('data-visible', outside);
+      // While the label sits outside, the box shows only Bitcoin's ₿ (silver's stays plain) so the value appears once.
+      tiles.get(id)!.tile.toggleAttribute('data-label-outside', outside);
+      // Like Bitcoin's, silver's label sits beside its square, inside gold, when gold also has room
+      // for its own centred label. Otherwise it sits just above the square, over the tile there, as
+      // long as that is still inside the chart. In gold's bottom-right corner it goes on the left.
+      const gold = rects.gold;
+      const roomBeside = gold.w - rect.w - 4 >= callout.offsetWidth && gold.h >= 2 * callout.offsetHeight + 2.75 * rem;
+      const roomAbove = rect.y >= callout.offsetHeight + 2;
+      const above = id === 'silver' && !corners.gold && !roomBeside && roomAbove;
+      const onLeft = id === 'silver' && !!corners.gold;
+      callout.style.left = onLeft ? '' : above ? `${rect.x}px` : `${rect.x + rect.w + 4}px`;
+      callout.style.right = onLeft ? `${width - rect.x + 4}px` : '';
+      callout.style.top = above ? '' : `${rect.y}px`;
+      callout.style.bottom = above ? `${height - rect.y + 2}px` : '';
+      callout.style.alignItems = onLeft ? 'flex-end' : '';
+    }
   }
 
   const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
@@ -154,7 +171,7 @@ if (root && json) {
       const ratio = base[id] > 0 ? values[id] / base[id] - 1 : 0;
       change.textContent = simulated && Math.abs(ratio) > 1e-9 ? formatChange(ratio) : '';
     }
-    calloutValue.textContent = formatCompactUsd(values.bitcoin);
+    for (const [id, { value }] of callouts) value.textContent = formatCompactUsd(values[id]);
     priceOutput.textContent = formatUsd(price);
     const position = Math.round(positionFromCap(cap, base.bitcoin, total));
     slider.value = String(position);
@@ -208,7 +225,7 @@ if (root && json) {
     const { cap, milestone } = snapCap(position, base.bitcoin, total, supply, SNAP_PX / Math.max(1, width - thumb) * SLIDER_STEPS);
     if (milestone !== undefined && milestone !== snappedTo) navigator.vibrate?.(8);
     snappedTo = milestone;
-    const next = milestone === undefined && Math.round(position) <= 0 ? null : milestone === undefined ? capFromPosition(Math.round(position), base.bitcoin, total) : cap;
+    const next = cap <= base.bitcoin ? null : cap;
     if (next === selectedCap) return;
     selectedCap = next;
     render();

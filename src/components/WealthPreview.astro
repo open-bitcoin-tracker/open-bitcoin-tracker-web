@@ -1,28 +1,28 @@
 ---
 import '../features/wealth/tiles.css';
 import { assetNames } from '../i18n/wealth';
-import { ASSET_IDS, layoutAssets, totalValue } from '../features/wealth/model';
+import { ASSET_IDS, layoutAssets, tileClipPath, totalValue } from '../features/wealth/model';
 import { staticWealth } from '../features/wealth/static';
 
 // A static miniature of the Global Wealth treemap, drawn from the bundled snapshot. It has a
 // regular and a wide layout so Bitcoin stays square when the homepage card spans the full row.
-// Gold and Bitcoin are enlarged beyond their true share so every area can carry its label.
+// Gold, silver and Bitcoin are enlarged beyond their true share so every area can carry its label.
 const { base } = staticWealth();
 const total = totalValue(base);
-const values = { ...base, gold: Math.max(base.gold, total * .07), bitcoin: Math.max(base.bitcoin, total * .005) };
+const values = { ...base, gold: Math.max(base.gold, total * .07), silver: Math.max(base.silver, total * .012), bitcoin: Math.max(base.bitcoin, total * .005) };
 const layouts = [{ name: 'regular', width: 160, height: 110 }, { name: 'wide', width: 400, height: 110 }].map((size) => ({ ...size, ...layoutAssets(values, size.width, size.height) }));
 const percent = (value: number, of: number) => `${(value / of * 100).toFixed(3)}%`;
 // Tiles overlap their neighbours by 1px so the dark background never shows through at fractional seams.
 ---
 
-{layouts.map(({ name, width, height, rects, notches }) => (
+{layouts.map(({ name, width, height, rects, notches, corners }) => (
   <div class:list={['wealth-preview', 'wealth-tiles', `wealth-preview--${name}`]} aria-hidden="true">
     {ASSET_IDS.map((id) => {
       const rect = rects[id];
-      const cut = notches[id];
-      const clip = cut ? `clip-path:polygon(${percent(cut.w, rect.w)} 0, 100% 0, 100% 100%, 0 100%, 0 ${percent(cut.h, rect.h)}, ${percent(cut.w, rect.w)} ${percent(cut.h, rect.h)});` : '';
+      const path = tileClipPath(rect, notches[id], corners[id], percent);
+      const clip = path ? `clip-path:${path};` : '';
       return <span class="preview-tile" data-tile={id} style={`left:${percent(rect.x, width)};top:${percent(rect.y, height)};width:calc(${percent(rect.w, width)} + 1px);height:calc(${percent(rect.h, height)} + 1px);${clip}`}>
-        {id === 'bitcoin' ? <span class="preview-glyph">₿</span> : <span lang="en">{assetNames[id]}</span>}
+        {id === 'bitcoin' ? <span class="preview-glyph">₿</span> : id === 'silver' ? null : <span lang="en">{assetNames[id]}</span>}
       </span>;
     })}
   </div>
@@ -41,6 +41,7 @@ const percent = (value: number, of: number) => `${(value / of * 100).toFixed(3)}
   .preview-tile[data-tile='equities'] { --tile-color: var(--tile-equities); }
   .preview-tile[data-tile='fiat'] { --tile-color: var(--tile-fiat); }
   .preview-tile[data-tile='gold'] { --tile-color: var(--tile-gold); }
+  .preview-tile[data-tile='silver'] { --tile-color: var(--tile-silver); }
   .preview-tile[data-tile='bitcoin'] { --tile-color: var(--tile-bitcoin); }
   .preview-glyph { font-size: .6875rem; font-weight: 700; line-height: 1; }
 </style>

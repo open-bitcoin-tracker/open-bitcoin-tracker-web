@@ -9,10 +9,11 @@ export const wealth = {
   goldUnavailable: 'Live gold price unavailable. Showing the price from {date}.',
   nojs: 'Without JavaScript, the chart shows values from {date}. The live prices and the slider require JavaScript.',
   methodTitle: 'Sources & method',
-  methodIntro: 'Bitcoin and gold are priced live; the rest come from annual reports. Categories overlap, so read the total as an order of magnitude.',
+  methodIntro: 'Bitcoin and gold are priced live; silver uses a recent price and the rest come from annual reports. Categories overlap, so read the total as an order of magnitude.',
   simulationMethod: 'Bitcoin’s gain comes from the other assets in proportion to their size; the total stays fixed. Price = market cap ÷ circulating supply.',
   bitcoinMethod: 'Circulating supply from the subsidy schedule, estimated from block {height} ({date}). Lost coins included.',
   goldMethod: '{tonnes} tonnes above ground (end of {year}) × the live PAXG price.',
+  silverMethod: '{ounces} billion ounces above ground (end of {year}) × ${price}/oz ({date}). Bullion plus recoverable silverware and jewelry; silver used up in industry is excluded.',
   fiatMethod: 'M2 (M4ex for the UK) in USD, EUR, JPY, CNY and GBP, at ECB rates of {date}.',
   asOf: 'as of {date}',
   sourceLink: 'Source',
@@ -24,6 +25,7 @@ export const assetNames = {
   equities: 'Equities',
   fiat: 'Fiat',
   gold: 'Gold',
+  silver: 'Silver',
   bitcoin: 'Bitcoin',
 } as const;
 

@@ -11,6 +11,6 @@ export function staticWealth() {
   const fiat = broadMoneyUsd(supplySnapshot, snapshot.fiat.usdRates);
   if (!Number.isFinite(fiat)) throw new Error('Broad money conversion failed. Check the exchange rates.');
   const supply = circulatingSupply(estimateHeight(snapshot.bitcoin, Date.parse(snapshot.bitcoin.referenceTime)));
-  const base = baseValues(snapshot, fiat, snapshot.bitcoin.fallbackPrice, snapshot.gold.fallbackPrice, supply);
+  const base = baseValues(snapshot, fiat, snapshot.bitcoin.fallbackPrice, snapshot.gold.fallbackPrice, snapshot.silver.fallbackPrice, supply);
   return { snapshot, fiat, supply, base, total: totalValue(base) };
 }

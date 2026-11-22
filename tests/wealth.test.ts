@@ -7,7 +7,7 @@ import { ASSET_IDS, baseValues, layoutAssets, broadMoneyUsd, capFromPosition, ci
 const read = <T>(path: string) => JSON.parse(readFileSync(new URL(path, import.meta.url), 'utf8')) as T;
 const snapshot = read<WealthSnapshot>('../src/features/wealth/snapshot.json');
 const supply = read<SupplySnapshot>('../src/features/supply/snapshot.json');
-const base: AssetValues = { realEstate: 400, bonds: 160, equities: 160, fiat: 100, gold: 25, bitcoin: 5 };
+const base: AssetValues = { realEstate: 400, bonds: 160, equities: 160, fiat: 100, gold: 25, silver: 3, bitcoin: 5 };
 const close = (actual: number, expected: number, epsilon = 1e-9) => assert.ok(Math.abs(actual - expected) <= epsilon * Math.max(1, Math.abs(expected)), `${actual} ≠ ${expected}`);
 
 test('bundled wealth snapshot is valid and converts all five broad money aggregates', () => {
@@ -17,6 +17,7 @@ test('bundled wealth snapshot is valid and converts all five broad money aggrega
   assert.ok(Number.isNaN(broadMoneyUsd(supply, { ...snapshot.fiat.usdRates, CNY: 0 })));
   assert.equal(isValidWealthSnapshot({ ...snapshot, assets: snapshot.assets.slice(1) }), false);
   assert.equal(isValidWealthSnapshot({ ...snapshot, gold: { ...snapshot.gold, tonnes: -1 } }), false);
+  assert.equal(isValidWealthSnapshot({ ...snapshot, silver: { ...snapshot.silver, ounces: 0 } }), false);
 });
 
 test('circulating supply follows the halving schedule and never exceeds 21 million', () => {
@@ -35,9 +36,10 @@ test('height estimates add ten-minute blocks after the reference and never go ba
   assert.equal(estimateHeight(snapshot.bitcoin, NaN), snapshot.bitcoin.referenceHeight);
 });
 
-test('base values price gold per troy ounce and Bitcoin per circulating coin', () => {
+test('base values price gold and silver per troy ounce and Bitcoin per circulating coin', () => {
   close(goldOunces(1), 32_150.746568627982);
-  const values = baseValues(snapshot, 1e14, 100_000, 4_000, 20_000_000);
+  const values = baseValues(snapshot, 1e14, 100_000, 4_000, 40, 20_000_000);
+  assert.equal(values.silver, snapshot.silver.ounces * 40);
   assert.equal(values.bitcoin, 2e12);
   close(values.gold, goldOunces(snapshot.gold.tonnes) * 4_000);
   assert.equal(values.fiat, 1e14);
@@ -50,7 +52,7 @@ test('redistribution keeps the total fixed and moves value proportionally', () =
   assert.equal(grown.bitcoin, 105);
   close(totalValue(grown), total);
   close(grown.realEstate / grown.gold, base.realEstate / base.gold);
-  close(grown.gold, 25 * (850 - 105) / 845);
+  close(grown.gold, 25 * (853 - 105) / 848);
   close(totalValue(redistribute(base, 1)), total);
   assert.ok(redistribute(base, 1).gold > base.gold);
   const all = redistribute(base, total * 2);
@@ -82,6 +84,11 @@ test('the slider snaps onto a nearby round price and leaves other positions alon
   const free = snapCap(at200k + 20, min, max, supply, 5);
   assert.equal(free.milestone, undefined);
   close(free.cap, capFromPosition(at200k + 20, min, max));
+  // $40M lies a few steps from the end of a $42M range; the end still wins there.
+  const nearMax = 42e6 * supply;
+  assert.deepEqual(snapCap(SLIDER_STEPS, min, nearMax, supply, 5), { cap: nearMax });
+  assert.deepEqual(snapCap(SLIDER_STEPS - 1, min, nearMax, supply, 5), { cap: nearMax });
+  assert.deepEqual(snapCap(0.5, min, max, supply, 5), { cap: min });
 });
 
 test('squarified treemap fills the area exactly, proportionally and without overlap', () => {
@@ -117,6 +124,22 @@ test('the pinned item starts in the top-left corner at any size', () => {
   }
 });
 
+test('silver nests in a corner of gold, which wraps around it', () => {
+  const inside = (a: { x: number; y: number; w: number; h: number }, b: typeof a) => a.x >= b.x - 1e-9 && a.y >= b.y - 1e-9 && a.x + a.w <= b.x + b.w + 1e-9 && a.y + a.h <= b.y + b.h + 1e-9;
+  for (const bitcoin of [0.5, 5, 25, 100, 150, 300, 800]) {
+    const values = redistribute(base, bitcoin);
+    const { rects, notches, corners } = layoutAssets(values, 160, 90);
+    const silver = rects.silver;
+    close(silver.w * silver.h, values.silver / totalValue(values) * 160 * 90, 1e-6);
+    assert.ok(inside(silver, rects.gold) || (close(silver.x, rects.gold.x), silver.y >= rects.gold.y + rects.gold.h - 1e-6), `silver inside gold at ${bitcoin}`);
+    const cut = notches.gold && notches.gold.w === silver.w && silver.x === rects.gold.x && silver.y === rects.gold.y ? notches.gold : corners.gold;
+    if (cut) close(silver.w, silver.h);
+  }
+  const plain = layoutAssets(base, 160, 90);
+  assert.deepEqual([plain.rects.silver.x, plain.rects.silver.y], [plain.rects.gold.x, plain.rects.gold.y]);
+  assert.deepEqual(plain.notches.gold, { w: plain.rects.silver.w, h: plain.rects.silver.h });
+});
+
 test('Bitcoin stays square in the corner beside fiat and gold, with exact areas around it', () => {
   const touches = (a: { x: number; y: number; w: number; h: number }, b: typeof a) => {
     const e = 1e-6;
@@ -127,7 +150,7 @@ test('Bitcoin stays square in the corner beside fiat and gold, with exact areas 
   for (const bitcoin of [0.5, 5, 25, 100, 150, 300]) {
     const values = redistribute(base, bitcoin);
     const total = totalValue(values);
-    const { rects, notches } = layoutAssets(values, 160, 90);
+    const { rects, notches, corners } = layoutAssets(values, 160, 90);
     assert.deepEqual([rects.bitcoin.x, rects.bitcoin.y], [0, 0]);
     close(rects.bitcoin.w, rects.bitcoin.h);
     close(rects.bitcoin.w * rects.bitcoin.h, values.bitcoin / total * 160 * 90, 1e-6);
@@ -135,13 +158,14 @@ test('Bitcoin stays square in the corner beside fiat and gold, with exact areas 
     for (const id of ASSET_IDS) {
       if (id === 'bitcoin') continue;
       const notch = notches[id];
-      close(rects[id].w * rects[id].h - (notch ? notch.w * notch.h : 0), values[id] / total * 160 * 90, 1e-6);
+      const corner = corners[id];
+      close(rects[id].w * rects[id].h - (notch ? notch.w * notch.h : 0) - (corner ? corner.w * corner.h : 0), values[id] / total * 160 * 90, 1e-6);
     }
     assert.ok(touches(rects.fiat, rects.gold));
   }
   const dominant = layoutAssets(redistribute(base, 800), 160, 90);
   assert.deepEqual(dominant.notches, {});
   assert.deepEqual([dominant.rects.bitcoin.x, dominant.rects.bitcoin.y], [0, 0]);
-  close(dominant.rects.bitcoin.w * dominant.rects.bitcoin.h, 800 / 850 * 160 * 90, 1e-6);
+  close(dominant.rects.bitcoin.w * dominant.rects.bitcoin.h, 800 / 853 * 160 * 90, 1e-6);
 });
 

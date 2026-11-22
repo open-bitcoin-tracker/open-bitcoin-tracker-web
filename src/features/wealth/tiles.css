@@ -5,6 +5,7 @@
   --tile-equities: #9fb9ef;
   --tile-fiat: #cfe3ae;
   --tile-gold: #f0cf7f;
+  --tile-silver: #cdd3dc;
   --tile-bitcoin: var(--color-accent);
   --tile-ink: #1f1b14;
   /* Behind the tiles: a light blend of their colours, so an edge that falls between pixels never shows a dark line. */
@@ -16,4 +17,5 @@ html.dark .wealth-tiles {
   --tile-equities: #8eaae3;
   --tile-fiat: #bed69b;
   --tile-gold: #e4c06c;
+  --tile-silver: #b9c0cb;
 }
