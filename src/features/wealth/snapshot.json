@@ -29,9 +29,151 @@
       "EUR": 0.90992,
       "JPY": 158.64,
       "CNY": 6.6777,
-      "GBP": 0.76192
+      "GBP": 0.76192,
+      "AUD": 1.5002,
+      "BRL": 5.938,
+      "CAD": 1.4307,
+      "CHF": 0.83922,
+      "HKD": 7.8389,
+      "IDR": 18263,
+      "INR": 92.68,
+      "KRW": 1339.44,
+      "MXN": 19.0673,
+      "NOK": 9.7525,
+      "PLN": 4.0567,
+      "SEK": 10.2025,
+      "SGD": 1.2884,
+      "TRY": 50.572,
+      "ZAR": 17.4692
     },
-    "fxSource": "https://www.ecb.europa.eu/stats/policy_and_exchange_rates/euro_reference_exchange_rates/html/index.en.html"
+    "fxSource": "https://www.ecb.europa.eu/stats/policy_and_exchange_rates/euro_reference_exchange_rates/html/index.en.html",
+    "more": [
+      {
+        "currency": "INR",
+        "aggregate": "M3",
+        "amount": 337684160000000,
+        "month": "2026-10",
+        "publisher": "Reserve Bank of India",
+        "source": "https://www.rbi.org.in/scripts/BS_PressReleaseDisplay.aspx?prid=63972"
+      },
+      {
+        "currency": "KRW",
+        "aggregate": "M2",
+        "amount": 4283907800000000,
+        "month": "2026-09",
+        "publisher": "Bank of Korea",
+        "source": "https://ecos.bok.or.kr/api/StatisticSearch/sample/json/en/1/10/161Y005/M/202606/202610/BBHS00",
+        "note": "Monthly average, seasonally adjusted."
+      },
+      {
+        "currency": "CAD",
+        "aggregate": "M2+ (gross)",
+        "amount": 3510558000000,
+        "month": "2026-09",
+        "publisher": "Bank of Canada",
+        "source": "https://www.bankofcanada.ca/valet/observations/group/E1_MONTHLY/json?recent=2"
+      },
+      {
+        "currency": "AUD",
+        "aggregate": "Broad money",
+        "amount": 3513200000000,
+        "month": "2026-09",
+        "publisher": "Reserve Bank of Australia",
+        "source": "https://www.rba.gov.au/statistics/tables/csv/d3-data.csv",
+        "note": "Seasonally adjusted."
+      },
+      {
+        "currency": "CHF",
+        "aggregate": "M3",
+        "amount": 1238936000000,
+        "month": "2026-09",
+        "publisher": "Swiss National Bank",
+        "source": "https://data.snb.ch/api/cube/snbmonagg/data/csv/en"
+      },
+      {
+        "currency": "BRL",
+        "aggregate": "M2",
+        "amount": 7870395191000,
+        "month": "2026-09",
+        "publisher": "Banco Central do Brasil",
+        "source": "https://api.bcb.gov.br/dados/serie/bcdata.sgs.27810/dados/ultimos/1?formato=json",
+        "note": "New methodology, end of period."
+      },
+      {
+        "currency": "HKD",
+        "aggregate": "M2",
+        "amount": 9491899347000,
+        "month": "2026-09",
+        "publisher": "Hong Kong Monetary Authority",
+        "source": "https://api.hkma.gov.hk/public/market-data-and-statistics/monthly-statistical-bulletin/money/supply-components-hkd",
+        "note": "Hong Kong dollar component only."
+      },
+      {
+        "currency": "MXN",
+        "aggregate": "M2",
+        "amount": 17121700000000,
+        "month": "2026-09",
+        "publisher": "Banco de México",
+        "source": "https://www.banxico.org.mx/publicaciones-y-prensa/agregados-monetarios-y-actividad-financiera/%7BD9BD3848-9D6D-7BA4-BA7A-CBB6335439E9%7D.pdf"
+      },
+      {
+        "currency": "PLN",
+        "aggregate": "M3",
+        "amount": 2973100400000,
+        "month": "2026-09",
+        "publisher": "Narodowy Bank Polski",
+        "source": "https://static.nbp.pl/dane/monetarno-finansowa/miarypieniadza_nowe_en.xlsx"
+      },
+      {
+        "currency": "SGD",
+        "aggregate": "M2",
+        "amount": 903759400000,
+        "month": "2026-09",
+        "publisher": "Monetary Authority of Singapore",
+        "source": "https://tablebuilder.singstat.gov.sg/table/TS/M701111"
+      },
+      {
+        "currency": "TRY",
+        "aggregate": "M3",
+        "amount": 32817438000000,
+        "month": "2026-09",
+        "publisher": "Central Bank of the Republic of Türkiye",
+        "source": "https://www.tcmb.gov.tr/wps/wcm/connect/fbd95ed0-30d3-4333-9b68-27d069b83e21/Parasal+Geli%C5%9Fmeler+Raporu.pdf?MOD=AJPERES&CACHEID=ROOTWORKSPACE-fbd95ed0-30d3-4333-9b68-27d069b83e21-q6cALhB"
+      },
+      {
+        "currency": "IDR",
+        "aggregate": "M2",
+        "amount": 10587900000000000,
+        "month": "2026-09",
+        "publisher": "Bank Indonesia",
+        "source": "https://www.bi.go.id/en/publikasi/ruang-media/news-release/Pages/sp_2823526.aspx",
+        "note": "Preliminary."
+      },
+      {
+        "currency": "SEK",
+        "aggregate": "M3",
+        "amount": 5214127000000,
+        "month": "2026-09",
+        "publisher": "Statistics Sweden",
+        "source": "https://api.scb.se/OV0104/v1/doris/en/ssd/FM/FM5001/FM5001A/FM5001penningmangd"
+      },
+      {
+        "currency": "NOK",
+        "aggregate": "M3",
+        "amount": 3635562000000,
+        "month": "2026-09",
+        "publisher": "Statistics Norway",
+        "source": "https://data.ssb.no/api/v0/en/table/10945"
+      },
+      {
+        "currency": "ZAR",
+        "aggregate": "M3",
+        "amount": 6167588000000,
+        "month": "2026-08",
+        "publisher": "South African Reserve Bank",
+        "source": "https://www.resbank.co.za/content/dam/sarb/publications/monthly-releases/monthly-release-of-selected-data/2026/Eng%20451.pdf"
+      }
+    ]
   },
   "assets": [
     {

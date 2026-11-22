@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { readFileSync } from 'node:fs';
 import type { SupplySnapshot } from '../src/features/supply/model.ts';
-import { ASSET_IDS, baseValues, layoutAssets, broadMoneyUsd, capFromPosition, circulatingSupply, estimateHeight, goldOunces, isValidWealthSnapshot, positionFromCap, priceMilestones, redistribute, snapCap, SLIDER_STEPS, squarify, totalValue, type AssetValues, type WealthSnapshot } from '../src/features/wealth/model.ts';
+import { ASSET_IDS, baseValues, layoutAssets, broadMoneyUsd, otherBroadMoneyUsd, capFromPosition, circulatingSupply, estimateHeight, goldOunces, isValidWealthSnapshot, positionFromCap, priceMilestones, redistribute, snapCap, SLIDER_STEPS, squarify, totalValue, type AssetValues, type WealthSnapshot } from '../src/features/wealth/model.ts';
 
 const read = <T>(path: string) => JSON.parse(readFileSync(new URL(path, import.meta.url), 'utf8')) as T;
 const snapshot = read<WealthSnapshot>('../src/features/wealth/snapshot.json');
@@ -18,6 +18,18 @@ test('bundled wealth snapshot is valid and converts all five broad money aggrega
   assert.equal(isValidWealthSnapshot({ ...snapshot, assets: snapshot.assets.slice(1) }), false);
   assert.equal(isValidWealthSnapshot({ ...snapshot, gold: { ...snapshot.gold, tonnes: -1 } }), false);
   assert.equal(isValidWealthSnapshot({ ...snapshot, silver: { ...snapshot.silver, ounces: 0 } }), false);
+});
+
+test('other currencies add their broad money at the same ECB rates and fail on a missing rate', () => {
+  const others = otherBroadMoneyUsd(snapshot.fiat);
+  assert.ok(others > 5e12 && others < 60e12);
+  const first = snapshot.fiat.more[0];
+  close(otherBroadMoneyUsd({ ...snapshot.fiat, more: [first] }), first.amount / snapshot.fiat.usdRates[first.currency]);
+  assert.equal(otherBroadMoneyUsd({ ...snapshot.fiat, more: [] }), 0);
+  const { [first.currency]: _, ...rates } = snapshot.fiat.usdRates;
+  assert.ok(Number.isNaN(otherBroadMoneyUsd({ ...snapshot.fiat, usdRates: rates as typeof snapshot.fiat.usdRates })));
+  assert.equal(isValidWealthSnapshot({ ...snapshot, fiat: { ...snapshot.fiat, usdRates: rates as typeof snapshot.fiat.usdRates } }), false);
+  assert.equal(isValidWealthSnapshot({ ...snapshot, fiat: { ...snapshot.fiat, more: [...snapshot.fiat.more, { ...first, currency: 'USD' }] } }), false);
 });
 
 test('circulating supply follows the halving schedule and never exceeds 21 million', () => {

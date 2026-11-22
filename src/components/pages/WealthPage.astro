@@ -86,11 +86,11 @@ const sourceFor = (id: AssetId) => id === 'bitcoin' ? snapshot.bitcoin.source : 
                 : id === 'silver'
                   ? interpolate(t.silverMethod, { ounces: (snapshot.silver.ounces / 1e9).toLocaleString(locale, { maximumFractionDigits: 1 }), year: yearOf(snapshot.silver.asOf), date: date(snapshot.silver.fallbackPriceDate), price: snapshot.silver.fallbackPrice.toFixed(2) })
                 : id === 'fiat'
-                  ? interpolate(t.fiatMethod, { date: date(snapshot.fiat.fxDate) })
+                  ? interpolate(t.fiatMethod, { count: String(5 + snapshot.fiat.more.length), date: date(snapshot.fiat.fxDate) })
                   : `${asset.publisher}, ${interpolate(t.asOf, { date: date(asset.asOf) })}. ${asset.note}`;
             return <div class="source-item">
               <dt><span class="source-swatch" data-swatch={id} aria-hidden="true"></span>{assetNames[id]}</dt>
-              <dd>{detail} <a href={sourceFor(id)} aria-label={`${assetNames[id]} source`}>{t.sourceLink} ↗</a>{id === 'fiat' && <> <a href={snapshot.fiat.fxSource} aria-label="ECB reference rates">ECB ↗</a></>}</dd>
+              <dd>{detail} <a href={sourceFor(id)} aria-label={`${assetNames[id]} source`}>{t.sourceLink} ↗</a>{id === 'fiat' && <> <a href={snapshot.fiat.fxSource} aria-label="ECB reference rates">ECB ↗</a>{snapshot.fiat.more.length > 0 && <span class="other-money">{t.otherMoneyLabel}{' '}{snapshot.fiat.more.map((money, index) => <>{index > 0 && ' · '}<a href={money.source} aria-label={`${money.currency} ${money.aggregate}, ${money.publisher}, ${money.month}`}>{money.currency} ↗</a></>)}</span>}</>}</dd>
             </div>;
           })}
         </dl>
@@ -213,6 +213,7 @@ const sourceFor = (id: AssetId) => id === 'bitcoin' ? snapshot.bitcoin.source : 
   .source-swatch[data-swatch='equities'] { --swatch: var(--tile-equities); }
   .source-swatch[data-swatch='fiat'] { --swatch: var(--tile-fiat); }
   .source-swatch[data-swatch='gold'] { --swatch: var(--tile-gold); }
+  .other-money { display: block; margin-top: .25rem; }
   .source-swatch[data-swatch='silver'] { --swatch: var(--tile-silver); }
   .source-swatch[data-swatch='bitcoin'] { --swatch: var(--tile-bitcoin); }
   .source-item a { color: var(--color-emphasis-ink); text-decoration: underline; text-decoration-color: var(--color-accent); text-underline-offset: .25rem; white-space: nowrap; }

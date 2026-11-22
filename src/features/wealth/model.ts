@@ -10,9 +10,12 @@ export interface WealthSnapshot {
   bitcoin: { referenceHeight: number; referenceTime: string; fallbackPrice: number; fallbackPriceDate: string; source: string };
   gold: { tonnes: number; asOf: string; source: string; fallbackPrice: number; fallbackPriceDate: string; note: string };
   silver: { ounces: number; asOf: string; source: string; fallbackPrice: number; fallbackPriceDate: string; note: string };
-  fiat: { fxDate: string; usdRates: Record<'EUR' | 'JPY' | 'CNY' | 'GBP', number>; fxSource: string };
+  fiat: { fxDate: string; usdRates: Record<'EUR' | 'JPY' | 'CNY' | 'GBP', number> & Record<string, number>; fxSource: string; more: OtherMoney[] };
   assets: { id: SnapshotAssetId; valueUsd: number; asOf: string; publisher: string; source: string; note: string }[];
 }
+
+/** Broad money of a currency beyond the supply page's five, in full local units. */
+export interface OtherMoney { currency: string; aggregate: string; amount: number; month: string; publisher: string; source: string; note?: string }
 
 export const GRAMS_PER_TROY_OUNCE = 31.1034768;
 export const BLOCK_INTERVAL_MS = 600_000;
@@ -32,6 +35,9 @@ export function isValidWealthSnapshot(snapshot: WealthSnapshot): boolean {
     && positive(gold.tonnes) && isoDate(gold.asOf) && url(gold.source) && positive(gold.fallbackPrice) && isoDate(gold.fallbackPriceDate)
     && !!silver && positive(silver.ounces) && isoDate(silver.asOf) && url(silver.source) && positive(silver.fallbackPrice) && isoDate(silver.fallbackPriceDate)
     && isoDate(fiat.fxDate) && url(fiat.fxSource) && (['EUR', 'JPY', 'CNY', 'GBP'] as const).every((code) => positive(fiat.usdRates[code]))
+    && Array.isArray(fiat.more) && new Set(fiat.more.map(({ currency }) => currency)).size === fiat.more.length
+    && fiat.more.every((money) => /^[A-Z]{3}$/.test(money.currency) && !['USD', 'EUR', 'JPY', 'CNY', 'GBP'].includes(money.currency)
+      && positive(money.amount) && /^\d{4}-\d{2}$/.test(money.month) && url(money.source) && !!money.aggregate && !!money.publisher && positive(fiat.usdRates[money.currency]))
     && assets.length === 3 && new Set(assets.map(({ id }) => id)).size === 3
     && assets.every((asset) => ['realEstate', 'bonds', 'equities'].includes(asset.id) && positive(asset.valueUsd) && isoDate(asset.asOf) && url(asset.source) && !!asset.publisher);
 }
@@ -60,6 +66,14 @@ export function estimateHeight(bitcoin: WealthSnapshot['bitcoin'], now: number):
 
 export function goldOunces(tonnes: number): number {
   return tonnes * 1_000_000 / GRAMS_PER_TROY_OUNCE;
+}
+
+/** Broad money of the currencies beyond the supply page's five, converted at the same ECB reference date. */
+export function otherBroadMoneyUsd(fiat: WealthSnapshot['fiat']): number {
+  return fiat.more.reduce((total, money) => {
+    const rate = fiat.usdRates[money.currency];
+    return positive(rate) ? total + money.amount / rate : NaN;
+  }, 0);
 }
 
 /** Recorded broad money for the five supply-page currencies, converted at one ECB reference date. */
