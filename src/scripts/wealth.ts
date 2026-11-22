@@ -1,6 +1,6 @@
 import { subscribeBitcoinPricePoll } from '../lib/bitcoin-price-poll';
 import { formatDate, interpolate } from '../features/supply/model';
-import { ASSET_IDS, baseValues, capFromPosition, circulatingSupply, estimateHeight, formatChange, formatCompactUsd, formatUsd, positionFromCap, redistribute, SLIDER_STEPS, layoutAssets, totalValue, type AssetValues, type Notch, type Rect, type WealthSnapshot } from '../features/wealth/model';
+import { ASSET_IDS, baseValues, capFromPosition, circulatingSupply, estimateHeight, formatChange, formatCompactUsd, formatUsd, positionFromCap, priceMilestones, redistribute, SLIDER_STEPS, snapCap, layoutAssets, totalValue, type AssetValues, type Notch, type Rect, type WealthSnapshot } from '../features/wealth/model';
 import type { WealthCopy, assetNames } from '../i18n/wealth';
 
 type Copy = WealthCopy & { assetNames: typeof assetNames };
@@ -121,6 +121,24 @@ if (root && json) {
     frame = requestAnimationFrame(step);
   }
 
+  // The scale marks every round price; powers of ten get a label. It follows the live range.
+  const scale = root.querySelector<HTMLElement>('[data-scale]')!;
+  let scaleKey = '';
+  function drawScale(min: number, max: number, supply: number) {
+    const marks = priceMilestones(min / supply, max / supply).map((price) => ({ price, at: positionFromCap(price * supply, min, max) / SLIDER_STEPS }));
+    const key = marks.map(({ at }) => at.toFixed(4)).join();
+    if (key === scaleKey) return;
+    scaleKey = key;
+    scale.replaceChildren(...marks.map(({ price, at }) => {
+      const major = /^10*$/.test(String(price));
+      const mark = document.createElement('span');
+      mark.className = major ? 'scale-mark scale-mark--major' : 'scale-mark';
+      mark.style.setProperty('--at', String(at));
+      if (major) mark.dataset.label = formatCompactUsd(price);
+      return mark;
+    }));
+  }
+
   function render(animate = false) {
     const { supply, base, total } = current();
     // Bitcoin can only grow from today's live market cap, up to all global wealth.
@@ -141,6 +159,7 @@ if (root && json) {
     const position = Math.round(positionFromCap(cap, base.bitcoin, total));
     slider.value = String(position);
     slider.style.setProperty('--fill', `${position / SLIDER_STEPS * 100}%`);
+    drawScale(base.bitcoin, total, supply);
     slider.setAttribute('aria-valuetext', interpolate(copy.sliderValue, { cap: formatCompactUsd(cap, 4), price: formatUsd(price) }));
 
     const lines = [
@@ -163,7 +182,8 @@ if (root && json) {
    * The input ignores the pointer; its wrapper takes it with `touch-action: pan-y`, so a vertical
    * swipe that starts beside the thumb still scrolls the page. A touch that starts on the thumb
    * cancels the browser's own gesture, so dragging it down never scrolls or pulls to refresh.
-   * A drag keeps its grab offset, so the thumb never jumps. Keyboard control stays native.
+   * A drag keeps its grab offset, so the thumb never jumps. Keyboard control stays native, plus
+   * Page Up/Down between round prices.
    */
   const sliderHit = root.querySelector<HTMLElement>('[data-slider-hit]')!;
   let dragId: number | null = null;
@@ -176,14 +196,22 @@ if (root && json) {
   };
   // Fingers get a larger hit area around the thumb than the mouse.
   const onThumb = (event: { clientX: number }, touch: boolean) => Math.abs(thumbOffset(event)) <= thumbWidth() / 2 + (touch ? 14 : 4);
+  // A drag pulls onto a round price (see the scale under the track) once within a few pixels of it.
+  const SNAP_PX = 7;
+  let snappedTo: number | undefined;
   function followPointer(event: PointerEvent) {
     const { left, width } = slider.getBoundingClientRect();
     const thumb = thumbWidth();
     const ratio = Math.min(1, Math.max(0, (event.clientX - grabOffset - left - thumb / 2) / (width - thumb)));
-    const value = String(Math.round(ratio * SLIDER_STEPS));
-    if (value === slider.value) return;
-    slider.value = value;
-    slider.dispatchEvent(new Event('input', { bubbles: true }));
+    const { supply, base, total } = current();
+    const position = ratio * SLIDER_STEPS;
+    const { cap, milestone } = snapCap(position, base.bitcoin, total, supply, SNAP_PX / Math.max(1, width - thumb) * SLIDER_STEPS);
+    if (milestone !== undefined && milestone !== snappedTo) navigator.vibrate?.(8);
+    snappedTo = milestone;
+    const next = milestone === undefined && Math.round(position) <= 0 ? null : milestone === undefined ? capFromPosition(Math.round(position), base.bitcoin, total) : cap;
+    if (next === selectedCap) return;
+    selectedCap = next;
+    render();
   }
   sliderHit.addEventListener('pointerdown', (event) => {
     if (slider.disabled || dragId !== null || !onThumb(event, event.pointerType === 'touch')) return;
@@ -213,9 +241,20 @@ if (root && json) {
   sliderHit.addEventListener('pointerup', endDrag);
   sliderHit.addEventListener('pointercancel', endDrag);
   // Keyboard users can return to today's value from the slider.
+  // Page Up and Page Down jump between round prices.
   slider.addEventListener('keydown', (event) => {
-    if (event.key !== 'Escape') return;
-    selectedCap = null;
+    if (event.key === 'Escape') {
+      selectedCap = null;
+      render(true);
+      return;
+    }
+    if (event.key !== 'PageUp' && event.key !== 'PageDown') return;
+    event.preventDefault();
+    const { supply, base, total } = current();
+    const price = Math.max(base.bitcoin, selectedCap ?? base.bitcoin) / supply;
+    const milestones = priceMilestones(base.bitcoin / supply, total / supply);
+    const target = event.key === 'PageUp' ? milestones.find((m) => m > price * (1 + 1e-9)) : milestones.findLast((m) => m < price * (1 - 1e-9));
+    selectedCap = target !== undefined ? target * supply : event.key === 'PageUp' ? total : null;
     render(true);
   });
   // Sources & method sits at the bottom; when it opens below the fold, bring it into view.

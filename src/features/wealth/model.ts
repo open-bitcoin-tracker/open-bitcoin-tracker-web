@@ -103,6 +103,33 @@ export function positionFromCap(cap: number, min: number, max: number): number {
   return Math.log(cap / min) / Math.log(max / min) * SLIDER_STEPS;
 }
 
+/** Round prices per bitcoin (1–9 × a power of ten) strictly between two prices, in ascending order. */
+export function priceMilestones(minPrice: number, maxPrice: number): number[] {
+  const milestones: number[] = [];
+  if (!(minPrice > 0) || !(maxPrice > minPrice)) return milestones;
+  for (let power = 10 ** Math.floor(Math.log10(minPrice)); power < maxPrice; power *= 10) {
+    for (let digit = 1; digit <= 9; digit += 1) {
+      const price = digit * power;
+      if (price > minPrice && price < maxPrice) milestones.push(price);
+    }
+  }
+  return milestones;
+}
+
+/**
+ * The cap for a slider position, pulled onto a round price when the position lies within
+ * `snapSteps` of one, so prices like $200,000 or $1,000,000 are easy to hit.
+ */
+export function snapCap(position: number, min: number, max: number, supply: number, snapSteps: number): { cap: number; milestone?: number } {
+  let best: { price: number; distance: number } | undefined;
+  for (const price of priceMilestones(min / supply, max / supply)) {
+    const distance = Math.abs(positionFromCap(price * supply, min, max) - position);
+    if (!best || distance < best.distance) best = { price, distance };
+  }
+  if (best && best.distance <= snapSteps) return { cap: best.price * supply, milestone: best.price };
+  return { cap: capFromPosition(position, min, max) };
+}
+
 export interface Rect { x: number; y: number; w: number; h: number }
 
 function worst(row: number[], side: number): number {

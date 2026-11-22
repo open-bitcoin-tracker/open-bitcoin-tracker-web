@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { readFileSync } from 'node:fs';
 import type { SupplySnapshot } from '../src/features/supply/model.ts';
-import { ASSET_IDS, baseValues, layoutAssets, broadMoneyUsd, capFromPosition, circulatingSupply, estimateHeight, goldOunces, isValidWealthSnapshot, positionFromCap, redistribute, SLIDER_STEPS, squarify, totalValue, type AssetValues, type WealthSnapshot } from '../src/features/wealth/model.ts';
+import { ASSET_IDS, baseValues, layoutAssets, broadMoneyUsd, capFromPosition, circulatingSupply, estimateHeight, goldOunces, isValidWealthSnapshot, positionFromCap, priceMilestones, redistribute, snapCap, SLIDER_STEPS, squarify, totalValue, type AssetValues, type WealthSnapshot } from '../src/features/wealth/model.ts';
 
 const read = <T>(path: string) => JSON.parse(readFileSync(new URL(path, import.meta.url), 'utf8')) as T;
 const snapshot = read<WealthSnapshot>('../src/features/wealth/snapshot.json');
@@ -67,6 +67,21 @@ test('the logarithmic slider starts at today\'s market cap, round-trips and clam
   assert.equal(positionFromCap(1e11, min, max), 0);
   assert.equal(positionFromCap(max * 2, min, max), SLIDER_STEPS);
   assert.equal(capFromPosition(-5, min, max), min);
+});
+
+test('price milestones are round prices strictly inside the slider range', () => {
+  assert.deepEqual(priceMilestones(60_116, 1_000_000), [70_000, 80_000, 90_000, 100_000, 200_000, 300_000, 400_000, 500_000, 600_000, 700_000, 800_000, 900_000]);
+  assert.deepEqual(priceMilestones(5, 5), []);
+  assert.deepEqual(priceMilestones(0, 100), []);
+});
+
+test('the slider snaps onto a nearby round price and leaves other positions alone', () => {
+  const supply = 20e6, min = 60_000 * supply, max = 40e6 * supply;
+  const at200k = positionFromCap(200_000 * supply, min, max);
+  assert.deepEqual(snapCap(at200k + 3, min, max, supply, 5), { cap: 200_000 * supply, milestone: 200_000 });
+  const free = snapCap(at200k + 20, min, max, supply, 5);
+  assert.equal(free.milestone, undefined);
+  close(free.cap, capFromPosition(at200k + 20, min, max));
 });
 
 test('squarified treemap fills the area exactly, proportionally and without overlap', () => {

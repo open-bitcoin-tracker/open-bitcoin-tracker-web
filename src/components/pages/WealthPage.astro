@@ -34,6 +34,7 @@ const sourceFor = (id: AssetId) => id === 'bitcoin' ? snapshot.bitcoin.source : 
         <div class="slider-hit" data-slider-hit>
           <input id="bitcoin-cap" class="cap-slider" type="range" min="0" max={SLIDER_STEPS} step="1" value="0" style="--fill:0%" data-slider disabled
             aria-valuetext={interpolate(t.sliderValue, { cap: formatCompactUsd(base.bitcoin, 4), price: formatUsd(snapshot.bitcoin.fallbackPrice) })} />
+          <div class="slider-scale" data-scale aria-hidden="true"></div>
         </div>
       </div>
     </header>
@@ -104,10 +105,13 @@ const sourceFor = (id: AssetId) => id === 'bitcoin' ? snapshot.bitcoin.source : 
     padding: var(--menu-control-top) clamp(1rem, 3vw, 2.5rem) 2rem;
   }
   /* The title and the price slider share the menu button's row. */
-  .wealth-header { position: relative; display: flex; align-items: center; gap: .75rem clamp(1rem, 2.5vw, 2.5rem); min-height: var(--menu-control-size); margin-bottom: var(--wealth-gap); padding-right: calc(var(--menu-control-size) + 1rem); }
-  .wealth-header h1 { flex: none; }
-  .header-price { display: flex; flex: 1 1 22rem; align-items: center; gap: clamp(.75rem, 1.5vw, 1.5rem); min-width: 0; max-width: 48rem; }
-  .header-price .price-head { display: grid; justify-items: start; gap: .05rem; flex: none; min-width: 9.5rem; }
+  .wealth-header { position: relative; padding-bottom: .5rem; display: flex; align-items: flex-start; gap: .75rem clamp(1rem, 2.5vw, 2.5rem); min-height: var(--menu-control-size); margin-bottom: var(--wealth-gap); padding-right: calc(var(--menu-control-size) + 1rem); }
+  /* The title is centred on the menu button's row at every width. */
+  .wealth-header h1 { display: flex; flex: none; align-items: center; min-height: var(--menu-control-size); }
+  .header-price { display: flex; flex: 1 1 22rem; align-items: center; min-height: var(--menu-control-size); gap: clamp(1rem, 2.5vw, 2.5rem); min-width: 0; padding-left: clamp(1rem, 2.5vw, 2.5rem); border-left: 1px solid var(--color-divider); }
+  .header-price .price-head { display: grid; justify-items: start; gap: .05rem; flex: none; }
+  /* Room for the widest price (tens of millions), so the slider never resizes while it moves. */
+  .header-price .cap-value { min-width: 11ch; }
   .header-price .slider-hit { flex: 1; min-width: 8rem; margin-top: 0; }
   .wealth-header h1 { font-size: clamp(1.375rem, 2.4vw, 2rem); font-weight: 650; letter-spacing: -.03em; line-height: 1.15; }
   /* When Bitcoin's box is too small for its own label, its name and value sit beside it, over the neighbouring tile. */
@@ -162,10 +166,16 @@ const sourceFor = (id: AssetId) => id === 'bitcoin' ? snapshot.bitcoin.source : 
   .price-head { display: flex; align-items: center; justify-content: space-between; gap: .75rem; }
   .cap-value { font-size: clamp(1.25rem, 1.9vw, 1.75rem); font-weight: 650; line-height: 1.15; font-variant-numeric: tabular-nums; letter-spacing: -.03em; white-space: nowrap; }
   /* A custom slider: a thicker track filled up to the thumb (--fill, set by the script). */
-  .cap-slider { --track: color-mix(in srgb, var(--color-ink) 16%, transparent); --thumb: 22px; width: 100%; pointer-events: none; height: 2.75rem; margin: .25rem 0 0; background: transparent; appearance: none; -webkit-appearance: none; cursor: default; }
+  .cap-slider { --track: color-mix(in srgb, var(--color-ink) 16%, transparent); width: 100%; pointer-events: none; height: var(--slider-h); margin: .25rem 0 0; background: transparent; appearance: none; -webkit-appearance: none; cursor: default; }
   /* The wrapper takes the pointer so vertical swipes still scroll the page; the script drags the thumb. */
-  .slider-hit { margin-top: .25rem; touch-action: pan-y; -webkit-user-select: none; user-select: none; }
-  .slider-hit .cap-slider { margin: 0; }
+  .slider-hit { --thumb: 22px; --slider-h: 2.75rem; position: relative; margin-top: .25rem; padding-bottom: 1rem; margin-bottom: -1rem; touch-action: pan-y; -webkit-user-select: none; user-select: none; }
+  /* A log ruler under the track: a tick for every round price the drag snaps to, a label on powers of ten. */
+  .slider-scale { position: absolute; top: calc(var(--slider-h) / 2 + .5rem); right: calc(var(--thumb) / 2); left: calc(var(--thumb) / 2); height: 1.25rem; pointer-events: none; }
+  /* The marks are created by the script, outside Astro's scoped styles. */
+  .slider-scale :global(.scale-mark) { position: absolute; top: 0; left: calc(var(--at) * 100%); width: 1px; height: 4px; background: color-mix(in srgb, var(--color-ink) 28%, transparent); }
+  .slider-scale :global(.scale-mark--major) { height: 7px; background: color-mix(in srgb, var(--color-ink) 50%, transparent); }
+  .slider-scale :global(.scale-mark--major::after) { content: attr(data-label); position: absolute; top: 9px; left: 50%; transform: translateX(-50%); color: var(--color-ink-muted); font-size: .6875rem; font-weight: 600; font-variant-numeric: tabular-nums; line-height: 1; white-space: nowrap; }
+  .slider-hit .cap-slider { display: block; margin: 0; }
   .slider-hit[data-over-thumb] { cursor: grab; }
   .slider-hit[data-dragging] { cursor: grabbing; }
   .cap-slider:focus { outline: none; }
@@ -209,17 +219,17 @@ const sourceFor = (id: AssetId) => id === 'bitcoin' ? snapshot.bitcoin.source : 
   }
   @media (min-width: 900px) and (max-height: 780px) {
     .wealth-page { --wealth-gap: .625rem; }
-      .cap-slider { height: 2.25rem; }
+      .slider-hit { --slider-h: 2.25rem; }
             }
   @media (max-width: 899px) {
     .wealth-page { padding-bottom: 1.5rem; }
     .treemap { aspect-ratio: 4 / 3; }
   }
-  /* Phones: the title on the first row, the price slider across the next. */
+  /* Phones: the title on the first row, the price slider across the next, kept clear of the menu button. */
   @media (max-width: 700px) {
     .wealth-header { flex-wrap: wrap; }
     .wealth-header h1 { flex: 1; }
-    .header-price { order: 3; flex-basis: 100%; max-width: none; margin-right: calc((var(--menu-control-size) + 1rem) * -1); }
+    .header-price { order: 3; flex-basis: 100%; max-width: none; padding-left: 0; border-left: 0; margin: 1.25rem calc((var(--menu-control-size) + 1rem) * -1) 0 0; }
     }
   @media (max-width: 600px) {
     .treemap { aspect-ratio: 4 / 5; }
