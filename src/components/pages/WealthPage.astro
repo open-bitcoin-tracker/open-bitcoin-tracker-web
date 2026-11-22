@@ -225,12 +225,15 @@ const sourceFor = (id: AssetId) => id === 'bitcoin' ? snapshot.bitcoin.source : 
     .wealth-page { padding-bottom: 1.5rem; }
     .treemap { aspect-ratio: 4 / 3; }
   }
-  /* Phones: the title on the first row, the price slider across the next, kept clear of the menu button. */
+  /* Phones: the price and slider move below the chart, so the dragging hand never covers it and the thumb reaches it easily. */
   @media (max-width: 700px) {
-    .wealth-header { flex-wrap: wrap; }
-    .wealth-header h1 { flex: 1; }
-    .header-price { order: 3; flex-basis: 100%; max-width: none; padding-left: 0; border-left: 0; margin: 1.25rem calc((var(--menu-control-size) + 1rem) * -1) 0 0; }
-    }
+    .wealth-screen { display: flex; flex-direction: column; }
+    .wealth-header { display: contents; }
+    .wealth-header h1 { order: 0; margin-bottom: var(--wealth-gap); padding-right: calc(var(--menu-control-size) + 1rem); }
+    .wealth-stage { order: 1; }
+    .header-price { order: 2; flex: none; margin: 1rem 0 1rem; padding-left: 0; border-left: 0; }
+    .simulator-footer { order: 3; }
+  }
   @media (max-width: 600px) {
     .treemap { aspect-ratio: 4 / 5; }
   }
