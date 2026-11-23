@@ -4,14 +4,16 @@ import { isCurrency, type Currency } from './bitcoin-currency';
 const key = 'bitcoin-tracker-display';
 const currencyChange = 'bitcoin-currency-change';
 let unsavedCurrency: Currency | undefined;
-export interface DisplayPreferences { scale: ChartScale; currency: Currency }
+// highLow labels the visible range's extremes on the price chart; it is opt-in.
+export interface DisplayPreferences { scale: ChartScale; currency: Currency; highLow?: boolean }
 
-export function readDisplayPreferences(): DisplayPreferences {
-  const preferences: DisplayPreferences = { scale: 'logarithmic', currency: 'USD' };
+export function readDisplayPreferences(): Required<DisplayPreferences> {
+  const preferences: Required<DisplayPreferences> = { scale: 'logarithmic', currency: 'USD', highLow: false };
   try {
     const saved = JSON.parse(window.localStorage.getItem(key) ?? 'null');
     if (saved?.scale === 'linear' || saved?.scale === 'logarithmic') preferences.scale = saved.scale;
     if (isCurrency(saved?.currency)) preferences.currency = saved.currency;
+    if (saved?.highLow === true) preferences.highLow = true;
   } catch { /* Keep the default display usable without storage. */ }
   if (unsavedCurrency) preferences.currency = unsavedCurrency;
   return preferences;

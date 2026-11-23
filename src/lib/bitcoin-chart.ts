@@ -48,6 +48,18 @@ export function chartViewport(points: HistoryPoint[], scale: ChartScale): ChartV
   return { start: points[0].time, end: points.at(-1)!.time, bottom: low - range * 0.05, top: low + range * 1.05 };
 }
 
+/** Indices of the highest and lowest prices, preferring the earliest of equal values; undefined without a range. */
+export function extremeIndices(points: HistoryPoint[]): { high: number; low: number } | undefined {
+  if (points.length < 2) return undefined;
+  let high = 0;
+  let low = 0;
+  points.forEach((point, index) => {
+    if (point.price > points[high].price) high = index;
+    if (point.price < points[low].price) low = index;
+  });
+  return high === low ? undefined : { high, low };
+}
+
 export function chartPositions(points: HistoryPoint[], width: number, height: number, scale: ChartScale = 'logarithmic', viewport?: ChartViewport) {
   if (points.length < 2) return [];
   const { start, end, bottom, top } = viewport ?? chartViewport(points, scale);

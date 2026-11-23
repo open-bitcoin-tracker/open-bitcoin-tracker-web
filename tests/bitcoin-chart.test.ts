@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { chartPaths, chartPositions, chartViewport, compactPositions, nearestHistoryIndex } from '../src/lib/bitcoin-chart.ts';
+import { chartPaths, chartPositions, chartViewport, compactPositions, extremeIndices, nearestHistoryIndex } from '../src/lib/bitcoin-chart.ts';
 
 test('dense paths preserve each column’s extrema, timestamps and both endpoints', () => {
   const positions = Array.from({ length: 1000 }, (_, i) => ({ x: i / 100, y: Math.sin(i) * 100 }));
@@ -45,4 +45,11 @@ test('viewport calculations accept large histories without argument-spread limit
   assert.equal(viewport.end, 199_999);
   assert.equal(viewport.bottom, 1 - 199_999 * 0.05);
   assert.equal(viewport.top, 1 + 199_999 * 1.05);
+});
+
+test('extremes find the earliest high and low, and need a real range', () => {
+  const at = (prices: number[]) => prices.map((price, time) => ({ time, price }));
+  assert.deepEqual(extremeIndices(at([5, 9, 2, 9, 2, 7])), { high: 1, low: 2 });
+  assert.equal(extremeIndices(at([5])), undefined);
+  assert.equal(extremeIndices(at([4, 4, 4])), undefined);
 });

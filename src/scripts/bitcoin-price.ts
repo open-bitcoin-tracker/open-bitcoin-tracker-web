@@ -1,4 +1,4 @@
-import { DAY_MS, chartPaths, chartPositions, chartViewport, mergeHistory, nearestHistoryIndex, parseHistory, visibleHistory, type ChartScale, type HistoryPoint } from '../lib/bitcoin-chart';
+import { DAY_MS, chartPaths, chartPositions, chartViewport, extremeIndices, mergeHistory, nearestHistoryIndex, parseHistory, visibleHistory, type ChartScale, type HistoryPoint } from '../lib/bitcoin-chart';
 import { ChartMotion } from '../lib/bitcoin-chart-motion';
 import { createPriceChangeFormatter } from '../lib/bitcoin-price-change';
 import type { TrackerCopy } from '../i18n/tracker';
@@ -35,6 +35,9 @@ function startTracker(root: HTMLElement) {
   const area = root.querySelector<SVGPathElement>('[data-chart-area]')!;
   const fillGradient = root.querySelector<SVGLinearGradientElement>('[data-chart-fill-gradient]')!;
   const revealRect = root.querySelector<SVGRectElement>('[data-chart-reveal]')!;
+  const extremesEl = root.querySelector<HTMLElement>('[data-chart-extremes]')!;
+  const extremeEls = { high: root.querySelector<HTMLElement>('[data-chart-extreme="high"]')!, low: root.querySelector<HTMLElement>('[data-chart-extreme="low"]')! };
+  const highLowToggle = root.querySelector<HTMLButtonElement>('[data-high-low-toggle]')!;
   const fillCurtain = root.querySelector<SVGLinearGradientElement>('[data-chart-fill-curtain]')!;
   const fillCurtainRect = root.querySelector<SVGRectElement>('[data-chart-fill-curtain-rect]')!;
   const marker = root.querySelector<SVGGElement>('[data-chart-marker]')!;
@@ -47,6 +50,9 @@ function startTracker(root: HTMLElement) {
   const loadingDescription = root.querySelector<HTMLElement>('[data-loading-description]')!;
   const moneyFormat = (code: Currency) => new Intl.NumberFormat(locale, { style: 'currency', currency: code, currencyDisplay: 'narrowSymbol', useGrouping: true, minimumFractionDigits: 0, maximumFractionDigits: 0 });
   let money = moneyFormat(currency);
+  // Early history trades below one unit, where whole-unit rounding would label the low "$0".
+  const extremeMoney = (price: number) => price >= 1 ? money.format(price)
+    : new Intl.NumberFormat(locale, { style: 'currency', currency, currencyDisplay: 'narrowSymbol', maximumSignificantDigits: 2 }).format(price);
   const date = new Intl.DateTimeFormat(locale, { year: 'numeric', month: 'short', day: 'numeric', timeZone: 'UTC' });
   const dateTime = new Intl.DateTimeFormat(locale, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit', timeZone: 'UTC' });
   const rangeBar = root.querySelector<HTMLElement>('[data-range-bar]')!;
@@ -62,6 +68,7 @@ function startTracker(root: HTMLElement) {
     ? { unit: 'all' }
     : { unit: preferences.selected, count: counts[preferences.selected] };
   let scale: ChartScale = display.scale;
+  let highLow = display.highLow;
   const exchangeRates = new CurrencyRates();
   const historyStart = Number(root.dataset.historyStart);
   let currencyLoading = false;
@@ -131,6 +138,7 @@ function startTracker(root: HTMLElement) {
       plottedPositions = chartPositions(plottedPoints, width, height, scene.scale, scene.viewport);
       updatePriceDisplay();
     }
+    updateExtremes(width);
     if (motion.presenting && !motionFrame && !document.hidden && !stopped) {
       motionFrame = requestAnimationFrame((time) => { motionFrame = 0; paintMotion(time); });
     }
@@ -161,7 +169,9 @@ function startTracker(root: HTMLElement) {
     const period = points.length ? `${formatter.format(points[0].time)} — ${formatter.format(points.at(-1)!.time)}` : loading ? r.loading : r.unavailable;
     const scaleLabel = scale === 'logarithmic' ? t.scale : t.linearScale;
     chart.setAttribute('aria-label', `${t.price} (${currency}) — ${scaleLabel}`);
-    root.querySelector<SVGDescElement>('[data-chart-description]')!.textContent = `${label}: ${period}. ${scaleLabel}. ${currency}.`;
+    const extremes = highLow ? extremeIndices(points) : undefined;
+    const extremesText = extremes ? ` ${settingsCopy.high}: ${extremeMoney(points[extremes.high].price)}. ${settingsCopy.low}: ${extremeMoney(points[extremes.low].price)}.` : '';
+    root.querySelector<SVGDescElement>('[data-chart-description]')!.textContent = `${label}: ${period}. ${scaleLabel}. ${currency}.${extremesText}`;
     updateCurrencyStatus();
     // Keep the outgoing curve while a new candle interval is loading.
     if (loading && points.length < 2) return;
@@ -172,6 +182,7 @@ function startTracker(root: HTMLElement) {
       line.setAttribute('d', '');
       area.setAttribute('d', '');
       plottedPositions = [];
+      updateExtremes();
     } else {
       // Long ranges share the full curve; only the camera window changes.
       const renderPoints = points.at(-1) === convertedLive ? [...source, convertedLive!] : source;
@@ -180,6 +191,27 @@ function startTracker(root: HTMLElement) {
       paintMotion(now);
     }
     updatePriceDisplay();
+  }
+
+  // Label the visible range's high and low once the curve has settled; hide them while it moves or draws in.
+  function updateExtremes(knownWidth?: number) {
+    const extremes = highLow && !motion.animating && plottedRangeKey === rangeKey() && plottedPositions.length === plottedPoints.length
+      ? extremeIndices(plottedPoints) : undefined;
+    const width = extremes ? knownWidth ?? chart.getBoundingClientRect().width : 0;
+    extremesEl.dataset.visible = String(Boolean(extremes && width));
+    if (!extremes || !width) return;
+    for (const kind of ['high', 'low'] as const) {
+      const el = extremeEls[kind];
+      const { x, y } = plottedPositions[extremes[kind]];
+      const value = el.querySelector<HTMLElement>('[data-chart-extreme-value]')!;
+      const text = extremeMoney(plottedPoints[extremes[kind]].price);
+      if (value.textContent !== text) value.textContent = text;
+      el.style.transform = `translate(${x}px, ${y}px)`;
+      // Centre the price over its point, but keep it at least 8px inside the plot near either edge.
+      const labelWidth = value.offsetWidth || 0;
+      const left = Math.max(8, Math.min(width - labelWidth - 8, x - labelWidth / 2));
+      value.style.left = `${left - x}px`;
+    }
   }
 
   function selectionIndex() {
@@ -353,10 +385,18 @@ function startTracker(root: HTMLElement) {
       if (!option.checked || (option.value !== 'logarithmic' && option.value !== 'linear')) return;
       clearSelection();
       scale = option.value;
-      saveDisplayPreferences({ scale, currency });
+      saveDisplayPreferences({ scale, currency, highLow });
       scheduleDraw();
     });
   }
+  highLowToggle.setAttribute('aria-checked', String(highLow));
+  highLowToggle.addEventListener('click', () => {
+    highLow = !highLow;
+    highLowToggle.setAttribute('aria-checked', String(highLow));
+    saveDisplayPreferences({ scale, currency, highLow });
+    updateExtremes();
+    scheduleDraw();
+  });
   currencySelect.value = currency;
   currencySelect.disabled = false;
   function applyCurrency(next: Currency) {
@@ -373,6 +413,7 @@ function startTracker(root: HTMLElement) {
     plottedPositions = [];
     line.setAttribute('d', '');
     area.setAttribute('d', '');
+    updateExtremes();
     void refreshCurrency();
     updatePriceDisplay();
     updatePageTitle(true);
@@ -382,7 +423,7 @@ function startTracker(root: HTMLElement) {
   currencySelect.addEventListener('change', () => {
     if (!isCurrency(currencySelect.value) || currencySelect.value === currency) return;
     applyCurrency(currencySelect.value);
-    saveDisplayPreferences({ scale, currency });
+    saveDisplayPreferences({ scale, currency, highLow });
   });
   const currencyPicker = createCurrencyPicker(root, currencySelect, {
     panel: root.querySelector<HTMLElement>('[data-currency-panel]')!,

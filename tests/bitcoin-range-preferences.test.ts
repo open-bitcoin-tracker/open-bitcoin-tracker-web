@@ -66,7 +66,7 @@ function page(stored: Map<string, string>, locale = 'en', blocked: 'read' | 'wri
     locale,
     copy: JSON.stringify({ all: 'All', price: 'Bitcoin price', scale: 'Log', linearScale: 'Linear', history: 'Unavailable' }),
     rangeCopy: JSON.stringify({ loading: 'Loading price history', unavailable: 'Price history unavailable', suffixes: { day: 'D', week: locale === 'es' ? 'S' : 'W', month: 'M', year: 'Y' } }),
-    settingsCopy: JSON.stringify({ logarithmic: 'Logarithmic', linear: 'Linear', fxLoading: 'Loading exchange rates', fxUnavailable: 'Exchange rates unavailable', fxHistoryUnavailable: 'Exchange-rate history unavailable' }),
+    settingsCopy: JSON.stringify({ logarithmic: 'Logarithmic', linear: 'Linear', fxLoading: 'Loading exchange rates', fxUnavailable: 'Exchange rates unavailable', fxHistoryUnavailable: 'Exchange-rate history unavailable', high: 'High', low: 'Low' }),
     historyStart: String(Date.now() - 86_400_000),
   };
   const bar = root.querySelector('[data-range-bar]');
@@ -399,7 +399,7 @@ test('currency converts live and inspected prices and persists with scale across
   chart.dispatchEvent(Object.assign(new Event('keydown'), { key: 'Home' }));
   assert.match(p.root.querySelector('[data-price]').textContent, /50/);
   p.close();
-  assert.deepEqual(JSON.parse(storage.get('bitcoin-tracker-display')!), { scale: 'linear', currency: 'EUR' });
+  assert.deepEqual(JSON.parse(storage.get('bitcoin-tracker-display')!), { scale: 'linear', currency: 'EUR', highLow: false });
   const restored = page(storage);
   await restored.ready();
   assert.equal(restored.currencySelect.value, 'EUR');
@@ -425,7 +425,7 @@ test('the price currency picker shares selection with settings and dismisses wit
   assert.equal(p.currencySelect.value, 'EUR');
   assert.match(p.root.querySelector('[data-price]').textContent, /€/);
   assert.equal(p.currencyOptions.find(option => option.dataset.currencyOption === 'EUR')!.attributes['aria-selected'], 'true');
-  assert.deepEqual(JSON.parse(storage.get('bitcoin-tracker-display')!), { currency: 'EUR', scale: 'linear' });
+  assert.deepEqual(JSON.parse(storage.get('bitcoin-tracker-display')!), { currency: 'EUR', scale: 'linear', highLow: false });
   p.currency('GBP');
   assert.equal(p.priceCurrencyOptions.find(option => option.dataset.currencyOption === 'GBP')!.attributes['aria-selected'], 'true');
   p.priceCurrencyTrigger.dispatchEvent(new Event('click'));
@@ -555,6 +555,42 @@ test('the currency picker keeps one selection and ignores invalid native changes
   p.close();
 });
 
+test('high/low labels start off, follow the switch, persist, and describe the extremes', async () => {
+  const storage = new Map<string, string>();
+  const p = page(storage);
+  await p.ready();
+  const toggle = p.root.querySelector('[data-high-low-toggle]');
+  const extremes = p.root.querySelector('[data-chart-extremes]');
+  const description = () => p.root.querySelector('[data-chart-description]').textContent;
+  assert.equal(toggle.attributes['aria-checked'], 'false');
+  assert.equal(extremes.dataset.visible, 'false');
+  assert.doesNotMatch(description(), /High:/);
+  toggle.dispatchEvent(new Event('click'));
+  await p.ready();
+  assert.equal(toggle.attributes['aria-checked'], 'true');
+  assert.equal(JSON.parse(storage.get('bitcoin-tracker-display')!).highLow, true);
+  assert.equal(extremes.dataset.visible, 'true');
+  const high = p.root.querySelector('[data-chart-extreme="high"]');
+  const low = p.root.querySelector('[data-chart-extreme="low"]');
+  const highText = high.querySelector('[data-chart-extreme-value]').textContent;
+  const lowText = low.querySelector('[data-chart-extreme-value]').textContent;
+  assert.match(highText, /^\$/);
+  assert.notEqual(highText, lowText);
+  assert.match(high.style.transform, /^translate\(/);
+  assert.ok(description().endsWith(` High: ${highText}. Low: ${lowText}.`), description());
+  p.close();
+  const restored = page(storage);
+  await restored.ready();
+  const restoredToggle = restored.root.querySelector('[data-high-low-toggle]');
+  assert.equal(restoredToggle.attributes['aria-checked'], 'true');
+  assert.equal(restored.root.querySelector('[data-chart-extremes]').dataset.visible, 'true');
+  restoredToggle.dispatchEvent(new Event('click'));
+  await restored.ready();
+  assert.equal(restored.root.querySelector('[data-chart-extremes]').dataset.visible, 'false');
+  assert.equal(JSON.parse(storage.get('bitcoin-tracker-display')!).highLow, false);
+  restored.close();
+});
+
 test('scale selection keeps settings open and currency selection returns focus to its trigger', async () => {
   const storage = new Map<string, string>();
   const p = page(storage, 'en', undefined, false, 'fx');
@@ -572,7 +608,7 @@ test('scale selection keeps settings open and currency selection returns focus t
   p.currency('EUR');
   assert.equal(p.currencyList.hidden, true);
   assert.equal(focused, true);
-  assert.deepEqual(JSON.parse(storage.get('bitcoin-tracker-display')!), { scale: 'linear', currency: 'EUR' });
+  assert.deepEqual(JSON.parse(storage.get('bitcoin-tracker-display')!), { scale: 'linear', currency: 'EUR', highLow: false });
   await p.ready();
   assert.equal(p.root.querySelector('[data-chart-loading]').hidden, false);
   focused = false;

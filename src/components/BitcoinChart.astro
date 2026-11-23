@@ -77,6 +77,10 @@ const lastDate = new Intl.DateTimeFormat(lang, { year: 'numeric', month: 'short'
         </g>
       </svg>
       <script is:inline>document.currentScript.previousElementSibling.setAttribute('data-chart-pending', '');</script>
+      <div class="chart-extremes" data-chart-extremes data-visible="false" aria-hidden="true">
+        <span class="chart-extreme chart-extreme-high" data-chart-extreme="high"><span class="chart-extreme-dot"></span><span class="chart-extreme-value" data-chart-extreme-value></span></span>
+        <span class="chart-extreme chart-extreme-low" data-chart-extreme="low"><span class="chart-extreme-dot"></span><span class="chart-extreme-value" data-chart-extreme-value></span></span>
+      </div>
       <div class="chart-marker-waves" data-chart-marker-waves hidden aria-hidden="true">
         <span class="chart-marker-wave"></span>
         <span class="chart-marker-wave"></span>
@@ -130,6 +134,15 @@ const lastDate = new Intl.DateTimeFormat(lang, { year: 'numeric', month: 'short'
               <label class="chart-scale-choice"><input class="sr-only" type="radio" name="chart-scale" value="linear" data-scale-option aria-label={settings.linear} /><span>{settings.linear}</span></label>
             </div>
           </fieldset>
+          <hr class="chart-settings-divider" />
+          <button type="button" class="chart-setting-row chart-tab-toggle" role="switch" data-high-low-toggle aria-checked="false" aria-labelledby="chart-high-low-label">
+            <span class="chart-setting-label" id="chart-high-low-label">{settings.highLow}</span>
+            <span class="chart-switch-control" aria-hidden="true">
+              <span class="chart-switch-state chart-switch-on">{settings.on}</span>
+              <span class="chart-switch-state chart-switch-off">{settings.off}</span>
+              <span class="chart-switch-track"></span>
+            </span>
+          </button>
         </section>
         <section class="chart-settings-group" aria-label={settings.browserTab}>
           <button type="button" class="chart-setting-row chart-tab-toggle" role="switch" data-price-tab-toggle aria-checked="false" aria-labelledby="chart-tab-label" aria-controls="price-tab-dialog">
@@ -221,9 +234,9 @@ const lastDate = new Intl.DateTimeFormat(lang, { year: 'numeric', month: 'short'
   .chart-switch-state { color: var(--menu-link-ink); font-size: .8125rem; }
   .chart-switch-track { position: relative; flex-shrink: 0; width: 48px; height: 28px; border-radius: 999px; background: var(--menu-option-hover); transition: background-color 150ms ease; }
   .chart-switch-track::after { content: ''; position: absolute; inset-block-start: 4px; inset-inline-start: 4px; width: 20px; height: 20px; border-radius: 50%; background: var(--menu-ink); transition: inset-inline-start 150ms ease; }
-  [data-price-tab-toggle][aria-checked="true"] .chart-switch-track { background: var(--color-accent); }
-  [data-price-tab-toggle][aria-checked="true"] .chart-switch-track::after { inset-inline-start: 24px; background: #101820; }
-  [data-price-tab-toggle][aria-checked="false"] .chart-switch-on, [data-price-tab-toggle][aria-checked="true"] .chart-switch-off { display: none; }
+  :is([data-price-tab-toggle], [data-high-low-toggle])[aria-checked="true"] .chart-switch-track { background: var(--color-accent); }
+  :is([data-price-tab-toggle], [data-high-low-toggle])[aria-checked="true"] .chart-switch-track::after { inset-inline-start: 24px; background: #101820; }
+  :is([data-price-tab-toggle], [data-high-low-toggle])[aria-checked="false"] .chart-switch-on, :is([data-price-tab-toggle], [data-high-low-toggle])[aria-checked="true"] .chart-switch-off { display: none; }
   .chart-tab-refresh { margin-inline-start: .75rem; padding-inline-start: .875rem; border-inline-start: 2px solid var(--menu-dropdown-border); }
   .chart-tab-refresh[hidden] { display: none; }
   .chart-tab-refresh :global(.refresh-picker--menu) { grid-template-columns: minmax(0, 1fr) minmax(0, auto); gap: .5rem; padding-block: .5rem; color: var(--menu-ink); font-size: 1rem; }
@@ -291,6 +304,14 @@ const lastDate = new Intl.DateTimeFormat(lang, { year: 'numeric', month: 'short'
   /* Animate small composited layers independently of the full history SVG. */
   /* With JavaScript, the server-rendered curve waits for the script so it can draw in instead of popping. */
   .price-chart[data-chart-pending] :is([data-chart-line], [data-chart-area]) { visibility: hidden; }
+  /* Optional high/low labels: a dot on each extreme with its price just outside the curve. */
+  .chart-extremes { position: absolute; inset: 0; pointer-events: none; opacity: 0; transition: opacity 250ms ease-out; }
+  .chart-extremes[data-visible="true"] { opacity: 1; }
+  .chart-extreme { position: absolute; top: 0; left: 0; }
+  .chart-extreme-dot { position: absolute; width: 5px; height: 5px; margin: -2.5px 0 0 -2.5px; border-radius: 50%; background: var(--color-ink-muted); }
+  .chart-extreme-value { position: absolute; left: 0; color: var(--color-ink-muted); font-size: .8125rem; font-variant-numeric: tabular-nums; line-height: 1; white-space: nowrap; }
+  .chart-extreme-high .chart-extreme-value { bottom: 7px; }
+  .chart-extreme-low .chart-extreme-value { top: 7px; }
   .chart-marker-waves { position: absolute; top: 0; left: 0; width: 0; height: 0; pointer-events: none; }
   .chart-marker-waves[hidden] { display: none; }
   .chart-marker-wave { position: absolute; top: -30px; left: -30px; width: 60px; height: 60px; border: 1.5px solid var(--color-accent); border-radius: 50%; opacity: 0; animation: marker-wave 5s linear infinite; will-change: transform, opacity; }
@@ -392,6 +413,7 @@ const lastDate = new Intl.DateTimeFormat(lang, { year: 'numeric', month: 'short'
     .range-pill, .range-select, .chart-menu-action, .chart-scale-choice span, .chart-switch-track, .chart-switch-track::after { transition: none; }
     .range-step, .range-step svg, .range-step::before { transition: none !important; }
     .price-currency-code, .price-currency-chevron { transition: none; }
+    .chart-extremes { transition: none; }
     .range-step:hover svg { transform: none; }
     .range-step:active svg { transform: scale(.8); }
     :global(.chart-menu-panel) { animation: none; }
