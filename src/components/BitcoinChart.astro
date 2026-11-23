@@ -8,34 +8,34 @@ import { ranges } from '../i18n/ranges';
 import { rangeSlots } from '../lib/bitcoin-range';
 import { currencies } from '../lib/bitcoin-currency';
 import { chartSettings } from '../i18n/chart-settings';
-import { party } from '../i18n/party';
 import RefreshIntervalPicker from './ui/RefreshIntervalPicker.astro';
 import RefreshIntervalOptions from './ui/RefreshIntervalOptions.astro';
 
 const lang = resolveLang(Astro.currentLocale);
 const t = tracker[lang];
 const r = ranges[lang];
-const { exitFullscreen, fullscreenUnavailable } = party[lang];
-const settings = { ...chartSettings[lang], fullscreen: chartSettings[lang].enterFullscreen, exitFullscreen, fullscreenUnavailable };
+const settings = chartSettings[lang];
 const history = parseHistory(bundledHistory);
 const paths = chartPaths(history, 1200, 440);
 const lastDate = new Intl.DateTimeFormat(lang, { year: 'numeric', month: 'short', day: 'numeric', timeZone: 'UTC' }).format(history.at(-1)!.time);
 ---
 
 <section class="bitcoin-tracker" data-bitcoin-tracker data-copy={JSON.stringify(t)} data-range-copy={JSON.stringify(r)} data-settings-copy={JSON.stringify(settings)} data-history-start={history[0].time} data-locale={lang} aria-label={t.price}>
-  <p class="sr-only" data-control-status role="status" hidden></p>
   <div class="price-header">
     <div>
       <div class="price-currency-picker" data-price-currency-picker>
         <button type="button" class="price-currency-trigger" data-currency-trigger aria-haspopup="listbox" aria-expanded="false" aria-controls="price-currency-options" disabled>
           <span class="sr-only">{settings.currency}: </span>
           <span class="current-price" data-price aria-label={t.unavailable}>—</span>
+          <span class="price-roll" data-price-roll aria-hidden="true"></span>
           <span class="price-currency-code">
             <span data-currency-value>USD</span>
             <svg class="price-currency-chevron" width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="m4 6 4 4 4-4" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" /></svg>
           </span>
         </button>
         <CurrencyOptions id="price-currency-options" locale={lang} class="price-currency-menu chart-menu-panel" label={settings.currency} />
+        <label class="sr-only" for="chart-currency">{settings.currency}</label>
+        <select id="chart-currency" data-currency hidden disabled>{currencies.map(code => <option value={code}>{code}</option>)}</select>
       </div>
       <p class="price-change" data-price-change></p>
       <p class="currency-status" data-currency-status role="status" hidden></p>
@@ -110,22 +110,12 @@ const lastDate = new Intl.DateTimeFormat(lang, { year: 'numeric', month: 'short'
         <button type="button" class="range-select" data-range-select="all" aria-label={t.all} aria-pressed="true"><span data-range-label>{r.all}</span></button>
       </div>
     </div>
-    <details class="chart-settings" data-chart-settings data-currency-picker>
+    <details class="chart-settings" data-chart-settings>
       <summary class="chart-settings-trigger" data-settings-trigger aria-label={settings.settings} title={settings.settings}>
         <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="12" cy="5" r="2" /><circle cx="12" cy="12" r="2" /><circle cx="12" cy="19" r="2" /></svg>
       </summary>
       <div class="chart-settings-menu chart-menu-panel" data-settings-menu role="group" aria-label={settings.settings}>
         <section class="chart-settings-group" aria-label={settings.chartDisplay}>
-          <label class="sr-only" for="chart-currency">{settings.currency}</label>
-          <select id="chart-currency" data-currency hidden disabled>{currencies.map(code => <option value={code}>{code}</option>)}</select>
-          <div class="chart-setting-row">
-            <span class="chart-setting-label" id="chart-currency-label">{settings.currency}</span>
-            <button type="button" class="chart-currency-control" data-currency-trigger aria-labelledby="chart-currency-label chart-currency-value" aria-haspopup="listbox" aria-expanded="false" aria-controls="chart-currency-options" disabled>
-              <span class="chart-currency-value" id="chart-currency-value" data-currency-value>USD</span>
-              <svg class="chart-action-chevron" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 6 6 6-6 6" /></svg>
-            </button>
-          </div>
-          <hr class="chart-settings-divider" />
           <fieldset class="chart-setting-row chart-scale-row">
             <legend class="sr-only">{settings.scale}</legend>
             <span class="chart-setting-label" aria-hidden="true">{settings.scale}</span>
@@ -158,20 +148,11 @@ const lastDate = new Intl.DateTimeFormat(lang, { year: 'numeric', month: 'short'
           </div>
         </section>
         <div class="chart-settings-footer">
-          <button type="button" class="chart-menu-action chart-fullscreen-button" data-fullscreen aria-label={settings.fullscreen} title={settings.fullscreen} hidden disabled>
+          <button type="button" class="chart-menu-action" data-price-only-enter>
             <svg class="chart-action-icon" width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 3H3v5m13-5h5v5M3 16v5h5m13-5v5h-5" /></svg>
-            <span data-fullscreen-label>{settings.fullscreen}</span>
+            <span>{settings.priceOnly}</span>
           </button>
         </div>
-      </div>
-      <div class="chart-currency-panel chart-menu-panel" data-currency-panel hidden>
-        <div class="chart-currency-header">
-          <button type="button" class="chart-currency-back" data-currency-back aria-label={settings.settings}>
-            <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m14 6-6 6 6 6" /></svg>
-          </button>
-          <h2 class="chart-menu-title" id="chart-currency-title">{settings.currency}</h2>
-        </div>
-        <CurrencyOptions id="chart-currency-options" locale={lang} class="chart-currency-menu" labelledby="chart-currency-title" />
       </div>
       <div class="chart-refresh-panel chart-menu-panel" data-refresh-panel hidden>
         <div class="chart-currency-header">
@@ -184,6 +165,9 @@ const lastDate = new Intl.DateTimeFormat(lang, { year: 'numeric', month: 'short'
       </div>
     </details>
   </div>
+  <button type="button" class="price-only-exit" data-price-only-exit aria-label={settings.exitPriceOnly} title={settings.exitPriceOnly} hidden>
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18" /></svg>
+  </button>
   <dialog class="price-tab-dialog" id="price-tab-dialog" data-price-tab-dialog aria-labelledby="price-tab-heading" aria-describedby="price-tab-description price-tab-note">
     <div data-price-tab-confirmation>
       <header class="price-tab-header">
@@ -218,16 +202,13 @@ const lastDate = new Intl.DateTimeFormat(lang, { year: 'numeric', month: 'short'
 <style>
   .bitcoin-tracker { position: relative; isolation: isolate; overflow: clip; display: flex; flex-direction: column; flex: 1; min-height: 0; padding-top: var(--live-price-top); }
   :global(.chart-menu-panel) { position: absolute; right: 0; bottom: calc(100% + .75rem); width: min(21rem, calc(100vw - 2 * var(--tracker-gutter, 1rem))); max-height: calc(100dvh - 6rem - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)); padding: .5rem; overflow-y: auto; overscroll-behavior: contain; border: 1px solid var(--menu-dropdown-border); border-radius: var(--radius-lg); color: var(--menu-ink); background: var(--menu-dropdown-bg); box-shadow: var(--menu-dropdown-shadow); animation: chart-menu-enter 160ms var(--ease-out); }
-  :global(.chart-menu-panel)[hidden], .chart-fullscreen-button[hidden], :global(.chart-currency-menu)[hidden], .bitcoin-tracker[data-currency-open] .chart-settings-menu, .chart-settings[data-refresh-open] .chart-settings-menu { display: none; }
+  :global(.chart-menu-panel)[hidden], .chart-settings[data-refresh-open] .chart-settings-menu { display: none; }
   .chart-menu-title { min-width: 0; margin: 0; padding: .625rem .75rem; font-size: 1.25rem; font-weight: 600; line-height: 1.3; letter-spacing: -.02em; overflow-wrap: anywhere; }
   .chart-settings-menu { width: min(24rem, calc(100vw - 2 * var(--tracker-gutter, 1rem))); padding: 1.25rem; scrollbar-width: thin; scrollbar-color: var(--menu-dropdown-border) transparent; }
   .chart-settings-divider { margin: .5rem 0; border: 0; border-top: 1px solid var(--menu-dropdown-border); }
   .chart-settings-group + .chart-settings-group { margin-top: 1rem; padding-top: 1.25rem; border-top: 1px solid var(--menu-dropdown-border); }
   .chart-setting-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: .75rem; width: 100%; min-width: 0; min-height: 64px; margin: 0; padding: .5rem 0; color: var(--menu-ink); font-size: 1rem; line-height: 1.4; text-align: start; }
   .chart-setting-label { min-width: 0; font-weight: 500; overflow-wrap: anywhere; }
-  .chart-currency-control { display: flex; align-items: center; justify-content: space-between; gap: 1rem; min-width: 6.5rem; min-height: 48px; padding: .625rem .75rem; border: 0; border-radius: var(--radius-control-small); background: var(--menu-option-hover); }
-  .chart-currency-control:hover { color: var(--menu-primary-ink); }
-  .chart-currency-control:disabled { opacity: .35; cursor: default; }
   .chart-tab-toggle { border-radius: var(--radius-control-small); cursor: pointer; }
   .chart-tab-toggle:hover .chart-setting-label { color: var(--menu-primary-ink); }
   .chart-switch-control { display: flex; align-items: center; gap: .5rem; }
@@ -243,11 +224,10 @@ const lastDate = new Intl.DateTimeFormat(lang, { year: 'numeric', month: 'short'
   .chart-tab-refresh :global(.refresh-picker--menu .refresh-trigger) { min-height: 48px; padding: .625rem .75rem; border-radius: var(--radius-control-small); background: var(--menu-option-hover); color: var(--menu-ink); font-size: 1rem; }
   .chart-tab-refresh :global(.refresh-label) { overflow-wrap: normal; }
   .chart-settings-footer { margin-top: 1rem; padding-top: 1.25rem; border-top: 1px solid var(--menu-dropdown-border); }
-  .chart-settings-footer:has(.chart-fullscreen-button[hidden]) { display: none; }
   .chart-menu-action { display: flex; align-items: center; justify-content: center; gap: .625rem; width: 100%; min-height: 48px; padding: .625rem .75rem; border-radius: var(--radius-control-small); color: var(--menu-ink); font-size: 1rem; font-weight: 500; line-height: 1.4; cursor: pointer; transition: color 150ms ease, background-color 150ms ease; }
   .chart-menu-action:hover { background: var(--menu-option-hover); color: var(--menu-primary-ink); }
   .chart-menu-action:disabled { cursor: default; opacity: .35; }
-  .chart-action-icon, .chart-action-chevron { flex-shrink: 0; color: var(--menu-link-ink); }
+  .chart-action-icon { flex-shrink: 0; color: var(--menu-link-ink); }
   .price-tab-dialog { position: fixed; inset: 0; width: min(460px, calc(100vw - 32px)); max-width: none; max-height: calc(100dvh - 32px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)); margin: auto; padding: 0; overflow-y: auto; overscroll-behavior: contain; border: 1px solid var(--menu-dropdown-border); border-radius: 20px; background: var(--menu-dropdown-bg); color: var(--menu-ink); box-shadow: 0 24px 80px #0006; }
   .price-tab-dialog::backdrop { background: #000b; }
   .price-tab-dialog { scrollbar-width: thin; scrollbar-color: var(--menu-dropdown-border) transparent; }
@@ -265,12 +245,11 @@ const lastDate = new Intl.DateTimeFormat(lang, { year: 'numeric', month: 'short'
   .price-tab-confirm:hover { filter: brightness(1.08); }
   .price-tab-cancel { color: var(--menu-link-ink); background: var(--menu-option-hover); }
   .price-tab-cancel:hover { color: var(--menu-primary-ink); }
-  .chart-currency-value { font-size: 1rem; font-weight: 500; color: var(--menu-ink); }
   .chart-currency-header { display: flex; align-items: center; gap: .25rem; padding: 0 .25rem .5rem; border-bottom: 1px solid var(--menu-dropdown-border); }
   .chart-currency-header .chart-menu-title { padding: .625rem .25rem; }
   .chart-currency-back { display: grid; place-items: center; flex-shrink: 0; width: 44px; height: 44px; border-radius: 50%; color: var(--menu-link-ink); }
   .chart-currency-back:hover { color: var(--menu-primary-ink); background: var(--menu-option-hover); }
-  :global(.chart-currency-menu), :global(.chart-refresh-options), :global(.price-tab-refresh-options) { padding-top: .375rem; }
+  :global(.chart-refresh-options), :global(.price-tab-refresh-options) { padding-top: .375rem; }
   @keyframes chart-menu-enter { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
   .price-header, .history-status { padding-inline: var(--tracker-gutter, 1rem); }
   .price-header { position: relative; z-index: 1; display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem; padding-inline-end: calc(var(--tracker-gutter, 1rem) + 48px + 1rem); }
@@ -292,6 +271,14 @@ const lastDate = new Intl.DateTimeFormat(lang, { year: 'numeric', month: 'short'
   .price-currency-trigger:not(:disabled):hover .price-currency-chevron { transform: translateY(2px); }
   .price-currency-trigger[aria-expanded="true"] .price-currency-chevron { transform: rotate(180deg); }
   :global(.price-currency-menu) { top: calc(100% + .5rem); bottom: auto; left: 0; right: auto; max-height: min(30rem, calc(100dvh - var(--live-price-top) - var(--live-price-font-size) - 5rem)); }
+  /* Rolling digits overlay the real price text exactly; the text keeps layout and accessibility. */
+  .price-roll { position: absolute; top: 0; left: 0; display: none; font-size: var(--price-size); font-weight: 700; line-height: 1.1; letter-spacing: -.06em; font-variant-numeric: tabular-nums; white-space: nowrap; pointer-events: none; }
+  .price-currency-trigger[data-price-rolling] .price-roll { display: block; }
+  .price-currency-trigger[data-price-rolling] .current-price { color: transparent; }
+  /* Each digit is a one-line window onto a vertical 0–9 strip; padding with matching negative margin keeps glyph edges unclipped. */
+  .price-roll :global(.roll-digit) { display: inline-block; vertical-align: top; height: 1.1em; overflow: hidden; padding-inline: .15em; margin-inline: -.15em; }
+  .price-roll :global(.roll-strip) { display: block; white-space: pre; }
+  .price-roll :global(.roll-digit.rolling) { -webkit-mask-image: linear-gradient(transparent, #000 18%, #000 82%, transparent); mask-image: linear-gradient(transparent, #000 18%, #000 82%, transparent); }
   .current-price { font-size: var(--price-size); font-weight: 700; line-height: 1.1; letter-spacing: -.06em; font-variant-numeric: tabular-nums; white-space: nowrap; }
   .price-change { min-height: 1.5em; margin-top: .375rem; color: var(--color-ink-muted); font-size: clamp(.9375rem, 1.5vw, 1.125rem); font-variant-numeric: tabular-nums; }
   .price-history { position: relative; z-index: 0; display: flex; flex-direction: column; flex: 1; min-height: 0; margin: .25rem 0 0; padding-bottom: calc(5.5rem + env(safe-area-inset-bottom, 0px)); }
@@ -409,7 +396,30 @@ const lastDate = new Intl.DateTimeFormat(lang, { year: 'numeric', month: 'short'
     .range-bar:focus-within .range-slot[data-selected="true"] .range-step { visibility: visible; opacity: 1; transition: opacity 180ms ease-out, visibility 0s; }
   }
   .chart-controls button:focus-visible { outline-offset: 0; }
+  /* Price-only view: the live price alone, centred and as large as fits with generous margins. */
+  .bitcoin-tracker[data-price-only] :is(.price-history, .chart-controls, .history-status, .chart-loading, .price-change, .currency-status, .price-currency-code) { display: none; }
+  /* Sized from the viewport itself so a reserved scrollbar gutter cannot pull the price off centre. */
+  .bitcoin-tracker[data-price-only] .price-header { position: fixed; top: 0; left: 0; width: 100vw; height: 100dvh; z-index: 2; display: flex; flex-direction: column; justify-content: center; padding: max(2rem, env(safe-area-inset-top, 0px)) max(2rem, env(safe-area-inset-right, 0px)) max(2rem, env(safe-area-inset-bottom, 0px)) max(2rem, env(safe-area-inset-left, 0px)); }
+  .bitcoin-tracker[data-price-only] .price-header > div { flex: none; width: 100%; animation: price-only-enter 320ms var(--ease-out); }
+  .bitcoin-tracker[data-price-only] .price-currency-picker { margin-inline: auto; }
+  /* About three quarters of the screen's width, capped by its height on wide, short screens. */
+  .bitcoin-tracker[data-price-only] .price-currency-trigger { --price-size: min(calc(136vw / var(--price-chars, 1)), 46vh); pointer-events: none; }
+  .price-only-exit { position: fixed; z-index: 3; top: max(1rem, env(safe-area-inset-top, 0px)); right: max(var(--tracker-gutter, 1rem), env(safe-area-inset-right, 0px)); display: flex; align-items: center; justify-content: center; width: 44px; height: 44px; border-radius: 999px; color: var(--color-ink-muted); background: rgb(var(--color-ink-rgb) / .055); cursor: pointer; transition: opacity 250ms ease, background-color 150ms ease, color 150ms ease; }
+  .price-only-exit:hover { color: var(--color-ink); background: var(--hover-tint); }
+  .price-only-exit[hidden] { display: none; }
+  .bitcoin-tracker[data-fullscreen-idle] .price-only-exit { opacity: 0; pointer-events: none; }
+  /* The view is meant for a phone or tablet left in landscape, so portrait screens lay it out sideways:
+     the price runs along the long edge and reads upright once the device is turned. */
+  @media (orientation: portrait) {
+    .bitcoin-tracker[data-price-only] .price-header { top: 50dvh; left: 50vw; width: 100dvh; height: 100vw; transform: translate(-50%, -50%) rotate(90deg); }
+    .bitcoin-tracker[data-price-only] .price-currency-trigger { --price-size: min(calc(136dvh / var(--price-chars, 1)), 46vw); }
+    /* The physical bottom-right corner becomes the top-right once the device is turned. */
+    .price-only-exit { top: auto; bottom: max(1rem, env(safe-area-inset-bottom, 0px)); }
+  }
+  @keyframes price-only-enter { from { opacity: 0; transform: scale(.97); } to { opacity: 1; transform: none; } }
   @media (prefers-reduced-motion: reduce) {
+    .bitcoin-tracker[data-price-only] .price-header > div { animation: none; }
+    .price-only-exit { transition: none; }
     .range-pill, .range-select, .chart-menu-action, .chart-scale-choice span, .chart-switch-track, .chart-switch-track::after { transition: none; }
     .range-step, .range-step svg, .range-step::before { transition: none !important; }
     .price-currency-code, .price-currency-chevron { transition: none; }

@@ -5,7 +5,7 @@ import { createContext, runInContext } from 'node:vm';
 import ts from 'typescript';
 import { tracker } from '../src/i18n/tracker.ts';
 
-const names = ['bitcoin-price', 'bitcoin-live-price', 'bitcoin-chart', 'bitcoin-chart-motion', 'bitcoin-price-change', 'bitcoin-range', 'bitcoin-range-preferences', 'bitcoin-range-pill', 'bitcoin-currency', 'bitcoin-display-preferences', 'currency-picker', 'price-tab-title', 'chart-fullscreen-controls'];
+const names = ['bitcoin-price', 'bitcoin-live-price', 'bitcoin-chart', 'bitcoin-chart-motion', 'bitcoin-price-change', 'bitcoin-range', 'bitcoin-range-preferences', 'bitcoin-range-pill', 'bitcoin-currency', 'bitcoin-display-preferences', 'currency-picker', 'price-tab-title', 'chart-fullscreen-controls', 'rolling-number'];
 const scripts = Object.fromEntries(names.map(name => [name, ts.transpileModule(
   readFileSync(new URL(`../src/${['bitcoin-price', 'bitcoin-range-pill'].includes(name) ? 'scripts' : 'lib'}/${name}.ts`, import.meta.url), 'utf8'),
   { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 } },
@@ -94,20 +94,17 @@ function page(stored: Map<string, string>, locale = 'en', blocked: 'read' | 'wri
   root.querySelectorAll = () => scaleOptions;
 
   const currencySelect = root.querySelector('[data-currency]');
-  const currencyPicker = root.querySelector('[data-currency-picker]');
-  const currencyTrigger = currencyPicker.querySelector('[data-currency-trigger]');
-  const currencyList = currencyPicker.querySelector('[data-currency-list]');
-  const currencyOptions = ['USD', 'EUR', 'GBP', 'AUD', 'CAD', 'CHF', 'JPY'].map(code => Object.assign(new Control(), {
-    dataset: { currencyOption: code }, parent: currencyList,
-  }));
-  currencyList.querySelectorAll = () => currencyOptions;
+  // The only currency picker sits beside the live price.
   const priceCurrencyPicker = root.querySelector('[data-price-currency-picker]');
   const priceCurrencyTrigger = priceCurrencyPicker.querySelector('[data-currency-trigger]');
   const priceCurrencyList = priceCurrencyPicker.querySelector('[data-currency-list]');
-  const priceCurrencyOptions = currencyOptions.map(option => Object.assign(new Control(), {
-    dataset: { ...option.dataset }, parent: priceCurrencyList,
+  const priceCurrencyOptions = ['USD', 'EUR', 'GBP', 'AUD', 'CAD', 'CHF', 'JPY'].map(code => Object.assign(new Control(), {
+    dataset: { currencyOption: code }, parent: priceCurrencyList,
   }));
   priceCurrencyList.querySelectorAll = () => priceCurrencyOptions;
+  const currencyTrigger = priceCurrencyTrigger;
+  const currencyList = priceCurrencyList;
+  const currencyOptions = priceCurrencyOptions;
   const document = Object.assign(new EventTarget(), { hidden: false, querySelector: () => root });
   const window = Object.assign(new EventTarget(), {
     matchMedia: () => Object.assign(new EventTarget(), { matches: true }),
@@ -503,30 +500,6 @@ test('settings dismiss on Escape and outside interaction without changing range 
   p.close();
 });
 
-test('nested currency dismissal keeps settings open until Escape reaches the parent menu', () => {
-  const p = page(new Map());
-  const menu = p.root.querySelector('[data-chart-settings]');
-  menu.open = true;
-  p.currencyTrigger.dispatchEvent(new Event('click'));
-  assert.equal(p.currencyList.hidden, false);
-  const escape = Object.assign(new Event('keydown', { cancelable: true }), { key: 'Escape' });
-  p.root.querySelector('[data-currency-picker]').dispatchEvent(escape);
-  menu.dispatchEvent(escape);
-  assert.equal(p.currencyList.hidden, true);
-  assert.equal(menu.open, true);
-  menu.dispatchEvent(Object.assign(new Event('keydown', { cancelable: true }), { key: 'Escape' }));
-  assert.equal(menu.open, false);
-
-  menu.open = true;
-  p.currencyTrigger.dispatchEvent(new Event('click'));
-  assert.equal(p.root.hasAttribute('data-currency-open'), true);
-  menu.open = false;
-  menu.dispatchEvent(new Event('toggle'));
-  assert.equal(p.currencyList.hidden, true);
-  assert.equal(p.root.hasAttribute('data-currency-open'), false);
-  p.close();
-});
-
 test('Escape dismisses settings and returns focus to its trigger', () => {
   const p = page(new Map());
   const menu = p.root.querySelector('[data-chart-settings]');
@@ -552,6 +525,18 @@ test('the currency picker keeps one selection and ignores invalid native changes
   p.currencySelect.value = 'EUR';
   p.currencySelect.dispatchEvent(new Event('change'));
   assert.equal(p.currencyOptions.filter(option => option.attributes['aria-selected'] === 'true').length, 1);
+  p.close();
+});
+
+test('inspecting sub-unit early prices shows cents instead of rounding to zero', async () => {
+  const p = page(new Map(), 'en', undefined, false, undefined, 0.001);
+  await p.ready();
+  const chart = p.root.querySelector('[data-chart]');
+  chart.dispatchEvent(Object.assign(new Event('keydown'), { key: 'Home' }));
+  assert.equal(p.root.querySelector('[data-price]').textContent, '$0.10');
+  chart.dispatchEvent(Object.assign(new Event('keydown'), { key: 'End' }));
+  assert.equal(p.root.querySelector('[data-price]').textContent, '$0.10');
+  chart.dispatchEvent(Object.assign(new Event('keydown'), { key: 'Escape' }));
   p.close();
 });
 

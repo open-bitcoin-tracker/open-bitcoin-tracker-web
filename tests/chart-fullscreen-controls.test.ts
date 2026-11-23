@@ -3,7 +3,7 @@ import test from 'node:test';
 import { browserModule } from './support/browser-module.ts';
 import type { createChartFullscreenControls } from '../src/lib/chart-fullscreen-controls.ts';
 
-function harness() {
+function harness(isActive?: () => boolean) {
   class Surface extends EventTarget {
     id = '';
     focusVisible = false;
@@ -42,7 +42,7 @@ function harness() {
     },
     clearTimeout(id: number) { timers.delete(id); },
   }) as { createChartFullscreenControls: typeof createChartFullscreenControls };
-  const controls = module.createChartFullscreenControls(root as unknown as HTMLElement);
+  const controls = module.createChartFullscreenControls(root as unknown as HTMLElement, isActive ? { isActive } : undefined);
   function tick(ms: number) {
     const end = now + ms;
     while (true) {
@@ -194,4 +194,27 @@ test('background tabs stop idle work without restarting the mouse reveal, and de
   h.tick(10000);
   assert.equal(h.idle(), false);
   assert.equal(h.timers.size, 0);
+});
+
+test('a custom view (price-only) starts idle on refresh, reveals on mouse or explicit taps, and ignores fullscreen', () => {
+  let active = false;
+  const h = harness(() => active);
+  h.fullscreen(true);
+  assert.equal(h.idle(), false, 'browser fullscreen alone does not fade a custom view');
+  active = true;
+  h.controls.refresh();
+  assert.equal(h.idle(), true);
+  h.pointer('pointermove', 'touch');
+  assert.equal(h.idle(), true);
+  h.controls.reveal();
+  assert.equal(h.idle(), false);
+  h.tick(3000);
+  assert.equal(h.idle(), true);
+  h.pointer();
+  assert.equal(h.idle(), false);
+  active = false;
+  h.controls.refresh();
+  assert.equal(h.idle(), false);
+  h.tick(3000);
+  assert.equal(h.idle(), false);
 });

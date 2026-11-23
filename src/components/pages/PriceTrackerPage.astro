@@ -27,6 +27,10 @@ const pageTitle = `${t.priceChart} — Open Bitcoin Tracker`;
   :global(.tracker-page:has([data-fullscreen-idle]) .chart-controls) { opacity: 0; pointer-events: none; }
   :global(html:has(.tracker-page [data-fullscreen-idle])),
   :global(html:has(.tracker-page [data-fullscreen-idle]) *) { cursor: none !important; }
+  /* The price-only view shows nothing but the price; its own exit button replaces the navigation. */
+  :global(.tracker-page:has([data-price-only]) .site-nav), :global(.tracker-page:has([data-price-only]) .nav-menu-trigger) { display: none; }
+  /* No scrolling or reserved scrollbar gutter, so the price centres on the whole screen. */
+  :global(html:has(.tracker-page [data-price-only])) { overflow: hidden; scrollbar-gutter: auto; }
   @media (prefers-reduced-motion: reduce) {
     :global(.tracker-page .nav-menu-trigger), :global(.tracker-page .chart-controls) { transition: none; }
   }

@@ -30,7 +30,7 @@ function harness(hidden = false, fullscreenEnabled = false, options: { locale?: 
     style = { setProperty() {}, opacity: '', transform: '' };
     setAttribute(name: string, value: string) { this.attributes.set(name, value); }
     getAttribute(name: string) { return this.attributes.get(name) ?? null; }
-    removeAttribute() {}
+    removeAttribute(name: string) { this.attributes.delete(name); }
     querySelector(selector: string): Control {
       if (!controls.has(selector)) controls.set(selector, new Control());
       return controls.get(selector)!;
@@ -39,7 +39,7 @@ function harness(hidden = false, fullscreenEnabled = false, options: { locale?: 
   }
   const controls = new Map<string, Control>();
   const root = Object.assign(new Control(), {
-    dataset: { copy: '{}', rangeCopy: '{}', settingsCopy: JSON.stringify({ fullscreen: 'Fullscreen', exitFullscreen: 'Exit fullscreen', fullscreenUnavailable: 'Fullscreen unavailable' }), locale: options.locale ?? 'en-US', historyStart: '0' },
+    dataset: { copy: '{}', rangeCopy: '{}', settingsCopy: JSON.stringify({ priceOnly: 'Show only the price', exitPriceOnly: 'Exit price-only view' }), locale: options.locale ?? 'en-US', historyStart: '0' },
     querySelector: (selector: string) => {
       if (!controls.has(selector)) controls.set(selector, new Control());
       return controls.get(selector);
@@ -111,7 +111,8 @@ function harness(hidden = false, fullscreenEnabled = false, options: { locale?: 
     subscribeCurrencyPreference: () => () => {},
     createRangePill: () => ({ select() {}, destroy() {} }),
     createCurrencyPicker: () => ({ close() {}, destroy() { pickerDestroyed = true; } }),
-    createChartFullscreenControls: () => ({ destroy() { fullscreenControlsDestroyed = true; } }),
+    createChartFullscreenControls: () => ({ refresh() {}, reveal() {}, destroy() { fullscreenControlsDestroyed = true; } }),
+    createRollingNumber: () => undefined,
     isCurrency: (value: string) => ['USD', 'EUR', 'GBP', 'AUD', 'CAD', 'CHF', 'JPY'].includes(value),
     saveDisplayPreferences: (preferences: unknown) => savedPreferences.push(preferences),
     createPriceChangeFormatter: () => () => '',
@@ -143,7 +144,7 @@ function harness(hidden = false, fullscreenEnabled = false, options: { locale?: 
     request.resolve({ ok: true, json: async () => ({ error: [], result: { XBTUSD: { c: ['83000'] } } }) });
     await setImmediate();
   };
-  return { controls, document, window, navigator, timers, frames, requests, sockets, rates, storage, visibility, respondToTicker, disconnected: () => disconnected, savedPreferences, pickerDestroyed: () => pickerDestroyed,
+  return { root, controls, document, window, navigator, timers, frames, requests, sockets, rates, storage, visibility, respondToTicker, disconnected: () => disconnected, savedPreferences, pickerDestroyed: () => pickerDestroyed,
     advance(ms: number) {
       now += ms;
       for (const [id, timer] of [...timeouts]) if (timer.at <= now) { timeouts.delete(id); timer.run(); }
@@ -378,39 +379,48 @@ test('missing FX, a disconnected feed, offline mode, and page cleanup restore th
   assert.equal(h.document.title, originalTitle);
 });
 
-test('the chart fullscreen button enters, exits, updates its label, and reports rejected requests', async () => {
+test('show only the price enters a price-only view in fullscreen and exits by button, Escape, or leaving fullscreen', async () => {
   const h = harness(false, true);
-  const button = h.controls.get('[data-fullscreen]')!;
-  const status = h.controls.get('[data-control-status]')!;
-  assert.equal(button.hidden, false);
-  assert.equal(button.disabled, false);
-  assert.equal(button.attributes.get('aria-label'), 'Fullscreen');
-  assert.equal(h.controls.get('[data-fullscreen-label]')!.textContent, 'Fullscreen');
-  h.controls.get('[data-chart-settings]')!.open = true;
-  button.dispatchEvent(new Event('click'));
+  const enter = h.controls.get('[data-price-only-enter]')!;
+  const exit = h.controls.get('[data-price-only-exit]')!;
+  const settings = h.controls.get('[data-chart-settings]')!;
+  const priceOnly = () => h.root.attributes.has('data-price-only');
+  const open = async () => { enter.dispatchEvent(new Event('click')); await setImmediate(); };
+  settings.open = true;
+  await open();
+  assert.equal(priceOnly(), true);
+  assert.equal(settings.open, false);
+  assert.equal(exit.hidden, false);
+  assert.equal(exit.focused, true);
   assert.equal(h.fullscreenRequests(), 1);
-  assert.equal(button.title, 'Exit fullscreen');
-  assert.equal(h.controls.get('[data-fullscreen-label]')!.textContent, 'Exit fullscreen');
-  assert.equal(h.controls.get('[data-chart-settings]')!.open, false);
-  assert.equal(button.attributes.get('aria-label'), 'Exit fullscreen');
-  button.dispatchEvent(new Event('click'));
+  assert.ok(h.document.fullscreenElement);
+  exit.dispatchEvent(new Event('click'));
+  assert.equal(priceOnly(), false);
+  assert.equal(exit.hidden, true);
   assert.equal(h.fullscreenExits(), 1);
-  assert.equal(button.title, 'Fullscreen');
-  h.rejectFullscreen();
-  button.dispatchEvent(new Event('click'));
-  await setImmediate();
-  assert.equal(status.hidden, false);
-  assert.equal(status.textContent, 'Fullscreen unavailable');
+  assert.equal(h.controls.get('[data-settings-trigger]')!.focused, true);
+  await open();
+  h.document.dispatchEvent(Object.assign(new Event('keydown', { cancelable: true }), { key: 'Escape' }));
+  assert.equal(priceOnly(), false);
+  await open();
+  // Leaving browser fullscreen (its own Escape) also leaves the price-only view.
+  h.document.fullscreenElement = null;
+  h.document.dispatchEvent(new Event('fullscreenchange'));
+  assert.equal(priceOnly(), false);
   h.window.dispatchEvent(new Event('pagehide'));
   assert.equal(h.fullscreenControlsDestroyed(), true);
-  h.document.fullscreenElement = h.document.documentElement;
-  h.document.dispatchEvent(new Event('fullscreenchange'));
-  assert.equal(button.title, 'Fullscreen');
 });
 
-test('the chart hides and disables fullscreen when the browser does not support it', () => {
-  const h = harness();
-  const button = h.controls.get('[data-fullscreen]')!;
-  assert.equal(button.hidden, true);
-  assert.equal(button.disabled, true);
+test('the price-only view works in the page without, or after a refused, fullscreen request', async () => {
+  const unsupported = harness();
+  unsupported.controls.get('[data-price-only-enter]')!.dispatchEvent(new Event('click'));
+  assert.equal(unsupported.root.attributes.has('data-price-only'), true);
+  assert.equal(unsupported.fullscreenRequests(), 0);
+  const refused = harness(false, true);
+  refused.rejectFullscreen();
+  refused.controls.get('[data-price-only-enter]')!.dispatchEvent(new Event('click'));
+  await setImmediate();
+  assert.equal(refused.root.attributes.has('data-price-only'), true);
+  refused.document.dispatchEvent(new Event('fullscreenchange'));
+  assert.equal(refused.root.attributes.has('data-price-only'), true, 'an unrelated fullscreen change keeps the view');
 });

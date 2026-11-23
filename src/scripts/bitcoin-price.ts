@@ -13,7 +13,7 @@ import { subscribeBitcoinPrice, type PriceFeedState } from '../lib/bitcoin-live-
 import { createCurrencyPicker } from '../lib/currency-picker';
 import { createPriceTabTitle } from '../lib/price-tab-title';
 import { createChartFullscreenControls } from '../lib/chart-fullscreen-controls';
-import type { PartyCopy } from '../i18n/party';
+import { createRollingNumber, type RollingNumber } from '../lib/rolling-number';
 
 const root = document.querySelector<HTMLElement>('[data-bitcoin-tracker]');
 if (root) startTracker(root);
@@ -21,12 +21,18 @@ if (root) startTracker(root);
 function startTracker(root: HTMLElement) {
   const t: TrackerCopy = JSON.parse(root.dataset.copy!);
   const r: RangeCopy = JSON.parse(root.dataset.rangeCopy!);
-  const settingsCopy: ChartSettingsCopy & Pick<PartyCopy, 'fullscreen' | 'exitFullscreen' | 'fullscreenUnavailable'> = JSON.parse(root.dataset.settingsCopy!);
+  const settingsCopy: ChartSettingsCopy = JSON.parse(root.dataset.settingsCopy!);
   const locale = root.dataset.locale || 'en';
   const priceEl = root.querySelector<HTMLElement>('[data-price]')!;
   const priceChangeEl = root.querySelector<HTMLElement>('[data-price-change]')!;
   // The price button sizes both the price and the currency code beside it from the character count.
   const priceSizer = root.querySelector<HTMLElement>('[data-price-currency-picker] [data-currency-trigger]') ?? priceEl;
+  // Rolling digits draw over the real price text, which stays for layout, screen readers, and the tab title.
+  const priceRoll = createRollingNumber(root.querySelector<HTMLElement>('[data-price-roll]'));
+  if (priceRoll) priceSizer.setAttribute('data-price-rolling', '');
+  let lastLive: { value: number; currency: Currency } | undefined;
+  let showingLive = false;
+  let rollDirection = 1;
   const display = readDisplayPreferences();
   let currency: Currency = display.currency;
   let formatPriceChange = createPriceChangeFormatter(locale, currency);
@@ -50,9 +56,9 @@ function startTracker(root: HTMLElement) {
   const loadingDescription = root.querySelector<HTMLElement>('[data-loading-description]')!;
   const moneyFormat = (code: Currency) => new Intl.NumberFormat(locale, { style: 'currency', currency: code, currencyDisplay: 'narrowSymbol', useGrouping: true, minimumFractionDigits: 0, maximumFractionDigits: 0 });
   let money = moneyFormat(currency);
-  // Early history trades below one unit, where whole-unit rounding would label the low "$0".
-  const extremeMoney = (price: number) => price >= 1 ? money.format(price)
-    : new Intl.NumberFormat(locale, { style: 'currency', currency, currencyDisplay: 'narrowSymbol', maximumSignificantDigits: 2 }).format(price);
+  // Early history trades below one unit, where whole-unit rounding would show "$0"; keep two significant digits there.
+  const historicMoney = (price: number) => price >= 1 ? money.format(price)
+    : new Intl.NumberFormat(locale, { style: 'currency', currency, currencyDisplay: 'narrowSymbol', minimumSignificantDigits: 2, maximumSignificantDigits: 2 }).format(price);
   const date = new Intl.DateTimeFormat(locale, { year: 'numeric', month: 'short', day: 'numeric', timeZone: 'UTC' });
   const dateTime = new Intl.DateTimeFormat(locale, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit', timeZone: 'UTC' });
   const rangeBar = root.querySelector<HTMLElement>('[data-range-bar]')!;
@@ -170,7 +176,7 @@ function startTracker(root: HTMLElement) {
     const scaleLabel = scale === 'logarithmic' ? t.scale : t.linearScale;
     chart.setAttribute('aria-label', `${t.price} (${currency}) — ${scaleLabel}`);
     const extremes = highLow ? extremeIndices(points) : undefined;
-    const extremesText = extremes ? ` ${settingsCopy.high}: ${extremeMoney(points[extremes.high].price)}. ${settingsCopy.low}: ${extremeMoney(points[extremes.low].price)}.` : '';
+    const extremesText = extremes ? ` ${settingsCopy.high}: ${historicMoney(points[extremes.high].price)}. ${settingsCopy.low}: ${historicMoney(points[extremes.low].price)}.` : '';
     root.querySelector<SVGDescElement>('[data-chart-description]')!.textContent = `${label}: ${period}. ${scaleLabel}. ${currency}.${extremesText}`;
     updateCurrencyStatus();
     // Keep the outgoing curve while a new candle interval is loading.
@@ -204,7 +210,7 @@ function startTracker(root: HTMLElement) {
       const el = extremeEls[kind];
       const { x, y } = plottedPositions[extremes[kind]];
       const value = el.querySelector<HTMLElement>('[data-chart-extreme-value]')!;
-      const text = extremeMoney(plottedPoints[extremes[kind]].price);
+      const text = historicMoney(plottedPoints[extremes[kind]].price);
       if (value.textContent !== text) value.textContent = text;
       el.style.transform = `translate(${x}px, ${y}px)`;
       // Centre the price over its point, but keep it at least 8px inside the plot near either edge.
@@ -232,7 +238,8 @@ function startTracker(root: HTMLElement) {
       markerWaves.style.transform = `translate3d(${position.x}px, ${position.y}px, 0)`;
       markerWaves.hidden = document.hidden;
       marker.setAttribute('visibility', 'visible');
-      setPriceText(money.format(point.price));
+      setPriceText(historicMoney(point.price));
+      showingLive = false;
       priceEl.removeAttribute('aria-label');
       const formatter = candleWindow(selected) ? dateTime : date;
       priceChangeEl.textContent = `${formatter.format(point.time)}${candleWindow(selected) ? ' UTC' : ''}`;
@@ -241,7 +248,14 @@ function startTracker(root: HTMLElement) {
     marker.setAttribute('visibility', 'hidden');
     markerWaves.hidden = true;
     const rate = exchangeRates.current(currency);
-    setPriceText(livePoint && rate ? money.format(livePoint.price * rate.rate) : '—');
+    const live = livePoint && rate ? livePoint.price * rate.rate : undefined;
+    // Like the app, live ticks roll in the price's direction; the first price, a currency change,
+    // and returning from chart inspection snap instead.
+    const rolls = live !== undefined && lastLive !== undefined && lastLive.currency === currency && showingLive && !reduceMotion.matches;
+    if (live !== undefined && lastLive !== undefined && live !== lastLive.value) rollDirection = live > lastLive.value ? 1 : -1;
+    lastLive = live === undefined ? undefined : { value: live, currency };
+    showingLive = true;
+    setPriceText(live !== undefined ? money.format(live) : '—', { direction: rollDirection, animate: rolls });
     if (livePoint && rate) priceEl.removeAttribute('aria-label');
     else priceEl.setAttribute('aria-label', t.unavailable);
     // All starts near zero, so its change would just repeat the current price.
@@ -261,8 +275,9 @@ function startTracker(root: HTMLElement) {
     updatePriceDisplay();
   }
 
-  function setPriceText(value: string) {
+  function setPriceText(value: string, roll: Parameters<RollingNumber['set']>[1] = { animate: false }) {
     priceEl.textContent = value;
+    priceRoll?.set(value, roll);
     priceSizer.style.setProperty('--price-chars', String([...value].length));
     // Currencies without a symbol (CHF) already show their code in the price, so the label keeps only its chevron.
     priceSizer.dataset.codeInPrice = String(value.includes(currency));
@@ -425,19 +440,12 @@ function startTracker(root: HTMLElement) {
     applyCurrency(currencySelect.value);
     saveDisplayPreferences({ scale, currency, highLow });
   });
-  const currencyPicker = createCurrencyPicker(root, currencySelect, {
-    panel: root.querySelector<HTMLElement>('[data-currency-panel]')!,
-    back: root.querySelector<HTMLButtonElement>('[data-currency-back]')!,
-  });
   const priceCurrency = root.querySelector<HTMLElement>('[data-price-currency-picker]')!;
   const priceCurrencyPicker = createCurrencyPicker(priceCurrency, currencySelect, { wrapper: priceCurrency });
   const stopCurrency = subscribeCurrencyPreference(next => {
     if (next === currency) return;
     applyCurrency(next);
     currencySelect.dispatchEvent(new Event('change', { bubbles: true }));
-  });
-  settingsMenu.addEventListener('toggle', () => {
-    if (!settingsMenu.open) currencyPicker.close();
   });
   settingsMenu.addEventListener('keydown', (event) => {
     if (!event.defaultPrevented && event.key === 'Escape' && settingsMenu.open) {
@@ -452,26 +460,60 @@ function startTracker(root: HTMLElement) {
     if (settingsMenu.open && !settingsMenu.contains(event.target as Node)) settingsMenu.open = false;
   });
 
-  const fullscreen = root.querySelector<HTMLButtonElement>('[data-fullscreen]')!;
-  const fullscreenLabel = root.querySelector<HTMLElement>('[data-fullscreen-label]')!;
-  const controlStatus = root.querySelector<HTMLElement>('[data-control-status]')!;
-  function updateFullscreen() {
-    const label = document.fullscreenElement ? settingsCopy.exitFullscreen : settingsCopy.fullscreen;
-    fullscreen.setAttribute('aria-label', label);
-    fullscreen.title = label;
-    fullscreenLabel.textContent = label;
-    controlStatus.hidden = true;
+  // Price-only view: just the live price, centred and large. It uses browser fullscreen where available,
+  // and leaving fullscreen (or pressing Escape, or the exit button) returns to the chart.
+  const priceOnlyEnter = root.querySelector<HTMLButtonElement>('[data-price-only-enter]')!;
+  const priceOnlyExit = root.querySelector<HTMLButtonElement>('[data-price-only-exit]')!;
+  let priceOnly = false;
+  let priceOnlyFullscreen = false;
+  const fullscreenControls = createChartFullscreenControls(root, { isActive: () => priceOnly });
+  function setPriceOnly(next: boolean) {
+    if (next === priceOnly) return;
+    priceOnly = next;
+    if (next) {
+      settingsMenu.open = false;
+      clearSelection();
+      root.setAttribute('data-price-only', '');
+    } else root.removeAttribute('data-price-only');
+    priceOnlyExit.hidden = !next;
+    // The price is display-only here; keep its currency menu out of reach.
+    priceSizer.tabIndex = next ? -1 : 0;
+    fullscreenControls.refresh();
+    if (next) {
+      priceOnlyExit.focus({ preventScroll: true });
+      if (document.fullscreenEnabled && !document.fullscreenElement) {
+        document.documentElement.requestFullscreen()
+          .then(() => {
+            if (!priceOnly) { void document.exitFullscreen(); return; }
+            priceOnlyFullscreen = true;
+            // Phones and tablets that allow it stay in landscape; others get the sideways layout in portrait.
+            void (window.screen?.orientation as (ScreenOrientation & { lock?: (orientation: string) => Promise<void> }) | undefined)?.lock?.('landscape').catch(() => {});
+          })
+          .catch(() => { /* The in-page view works without fullscreen. */ });
+      }
+    } else {
+      window.screen?.orientation?.unlock?.();
+      if (priceOnlyFullscreen && document.fullscreenElement) void document.exitFullscreen().catch(() => {});
+      priceOnlyFullscreen = false;
+      settingsTrigger.focus({ preventScroll: true });
+      scheduleDraw();
+    }
   }
-  fullscreen.hidden = !document.fullscreenEnabled;
-  fullscreen.disabled = !document.fullscreenEnabled;
-  fullscreen.addEventListener('click', () => {
-    const request = document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen();
-    closeSettings();
-    void request.catch(() => { controlStatus.textContent = settingsCopy.fullscreenUnavailable; controlStatus.hidden = false; });
-  });
-  document.addEventListener('fullscreenchange', updateFullscreen);
-  updateFullscreen();
-  const fullscreenControls = createChartFullscreenControls(root);
+  function onPriceOnlyFullscreenChange() {
+    if (priceOnlyFullscreen && !document.fullscreenElement) { priceOnlyFullscreen = false; setPriceOnly(false); }
+  }
+  function onPriceOnlyKeyDown(event: KeyboardEvent) {
+    if (priceOnly && event.key === 'Escape') { event.preventDefault(); setPriceOnly(false); }
+  }
+  function onPriceOnlyPointerDown(event: PointerEvent) {
+    // Touch never hovers, so a tap brings back the exit button.
+    if (priceOnly && event.pointerType === 'touch') fullscreenControls.reveal();
+  }
+  priceOnlyEnter.addEventListener('click', () => setPriceOnly(true));
+  priceOnlyExit.addEventListener('click', () => setPriceOnly(false));
+  document.addEventListener('fullscreenchange', onPriceOnlyFullscreenChange);
+  document.addEventListener('keydown', onPriceOnlyKeyDown);
+  window.addEventListener('pointerdown', onPriceOnlyPointerDown);
 
   function updateCurrencyStatus() {
     const rate = exchangeRates.current(currency);
@@ -624,9 +666,10 @@ function startTracker(root: HTMLElement) {
     cancelAnimationFrame(motionFrame);
     reduceMotion.removeEventListener('change', onMotionPreferenceChange);
     rangePill.destroy();
-    currencyPicker.destroy();
     priceCurrencyPicker.destroy();
-    document.removeEventListener('fullscreenchange', updateFullscreen);
+    document.removeEventListener('fullscreenchange', onPriceOnlyFullscreenChange);
+    document.removeEventListener('keydown', onPriceOnlyKeyDown);
+    window.removeEventListener('pointerdown', onPriceOnlyPointerDown);
     fullscreenControls.destroy();
     stopTimers();
     stopPriceFeed();

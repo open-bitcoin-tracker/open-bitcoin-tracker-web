@@ -1,7 +1,10 @@
 const IDLE_DELAY = 3000;
 
-/** Fade fullscreen chart controls while preserving menus and keyboard access. */
-export function createChartFullscreenControls(root: HTMLElement) {
+/**
+ * Fade controls in an immersive view while preserving menus and keyboard access.
+ * The view defaults to browser fullscreen; callers can supply their own and call refresh() when it changes.
+ */
+export function createChartFullscreenControls(root: HTMLElement, { isActive = () => Boolean(document.fullscreenElement) } = {}) {
   const navigationTrigger = document.querySelector<HTMLElement>('.nav-menu-trigger');
   let timer: ReturnType<typeof setTimeout> | undefined;
   let revealUntil = 0;
@@ -14,7 +17,7 @@ export function createChartFullscreenControls(root: HTMLElement) {
   }
 
   function canFade() {
-    if (!document.fullscreenElement || document.hidden) return false;
+    if (!isActive() || document.hidden) return false;
     if (root.querySelector('[data-chart-settings][open], dialog[open], [data-range-bar][data-dragging="true"]')) return false;
     // Navigation moves its modal outside the chart root.
     if (document.querySelector('#site-navigation-dialog[open]')) return false;
@@ -24,7 +27,7 @@ export function createChartFullscreenControls(root: HTMLElement) {
 
   function sync() {
     clearTimer();
-    if (!document.fullscreenElement) {
+    if (!isActive()) {
       root.removeAttribute('data-fullscreen-idle');
       return;
     }
@@ -37,7 +40,7 @@ export function createChartFullscreenControls(root: HTMLElement) {
   }
 
   function reveal() {
-    if (!document.fullscreenElement) return;
+    if (!isActive()) return;
     revealUntil = Date.now() + IDLE_DELAY;
     root.removeAttribute('data-fullscreen-idle');
     sync();
@@ -57,7 +60,7 @@ export function createChartFullscreenControls(root: HTMLElement) {
     clearTimer();
     revealUntil = 0;
     keyboardNavigation = false;
-    if (document.fullscreenElement) root.setAttribute('data-fullscreen-idle', '');
+    if (isActive()) root.setAttribute('data-fullscreen-idle', '');
     else root.removeAttribute('data-fullscreen-idle');
   }
 
@@ -93,6 +96,10 @@ export function createChartFullscreenControls(root: HTMLElement) {
   handleFullscreenChange();
 
   return {
+    /** Re-read whether the view is active, starting idle on entry. */
+    refresh: handleFullscreenChange,
+    /** Show the controls for the idle delay, e.g. after a tap on a touch screen. */
+    reveal,
     destroy() {
       clearTimer();
       window.removeEventListener('pointermove', handlePointerMove);
