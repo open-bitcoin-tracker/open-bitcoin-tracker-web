@@ -467,6 +467,29 @@ function startTracker(root: HTMLElement) {
   let priceOnly = false;
   let priceOnlyFullscreen = false;
   const fullscreenControls = createChartFullscreenControls(root, { isActive: () => priceOnly });
+  // Like the app's full-screen price, the view keeps the screen awake. Browsers drop the lock when
+  // the page is hidden, so it is requested again on return; unsupported or refused requests are ignored.
+  let wakeLock: WakeLockSentinel | undefined;
+  let wakeLockPending = false;
+  async function holdWakeLock() {
+    if (!priceOnly || document.hidden || wakeLock || wakeLockPending || !navigator.wakeLock) return;
+    wakeLockPending = true;
+    try {
+      const lock = await navigator.wakeLock.request('screen');
+      if (!priceOnly || stopped) { void lock.release().catch(() => {}); return; }
+      wakeLock = lock;
+      lock.addEventListener('release', () => { if (wakeLock === lock) wakeLock = undefined; });
+    } catch { /* The view still works; the screen may simply dim. */ }
+    finally { wakeLockPending = false; }
+  }
+  function releaseWakeLock() {
+    const lock = wakeLock;
+    wakeLock = undefined;
+    void lock?.release().catch(() => {});
+  }
+  function onPriceOnlyVisibility() {
+    if (!document.hidden) void holdWakeLock();
+  }
   function setPriceOnly(next: boolean) {
     if (next === priceOnly) return;
     priceOnly = next;
@@ -481,6 +504,7 @@ function startTracker(root: HTMLElement) {
     fullscreenControls.refresh();
     if (next) {
       priceOnlyExit.focus({ preventScroll: true });
+      void holdWakeLock();
       if (document.fullscreenEnabled && !document.fullscreenElement) {
         document.documentElement.requestFullscreen()
           .then(() => {
@@ -492,6 +516,7 @@ function startTracker(root: HTMLElement) {
           .catch(() => { /* The in-page view works without fullscreen. */ });
       }
     } else {
+      releaseWakeLock();
       window.screen?.orientation?.unlock?.();
       if (priceOnlyFullscreen && document.fullscreenElement) void document.exitFullscreen().catch(() => {});
       priceOnlyFullscreen = false;
@@ -513,6 +538,7 @@ function startTracker(root: HTMLElement) {
   priceOnlyExit.addEventListener('click', () => setPriceOnly(false));
   document.addEventListener('fullscreenchange', onPriceOnlyFullscreenChange);
   document.addEventListener('keydown', onPriceOnlyKeyDown);
+  document.addEventListener('visibilitychange', onPriceOnlyVisibility);
   window.addEventListener('pointerdown', onPriceOnlyPointerDown);
 
   function updateCurrencyStatus() {
@@ -669,6 +695,8 @@ function startTracker(root: HTMLElement) {
     priceCurrencyPicker.destroy();
     document.removeEventListener('fullscreenchange', onPriceOnlyFullscreenChange);
     document.removeEventListener('keydown', onPriceOnlyKeyDown);
+    document.removeEventListener('visibilitychange', onPriceOnlyVisibility);
+    releaseWakeLock();
     window.removeEventListener('pointerdown', onPriceOnlyPointerDown);
     fullscreenControls.destroy();
     stopTimers();

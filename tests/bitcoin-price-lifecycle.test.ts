@@ -13,7 +13,7 @@ const feedScript = ts.transpileModule(readFileSync(new URL('../src/lib/bitcoin-l
   compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 },
 }).outputText;
 
-function harness(hidden = false, fullscreenEnabled = false, options: { locale?: string; currency?: string; title?: string; showPrice?: boolean; storage?: Map<string, string>; blockedStorage?: boolean } = {}) {
+function harness(hidden = false, fullscreenEnabled = false, options: { locale?: string; currency?: string; title?: string; showPrice?: boolean; storage?: Map<string, string>; blockedStorage?: boolean; wakeLock?: unknown } = {}) {
   class Control extends EventTarget {
     textContent = '—';
     value = '';
@@ -75,7 +75,7 @@ function harness(hidden = false, fullscreenEnabled = false, options: { locale?: 
       setItem(key: string, value: string) { if (options.blockedStorage) throw Error('Storage blocked'); storage.set(key, value); },
     },
   });
-  const navigator = { onLine: true };
+  const navigator = { onLine: true, wakeLock: options.wakeLock };
   const timers = new Map<number, () => void>();
   const frames = new Map<number, () => void>();
   const requests: { url: string; resolve: (response: unknown) => void }[] = [];
@@ -423,4 +423,52 @@ test('the price-only view works in the page without, or after a refused, fullscr
   assert.equal(refused.root.attributes.has('data-price-only'), true);
   refused.document.dispatchEvent(new Event('fullscreenchange'));
   assert.equal(refused.root.attributes.has('data-price-only'), true, 'an unrelated fullscreen change keeps the view');
+});
+
+test('the price-only view keeps the screen awake, re-acquiring after the page is hidden and releasing on exit', async () => {
+  const locks: (EventTarget & { released: boolean; release(): Promise<void> })[] = [];
+  let refuse = false;
+  const wakeLock = {
+    async request(type: string) {
+      assert.equal(type, 'screen');
+      if (refuse) throw Error('Wake lock refused');
+      const lock = Object.assign(new EventTarget(), {
+        released: false,
+        async release() { if (!lock.released) { lock.released = true; lock.dispatchEvent(new Event('release')); } },
+      });
+      locks.push(lock);
+      return lock;
+    },
+  };
+  const h = harness(false, false, { wakeLock });
+  const enter = h.controls.get('[data-price-only-enter]')!;
+  const exit = h.controls.get('[data-price-only-exit]')!;
+  enter.dispatchEvent(new Event('click'));
+  await setImmediate();
+  assert.equal(locks.length, 1);
+  assert.equal(locks[0].released, false);
+  // Browsers release the lock while the page is hidden; returning asks again.
+  h.visibility(true);
+  await locks[0].release();
+  h.visibility(false);
+  await setImmediate();
+  assert.equal(locks.length, 2);
+  exit.dispatchEvent(new Event('click'));
+  await setImmediate();
+  assert.equal(locks[1].released, true);
+  h.visibility(true);
+  h.visibility(false);
+  await setImmediate();
+  assert.equal(locks.length, 2, 'no lock outside the view');
+  refuse = true;
+  enter.dispatchEvent(new Event('click'));
+  await setImmediate();
+  assert.equal(h.root.attributes.has('data-price-only'), true, 'a refused lock keeps the view');
+  refuse = false;
+  exit.dispatchEvent(new Event('click'));
+  enter.dispatchEvent(new Event('click'));
+  await setImmediate();
+  assert.equal(locks.length, 3);
+  h.window.dispatchEvent(new Event('pagehide'));
+  assert.equal(locks[2].released, true, 'leaving the page releases the lock');
 });
