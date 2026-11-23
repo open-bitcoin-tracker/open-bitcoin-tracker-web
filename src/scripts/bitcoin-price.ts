@@ -25,6 +25,8 @@ function startTracker(root: HTMLElement) {
   const locale = root.dataset.locale || 'en';
   const priceEl = root.querySelector<HTMLElement>('[data-price]')!;
   const priceChangeEl = root.querySelector<HTMLElement>('[data-price-change]')!;
+  // The price button sizes both the price and the currency code beside it from the character count.
+  const priceSizer = root.querySelector<HTMLElement>('[data-price-currency-picker] [data-currency-trigger]') ?? priceEl;
   const display = readDisplayPreferences();
   let currency: Currency = display.currency;
   let formatPriceChange = createPriceChangeFormatter(locale, currency);
@@ -32,6 +34,9 @@ function startTracker(root: HTMLElement) {
   const line = root.querySelector<SVGPathElement>('[data-chart-line]')!;
   const area = root.querySelector<SVGPathElement>('[data-chart-area]')!;
   const fillGradient = root.querySelector<SVGLinearGradientElement>('[data-chart-fill-gradient]')!;
+  const revealRect = root.querySelector<SVGRectElement>('[data-chart-reveal]')!;
+  const fillCurtain = root.querySelector<SVGLinearGradientElement>('[data-chart-fill-curtain]')!;
+  const fillCurtainRect = root.querySelector<SVGRectElement>('[data-chart-fill-curtain-rect]')!;
   const marker = root.querySelector<SVGGElement>('[data-chart-marker]')!;
   const markerLine = root.querySelector<SVGLineElement>('[data-chart-marker-line]')!;
   const markerPoint = root.querySelector<SVGGElement>('[data-chart-marker-point]')!;
@@ -99,7 +104,26 @@ function startTracker(root: HTMLElement) {
     const paths = chartPaths(visibleHistory(scene.points, scene.viewport), width, height, scene.scale, scene.viewport);
     line.setAttribute('d', paths.line);
     area.setAttribute('d', paths.area);
+    // A new line wipes in from the left; once drawn, its fill slides down from the top behind a soft edge.
+    const revealing = motion.revealed < 1;
+    if (revealing) {
+      revealRect.setAttribute('y', String(-height));
+      revealRect.setAttribute('width', String(width * motion.revealed));
+      revealRect.setAttribute('height', String(height * 3));
+      line.setAttribute('clip-path', 'url(#price-reveal)');
+    } else line.removeAttribute('clip-path');
+    if (motion.filled < 1) {
+      const feather = height * .25;
+      const edge = motion.filled * (height + feather);
+      fillCurtain.setAttribute('y1', String(edge - feather));
+      fillCurtain.setAttribute('y2', String(edge));
+      fillCurtainRect.setAttribute('y', String(-height));
+      fillCurtainRect.setAttribute('width', String(width));
+      fillCurtainRect.setAttribute('height', String(height * 3));
+      area.setAttribute('mask', 'url(#price-fill-curtain)');
+    } else area.removeAttribute('mask');
     line.style.opacity = area.style.opacity = String(motion.opacity);
+    chart.removeAttribute('data-chart-pending');
     fillGradient.setAttribute('y2', String(height));
     markerLine.setAttribute('y2', String(height));
     markerGradient.setAttribute('y2', String(height));
@@ -107,7 +131,7 @@ function startTracker(root: HTMLElement) {
       plottedPositions = chartPositions(plottedPoints, width, height, scene.scale, scene.viewport);
       updatePriceDisplay();
     }
-    if (motion.animating && !motionFrame && !document.hidden && !stopped) {
+    if (motion.presenting && !motionFrame && !document.hidden && !stopped) {
       motionFrame = requestAnimationFrame((time) => { motionFrame = 0; paintMotion(time); });
     }
   }
@@ -188,7 +212,8 @@ function startTracker(root: HTMLElement) {
     setPriceText(livePoint && rate ? money.format(livePoint.price * rate.rate) : '—');
     if (livePoint && rate) priceEl.removeAttribute('aria-label');
     else priceEl.setAttribute('aria-label', t.unavailable);
-    priceChangeEl.textContent = formatPriceChange(plottedPoints);
+    // All starts near zero, so its change would just repeat the current price.
+    priceChangeEl.textContent = selected.unit === 'all' ? '' : formatPriceChange(plottedPoints);
   }
 
   function updatePageTitle(immediate = false) {
@@ -206,7 +231,9 @@ function startTracker(root: HTMLElement) {
 
   function setPriceText(value: string) {
     priceEl.textContent = value;
-    priceEl.style.setProperty('--price-chars', String([...value].length));
+    priceSizer.style.setProperty('--price-chars', String([...value].length));
+    // Currencies without a symbol (CHF) already show their code in the price, so the label keeps only its chevron.
+    priceSizer.dataset.codeInPrice = String(value.includes(currency));
   }
 
   function selectAtPointer(event: PointerEvent) {
@@ -223,8 +250,10 @@ function startTracker(root: HTMLElement) {
     chart.setPointerCapture(event.pointerId);
     selectAtPointer(event);
   });
+  // Mice and pens inspect on hover; touch inspects only while pressed so page gestures stay free.
+  const hovers = (event: PointerEvent) => event.pointerType === 'mouse' || event.pointerType === 'pen';
   chart.addEventListener('pointermove', (event) => {
-    if (event.pointerId === activePointer) selectAtPointer(event);
+    if (event.pointerId === activePointer || (activePointer === undefined && event.isPrimary && hovers(event))) selectAtPointer(event);
   });
   chart.addEventListener('pointerleave', () => {
     if (activePointer === undefined) clearSelection();
@@ -233,7 +262,8 @@ function startTracker(root: HTMLElement) {
     if (event.pointerId !== activePointer) return;
     activePointer = undefined;
     chart.releasePointerCapture(event.pointerId);
-    clearSelection();
+    // A hovering pointer is still over the chart, so keep showing the point beneath it.
+    if (!hovers(event)) clearSelection();
   });
   chart.addEventListener('lostpointercapture', () => {
     if (activePointer !== undefined) { activePointer = undefined; clearSelection(); }

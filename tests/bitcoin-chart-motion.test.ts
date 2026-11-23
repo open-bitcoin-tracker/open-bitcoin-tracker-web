@@ -46,7 +46,7 @@ test('zooming out between candle intervals preserves detail and sorted timestamp
 
 test('range changes zoom the camera and retain the wider outgoing curve', () => {
   const motion = new ChartMotion();
-  motion.update(scene(), 0);
+  motion.update(scene(), 0, true);
   const target = { ...scene('day', points.slice(3)), points: points.slice(3) };
   motion.update(target, 10);
   const halfway = motion.sample(235)!;
@@ -70,7 +70,7 @@ test('rapid range changes start from the displayed viewport and expand using the
 
 test('scale fades switch geometry only when invisible, then restore full opacity', () => {
   const motion = new ChartMotion();
-  motion.update(scene(), 0);
+  motion.update(scene(), 0, true);
   motion.update(scene('all', points, 'linear'), 10);
   assert.equal(motion.sample(85)!.scale, 'logarithmic');
   assert.ok(Math.abs(motion.opacity - .5) < .001);
@@ -98,7 +98,7 @@ test('rapid scale toggles and range changes during a fade settle on the latest c
 
 test('live updates do not start or restart zooms; immediate updates cancel all motion', () => {
   const motion = new ChartMotion();
-  motion.update(scene(), 0);
+  motion.update(scene(), 0, true);
   motion.update(scene(), 10);
   assert.equal(motion.animating, false);
   motion.update(scene('day', points.slice(3)), 20);
@@ -110,6 +110,51 @@ test('live updates do not start or restart zooms; immediate updates cancel all m
   assert.equal(motion.animating, false);
   assert.equal(motion.opacity, 1);
   assert.deepEqual(motion.sample(510), scene());
+});
+
+test('a curve appearing from nothing draws in from the left without delaying zooms', () => {
+  const motion = new ChartMotion();
+  motion.update(scene(), 0);
+  assert.equal(motion.revealed, 0);
+  assert.equal(motion.filled, 0);
+  assert.equal(motion.animating, true);
+  assert.deepEqual(motion.sample(0), scene());
+  motion.sample(1000);
+  assert.ok(motion.revealed > .5 && motion.revealed < 1);
+  // A range change mid-reveal zooms as usual, and finishing the zoom keeps drawing in.
+  const target = { ...scene('day', points.slice(3)), points: points.slice(3) };
+  motion.update(target, 1000);
+  assert.deepEqual(motion.sample(1450), target);
+  assert.ok(motion.revealed < 1);
+  assert.equal(motion.animating, true);
+  // The fill waits for the line, then slides down while inspection is already allowed.
+  assert.equal(motion.filled, 0);
+  motion.sample(1900);
+  assert.equal(motion.revealed, 1);
+  assert.equal(motion.animating, false);
+  assert.equal(motion.presenting, true);
+  assert.ok(motion.filled > 0 && motion.filled < 1);
+  motion.sample(2300);
+  assert.equal(motion.filled, 1);
+  assert.equal(motion.presenting, false);
+});
+
+test('clearing presents the next curve with a fresh reveal; immediate updates skip it', () => {
+  const motion = new ChartMotion();
+  motion.update(scene(), 0, true);
+  motion.update(scene(), 10);
+  assert.equal(motion.revealed, 1);
+  motion.clear();
+  motion.update(scene(), 20);
+  assert.equal(motion.revealed, 0);
+  motion.finish();
+  assert.equal(motion.revealed, 1);
+  assert.equal(motion.filled, 1);
+  assert.equal(motion.presenting, false);
+  motion.clear();
+  motion.update(scene(), 30, true);
+  assert.equal(motion.revealed, 1);
+  assert.equal(motion.animating, false);
 });
 
 test('camera projection preserves sample timestamps and clips with boundary neighbours', () => {

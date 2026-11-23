@@ -310,13 +310,37 @@ test('the marker point follows pointer and keyboard inspection and disappears on
   chart.dispatchEvent(Object.assign(new Event('keydown'), { key: 'Escape' }));
   assert.equal(marker.attributes.visibility, 'hidden');
   assert.equal(waves.hidden, true);
-  chart.dispatchEvent(Object.assign(new Event('pointerdown'), { pointerId: 1, isPrimary: true, button: 0, clientX: 0 }));
+  chart.dispatchEvent(Object.assign(new Event('pointermove'), { pointerId: 1, pointerType: 'touch', isPrimary: true, clientX: 50 }));
+  assert.equal(marker.attributes.visibility, 'hidden');
+  chart.dispatchEvent(Object.assign(new Event('pointerdown'), { pointerId: 1, pointerType: 'touch', isPrimary: true, button: 0, clientX: 0 }));
   assert.equal(marker.attributes.visibility, 'visible');
-  chart.dispatchEvent(Object.assign(new Event('pointermove'), { pointerId: 1, clientX: 100 }));
+  chart.dispatchEvent(Object.assign(new Event('pointermove'), { pointerId: 1, pointerType: 'touch', clientX: 100 }));
   assert.match(point.attributes.transform, /^translate\(100 /);
-  chart.dispatchEvent(Object.assign(new Event('pointerup'), { pointerId: 1 }));
+  chart.dispatchEvent(Object.assign(new Event('pointerup'), { pointerId: 1, pointerType: 'touch' }));
   assert.equal(marker.attributes.visibility, 'hidden');
   assert.equal(waves.hidden, true);
+  p.close();
+});
+
+test('a mouse inspects the chart on hover and keeps the point after a click until it leaves', async () => {
+  const p = page(new Map());
+  await p.ready();
+  const chart = p.root.querySelector('[data-chart]');
+  const marker = p.root.querySelector('[data-chart-marker]');
+  const point = p.root.querySelector('[data-chart-marker-point]');
+  const mouse = (type: string, clientX = 0) => chart.dispatchEvent(Object.assign(new Event(type), { pointerId: 1, pointerType: 'mouse', isPrimary: true, button: 0, clientX }));
+  mouse('pointermove', 0);
+  assert.equal(marker.attributes.visibility, 'visible');
+  assert.match(point.attributes.transform, /^translate\(0 /);
+  assert.notEqual(p.root.querySelector('[data-price-change]').textContent, '');
+  mouse('pointermove', 100);
+  assert.match(point.attributes.transform, /^translate\(100 /);
+  mouse('pointerdown', 100);
+  mouse('pointerup', 100);
+  assert.equal(marker.attributes.visibility, 'visible');
+  mouse('pointerleave');
+  assert.equal(marker.attributes.visibility, 'hidden');
+  assert.equal(p.root.querySelector('[data-price-change]').textContent, '');
   p.close();
 });
 
@@ -334,11 +358,16 @@ for (const locale of Object.keys(tracker)) {
       assert.equal(rendered.replace(symbols[currency], '').trim(), number.format(amount), `${locale}/${currency}`);
     };
     checkMoney(p.root.querySelector('[data-price]').textContent, 'AUD', 8080);
+    assert.equal(p.root.querySelector('[data-price-change]').textContent, '', 'All repeats the price, so it shows no change');
+    p.select('year');
+    await p.ready();
     if (locale === 'es' || locale === 'it') assert.match(p.root.querySelector('[data-price]').textContent, /8\.080/);
     for (const currency of Object.keys(symbols) as (keyof typeof symbols)[]) {
       p.currency(currency);
       await p.ready();
       checkMoney(p.root.querySelector('[data-price]').textContent, currency, currency === 'USD' ? 10100 : 8080);
+      // Only symbol-less currencies repeat their code in the price, so only they hide the label's code.
+      assert.equal(p.root.querySelector('[data-price-currency-picker] [data-currency-trigger]').dataset.codeInPrice, String(currency === 'CHF'), `${locale}/${currency}`);
       const change = p.root.querySelector('[data-price-change]').textContent;
       assert.ok(change.startsWith('+'));
       checkMoney(change.slice(1).split(' (')[0], currency, currency === 'USD' ? 100 : 3080);
@@ -360,7 +389,12 @@ test('currency converts live and inspected prices and persists with scale across
   assert.match(p.root.querySelector('[data-price]').textContent, /81/);
   assert.equal(p.root.querySelector('[data-currency-status]').hidden, true);
   assert.match(p.root.querySelector('[data-chart]').attributes['aria-label'], /EUR/);
+  assert.equal(p.root.querySelector('[data-price-change]').textContent, '');
+  p.select('year');
+  await p.ready();
   assert.match(p.root.querySelector('[data-price-change]').textContent, /^\+.*31.*\(\+62%\)/);
+  p.select('all');
+  await p.ready();
   const chart = p.root.querySelector('[data-chart]');
   chart.dispatchEvent(Object.assign(new Event('keydown'), { key: 'Home' }));
   assert.match(p.root.querySelector('[data-price]').textContent, /50/);

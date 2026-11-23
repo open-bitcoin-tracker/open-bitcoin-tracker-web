@@ -30,7 +30,10 @@ const lastDate = new Intl.DateTimeFormat(lang, { year: 'numeric', month: 'short'
         <button type="button" class="price-currency-trigger" data-currency-trigger aria-haspopup="listbox" aria-expanded="false" aria-controls="price-currency-options" disabled>
           <span class="sr-only">{settings.currency}: </span>
           <span class="current-price" data-price aria-label={t.unavailable}>—</span>
-          <span class="sr-only" data-currency-value>USD</span>
+          <span class="price-currency-code">
+            <span data-currency-value>USD</span>
+            <svg class="price-currency-chevron" width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="m4 6 4 4 4-4" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" /></svg>
+          </span>
         </button>
         <CurrencyOptions id="price-currency-options" locale={lang} class="price-currency-menu chart-menu-panel" label={settings.currency} />
       </div>
@@ -57,6 +60,12 @@ const lastDate = new Intl.DateTimeFormat(lang, { year: 'numeric', month: 'short'
             <stop offset="85%" stop-color="var(--color-ink-muted)" />
             <stop offset="100%" stop-color="var(--color-ink-muted)" stop-opacity="0" />
           </linearGradient>
+          <clipPath id="price-reveal"><rect data-chart-reveal x="0" y="0" width="0" height="0" /></clipPath>
+          <linearGradient id="price-fill-curtain-edge" data-chart-fill-curtain gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="0" y2="0">
+            <stop offset="0%" stop-color="#fff" />
+            <stop offset="100%" stop-color="#000" />
+          </linearGradient>
+          <mask id="price-fill-curtain"><rect data-chart-fill-curtain-rect x="0" y="0" width="0" height="0" fill="url(#price-fill-curtain-edge)" /></mask>
         </defs>
         <path data-chart-area d={paths.area} fill="url(#price-fill)" />
         <path data-chart-line d={paths.line} fill="none" stroke="var(--color-accent)" stroke-width="1.5" vector-effect="non-scaling-stroke" stroke-linejoin="round" />
@@ -67,6 +76,7 @@ const lastDate = new Intl.DateTimeFormat(lang, { year: 'numeric', month: 'short'
           </g>
         </g>
       </svg>
+      <script is:inline>document.currentScript.previousElementSibling.setAttribute('data-chart-pending', '');</script>
       <div class="chart-marker-waves" data-chart-marker-waves hidden aria-hidden="true">
         <span class="chart-marker-wave"></span>
         <span class="chart-marker-wave"></span>
@@ -256,8 +266,20 @@ const lastDate = new Intl.DateTimeFormat(lang, { year: 'numeric', month: 'short'
   .price-currency-picker { position: relative; width: fit-content; max-width: 100%; }
   .price-currency-trigger { position: relative; display: inline-flex; align-items: center; max-width: 100%; padding: 0; border-radius: .25rem; color: inherit; cursor: pointer; }
   .price-currency-trigger:disabled { cursor: default; }
+  /* A quiet currency code and chevron beside the price: it names currencies that share a symbol and shows the price opens a menu. */
+  .price-currency-trigger { --price-code-room: 4.5rem; --price-size: min(var(--live-price-font-size), calc((100cqw - var(--price-code-room)) * 1.7 / var(--price-chars, 1))); align-items: flex-start; gap: .5rem; }
+  .price-currency-code { display: inline-flex; align-items: center; gap: .125rem; margin-top: calc(var(--price-size) * .24); color: var(--color-ink-muted); font-size: clamp(1rem, 1.6vw, 1.25rem); font-weight: 600; letter-spacing: .02em; line-height: 1; white-space: nowrap; transition: color 150ms ease-out; }
+  .price-currency-chevron { transition: transform 150ms ease-out; }
+  .price-currency-trigger[data-code-in-price="true"] { --price-code-room: 2rem; }
+  /* Visually hidden but still announced, so screen readers keep the selected currency. */
+  .price-currency-trigger[data-code-in-price="true"] [data-currency-value] { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+  .price-currency-trigger:not(:disabled):hover .price-currency-code,
+  .price-currency-trigger:focus-visible .price-currency-code,
+  .price-currency-trigger[aria-expanded="true"] .price-currency-code { color: var(--color-ink); }
+  .price-currency-trigger:not(:disabled):hover .price-currency-chevron { transform: translateY(2px); }
+  .price-currency-trigger[aria-expanded="true"] .price-currency-chevron { transform: rotate(180deg); }
   :global(.price-currency-menu) { top: calc(100% + .5rem); bottom: auto; left: 0; right: auto; max-height: min(30rem, calc(100dvh - var(--live-price-top) - var(--live-price-font-size) - 5rem)); }
-  .current-price { font-size: min(var(--live-price-font-size), calc(170cqw / var(--price-chars, 1))); font-weight: 700; line-height: 1.1; letter-spacing: -.06em; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .current-price { font-size: var(--price-size); font-weight: 700; line-height: 1.1; letter-spacing: -.06em; font-variant-numeric: tabular-nums; white-space: nowrap; }
   .price-change { min-height: 1.5em; margin-top: .375rem; color: var(--color-ink-muted); font-size: clamp(.9375rem, 1.5vw, 1.125rem); font-variant-numeric: tabular-nums; }
   .price-history { position: relative; z-index: 0; display: flex; flex-direction: column; flex: 1; min-height: 0; margin: .25rem 0 0; padding-bottom: calc(5.5rem + env(safe-area-inset-bottom, 0px)); }
   /* Shrink the plot on short screens so controls remain inside the viewport. */
@@ -267,6 +289,8 @@ const lastDate = new Intl.DateTimeFormat(lang, { year: 'numeric', month: 'short'
   /* Keep the plot frameless on touch; indicate keyboard focus with a short line. */
   .chart-plot:has(.price-chart:focus-visible)::after { content: ''; position: absolute; top: .75rem; left: var(--tracker-gutter, 1rem); width: 2.5rem; height: 3px; border-radius: 999px; background: var(--color-emphasis-ink); pointer-events: none; }
   /* Animate small composited layers independently of the full history SVG. */
+  /* With JavaScript, the server-rendered curve waits for the script so it can draw in instead of popping. */
+  .price-chart[data-chart-pending] :is([data-chart-line], [data-chart-area]) { visibility: hidden; }
   .chart-marker-waves { position: absolute; top: 0; left: 0; width: 0; height: 0; pointer-events: none; }
   .chart-marker-waves[hidden] { display: none; }
   .chart-marker-wave { position: absolute; top: -30px; left: -30px; width: 60px; height: 60px; border: 1.5px solid var(--color-accent); border-radius: 50%; opacity: 0; animation: marker-wave 5s linear infinite; will-change: transform, opacity; }
@@ -308,8 +332,14 @@ const lastDate = new Intl.DateTimeFormat(lang, { year: 'numeric', month: 'short'
   .chart-controls[hidden] { display: none; }
   .range-bar, .chart-settings-trigger { padding: .25rem; border-radius: 999px; background: rgb(var(--color-ink-rgb) / .055); }
   .range-bar { position: relative; display: flex; flex: 1; min-width: 0; align-items: stretch; gap: .25rem; margin: 0; }
-  .chart-settings { position: relative; flex: 0 0 44px; }
-  .chart-settings-trigger { display: flex; align-items: center; justify-content: center; height: 100%; min-height: 44px; color: var(--color-ink-muted); cursor: pointer; list-style: none; }
+  /* The pill keeps the full control height; a thinner rail behind it makes it read as sliding along a track. */
+  .range-bar { background: none; }
+  .range-bar::before { content: ""; position: absolute; inset: .5rem 0; border-radius: 999px; background: rgb(var(--color-ink-rgb) / .055); pointer-events: none; }
+  /* The menu button matches the pill's 36px height; an invisible ring keeps a 44px tap target. */
+  .chart-settings { position: relative; display: flex; align-items: center; flex: 0 0 36px; }
+  .chart-settings-trigger { position: relative; display: flex; align-items: center; justify-content: center; width: 36px; height: 36px; color: var(--color-ink-muted); cursor: pointer; list-style: none; }
+  .chart-settings-trigger::after { content: ""; position: absolute; inset: -4px; border-radius: 999px; }
+  .chart-settings-trigger svg { width: 18px; height: 18px; }
   .chart-settings-trigger::-webkit-details-marker { display: none; }
   .chart-settings-trigger:hover { background: var(--hover-tint); color: var(--color-ink); }
   .chart-settings[open] .chart-settings-trigger { color: var(--color-accent); background: var(--menu-dropdown-bg); box-shadow: inset 0 0 0 1px var(--menu-dropdown-border); }
@@ -336,20 +366,34 @@ const lastDate = new Intl.DateTimeFormat(lang, { year: 'numeric', month: 'short'
   [data-range-label] { display: inline-block; }
   .range-slot[data-highlighted="true"] .range-select { color: var(--color-emphasis-ink); font-weight: 700; cursor: grab; }
   .range-bar[data-dragging="true"] .range-select { cursor: grabbing; }
-  .range-step { grid-row: 1; justify-self: center; z-index: 1; display: flex; justify-content: center; align-items: center; width: 100%; max-width: 20px; height: 100%; border-radius: 999px; visibility: hidden; color: var(--color-accent); }
-  .range-step svg { max-width: 100%; }
+  .range-step { grid-row: 1; justify-self: center; z-index: 1; display: flex; justify-content: center; align-items: center; width: 100%; max-width: 20px; height: 100%; border-radius: 999px; visibility: hidden; opacity: 0; color: var(--color-accent); transition: opacity 180ms ease-out, visibility 0s linear 180ms; }
+  .range-step svg { position: relative; max-width: 100%; transition: transform 150ms ease-out; }
+  /* Hover and press feedback: an accent halo behind the chevron, a nudge toward the step direction, and a squeeze on press. */
+  .range-step { position: relative; --step-nudge: 0px; }
+  .range-step::before { content: ""; position: absolute; top: 50%; left: 50%; width: 24px; height: 24px; border-radius: 999px; background: color-mix(in srgb, var(--color-accent) 16%, transparent); transform: translate(-50%, -50%) scale(.6); opacity: 0; transition: opacity 150ms ease-out, transform 150ms ease-out, background-color 100ms ease-out; pointer-events: none; }
+  .range-step[data-range-step="1"]:hover { --step-nudge: -1.5px; }
+  .range-step[data-range-step="-1"]:hover { --step-nudge: 1.5px; }
+  .range-step:hover svg { transform: translateY(var(--step-nudge)); }
+  .range-step:hover::before, .range-step:focus-visible::before { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+  .range-step:active::before { opacity: 1; transform: translate(-50%, -50%) scale(.9); background: color-mix(in srgb, var(--color-accent) 28%, transparent); transition-duration: 60ms; }
+  .range-step:active svg { transform: translateY(var(--step-nudge)) scale(.8); transition-duration: 60ms; }
   .range-step[data-range-step="1"] { grid-column: 1; }
   .range-step[data-range-step="-1"] { grid-column: 3; }
   .range-bar:hover .range-slot[data-selected="true"] .range-step,
-  .range-bar:has(:focus-visible) .range-slot[data-selected="true"] .range-step { visibility: visible; }
+  .range-bar:has(:focus-visible) .range-slot[data-selected="true"] .range-step { visibility: visible; opacity: 1; transition: opacity 180ms ease-out, visibility 0s; }
+  /* While the pill moves, the chevrons vanish at once so they never trail behind it. */
   .range-bar[data-dragging="true"] .range-step,
-  .range-bar[data-moving="true"] .range-step { visibility: hidden !important; }
+  .range-bar[data-moving="true"] .range-step { visibility: hidden !important; opacity: 0 !important; transition: none !important; }
   @media (hover: none) {
-    .range-bar:focus-within .range-slot[data-selected="true"] .range-step { visibility: visible; }
+    .range-bar:focus-within .range-slot[data-selected="true"] .range-step { visibility: visible; opacity: 1; transition: opacity 180ms ease-out, visibility 0s; }
   }
   .chart-controls button:focus-visible { outline-offset: 0; }
   @media (prefers-reduced-motion: reduce) {
     .range-pill, .range-select, .chart-menu-action, .chart-scale-choice span, .chart-switch-track, .chart-switch-track::after { transition: none; }
+    .range-step, .range-step svg, .range-step::before { transition: none !important; }
+    .price-currency-code, .price-currency-chevron { transition: none; }
+    .range-step:hover svg { transform: none; }
+    .range-step:active svg { transform: scale(.8); }
     :global(.chart-menu-panel) { animation: none; }
     .price-tab-dialog[open], .price-tab-dialog[open]::backdrop { animation: none; }
     .chart-marker-wave { animation: none; will-change: auto; }

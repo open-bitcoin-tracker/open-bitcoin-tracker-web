@@ -35,19 +35,33 @@ function bezier(progress: number, x1: number, y1: number, x2: number, y2: number
   return coordinate((low + high) / 2, y1, y2);
 }
 
+// The line draws in first; the fill then slides down beneath it.
+const REVEAL_MS = 1600;
+const FILL_MS = 700;
+
 export class ChartMotion {
   private target?: ChartScene;
   private scene?: ChartScene;
   private zoom?: { start: number; from: ChartViewport; points: HistoryPoint[]; seriesKey: string; hold: boolean };
   private fade?: { start: number; from: number; out: boolean };
+  private reveal?: { start: number };
   opacity = 1;
+  /** How much of a newly presented line is drawn, from left (0) to right (1). */
+  revealed = 1;
+  /** How far the fill has slid down beneath a fully drawn line, from top (0) to bottom (1). */
+  filled = 1;
 
-  get animating() { return Boolean(this.zoom || this.fade); }
+  /** Geometry or line drawing is in motion, so inspected positions are not settled. */
+  get animating() { return Boolean(this.zoom || this.fade || (this.reveal && this.revealed < 1)); }
+  /** Any motion still needs frames, including the fill sliding in under a settled line. */
+  get presenting() { return this.animating || Boolean(this.reveal); }
 
   update(target: ChartScene, now: number, immediate = false) {
     this.sample(now);
     const previous = this.target;
     this.target = target;
+    // A curve appearing from nothing (page load, currency change) draws in from the left.
+    if (!this.scene && !immediate) { this.finish(); this.reveal = { start: now }; this.revealed = this.filled = 0; return; }
     if (!this.scene || immediate) { this.finish(); return; }
     if (previous?.scale !== target.scale) {
       this.zoom = undefined;
@@ -67,6 +81,13 @@ export class ChartMotion {
   }
 
   finish() {
+    this.settle();
+    this.reveal = undefined;
+    this.revealed = this.filled = 1;
+  }
+
+  // End a zoom or fade without cutting short a reveal that is still drawing in.
+  private settle() {
     this.zoom = undefined;
     this.fade = undefined;
     this.opacity = 1;
@@ -80,6 +101,15 @@ export class ChartMotion {
 
   sample(now: number): ChartScene | undefined {
     if (!this.target || !this.scene) return this.scene;
+    if (this.reveal) {
+      const elapsed = now - this.reveal.start;
+      const line = Math.min(1, elapsed / REVEAL_MS);
+      const fill = Math.max(0, Math.min(1, (elapsed - REVEAL_MS) / FILL_MS));
+      // A gentle ease-in-out keeps the pen moving at a readable pace across the whole history.
+      this.revealed = bezier(line, .45, .05, .55, .95);
+      this.filled = bezier(fill, .42, 0, .58, 1);
+      if (fill >= 1) { this.reveal = undefined; this.revealed = this.filled = 1; }
+    }
     if (this.fade) {
       let elapsed = now - this.fade.start;
       const duration = 150 * (this.fade.out ? this.fade.from : 1 - this.fade.from);
@@ -87,9 +117,9 @@ export class ChartMotion {
         this.scene = this.target;
         this.fade = { start: this.fade.start + duration, from: 0, out: false };
         elapsed -= duration;
-        if (elapsed >= 150) { this.finish(); return this.scene; }
+        if (elapsed >= 150) { this.settle(); return this.scene; }
       } else if (elapsed >= duration) {
-        this.finish();
+        this.settle();
         return this.scene;
       }
       const fadeDuration = 150 * (this.fade.out ? this.fade.from : 1 - this.fade.from);
@@ -98,7 +128,7 @@ export class ChartMotion {
       if (!this.fade.out) this.scene = this.target;
     } else if (this.zoom) {
       const progress = Math.min(1, (now - this.zoom.start) / 450);
-      if (progress >= 1) { this.finish(); return this.scene; }
+      if (progress >= 1) { this.settle(); return this.scene; }
       const t = bezier(progress, .645, .045, .355, 1);
       const from = this.zoom.from;
       const to = this.target.viewport;
