@@ -53,10 +53,10 @@ function harness({ saved, blocked = false, initial }: { saved?: string; blocked?
   const menu = wrapper.append(new Element());
   menu.offsetWidth = 260; menu.offsetHeight = 320;
   wrapper.selectors.set('[data-price-settings-panel]', menu);
-  const controls = ['trigger', 'panel', 'colour', 'font', 'stroke', 'strokeWidth', 'strokeColour', 'strokeOptions', 'strokeValue'].map(() => wrapper.append(new Element()));
-  const [trigger, panel, colour, font, stroke, strokeWidth, strokeColour, strokeOptions, strokeValue] = controls;
+  const controls = ['trigger', 'panel', 'colour', 'font', 'stroke', 'strokeWidth', 'strokeColour', 'strokeOptions', 'strokeValue', 'rolling'].map(() => wrapper.append(new Element()));
+  const [trigger, panel, colour, font, stroke, strokeWidth, strokeColour, strokeOptions, strokeValue, rolling] = controls;
   panel.offsetWidth = 260; panel.offsetHeight = 320;
-  for (const [index, selector] of ['[data-price-style-trigger]', '[data-price-style-panel]', '[data-price-colour]', '[data-price-font]', '[data-price-stroke]', '[data-price-stroke-width]', '[data-price-stroke-colour]', '[data-stroke-options]', '[data-stroke-width-value]'].entries()) {
+  for (const [index, selector] of ['[data-price-style-trigger]', '[data-price-style-panel]', '[data-price-colour]', '[data-price-font]', '[data-price-stroke]', '[data-price-stroke-width]', '[data-price-stroke-colour]', '[data-stroke-options]', '[data-stroke-width-value]', '[data-price-rolling-toggle]'].entries()) {
     wrapper.selectors.set(selector, controls[index]);
   }
   const swatches = ['#ffffff', '#ff981e', '#90c7ff'].map(value => {
@@ -81,7 +81,7 @@ function harness({ saved, blocked = false, initial }: { saved?: string; blocked?
   runInNewContext(script, { exports: module, window, document, Event });
   const style = module.createVideoPriceStyle!(root as unknown as HTMLElement, () => { refreshes++; }, initial);
   return {
-    root, wrapper, position, window, settingsTrigger, trigger, panel, menu, colour, font, stroke, strokeWidth, strokeColour, strokeOptions, strokeValue, swatches, document, style,
+    root, wrapper, position, window, settingsTrigger, trigger, panel, menu, colour, font, stroke, strokeWidth, strokeColour, strokeOptions, strokeValue, rolling, swatches, document, style,
     writes: () => writes, refreshes: () => refreshes, toggles: () => toggles,
     saved: () => storage.get('obt-video-price-style'),
     toggleStyle() { if (menu.hidden) settingsTrigger.click(); trigger.click(); },
@@ -103,7 +103,7 @@ function harness({ saved, blocked = false, initial }: { saved?: string; blocked?
 }
 
 test('shared styling overrides storage without saving on arrival and reports subsequent edits', () => {
-  const initial = { colour: '#90c7ff', font: 'digital', stroke: true, strokeWidth: 3.5, strokeColour: '#123456' };
+  const initial = { colour: '#90c7ff', font: 'digital', stroke: true, strokeWidth: 3.5, strokeColour: '#123456', rolling: false };
   for (const blocked of [false, true]) {
     const h = harness({ blocked, initial, saved: JSON.stringify({ version: 1, colour: '#ff981e', font: 'mono' }) });
     assert.equal(JSON.stringify(h.style.getState()), JSON.stringify(initial));
@@ -151,7 +151,7 @@ test('style controls preview choices immediately, save them, and restore them on
   assert.equal(restored.font.value, 'modern');
   assert.equal(restored.root.hasAttribute('data-price-style-custom'), false);
   assert.notEqual(restored.document.activeElement, restored.font);
-  assert.deepEqual(JSON.parse(restored.saved()!), { version: 1, colour: '#ffffff', font: 'modern', stroke: false, strokeWidth: 1, strokeColour: '#000000' });
+  assert.deepEqual(JSON.parse(restored.saved()!), { version: 1, colour: '#ffffff', font: 'modern', stroke: false, strokeWidth: 1, strokeColour: '#000000', rolling: true });
   h.style.destroy(); restored.style.destroy();
 });
 
@@ -417,4 +417,25 @@ test('outside dismissal closes settings even when both dropdowns are collapsed',
     h.settingsTrigger.click();
     assert.equal(h.menu.hidden, true, 'cleanup removes the settings trigger listener');
   }
+});
+
+test('rolling digits start on, switch off to a static price, persist, and keep older saved styles rolling', () => {
+  const h = harness({ saved: JSON.stringify({ version: 1, colour: '#ff981e', font: 'mono' }) });
+  assert.equal(h.rolling.checked, true, 'styles saved before the switch existed keep rolling');
+  assert.equal(h.root.hasAttribute('data-price-static'), false);
+  h.rolling.checked = false;
+  h.rolling.dispatchEvent(new Event('change'));
+  assert.equal(h.root.hasAttribute('data-price-static'), true);
+  assert.equal(h.root.hasAttribute('data-price-style-custom'), true, 'a static price counts as customised');
+  assert.equal(JSON.parse(h.saved()!).rolling, false);
+  assert.equal(h.style.getState().rolling, false);
+  const restored = harness({ saved: h.saved()! });
+  assert.equal(restored.rolling.checked, false);
+  assert.equal(restored.root.hasAttribute('data-price-static'), true);
+  restored.restore();
+  assert.equal(restored.rolling.checked, true, 'Restore brings rolling back');
+  assert.equal(restored.root.hasAttribute('data-price-static'), false);
+  restored.style.destroy();
+  h.style.destroy();
+  assert.equal(h.root.hasAttribute('data-price-static'), false);
 });

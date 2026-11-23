@@ -109,7 +109,7 @@ test('live price displays share currency immediately and update external tabs wi
     const status = new Element();
     const root = { querySelector: (selector: string) => selector === '[data-currency]' ? select : selector === '[data-price]' ? price : status };
     const globals = { ...h, navigator: { onLine: true }, Intl, setInterval: () => 1, clearInterval() {} };
-    const modules = { ...h.preferences, isCurrency,
+    const modules = { ...h.preferences, isCurrency, createRollingNumber: () => undefined,
       CurrencyRates: class {
         current(code: string) { return code === 'USD' ? { rate: 1 } : code === 'EUR' ? { rate: .9 } : undefined; }
         async refreshLatest() {}
@@ -143,4 +143,62 @@ test('live price displays share currency immediately and update external tabs wi
   for (const item of [a, b, c]) item.live.destroy();
   first.preferences.saveDisplayPreferences({ currency: 'USD', scale: 'linear' });
   assert.equal(b.select.value, 'JPY', 'destroyed displays unsubscribe');
+});
+
+test('a price with a rolling layer rolls live ticks in their direction and snaps first prices and currency changes', () => {
+  const h = page();
+  class Element extends EventTarget {
+    value = ''; disabled = true; textContent = ''; style = { setProperty() {} };
+    attributes = new Map<string, string>();
+    setAttribute(name: string, value: string) { this.attributes.set(name, value); }
+    removeAttribute(name: string) { this.attributes.delete(name); }
+  }
+  const select = new Element();
+  const status = new Element();
+  const text = new Element();
+  const layer = new Element();
+  let isStatic = false;
+  const price = Object.assign(new Element(), { querySelector: (selector: string) => selector === '[data-price-roll]' ? layer : text, closest: (selector: string) => selector === '[data-price-static]' && isStatic ? {} : null });
+  const root = { querySelector: (selector: string) => selector === '[data-currency]' ? select : selector === '[data-price]' ? price : status };
+  let reduce = false;
+  const window = Object.assign(h.window, { matchMedia: () => ({ get matches() { return reduce; } }) });
+  const rolls: { text: string; direction?: number; animate?: boolean }[] = [];
+  let tick = (_price: number) => {};
+  const modules = { ...h.preferences, isCurrency,
+    createRollingNumber: (target: unknown) => target === layer ? { set: (value: string, options: { direction?: number; animate?: boolean }) => rolls.push({ text: value, ...options }) } : undefined,
+    CurrencyRates: class {
+      current(code: string) { return code === 'USD' ? { rate: 1 } : code === 'EUR' ? { rate: .5 } : undefined; }
+      async refreshLatest() {}
+    },
+    subscribeBitcoinPrice(callbacks: { onPrice(point: { price: number; time: number }): void }) {
+      tick = price => callbacks.onPrice({ price, time: Date.now() });
+      return () => {};
+    },
+  };
+  const globals = { ...h, window, navigator: { onLine: true }, Intl, setInterval: () => 1, clearInterval() {} };
+  const { createLivePriceDisplay } = browserModule('lib/live-price-display', globals, modules);
+  const live = createLivePriceDisplay(root, { locale: 'en', copy: { unavailable: 'Unavailable', live: 'Live', fxUnavailable: 'No FX' } });
+  live.start();
+  assert.equal(price.attributes.has('data-price-rolling'), true);
+  const last = () => rolls.at(-1)!;
+  tick(100_000);
+  assert.equal(text.textContent, '$100,000', 'the real text stays underneath for layout and accessibility');
+  assert.deepEqual(last(), { text: '$100,000', direction: 1, animate: false }, 'the first price snaps');
+  tick(100_050);
+  assert.deepEqual(last(), { text: '$100,050', direction: 1, animate: true });
+  tick(99_990);
+  assert.deepEqual(last(), { text: '$99,990', direction: -1, animate: true });
+  select.value = 'EUR';
+  select.dispatchEvent(new Event('change'));
+  assert.deepEqual(last(), { text: '€49,995', direction: -1, animate: false }, 'a currency change snaps');
+  isStatic = true;
+  tick(99_000);
+  assert.equal(last().animate, false, 'a page that switched rolling off snaps');
+  isStatic = false;
+  tick(99_500);
+  assert.equal(last().animate, true);
+  reduce = true;
+  tick(100_000);
+  assert.equal(last().animate, false, 'reduced motion snaps');
+  live.destroy();
 });

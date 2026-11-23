@@ -1,5 +1,5 @@
 const STORAGE_KEY = 'obt-video-price-style';
-const DEFAULTS = { version: 1, colour: '#ffffff', font: 'modern', stroke: false, strokeWidth: 1, strokeColour: '#000000' };
+const DEFAULTS = { version: 1, colour: '#ffffff', font: 'modern', stroke: false, strokeWidth: 1, strokeColour: '#000000', rolling: true };
 export type VideoPriceStyleState = Omit<typeof DEFAULTS, 'version'>;
 const FONTS: Record<string, string> = {
   modern: 'var(--font-sans)',
@@ -29,6 +29,7 @@ export function createVideoPriceStyle(root: HTMLElement, refreshLayout: () => vo
   const strokeColour = wrapper.querySelector<HTMLInputElement>('[data-price-stroke-colour]')!;
   const strokeOptions = wrapper.querySelector<HTMLElement>('[data-stroke-options]')!;
   const strokeValue = wrapper.querySelector<HTMLOutputElement>('[data-stroke-width-value]')!;
+  const rolling = wrapper.querySelector<HTMLInputElement>('[data-price-rolling-toggle]')!;
   const swatches = [...wrapper.querySelectorAll<HTMLButtonElement>('[data-price-swatch]')];
   const removeListeners: (() => void)[] = [];
   let state = { ...DEFAULTS };
@@ -45,6 +46,8 @@ export function createVideoPriceStyle(root: HTMLElement, refreshLayout: () => vo
       state.stroke = saved.stroke === true;
       if (typeof saved.strokeWidth === 'number' && Number.isFinite(saved.strokeWidth) && saved.strokeWidth >= .5 && saved.strokeWidth <= 6) state.strokeWidth = Math.round(saved.strokeWidth * 2) / 2;
       if (isColour(saved.strokeColour)) state.strokeColour = saved.strokeColour.toLowerCase();
+      // Styles saved before the switch existed keep the default rolling digits.
+      state.rolling = saved.rolling !== false;
     }
   } catch { /* Styling remains available when browser storage is blocked or malformed. */ }
 
@@ -72,9 +75,12 @@ export function createVideoPriceStyle(root: HTMLElement, refreshLayout: () => vo
     strokeColour.value = state.strokeColour;
     strokeOptions.hidden = !state.stroke;
     strokeWidth.disabled = strokeColour.disabled = !state.stroke;
+    rolling.checked = state.rolling;
+    // Static prices show the plain styled text; the live display stops rolling while this is set.
+    root.toggleAttribute('data-price-static', !state.rolling);
     for (const swatch of swatches) swatch.setAttribute('aria-pressed', String(swatch.dataset.priceSwatch === state.colour));
     const isDefault = state.colour === DEFAULTS.colour && state.font === DEFAULTS.font && !state.stroke
-      && state.strokeWidth === DEFAULTS.strokeWidth && state.strokeColour === DEFAULTS.strokeColour;
+      && state.strokeWidth === DEFAULTS.strokeWidth && state.strokeColour === DEFAULTS.strokeColour && state.rolling;
     root.toggleAttribute('data-price-style-custom', !isDefault);
     refreshLayout();
     anchor();
@@ -205,6 +211,7 @@ export function createVideoPriceStyle(root: HTMLElement, refreshLayout: () => vo
     save();
   });
   listen(stroke, 'change', () => { state.stroke = stroke.checked; save(); });
+  listen(rolling, 'change', () => { state.rolling = rolling.checked; save(); });
   listen(strokeWidth, 'input', () => {
     const value = Number(strokeWidth.value);
     if (!Number.isFinite(value) || value < .5 || value > 6) return;
@@ -225,7 +232,7 @@ export function createVideoPriceStyle(root: HTMLElement, refreshLayout: () => vo
   settingsTrigger.setAttribute('aria-expanded', 'false');
   panel.hidden = true;
   trigger.setAttribute('aria-expanded', 'false');
-  trigger.disabled = colour.disabled = font.disabled = stroke.disabled = false;
+  trigger.disabled = colour.disabled = font.disabled = stroke.disabled = rolling.disabled = false;
   for (const swatch of swatches) swatch.disabled = false;
   paint();
   let observer: ResizeObserver | undefined;
@@ -248,6 +255,7 @@ export function createVideoPriceStyle(root: HTMLElement, refreshLayout: () => vo
       observer?.disconnect();
       for (const remove of removeListeners) remove();
       root.removeAttribute('data-price-style-custom');
+      root.removeAttribute('data-price-static');
     },
   };
 }

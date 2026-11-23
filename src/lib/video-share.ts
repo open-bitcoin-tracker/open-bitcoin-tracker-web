@@ -31,10 +31,12 @@ export function readVideoSetup(hash: string): VideoSetup | undefined {
     || x < 0 || x > 100 || y < 0 || y > 100 || size < 25 || size > Number.MAX_SAFE_INTEGER
     || strokeWidth < .5 || strokeWidth > 6 || !Number.isInteger(strokeWidth * 2)
     || volume < 0 || volume > 100 || !Number.isInteger(volume)
-    || !['stroke', 'muted', 'loop'].every(boolean)) return;
+    || !['stroke', 'muted', 'loop'].every(boolean)
+    // Links shared before rolling digits became optional omit it and keep them on.
+    || (params.has('roll') && !boolean('roll'))) return;
   return {
     video: { id, startSeconds }, currency, layout: { x, y, size },
-    style: { colour, font, stroke: params.get('stroke') === '1', strokeWidth, strokeColour },
+    style: { colour, font, stroke: params.get('stroke') === '1', strokeWidth, strokeColour, rolling: params.get('roll') !== '0' },
     playback: { volume, muted: params.get('muted') === '1', looping: params.get('loop') === '1' },
   };
 }
@@ -45,7 +47,7 @@ export function videoSetupHash(setup: VideoSetup): string {
     setup: '1', video: video.id, start: String(video.startSeconds), currency,
     x: String(layout.x), y: String(layout.y), size: String(layout.size),
     colour: style.colour, font: style.font, stroke: style.stroke ? '1' : '0',
-    strokeWidth: String(style.strokeWidth), strokeColour: style.strokeColour,
+    strokeWidth: String(style.strokeWidth), strokeColour: style.strokeColour, roll: style.rolling ? '1' : '0',
     volume: String(playback.volume), muted: playback.muted ? '1' : '0', loop: playback.looping ? '1' : '0',
   })}`;
 }

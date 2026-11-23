@@ -27,7 +27,7 @@ const locale = htmlLang(Astro.currentLocale);
       <section class="video-price-stage" data-price-stage aria-label={t.priceLabel}>
         <div class="video-alignment-grid" aria-hidden="true"></div>
         <div class="video-price-position" data-price-position role="group" aria-label={t.movePrice} aria-describedby="video-price-keyboard-hint" tabindex="0">
-          <p class="video-price" data-price aria-label={t.unavailable}>—</p>
+          <p class="video-price" data-price aria-label={t.unavailable}><span data-price-text>—</span><span class="video-price-roll" data-price-roll aria-hidden="true"></span></p>
           <span class="sr-only" data-price-status role="status">{t.loadingPrice}</span>
           <div class="video-price-editing">
             {['nw', 'ne', 'sw', 'se'].map(corner => (
@@ -84,6 +84,10 @@ const locale = htmlLang(Astro.currentLocale);
                   <label for="video-price-stroke-colour">{t.strokeColour}</label>
                   <input id="video-price-stroke-colour" class="video-colour-input" data-price-stroke-colour type="color" value="#000000" disabled />
                 </div>
+              </div>
+              <div class="video-style-row video-stroke-row">
+                <label for="video-price-rolling">{t.priceRolling}</label>
+                <input id="video-price-rolling" class="video-stroke-toggle" data-price-rolling-toggle type="checkbox" checked disabled />
               </div>
             </div>
             <hr class="video-settings-divider" />
@@ -403,6 +407,14 @@ const locale = htmlLang(Astro.currentLocale);
   .video-change, .video-setup-link, .video-dock, .video-page :global(.site-nav) { transition: opacity var(--video-ui-fade) ease; }
   .video-page[data-ui-idle] { cursor: none; }
   .video-page[data-ui-idle] .video-price-position { cursor: none; }
+  /* Rolling digits draw over the real price text, inheriting its colour, font, outline, and size.
+     The text stays underneath, transparent but still casting the shadow, which the digit windows would clip. */
+  .video-price { position: relative; }
+  .video-price-roll { position: absolute; inset: 0; display: none; padding: inherit; text-shadow: none; pointer-events: none; }
+  .video-price[data-price-rolling] .video-price-roll { display: block; }
+  .video-price[data-price-rolling] [data-price-text] { color: transparent; -webkit-text-stroke-color: transparent; }
+  .video-page[data-price-static] .video-price-roll { display: none; }
+  .video-page[data-price-static] .video-price[data-price-rolling] [data-price-text] { color: inherit; -webkit-text-stroke-color: inherit; }
   .video-page[data-ui-idle] .video-change,
   .video-page[data-ui-idle] .video-setup-link,
   .video-page[data-ui-idle] .video-dock,

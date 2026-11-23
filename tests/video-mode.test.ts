@@ -47,7 +47,7 @@ const { readVideoSetup, videoSetupHash } = browserModule('lib/video-share', { UR
 const sharedSetup: VideoSetup = {
   video: { id: 'ZYXWVUTSRQP', startSeconds: 30 }, currency: 'GBP',
   layout: { x: 12.5, y: 86, size: 75 },
-  style: { colour: '#ff981e', font: 'bungee', stroke: true, strokeWidth: 2.5, strokeColour: '#123456' },
+  style: { colour: '#ff981e', font: 'bungee', stroke: true, strokeWidth: 2.5, strokeColour: '#123456', rolling: false },
   playback: { volume: 42, muted: true, looping: true },
 };
 type Video = { id: string; startSeconds: number };
@@ -272,6 +272,7 @@ function harness(options: Options = {}) {
     }
   }
   const modules = {
+    createRollingNumber: () => undefined,
     videoSuggestions,
     isColour, isFont,
     CurrencyRates: Rates,
@@ -2190,4 +2191,15 @@ test('malformed, incomplete, duplicate and unsupported shared settings fall back
     assert.equal(h.control('[data-currency]').value, 'USD');
     h.close();
   }
+});
+
+test('shared setups carry rolling digits, while older links without it keep them on and invalid values are rejected', () => {
+  const hash = videoSetupHash(sharedSetup);
+  assert.match(hash, /[#&]roll=0(&|$)/);
+  assert.equal(readVideoSetup(hash)!.style.rolling, false);
+  const on = videoSetupHash({ ...sharedSetup, style: { ...sharedSetup.style, rolling: true } });
+  assert.equal(readVideoSetup(on)!.style.rolling, true);
+  assert.equal(readVideoSetup(hash.replace(/&roll=0/, ''))!.style.rolling, true, 'links shared before the switch keep rolling');
+  assert.equal(readVideoSetup(hash.replace('roll=0', 'roll=yes')), undefined);
+  assert.equal(readVideoSetup(`${hash}&roll=1`), undefined, 'duplicate values are rejected like other fields');
 });

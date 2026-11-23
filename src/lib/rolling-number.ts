@@ -29,6 +29,7 @@ const strip = Array.from({ length: CELLS }, (_, i) => String(i % 10)).join('\n')
 
 class RollingDigit {
   readonly el: HTMLSpanElement;
+  private readonly sizer: HTMLSpanElement;
   private readonly strip: HTMLSpanElement;
   private readonly doc: Document;
   private pos = REST;
@@ -38,10 +39,14 @@ class RollingDigit {
     this.doc = doc;
     this.el = doc.createElement('span');
     this.el.className = 'roll-digit';
+    // An invisible copy of the current digit sizes the window, so fonts without equal-width digits stay aligned.
+    this.sizer = doc.createElement('span');
+    this.sizer.className = 'roll-sizer';
+    this.sizer.textContent = '0';
     this.strip = doc.createElement('span');
     this.strip.className = 'roll-strip';
     this.strip.textContent = strip;
-    this.el.append(this.strip);
+    this.el.append(this.sizer, this.strip);
     this.strip.addEventListener('transitionend', (event) => {
       if (event.propertyName !== 'transform') return;
       this.el.classList.remove('rolling');
@@ -58,6 +63,7 @@ class RollingDigit {
 
   snap(digit: number) {
     this.digit = digit;
+    this.sizer.textContent = String(digit);
     this.pos = REST + digit;
     this.el.classList.remove('rolling');
     this.render(false);
@@ -68,6 +74,7 @@ class RollingDigit {
     if (!steps) return;
     if (this.pos + steps < 0 || this.pos + steps >= CELLS) this.rebase();
     this.digit = digit;
+    this.sizer.textContent = String(digit);
     this.pos += steps;
     this.el.classList.add('rolling');
     this.render(true);

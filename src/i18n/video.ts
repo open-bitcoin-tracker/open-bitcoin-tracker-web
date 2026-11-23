@@ -37,6 +37,7 @@ export interface VideoCopy {
   style: string;
   fontDigital: string;
   priceStroke: string;
+  priceRolling: string;
   strokeWeight: string;
   strokeColour: string;
   priceColour: string;
@@ -90,6 +91,7 @@ const en: VideoCopy = {
   style: 'Style',
   fontDigital: 'Digital',
   priceStroke: 'Stroke',
+  priceRolling: 'Rolling digits',
   strokeWeight: 'Weight',
   strokeColour: 'Stroke colour',
   priceColour: 'Colour',
@@ -145,6 +147,7 @@ export const video: Record<Lang, VideoCopy> = {
     style: 'Estilo',
     fontDigital: 'Digital',
     priceStroke: 'Contorno',
+    priceRolling: 'Dígitos rodantes',
     strokeWeight: 'Grosor',
     strokeColour: 'Color del contorno',
     priceColour: 'Color',
@@ -197,6 +200,7 @@ export const video: Record<Lang, VideoCopy> = {
     style: 'Estilo',
     fontDigital: 'Digital',
     priceStroke: 'Contorno',
+    priceRolling: 'Dígitos rolantes',
     strokeWeight: 'Espessura',
     strokeColour: 'Cor do contorno',
     priceColour: 'Cor',
@@ -249,6 +253,7 @@ export const video: Record<Lang, VideoCopy> = {
     style: 'Style',
     fontDigital: 'Numérique',
     priceStroke: 'Contour',
+    priceRolling: 'Chiffres déroulants',
     strokeWeight: 'Épaisseur',
     strokeColour: 'Couleur du contour',
     priceColour: 'Couleur',
@@ -301,6 +306,7 @@ export const video: Record<Lang, VideoCopy> = {
     style: 'Stil',
     fontDigital: 'Digital',
     priceStroke: 'Kontur',
+    priceRolling: 'Rollende Ziffern',
     strokeWeight: 'Stärke',
     strokeColour: 'Konturfarbe',
     priceColour: 'Farbe',
@@ -353,6 +359,7 @@ export const video: Record<Lang, VideoCopy> = {
     style: 'Stile',
     fontDigital: 'Digitale',
     priceStroke: 'Contorno',
+    priceRolling: 'Cifre scorrevoli',
     strokeWeight: 'Spessore',
     strokeColour: 'Colore del contorno',
     priceColour: 'Colore',
@@ -405,6 +412,7 @@ export const video: Record<Lang, VideoCopy> = {
     style: 'Стиль',
     fontDigital: 'Цифровой',
     priceStroke: 'Обводка',
+    priceRolling: 'Прокрутка цифр',
     strokeWeight: 'Толщина',
     strokeColour: 'Цвет обводки',
     priceColour: 'Цвет',
@@ -457,6 +465,7 @@ export const video: Record<Lang, VideoCopy> = {
     style: 'Stil',
     fontDigital: 'Dijital',
     priceStroke: 'Kontur',
+    priceRolling: 'Kayan rakamlar',
     strokeWeight: 'Kalınlık',
     strokeColour: 'Kontur rengi',
     priceColour: 'Renk',
@@ -509,6 +518,7 @@ export const video: Record<Lang, VideoCopy> = {
     style: 'Kiểu',
     fontDigital: 'Kỹ thuật số',
     priceStroke: 'Viền',
+    priceRolling: 'Chữ số cuộn',
     strokeWeight: 'Độ dày',
     strokeColour: 'Màu viền',
     priceColour: 'Màu',
@@ -561,6 +571,7 @@ export const video: Record<Lang, VideoCopy> = {
     style: 'スタイル',
     fontDigital: 'デジタル',
     priceStroke: '縁取り',
+    priceRolling: '数字のロール',
     strokeWeight: '太さ',
     strokeColour: '縁取りの色',
     priceColour: '色',

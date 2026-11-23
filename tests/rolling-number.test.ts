@@ -36,8 +36,9 @@ function layer() {
   return new FakeNode(doc);
 }
 // Each digit's strip offset in cells; a resting digit d sits at cell 20 + d.
+const strip = (digit: FakeNode) => digit.children.find(node => node.className === 'roll-strip')!;
 const cells = (root: FakeNode) => root.children.filter(node => node.className === 'roll-digit')
-  .map(node => Number(node.children[0].style.transform.match(/-?[\d.]+/)![0]) / -2);
+  .map(node => Number(strip(node).style.transform.match(/-?[\d.]+/)![0]) / -2);
 
 test('the first price snaps; later ticks roll only the changed digits in the given direction', () => {
   const root = layer();
@@ -48,7 +49,7 @@ test('the first price snaps; later ticks roll only the changed digits in the giv
   assert.deepEqual(cells(root), [26, 22, 27, 22, 31], 'the last digit rolls up through 0 to 1');
   const rolling = root.children.filter(node => node.classes.has('rolling'));
   assert.equal(rolling.length, 2);
-  assert.match(rolling[0].children[0].style.transition, /700ms/);
+  assert.match(strip(rolling[0]).style.transition, /700ms/);
   roller.set('$62,719', { direction: -1 });
   assert.deepEqual(cells(root), [26, 22, 27, 21, 29], 'falling prices roll back down');
   roller.set('$62,700', { animate: false });
@@ -63,7 +64,7 @@ test('settled strips return to the middle copy and new digits keep their place f
   roller.set('$99,991', { direction: 1 });
   const last = root.children.at(-1)!;
   assert.equal(cells(root).at(-1), 31);
-  last.children[0].listeners.get('transitionend')!({ propertyName: 'transform' });
+  strip(last).listeners.get('transitionend')!({ propertyName: 'transform' });
   assert.equal(cells(root).at(-1), 21, 'a settled 1 rests on the middle copy');
   roller.set('$100,001', { direction: 1 });
   assert.equal(root.children.at(-1), last, 'the units digit keeps its strip when the price gains a digit');

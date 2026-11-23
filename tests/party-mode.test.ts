@@ -113,6 +113,7 @@ function harness(options: Options = {}) {
     }
   }
   const modules = {
+    createRollingNumber: () => undefined,
     CurrencyRates: Rates,
     isCurrency: (value: string) => ['USD', 'EUR', 'GBP', 'AUD', 'CAD', 'CHF', 'JPY'].includes(value),
     readDisplayPreferences: () => ({ ...preferences }),

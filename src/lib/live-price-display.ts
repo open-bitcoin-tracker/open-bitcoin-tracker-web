@@ -3,6 +3,7 @@ import { readDisplayPreferences, saveDisplayPreferences, subscribeCurrencyPrefer
 import { subscribeBitcoinPrice, type PriceFeedState } from './bitcoin-live-price';
 import type { HistoryPoint } from './bitcoin-chart';
 import type { PartyCopy } from '../i18n/party';
+import { createRollingNumber } from './rolling-number';
 
 type PriceCopy = Pick<PartyCopy, 'unavailable' | 'offline' | 'fxLoading' | 'fxUnavailable' | 'loadingPrice' | PriceFeedState>;
 
@@ -14,6 +15,15 @@ export function createLivePriceDisplay(root: HTMLElement, { copy: t, locale, onP
   initialCurrency?: Currency;
 }) {
   const price = root.querySelector<HTMLElement>('[data-price]')!;
+  // Pages that include a rolling layer inside the price get the app's rolling digits; the real text
+  // stays underneath (transparent) for layout, accessibility, and effects such as shadows.
+  const roller = createRollingNumber(price.querySelector?.<HTMLElement>('[data-price-roll]') ?? null);
+  const priceText = (roller && price.querySelector<HTMLElement>('[data-price-text]')) || price;
+  if (roller && priceText !== price) price.setAttribute('data-price-rolling', '');
+  const reduceMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)');
+  let lastLive: { value: number; currency: Currency } | undefined;
+  let rollDirection = 1;
+  let rolledText: string | undefined;
   const status = root.querySelector<HTMLElement>('[data-price-status]')!;
   const currencySelect = root.querySelector<HTMLSelectElement>('[data-currency]')!;
   const rates = new CurrencyRates();
@@ -30,8 +40,18 @@ export function createLivePriceDisplay(root: HTMLElement, { copy: t, locale, onP
   function paintPrice() {
     if (destroyed || document.hidden) return;
     const rate = rates.current(currency);
-    const value = livePoint && rate ? money.format(livePoint.price * rate.rate) : '—';
-    price.textContent = value;
+    const live = livePoint && rate ? livePoint.price * rate.rate : undefined;
+    const value = live !== undefined ? money.format(live) : '—';
+    priceText.textContent = value;
+    if (roller && priceText !== price && value !== rolledText) {
+      rolledText = value;
+      // Live ticks roll in the price's direction; the first price and currency changes snap.
+      // A page can switch rolling off (Price on Video's style setting); hidden layers then snap.
+      const animate = live !== undefined && lastLive?.currency === currency && !reduceMotion?.matches && !price.closest?.('[data-price-static]');
+      if (live !== undefined && lastLive && live !== lastLive.value) rollDirection = live > lastLive.value ? 1 : -1;
+      lastLive = live === undefined ? undefined : { value: live, currency };
+      roller.set(value, { direction: rollDirection, animate });
+    }
     price.style.setProperty('--price-chars', String([...value].length));
     if (livePoint && rate) price.removeAttribute('aria-label');
     else price.setAttribute('aria-label', t.unavailable);

@@ -67,6 +67,14 @@
 .text-link:hover { color: var(--color-emphasis-ink); }
 
 html { scrollbar-gutter: stable; }
+
+/* Rolling digits (src/lib/rolling-number.ts). Each digit is a window onto a vertical 0–9 strip:
+   an invisible copy of the current digit sets the window's size, so proportional fonts stay aligned,
+   and padding with matching negative margin keeps glyph edges and outlines unclipped. */
+.roll-digit { position: relative; display: inline-block; vertical-align: top; overflow: hidden; padding-inline: .15em; margin-inline: -.15em; }
+.roll-sizer { visibility: hidden; }
+.roll-strip { position: absolute; top: 0; left: 0; right: 0; white-space: pre; text-align: center; }
+.roll-digit.rolling { -webkit-mask-image: linear-gradient(transparent, #000 18%, #000 82%, transparent); mask-image: linear-gradient(transparent, #000 18%, #000 82%, transparent); }
 .button { display: inline-flex; align-items: center; justify-content: center; gap: .625rem; min-height: 54px; padding: .9rem 1.5rem; border-radius: var(--radius-control); font-size: .9375rem; font-weight: 600; line-height: 1.2; text-align: center; }
 .cta-primary { background: var(--color-accent); color: #1F1B14 !important; box-shadow: 0 5px 16px rgb(247 147 26 / .15); transition: transform .25s var(--ease-out), box-shadow .25s, background-color .25s; }
 .cta-primary:hover { transform: translateY(-3px); box-shadow: 0 9px 24px rgb(247 147 26 / .25); }
