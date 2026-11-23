@@ -14,8 +14,10 @@ export const wealth = {
   bitcoinMethod: 'Circulating supply from the subsidy schedule, estimated from block {height} ({date}). Lost coins included.',
   goldMethod: '{tonnes} tonnes above ground (end of {year}) × the live PAXG price.',
   silverMethod: '{ounces} billion ounces above ground (end of {year}) × ${price}/oz ({date}). Bullion plus recoverable silverware and jewelry; silver used up in industry is excluded.',
-  fiatMethod: 'Broad money in {count} currencies at ECB rates of {date}: M2 (M4ex for the UK) for USD, EUR, JPY, CNY and GBP, plus each central bank’s headline measure for the rest. Currencies without ECB rates (such as TWD and RUB) are missing.',
+  fiatMethod: 'Broad money in {count} currencies at ECB rates of {date}: M2 (M4ex for the UK) for USD, EUR, JPY, CNY and GBP, plus each central bank’s headline measure for the rest.',
+  ownRateMethod: 'The ECB does not quote {currencies}, so those use their own central bank’s rate for the same day.',
   otherMoneyLabel: 'Other currencies:',
+  ownRateLabel: 'Central bank rates:',
   asOf: 'as of {date}',
   sourceLink: 'Source',
 };

@@ -83,6 +83,34 @@
         "note": "Seasonally adjusted."
       },
       {
+        "currency": "TWD",
+        "aggregate": "M2",
+        "amount": 71292900000000,
+        "month": "2026-09",
+        "publisher": "Central Bank of the Republic of China (Taiwan)",
+        "source": "https://www.cbc.gov.tw/en/cp-511-1869-DA6D6-2.html",
+        "note": "End of period.",
+        "rate": {
+          "usd": 32.936,
+          "publisher": "Central Bank of the Republic of China (Taiwan)",
+          "source": "https://www.cbc.gov.tw/en/lp-700-2.html"
+        }
+      },
+      {
+        "currency": "RUB",
+        "aggregate": "M2",
+        "amount": 137600000000000,
+        "month": "2026-09",
+        "publisher": "Bank of Russia",
+        "source": "https://www.cbr.ru/eng/statistics/macro_itm/dkfs/monetary_agg/",
+        "note": "As of 1 October 2026.",
+        "rate": {
+          "usd": 81.929,
+          "publisher": "Bank of Russia",
+          "source": "https://www.cbr.ru/eng/currency_base/daily/?UniDbQuery.Posted=True&UniDbQuery.To=20.11.2026"
+        }
+      },
+      {
         "currency": "CHF",
         "aggregate": "M3",
         "amount": 1238936000000,

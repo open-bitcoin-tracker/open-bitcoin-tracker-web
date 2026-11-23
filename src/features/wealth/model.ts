@@ -14,8 +14,17 @@ export interface WealthSnapshot {
   assets: { id: SnapshotAssetId; valueUsd: number; asOf: string; publisher: string; source: string; note: string }[];
 }
 
-/** Broad money of a currency beyond the supply page's five, in full local units. */
-export interface OtherMoney { currency: string; aggregate: string; amount: number; month: string; publisher: string; source: string; note?: string }
+/**
+ * Broad money of a currency beyond the supply page's five, in full local units. A currency the ECB does not
+ * quote carries its own central bank's rate (units per US dollar) for the same date as the ECB rates.
+ */
+export interface OtherMoney { currency: string; aggregate: string; amount: number; month: string; publisher: string; source: string; note?: string; rate?: OwnRate }
+export interface OwnRate { usd: number; publisher: string; source: string }
+
+/** Units of `money` per US dollar: its own central bank's rate when it has one, otherwise the ECB cross rate. */
+export function usdRateOf(money: OtherMoney, rates: WealthSnapshot['fiat']['usdRates']): number {
+  return money.rate ? money.rate.usd : rates[money.currency];
+}
 
 export const GRAMS_PER_TROY_OUNCE = 31.1034768;
 export const BLOCK_INTERVAL_MS = 600_000;
@@ -37,7 +46,10 @@ export function isValidWealthSnapshot(snapshot: WealthSnapshot): boolean {
     && isoDate(fiat.fxDate) && url(fiat.fxSource) && (['EUR', 'JPY', 'CNY', 'GBP'] as const).every((code) => positive(fiat.usdRates[code]))
     && Array.isArray(fiat.more) && new Set(fiat.more.map(({ currency }) => currency)).size === fiat.more.length
     && fiat.more.every((money) => /^[A-Z]{3}$/.test(money.currency) && !['USD', 'EUR', 'JPY', 'CNY', 'GBP'].includes(money.currency)
-      && positive(money.amount) && /^\d{4}-\d{2}$/.test(money.month) && url(money.source) && !!money.aggregate && !!money.publisher && positive(fiat.usdRates[money.currency]))
+      && positive(money.amount) && /^\d{4}-\d{2}$/.test(money.month) && url(money.source) && !!money.aggregate && !!money.publisher
+      && (money.rate === undefined
+        ? positive(fiat.usdRates[money.currency])
+        : positive(money.rate.usd) && url(money.rate.source) && !!money.rate.publisher && fiat.usdRates[money.currency] === undefined))
     && assets.length === 3 && new Set(assets.map(({ id }) => id)).size === 3
     && assets.every((asset) => ['realEstate', 'bonds', 'equities'].includes(asset.id) && positive(asset.valueUsd) && isoDate(asset.asOf) && url(asset.source) && !!asset.publisher);
 }
@@ -68,10 +80,10 @@ export function goldOunces(tonnes: number): number {
   return tonnes * 1_000_000 / GRAMS_PER_TROY_OUNCE;
 }
 
-/** Broad money of the currencies beyond the supply page's five, converted at the same ECB reference date. */
+/** Broad money of the currencies beyond the supply page's five, converted at rates of the same reference date. */
 export function otherBroadMoneyUsd(fiat: WealthSnapshot['fiat']): number {
   return fiat.more.reduce((total, money) => {
-    const rate = fiat.usdRates[money.currency];
+    const rate = usdRateOf(money, fiat.usdRates);
     return positive(rate) ? total + money.amount / rate : NaN;
   }, 0);
 }

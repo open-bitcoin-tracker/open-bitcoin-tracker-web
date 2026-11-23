@@ -32,6 +32,20 @@ test('other currencies add their broad money at the same ECB rates and fail on a
   assert.equal(isValidWealthSnapshot({ ...snapshot, fiat: { ...snapshot.fiat, more: [...snapshot.fiat.more, { ...first, currency: 'USD' }] } }), false);
 });
 
+test('currencies without an ECB rate convert at their own central bank rate, and only then', () => {
+  const own = snapshot.fiat.more.filter((money) => money.rate);
+  assert.deepEqual(own.map(({ currency }) => currency).sort(), ['RUB', 'TWD']);
+  for (const money of own) {
+    close(otherBroadMoneyUsd({ ...snapshot.fiat, more: [money] }), money.amount / money.rate!.usd);
+  }
+  const twd = own.find(({ currency }) => currency === 'TWD')!;
+  const swap = (money: typeof twd) => ({ ...snapshot, fiat: { ...snapshot.fiat, more: snapshot.fiat.more.map((other) => other === twd ? money : other) } });
+  assert.equal(isValidWealthSnapshot(swap({ ...twd, rate: { ...twd.rate!, usd: 0 } })), false);
+  assert.equal(isValidWealthSnapshot(swap({ ...twd, rate: { ...twd.rate!, source: 'http://example.com' } })), false);
+  assert.equal(isValidWealthSnapshot(swap({ ...twd, rate: undefined })), false);
+  assert.equal(isValidWealthSnapshot({ ...swap(twd), fiat: { ...swap(twd).fiat, usdRates: { ...snapshot.fiat.usdRates, TWD: 32 } } }), false);
+});
+
 test('circulating supply follows the halving schedule and never exceeds 21 million', () => {
   assert.equal(circulatingSupply(0), 50);
   assert.equal(circulatingSupply(209_999), 10_500_000);

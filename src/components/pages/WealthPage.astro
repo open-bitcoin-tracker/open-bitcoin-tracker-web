@@ -16,6 +16,8 @@ const { rects, notches, corners } = layoutAssets(base, 160, 90);
 const percent = (value: number, of: number) => `${(value / of * 100).toFixed(4)}%`;
 const listed = Object.fromEntries(snapshot.assets.map((asset) => [asset.id, asset]));
 const clientCopy = { ...t, assetNames };
+// Currencies the ECB does not quote, converted at their own central bank's rate.
+const ownRated = snapshot.fiat.more.filter((money) => money.rate);
 const yearOf = (value: string) => value.slice(0, 4);
 const sourceFor = (id: AssetId) => id === 'bitcoin' ? snapshot.bitcoin.source : id === 'gold' ? snapshot.gold.source : id === 'silver' ? snapshot.silver.source : id === 'fiat' ? `${getRelativeLocaleUrl(resolveLang(Astro.currentLocale), 'bitcoin-and-the-dollar')}#sources` : listed[id].source;
 ---
@@ -86,11 +88,11 @@ const sourceFor = (id: AssetId) => id === 'bitcoin' ? snapshot.bitcoin.source : 
                 : id === 'silver'
                   ? interpolate(t.silverMethod, { ounces: (snapshot.silver.ounces / 1e9).toLocaleString(locale, { maximumFractionDigits: 1 }), year: yearOf(snapshot.silver.asOf), date: date(snapshot.silver.fallbackPriceDate), price: snapshot.silver.fallbackPrice.toFixed(2) })
                 : id === 'fiat'
-                  ? interpolate(t.fiatMethod, { count: String(5 + snapshot.fiat.more.length), date: date(snapshot.fiat.fxDate) })
+                  ? [interpolate(t.fiatMethod, { count: String(5 + snapshot.fiat.more.length), date: date(snapshot.fiat.fxDate) }), ownRated.length > 0 && interpolate(t.ownRateMethod, { currencies: new Intl.ListFormat(locale).format(ownRated.map(({ currency }) => currency)) })].filter(Boolean).join(' ')
                   : `${asset.publisher}, ${interpolate(t.asOf, { date: date(asset.asOf) })}. ${asset.note}`;
             return <div class="source-item">
               <dt><span class="source-swatch" data-swatch={id} aria-hidden="true"></span>{assetNames[id]}</dt>
-              <dd>{detail} <a href={sourceFor(id)} aria-label={`${assetNames[id]} source`}>{t.sourceLink} ↗</a>{id === 'fiat' && <> <a href={snapshot.fiat.fxSource} aria-label="ECB reference rates">ECB ↗</a>{snapshot.fiat.more.length > 0 && <span class="other-money">{t.otherMoneyLabel}{' '}{snapshot.fiat.more.map((money, index) => <>{index > 0 && ' · '}<a href={money.source} aria-label={`${money.currency} ${money.aggregate}, ${money.publisher}, ${money.month}`}>{money.currency} ↗</a></>)}</span>}</>}</dd>
+              <dd>{detail} <a href={sourceFor(id)} aria-label={`${assetNames[id]} source`}>{t.sourceLink} ↗</a>{id === 'fiat' && <> <a href={snapshot.fiat.fxSource} aria-label="ECB reference rates">ECB ↗</a>{snapshot.fiat.more.length > 0 && <span class="other-money">{t.otherMoneyLabel}{' '}{snapshot.fiat.more.map((money, index) => <>{index > 0 && ' · '}<a href={money.source} aria-label={`${money.currency} ${money.aggregate}, ${money.publisher}, ${money.month}`}>{money.currency} ↗</a></>)}</span>}{ownRated.length > 0 && <span class="other-money">{t.ownRateLabel}{' '}{ownRated.map((money, index) => <>{index > 0 && ' · '}<a href={money.rate!.source} aria-label={`${money.currency} per US dollar, ${money.rate!.publisher}, ${date(snapshot.fiat.fxDate)}`}>{money.currency} ↗</a></>)}</span>}</>}</dd>
             </div>;
           })}
         </dl>
