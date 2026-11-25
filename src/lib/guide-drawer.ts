@@ -5,21 +5,22 @@ interface GuideSection {
 interface GuideDrawerOptions {
   dialog: HTMLDialogElement;
   overview: HTMLElement;
-  detail: HTMLElement;
+  /** Omit the detail panel for a single-panel guide. */
+  detail?: HTMLElement;
   heading: HTMLElement | null;
-  detailHeading: HTMLElement;
-  detailBody: HTMLElement;
+  detailHeading?: HTMLElement;
+  detailBody?: HTMLElement;
   overviewBody?: HTMLElement | null;
-  back: HTMLButtonElement | null;
+  back?: HTMLButtonElement | null;
   closeButtons: HTMLButtonElement[];
-  sections: GuideSection[];
+  sections?: GuideSection[];
   trigger?: HTMLElement;
   onClose?: () => void;
   deferDetailFocus?: boolean;
 }
 
 /** Native dialog lifecycle and two-panel navigation shared by Astro and React guides. */
-export function createGuideDrawer({ dialog, overview, detail, heading, detailHeading, detailBody, overviewBody, back, closeButtons, sections, trigger, onClose, deferDetailFocus = false }: GuideDrawerOptions) {
+export function createGuideDrawer({ dialog, overview, detail, heading, detailHeading, detailBody, overviewBody, back, closeButtons, sections = [], trigger, onClose, deferDetailFocus = false }: GuideDrawerOptions) {
   const narrow = window.matchMedia('(max-width: 899px)');
   const reduced = window.matchMedia('(prefers-reduced-motion: reduce)');
   const listeners: (() => void)[] = [];
@@ -36,16 +37,18 @@ export function createGuideDrawer({ dialog, overview, detail, heading, detailHea
   }
   function update() {
     overview.inert = narrow.matches && !!active;
-    detail.inert = !active;
-    detail.setAttribute('aria-hidden', String(!active));
+    if (detail) {
+      detail.inert = !active;
+      detail.setAttribute('aria-hidden', String(!active));
+    }
     sections.forEach(section => section.trigger.setAttribute('aria-expanded', String(section === active)));
   }
   function focusDetail() {
     const focus = () => {
       focusFrame = undefined;
       if (!dialog.open || !active) return;
-      detailBody.scrollTop = 0;
-      detailHeading.focus({ preventScroll: true });
+      if (detailBody) detailBody.scrollTop = 0;
+      detailHeading?.focus({ preventScroll: true });
     };
     if (focusFrame !== undefined) window.cancelAnimationFrame(focusFrame);
     // React must commit the selected content before its heading receives focus.
@@ -130,8 +133,8 @@ export function createGuideDrawer({ dialog, overview, detail, heading, detailHea
     const first = controls[0], last = controls.at(-1), focused = document.activeElement;
     if (event.shiftKey && (focused === first || focused === heading || focused === detailHeading)) {
       event.preventDefault(); last?.focus();
-    } else if (!event.shiftKey && focused === detailHeading) {
-      event.preventDefault(); (controls.find(control => detail.contains(control)) ?? first)?.focus();
+    } else if (!event.shiftKey && detailHeading && focused === detailHeading) {
+      event.preventDefault(); (controls.find(control => detail?.contains(control)) ?? first)?.focus();
     } else if (!event.shiftKey && (focused === last || focused === heading)) {
       event.preventDefault(); first?.focus();
     }

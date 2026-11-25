@@ -5,6 +5,7 @@ import { getRelativeLocaleUrl } from 'astro:i18n';
 import { resolveLang } from '../../i18n/utils';
 import { wealth as t, assetNames } from '../../i18n/wealth';
 import '../../features/wealth/tiles.css';
+import '../../styles/guide-drawer.css';
 import { formatDate, formatNumber, interpolate } from '../../features/supply/model';
 import { ASSET_IDS, formatCompactUsd, formatUsd, SLIDER_STEPS, layoutAssets, tileClipPath, type AssetId } from '../../features/wealth/model';
 import { staticWealth } from '../../features/wealth/static';
@@ -24,6 +25,8 @@ const sourceFor = (id: AssetId) => id === 'bitcoin' ? snapshot.bitcoin.source : 
 <Layout title={`${t.title} — Open Bitcoin Tracker`} description={t.description}>
   <Nav />
   <main id="main-content" class="wealth-page wealth-tiles" lang="en" data-wealth>
+    <!-- Sits beside the menu button, after it in tab order. -->
+    <button type="button" class="wealth-help" data-method-trigger aria-haspopup="dialog" aria-controls="wealth-method-dialog" aria-label={t.methodTitle} hidden><span aria-hidden="true">?</span><span class="wealth-help-tooltip" aria-hidden="true">{t.methodTitle}</span></button>
     <div class="wealth-screen">
     <header class="wealth-header">
       <h1>{t.title}</h1>
@@ -73,31 +76,44 @@ const sourceFor = (id: AssetId) => id === 'bitcoin' ? snapshot.bitcoin.source : 
     </div>
     </div>
 
-    <details class="method" id="sources">
-      <summary><h2>{t.methodTitle}</h2><svg class="details-plus" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg></summary>
-      <div class="method-content">
-        <p>{t.methodIntro}</p>
-        <p>{t.simulationMethod}</p>
-        <dl class="source-list">
-          {ASSET_IDS.map((id) => {
-            const asset = listed[id];
-            const detail = id === 'bitcoin'
-              ? interpolate(t.bitcoinMethod, { height: formatNumber(snapshot.bitcoin.referenceHeight, locale), date: date(snapshot.bitcoin.referenceTime) })
-              : id === 'gold'
-                ? interpolate(t.goldMethod, { tonnes: formatNumber(snapshot.gold.tonnes, locale), year: yearOf(snapshot.gold.asOf) })
-                : id === 'silver'
-                  ? interpolate(t.silverMethod, { ounces: (snapshot.silver.ounces / 1e9).toLocaleString(locale, { maximumFractionDigits: 1 }), year: yearOf(snapshot.silver.asOf), date: date(snapshot.silver.fallbackPriceDate), price: snapshot.silver.fallbackPrice.toFixed(2) })
-                : id === 'fiat'
-                  ? [interpolate(t.fiatMethod, { count: String(5 + snapshot.fiat.more.length), date: date(snapshot.fiat.fxDate) }), ownRated.length > 0 && interpolate(t.ownRateMethod, { currencies: new Intl.ListFormat(locale).format(ownRated.map(({ currency }) => currency)) })].filter(Boolean).join(' ')
-                  : `${asset.publisher}, ${interpolate(t.asOf, { date: date(asset.asOf) })}. ${asset.note}`;
-            return <div class="source-item">
-              <dt><span class="source-swatch" data-swatch={id} aria-hidden="true"></span>{assetNames[id]}</dt>
-              <dd>{detail} <a href={sourceFor(id)} aria-label={`${assetNames[id]} source`}>{t.sourceLink} ↗</a>{id === 'fiat' && <> <a href={snapshot.fiat.fxSource} aria-label="ECB reference rates">ECB ↗</a>{snapshot.fiat.more.length > 0 && <span class="other-money">{t.otherMoneyLabel}{' '}{snapshot.fiat.more.map((money, index) => <>{index > 0 && ' · '}<a href={money.source} aria-label={`${money.currency} ${money.aggregate}, ${money.publisher}, ${money.month}`}>{money.currency} ↗</a></>)}</span>}{ownRated.length > 0 && <span class="other-money">{t.ownRateLabel}{' '}{ownRated.map((money, index) => <>{index > 0 && ' · '}<a href={money.rate!.source} aria-label={`${money.currency} per US dollar, ${money.rate!.publisher}, ${date(snapshot.fiat.fxDate)}`}>{money.currency} ↗</a></>)}</span>}</>}</dd>
-            </div>;
-          })}
-        </dl>
-      </div>
-    </details>
+    <!-- With JavaScript, the help button beside the title opens the sources in this drawer; without it, the same content stays a disclosure at the bottom. -->
+    <section class="method" id="sources">
+      <dialog id="wealth-method-dialog" class="method-dialog guide-drawer guide-drawer--right" data-method-dialog aria-labelledby="wealth-method-title">
+        <div class="guide-drawer-panels">
+          <section class="guide-drawer-overview" data-method-overview>
+            <header class="method-header guide-drawer-header">
+              <h2 id="wealth-method-title" data-method-title tabindex="-1">{t.methodTitle}</h2>
+              <button type="button" class="guide-drawer-close" data-method-close aria-label={t.closeMethod}><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18" /></svg></button>
+            </header>
+            <div class="method-body guide-drawer-scroll" data-method-body></div>
+          </section>
+        </div>
+      </dialog>
+      <details data-method-fallback>
+        <summary><h2>{t.methodTitle}</h2><svg class="details-plus" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg></summary>
+        <div class="method-content" data-method-content>
+          <p class="method-note">{t.methodNote}</p>
+          <dl class="source-list">
+            {ASSET_IDS.map((id) => {
+              const asset = listed[id];
+              const detail = id === 'bitcoin'
+                ? interpolate(t.bitcoinMethod, { height: formatNumber(snapshot.bitcoin.referenceHeight, locale), date: date(snapshot.bitcoin.referenceTime) })
+                : id === 'gold'
+                  ? interpolate(t.goldMethod, { tonnes: formatNumber(snapshot.gold.tonnes, locale), year: yearOf(snapshot.gold.asOf) })
+                  : id === 'silver'
+                    ? interpolate(t.silverMethod, { ounces: (snapshot.silver.ounces / 1e9).toLocaleString(locale, { maximumFractionDigits: 1 }), year: yearOf(snapshot.silver.asOf), date: date(snapshot.silver.fallbackPriceDate), price: snapshot.silver.fallbackPrice.toFixed(2) })
+                  : id === 'fiat'
+                    ? [interpolate(t.fiatMethod, { count: String(5 + snapshot.fiat.more.length), date: date(snapshot.fiat.fxDate) }), ownRated.length > 0 && interpolate(t.ownRateMethod, { currencies: new Intl.ListFormat(locale).format(ownRated.map(({ currency }) => currency)) })].filter(Boolean).join(' ')
+                    : `${asset.publisher}, ${interpolate(t.asOf, { date: date(asset.asOf) })}. ${asset.note}`;
+              return <div class="source-item">
+                <dt><span class="source-swatch" data-swatch={id} aria-hidden="true"></span>{assetNames[id]}</dt>
+                <dd>{detail} <a href={sourceFor(id)} aria-label={`${assetNames[id]} source`}>{t.sourceLink} ↗</a>{id === 'fiat' && <> <a href={snapshot.fiat.fxSource} aria-label="ECB reference rates">ECB ↗</a>{snapshot.fiat.more.length > 0 && <span class="other-money">{t.otherMoneyLabel}{' '}{snapshot.fiat.more.map((money, index) => <>{index > 0 && ' · '}<a href={money.source} aria-label={`${money.currency} ${money.aggregate}, ${money.publisher}, ${money.month}`}>{money.currency} ↗</a></>)}</span>}{ownRated.length > 0 && <span class="other-money">{t.ownRateLabel}{' '}{ownRated.map((money, index) => <>{index > 0 && ' · '}<a href={money.rate!.source} aria-label={`${money.currency} per US dollar, ${money.rate!.publisher}, ${date(snapshot.fiat.fxDate)}`}>{money.currency} ↗</a></>)}</span>}</>}</dd>
+              </div>;
+            })}
+          </dl>
+        </div>
+      </details>
+    </section>
   </main>
   <script id="wealth-data" type="application/json" set:html={JSON.stringify({ snapshot, fiat, copy: clientCopy }).replace(/</g, '\\u003c')} />
   <script>import '../../scripts/wealth';</script>
@@ -105,15 +121,23 @@ const sourceFor = (id: AssetId) => id === 'bitcoin' ? snapshot.bitcoin.source : 
 <style>
   .wealth-page {
     --wealth-gap: 1rem;
+    /* The menu button and the help button beside it. */
+    --header-controls-room: calc(var(--menu-control-size) * 2 + .75rem + 1rem);
     width: 100%;
     max-width: 120rem;
     margin: 0 auto;
     padding: var(--menu-control-top) clamp(1rem, 3vw, 2.5rem) 2rem;
   }
   /* The title and the price slider share the menu button's row. */
-  .wealth-header { position: relative; padding-bottom: .5rem; display: flex; align-items: flex-start; gap: .75rem clamp(1rem, 2.5vw, 2.5rem); min-height: var(--menu-control-size); margin-bottom: var(--wealth-gap); padding-right: calc(var(--menu-control-size) + 1rem); }
+  .wealth-header { position: relative; padding-bottom: .5rem; display: flex; align-items: flex-start; gap: .75rem clamp(1rem, 2.5vw, 2.5rem); min-height: var(--menu-control-size); margin-bottom: var(--wealth-gap); padding-right: var(--header-controls-room); }
   /* The title is centred on the menu button's row at every width. */
   .wealth-header h1 { display: flex; flex: none; align-items: center; min-height: var(--menu-control-size); }
+  /* The sources open from a help button that matches the menu button and sits just left of it, so the chart keeps the page's height. */
+  .wealth-help { position: fixed; top: var(--menu-control-top); left: calc(var(--menu-viewport-width) - var(--menu-control-right) - var(--menu-control-size) * 2 - .75rem); z-index: 49; display: grid; place-items: center; width: var(--menu-control-size); height: var(--menu-control-size); padding: 0; border: 0; border-radius: 50%; background: var(--menu-control-bg); color: var(--menu-control-ink); font-size: 1.5rem; font-weight: 650; line-height: 1; }
+  .wealth-help[hidden] { display: none; }
+  .wealth-help-tooltip { position: absolute; top: calc(100% + 8px); left: 50%; z-index: 3; width: max-content; padding: 8px 12px; border: 1px solid var(--color-divider); border-radius: 12px; background: var(--color-surface); color: var(--color-ink); font-size: .875rem; font-weight: 400; line-height: 1.5; opacity: 0; visibility: hidden; transform: translateX(-50%); pointer-events: none; transition: opacity 120ms ease, visibility 0s 120ms; }
+  .wealth-help:is(:hover, :focus-visible):not([data-tooltip-dismissed]) .wealth-help-tooltip { opacity: 1; visibility: visible; transition-delay: 150ms; }
+  @media (hover: none) { .wealth-help-tooltip { display: none; } }
   .header-price { display: flex; flex: 1 1 22rem; align-items: center; min-height: var(--menu-control-size); gap: clamp(1rem, 2.5vw, 2.5rem); min-width: 0; padding-left: clamp(1rem, 2.5vw, 2.5rem); border-left: 1px solid var(--color-divider); }
   .header-price .price-head { display: grid; justify-items: start; gap: .05rem; flex: none; }
   /* Room for the widest price (tens of millions), so the slider never resizes while it moves. */
@@ -198,15 +222,25 @@ const sourceFor = (id: AssetId) => id === 'bitcoin' ? snapshot.bitcoin.source : 
   .simulator-footer { display: grid; gap: .35rem; margin-top: .5rem; }
   .simulator-status { color: var(--color-ink-muted); font-size: .8125rem; line-height: 1.45; }
   .simulator-status:empty { display: none; }
-  .method { margin-top: var(--wealth-gap); scroll-margin-top: calc(var(--menu-control-top) + var(--menu-control-size) + .5rem); }
+  .method details { margin-top: var(--wealth-gap); }
+  .method details[hidden] { display: none; }
+  /* Like the site menu, release the scrollbar gutter so the drawer reaches the right edge. */
+  :global(html:has(.method-dialog[open])) { overflow: hidden; scrollbar-gutter: auto; }
+  /* One panel: the sources, wide enough for their links. Narrow screens keep the shared drawer's widths. */
+  @media (min-width: 900px) { .method-dialog { --drawer-width: 440px; } }
+  .method-header { gap: 1rem; }
+  .method-header h2 { color: var(--color-ink-muted); font-size: 1.5rem; line-height: 1.2; font-weight: 600; }
+  .method-dialog h2:focus { outline: none; }
+  .method-body { padding: 0 28px max(28px, env(safe-area-inset-bottom)); }
+  .method-body .method-content { max-width: none; padding: 0; font-size: 1rem; }
+  @media (max-width: 540px) { .method-body { padding-inline: 24px; } }
   summary { display: flex; align-items: center; justify-content: space-between; gap: 1rem; min-height: 56px; padding: 1rem .125rem; border-top: 1px solid var(--color-divider); cursor: pointer; list-style: none; color: var(--color-ink); }
   summary h2 { font-size: 1.25rem; font-weight: 600; letter-spacing: -.01em; line-height: 1.3; }
   summary::-webkit-details-marker { display: none; }
   .details-plus { flex: none; width: 28px; height: 28px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; transition: transform .2s ease; }
   summary:hover .details-plus { color: var(--color-accent); }
-  details[open]:not([data-closing]) .details-plus { transform: rotate(45deg); }
+  details[open] .details-plus { transform: rotate(45deg); }
   .method-content { max-width: 76ch; padding-bottom: 1.5rem; color: var(--color-ink-muted); font-size: .9375rem; line-height: 1.75; }
-  .method-content > p + p { margin-top: .75rem; }
   .source-list { display: grid; gap: 1rem; margin-top: 1.25rem; }
   .source-item dt { display: flex; align-items: center; gap: .5rem; color: var(--color-ink); font-weight: 600; }
   .source-swatch { width: .75rem; height: .75rem; border-radius: .2rem; background: var(--swatch); }
@@ -222,6 +256,7 @@ const sourceFor = (id: AssetId) => id === 'bitcoin' ? snapshot.bitcoin.source : 
   a:focus-visible, summary:focus-visible, button:focus-visible, input:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 4px; }
   /* Desktop: the chart and controls fill one screen, so the slider and the boxes are visible together. */
   @media (min-width: 900px) and (min-height: 520px) {
+    .wealth-page { padding-bottom: var(--wealth-gap); }
     .wealth-screen { display: flex; flex-direction: column; height: calc(100dvh - var(--menu-control-top) - var(--wealth-gap)); }
     .wealth-stage, .treemap-area { flex: 1; }
     .treemap { aspect-ratio: auto; }
@@ -238,7 +273,7 @@ const sourceFor = (id: AssetId) => id === 'bitcoin' ? snapshot.bitcoin.source : 
   @media (max-width: 700px) {
     .wealth-screen { display: flex; flex-direction: column; }
     .wealth-header { display: contents; }
-    .wealth-header h1 { order: 0; margin-bottom: var(--wealth-gap); padding-right: calc(var(--menu-control-size) + 1rem); }
+    .wealth-header h1 { order: 0; margin-bottom: var(--wealth-gap); padding-right: var(--header-controls-room); }
     .wealth-stage { order: 1; }
     .header-price { order: 2; flex: none; margin: 1rem 0 1rem; padding-left: 0; border-left: 0; }
     .simulator-footer { order: 3; }
@@ -246,8 +281,17 @@ const sourceFor = (id: AssetId) => id === 'bitcoin' ? snapshot.bitcoin.source : 
   @media (max-width: 600px) {
     .treemap { aspect-ratio: 4 / 5; }
   }
+  /* Upright phones and tablets: the chart grows into the rest of the screen, never smaller than its old fixed shape. */
+  @media (max-width: 899px) and (orientation: portrait) {
+    .wealth-screen { display: flex; flex-direction: column; min-height: calc(100dvh - var(--menu-control-top) - 1.5rem); }
+    .wealth-stage, .treemap-area { flex: 1; }
+    .treemap { aspect-ratio: auto; min-height: 70.5vw; }
+  }
+  @media (max-width: 600px) and (orientation: portrait) {
+    .treemap { min-height: calc((100vw - 2rem) * 1.25); }
+  }
   @media (prefers-reduced-motion: reduce) {
-    .details-plus { transition: none; }
+    .details-plus, .wealth-help-tooltip { transition: none; }
       .cap-slider::-webkit-slider-thumb, .cap-slider::-moz-range-thumb { transition: none; }
         }
 </style>

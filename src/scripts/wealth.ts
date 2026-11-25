@@ -1,3 +1,4 @@
+import { createGuideDrawer } from '../lib/guide-drawer';
 import { subscribeBitcoinPricePoll } from '../lib/bitcoin-price-poll';
 import { formatDate, interpolate } from '../features/supply/model';
 import { ASSET_IDS, baseValues, tileClipPath, capFromPosition, circulatingSupply, estimateHeight, formatChange, formatCompactUsd, formatUsd, positionFromCap, priceMilestones, redistribute, SLIDER_STEPS, snapCap, layoutAssets, totalValue, type AssetValues, type Notch, type Rect, type WealthSnapshot } from '../features/wealth/model';
@@ -96,12 +97,14 @@ if (root && json) {
       tiles.get(id)!.tile.toggleAttribute('data-label-outside', outside);
       // Like Bitcoin's, silver's label sits beside its square, inside gold, when gold also has room
       // for its own centred label. Otherwise it sits just above the square, over the tile there, as
-      // long as that is still inside the chart. In gold's bottom-right corner it goes on the left.
+      // long as that is still inside the chart. In gold's bottom-right corner, or when the right side
+      // would run past the chart's edge (a narrow gold strip on tall phone charts), it goes on the left.
       const gold = rects.gold;
       const roomBeside = gold.w - rect.w - 4 >= callout.offsetWidth && gold.h >= 2 * callout.offsetHeight + 2.75 * rem;
       const roomAbove = rect.y >= callout.offsetHeight + 2;
       const above = id === 'silver' && !corners.gold && !roomBeside && roomAbove;
-      const onLeft = id === 'silver' && !!corners.gold;
+      const overflowsRight = rect.x + rect.w + 4 + callout.offsetWidth > width && rect.x >= callout.offsetWidth + 4;
+      const onLeft = (id === 'silver' && !!corners.gold) || (!above && overflowsRight);
       callout.style.left = onLeft ? '' : above ? `${rect.x}px` : `${rect.x + rect.w + 4}px`;
       callout.style.right = onLeft ? `${width - rect.x + 4}px` : '';
       callout.style.top = above ? '' : `${rect.y}px`;
@@ -274,29 +277,35 @@ if (root && json) {
     selectedCap = target !== undefined ? target * supply : event.key === 'PageUp' ? total : null;
     render(true);
   });
-  // Sources & method sits at the bottom; when it opens below the fold, bring it into view.
-  const method = root.querySelector<HTMLDetailsElement>('#sources');
-  method?.addEventListener('toggle', () => {
-    if (!method.open || method.getBoundingClientRect().bottom <= window.innerHeight) return;
-    method.scrollIntoView({ block: 'start', behavior: reducedMotion.matches ? 'auto' : 'smooth' });
-  });
-  // Closing collapses the section smoothly instead of removing it at once, so the page glides up.
-  const methodSummary = method?.querySelector('summary');
-  let closing: Animation | null = null;
-  methodSummary?.addEventListener('click', (event) => {
-    if (!method!.open || reducedMotion.matches) return;
-    event.preventDefault();
-    if (closing) return;
-    method!.style.overflow = 'hidden';
-    method!.toggleAttribute('data-closing', true);
-    closing = method!.animate([{ height: `${method!.offsetHeight}px` }, { height: `${methodSummary.offsetHeight}px` }], { duration: 280, easing: 'cubic-bezier(.4, 0, .2, 1)' });
-    closing.onfinish = closing.oncancel = () => {
-      method!.open = false;
-      method!.style.removeProperty('overflow');
-      method!.removeAttribute('data-closing');
-      closing = null;
-    };
-  });
+  // The sources move into a drawer opened from the help button beside the title, so the chart keeps the page's height.
+  // The disclosure at the bottom stays when JavaScript or dialog support is absent.
+  const methodTrigger = root.querySelector<HTMLButtonElement>('[data-method-trigger]');
+  const methodDialog = root.querySelector<HTMLDialogElement>('[data-method-dialog]');
+  const methodBody = root.querySelector<HTMLElement>('[data-method-body]');
+  const methodContent = root.querySelector<HTMLElement>('[data-method-content]');
+  const methodFallback = root.querySelector<HTMLDetailsElement>('[data-method-fallback]');
+  const methodOverview = root.querySelector<HTMLElement>('[data-method-overview]');
+  if (methodTrigger && methodDialog && methodBody && methodContent && methodFallback && methodOverview && typeof methodDialog.showModal === 'function') {
+    methodBody.append(methodContent);
+    methodFallback.hidden = true;
+    methodTrigger.hidden = false;
+    const drawer = createGuideDrawer({
+      dialog: methodDialog,
+      overview: methodOverview,
+      heading: root.querySelector<HTMLElement>('[data-method-title]'),
+      overviewBody: methodBody,
+      closeButtons: Array.from(root.querySelectorAll<HTMLButtonElement>('[data-method-close]')),
+      trigger: methodTrigger,
+    });
+    // Like A Bit of Earth's help button, the tooltip stays hidden after a click until the pointer or focus leaves.
+    methodTrigger.addEventListener('click', () => {
+      methodTrigger.toggleAttribute('data-tooltip-dismissed', true);
+      drawer.open();
+    });
+    for (const type of ['mouseleave', 'blur']) methodTrigger.addEventListener(type, () => {
+      if (!methodDialog.open) methodTrigger.removeAttribute('data-tooltip-dismissed');
+    });
+  }
   new ResizeObserver(() => render()).observe(treemap);
   slider.disabled = false;
 
