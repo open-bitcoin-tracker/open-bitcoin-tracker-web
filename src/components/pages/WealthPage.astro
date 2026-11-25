@@ -32,9 +32,9 @@ const sourceFor = (id: AssetId) => id === 'bitcoin' ? snapshot.bitcoin.source : 
       <h1>{t.title}</h1>
       <!-- The slider sets the price per bitcoin; the market cap follows and shows on the chart. -->
       <div class="header-price">
-        <div class="price-head">
-          <label for="bitcoin-cap" class="section-label">{t.priceLabel}</label>
+        <div class="price-stat">
           <output class="cap-value" for="bitcoin-cap" data-price>{formatUsd(snapshot.bitcoin.fallbackPrice)}</output>
+          <label for="bitcoin-cap" class="section-label">{t.priceLabel}</label>
         </div>
         <div class="slider-hit" data-slider-hit>
           <input id="bitcoin-cap" class="cap-slider" type="range" min="0" max={SLIDER_STEPS} step="1" value="0" style="--fill:0%" data-slider disabled
@@ -122,11 +122,11 @@ const sourceFor = (id: AssetId) => id === 'bitcoin' ? snapshot.bitcoin.source : 
   .wealth-page {
     --wealth-gap: 1rem;
     /* The menu button and the help button beside it. */
-    --header-controls-room: calc(var(--menu-control-size) * 2 + .75rem + 1rem);
+    --header-controls-room: calc(var(--menu-control-size) * 2 + .75rem + clamp(1.5rem, 4vw, 4rem));
     width: 100%;
     max-width: 120rem;
     margin: 0 auto;
-    padding: var(--menu-control-top) clamp(1rem, 3vw, 2.5rem) 2rem;
+    padding: var(--menu-control-top) clamp(1rem, 3vw, 2.5rem) var(--wealth-gap);
   }
   /* The title and the price slider share the menu button's row. */
   .wealth-header { position: relative; padding-bottom: .5rem; display: flex; align-items: flex-start; gap: .75rem clamp(1rem, 2.5vw, 2.5rem); min-height: var(--menu-control-size); margin-bottom: var(--wealth-gap); padding-right: var(--header-controls-room); }
@@ -138,10 +138,17 @@ const sourceFor = (id: AssetId) => id === 'bitcoin' ? snapshot.bitcoin.source : 
   .wealth-help-tooltip { position: absolute; top: calc(100% + 8px); left: 50%; z-index: 3; width: max-content; padding: 8px 12px; border: 1px solid var(--color-divider); border-radius: 12px; background: var(--color-surface); color: var(--color-ink); font-size: .875rem; font-weight: 400; line-height: 1.5; opacity: 0; visibility: hidden; transform: translateX(-50%); pointer-events: none; transition: opacity 120ms ease, visibility 0s 120ms; }
   .wealth-help:is(:hover, :focus-visible):not([data-tooltip-dismissed]) .wealth-help-tooltip { opacity: 1; visibility: visible; transition-delay: 150ms; }
   @media (hover: none) { .wealth-help-tooltip { display: none; } }
-  .header-price { display: flex; flex: 1 1 22rem; align-items: center; min-height: var(--menu-control-size); gap: clamp(1rem, 2.5vw, 2.5rem); min-width: 0; padding-left: clamp(1rem, 2.5vw, 2.5rem); border-left: 1px solid var(--color-divider); }
-  .header-price .price-head { display: grid; justify-items: start; gap: .05rem; flex: none; }
-  /* Room for the widest price (tens of millions), so the slider never resizes while it moves. */
-  .header-price .cap-value { min-width: 11ch; }
+  /* The price and its label form one block against the slider: the price is as tall as the slider, so it
+     centres on the track, and the label below it lines up with the scale's $100K / $1M / $10M labels.
+     The slider's track sits on the title's centre line. */
+  .header-price { --slider-h: 2.75rem; display: flex; flex: 1 1 22rem; align-items: flex-start; min-height: var(--menu-control-size); gap: 1rem; min-width: 0; padding-top: calc((var(--menu-control-size) - var(--slider-h)) / 2); padding-left: clamp(1rem, 2.5vw, 2.5rem); border-left: 1px solid var(--color-divider); }
+  .price-stat { display: grid; flex: none; justify-items: end; }
+  .price-stat .cap-value { line-height: var(--slider-h); }
+  /* Matches the scale labels: their offset below the track (.5rem + 9px), size and line height. */
+  .price-stat .section-label { margin-top: calc(.5rem + 9px - var(--slider-h) / 2); font-size: .6875rem; line-height: 1; }
+  /* Room for the widest price (tens of millions), so the slider never resizes while it moves.
+     The block is right-aligned, so the spare room falls on its left rather than before the slider. */
+  .header-price .cap-value { min-width: 10ch; text-align: right; }
   .header-price .slider-hit { flex: 1; min-width: 8rem; margin-top: 0; }
   .wealth-header h1 { font-size: clamp(1.375rem, 2.4vw, 2rem); font-weight: 650; letter-spacing: -.03em; line-height: 1.15; }
   /* When Bitcoin's or silver's box is too small for its own label, its name and value sit beside it, over the neighbouring tile. */
@@ -151,7 +158,7 @@ const sourceFor = (id: AssetId) => id === 'bitcoin' ? snapshot.bitcoin.source : 
   .wealth-stage { display: flex; flex-direction: column; min-height: 0; }
   /* The chart sits on the page; the controls use the standard OBT card: square corners, a divider border and the surface colour. */
   .treemap-area { position: relative; display: flex; flex-direction: column; min-height: 0; }
-  .treemap { position: relative; flex: 1; aspect-ratio: 16 / 9; overflow: hidden; background: var(--tile-seam); list-style: none; }
+  .treemap { position: relative; flex: 1; min-height: 10rem; overflow: hidden; background: var(--tile-seam); list-style: none; }
   .tile { position: absolute; }
   .tile-body { display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; padding: .25rem; overflow: hidden; background: var(--tile-color); color: var(--tile-ink); text-align: center; container-type: size; }
   .tile[data-tile='realEstate'] { --tile-color: var(--tile-realEstate); }
@@ -194,12 +201,11 @@ const sourceFor = (id: AssetId) => id === 'bitcoin' ? snapshot.bitcoin.source : 
     .tile-glyph { display: none; }
   }
   .section-label { color: var(--color-ink-muted); font-size: .75rem; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; }
-  .price-head { display: flex; align-items: center; justify-content: space-between; gap: .75rem; }
-  .cap-value { font-size: clamp(1.25rem, 1.9vw, 1.75rem); font-weight: 650; line-height: 1.15; font-variant-numeric: tabular-nums; letter-spacing: -.03em; white-space: nowrap; }
+  .cap-value { font-size: clamp(1.5rem, 2.2vw, 2rem); font-weight: 650; line-height: 1.1; font-variant-numeric: tabular-nums; letter-spacing: -.03em; white-space: nowrap; }
   /* A custom slider: a thicker track filled up to the thumb (--fill, set by the script). */
   .cap-slider { --track: color-mix(in srgb, var(--color-ink) 16%, transparent); width: 100%; pointer-events: none; height: var(--slider-h); margin: .25rem 0 0; background: transparent; appearance: none; -webkit-appearance: none; cursor: default; }
   /* The wrapper takes the pointer so vertical swipes still scroll the page; the script drags the thumb. */
-  .slider-hit { --thumb: 22px; --slider-h: 2.75rem; position: relative; margin-top: .25rem; padding-bottom: 1rem; margin-bottom: -1rem; touch-action: pan-y; -webkit-user-select: none; user-select: none; }
+  .slider-hit { --thumb: 22px; position: relative; margin-top: .25rem; padding-bottom: 1rem; margin-bottom: -1rem; touch-action: pan-y; -webkit-user-select: none; user-select: none; }
   /* A log ruler under the track: a tick for every round price the drag snaps to, a label on powers of ten. */
   .slider-scale { position: absolute; top: calc(var(--slider-h) / 2 + .5rem); right: calc(var(--thumb) / 2); left: calc(var(--thumb) / 2); height: 1.25rem; pointer-events: none; }
   /* The marks are created by the script, outside Astro's scoped styles. */
@@ -254,41 +260,27 @@ const sourceFor = (id: AssetId) => id === 'bitcoin' ? snapshot.bitcoin.source : 
   .source-swatch[data-swatch='bitcoin'] { --swatch: var(--tile-bitcoin); }
   .source-item a { color: var(--color-emphasis-ink); text-decoration: underline; text-decoration-color: var(--color-accent); text-underline-offset: .25rem; white-space: nowrap; }
   a:focus-visible, summary:focus-visible, button:focus-visible, input:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 4px; }
-  /* Desktop: the chart and controls fill one screen, so the slider and the boxes are visible together. */
-  @media (min-width: 900px) and (min-height: 520px) {
-    .wealth-page { padding-bottom: var(--wealth-gap); }
-    .wealth-screen { display: flex; flex-direction: column; height: calc(100dvh - var(--menu-control-top) - var(--wealth-gap)); }
-    .wealth-stage, .treemap-area { flex: 1; }
-    .treemap { aspect-ratio: auto; }
-  }
-  @media (min-width: 900px) and (max-height: 780px) {
+  /* At every size the chart takes the height the title and controls leave, so everything fits one screen.
+     Only below the chart's small minimum (very short windows) does the page scroll. */
+  .wealth-screen { display: flex; flex-direction: column; min-height: calc(100dvh - var(--menu-control-top) - var(--wealth-gap)); }
+  .wealth-stage, .treemap-area { flex: 1; }
+  @media (min-width: 701px) and (max-height: 780px) {
     .wealth-page { --wealth-gap: .625rem; }
-      .slider-hit { --slider-h: 2.25rem; }
-            }
-  @media (max-width: 899px) {
-    .wealth-page { padding-bottom: 1.5rem; }
-    .treemap { aspect-ratio: 4 / 3; }
+    .header-price { --slider-h: 2.25rem; }
   }
   /* Phones: the price and slider move below the chart, so the dragging hand never covers it and the thumb reaches it easily. */
   @media (max-width: 700px) {
-    .wealth-screen { display: flex; flex-direction: column; }
     .wealth-header { display: contents; }
     .wealth-header h1 { order: 0; margin-bottom: var(--wealth-gap); padding-right: var(--header-controls-room); }
     .wealth-stage { order: 1; }
-    .header-price { order: 2; flex: none; margin: 1rem 0 1rem; padding-left: 0; border-left: 0; }
+    /* The label (left) and large price (right) share a line, with the slider right under them, so a longer price never moves it. */
+    .header-price { order: 2; flex: none; display: grid; grid-template-columns: 1fr max-content; grid-template-areas: 'label price' 'slider slider'; align-items: end; gap: 0 1rem; margin: .75rem 0 0; padding: 0; border-left: 0; }
+    .header-price .cap-value { grid-area: price; min-width: 0; font-size: clamp(1.625rem, 7.5vw, 2rem); line-height: 1.1; text-align: right; }
+    .price-stat { display: contents; }
+    /* The label wraps onto two lines when the price grows into tens of millions. */
+    .price-stat .section-label { grid-area: label; justify-self: start; margin-top: 0; padding-bottom: .35em; font-size: .75rem; line-height: 1.3; text-align: left; }
+    .header-price .slider-hit { grid-area: slider; }
     .simulator-footer { order: 3; }
-  }
-  @media (max-width: 600px) {
-    .treemap { aspect-ratio: 4 / 5; }
-  }
-  /* Upright phones and tablets: the chart grows into the rest of the screen, never smaller than its old fixed shape. */
-  @media (max-width: 899px) and (orientation: portrait) {
-    .wealth-screen { display: flex; flex-direction: column; min-height: calc(100dvh - var(--menu-control-top) - 1.5rem); }
-    .wealth-stage, .treemap-area { flex: 1; }
-    .treemap { aspect-ratio: auto; min-height: 70.5vw; }
-  }
-  @media (max-width: 600px) and (orientation: portrait) {
-    .treemap { min-height: calc((100vw - 2rem) * 1.25); }
   }
   @media (prefers-reduced-motion: reduce) {
     .details-plus, .wealth-help-tooltip { transition: none; }
