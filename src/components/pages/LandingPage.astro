@@ -139,10 +139,10 @@ const href = (path: string) => getRelativeLocaleUrl(lang, path);
   .homepage-settings { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem 2.25rem; min-height: var(--menu-control-size); }
   .homepage-settings--mobile { display: none; }
   .homepage-settings :global(.lang-summary), .homepage-settings :global(.theme-summary) { min-height: 44px; }
-  .masthead h1 { display: flex; min-width: 0; max-width: 100%; font-size: calc(var(--menu-control-size) * 1.25); line-height: 1.06; letter-spacing: -.015em; white-space: nowrap; transition: font-size 550ms cubic-bezier(.22, 1, .36, 1); }
-  .masthead h1:has([aria-expanded="true"]) { font-size: clamp(1rem, calc((100cqi - var(--menu-control-size) - 1rem) / 8.5), calc(var(--menu-control-size) * 1.25)); }
+  .masthead h1 { --brand-size: calc(var(--menu-control-size) * .8); display: flex; min-width: 0; max-width: 100%; font-size: calc(var(--brand-size) * 1.25); line-height: 1.06; letter-spacing: -.015em; white-space: nowrap; transition: font-size 550ms cubic-bezier(.22, 1, .36, 1); }
+  .masthead h1:has([aria-expanded="true"]) { font-size: clamp(1rem, calc((100cqi - var(--brand-size) - 1rem) / 8.5), calc(var(--brand-size) * 1.25)); }
   .masthead-brand { display: inline-flex; align-items: center; height: var(--menu-control-size); gap: .875rem; border-radius: 8px; font: inherit; letter-spacing: inherit; text-transform: inherit; cursor: default; }
-  .masthead-brand img { flex: none; width: var(--menu-control-size); height: var(--menu-control-size); border-radius: 12px; }
+  .masthead-brand img { flex: none; width: var(--brand-size); height: var(--brand-size); border-radius: 10px; }
   .brand-wordmark, .brand-word { display: inline-flex; flex-shrink: 0; }
   /* Align the visible capitals with the icon, accounting for the font's descent. */
   .brand-wordmark { transform: translateY(-.05em); }
