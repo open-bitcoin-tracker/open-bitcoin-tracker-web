@@ -13,7 +13,6 @@ import { staticWealth } from '../../features/wealth/static';
 const lang = resolveLang(Astro.currentLocale);
 const t = wealth[lang];
 const { assetNames } = t;
-// Dates and counts in the copy follow the page language; dollar amounts stay in US format.
 const locale = lang;
 const date = (value: string) => formatDate(value, locale);
 const { snapshot, fiat, supply, base, total } = staticWealth();
@@ -37,12 +36,12 @@ const sourceFor = (id: AssetId) => id === 'bitcoin' ? snapshot.bitcoin.source : 
       <!-- The slider sets the price per bitcoin; the market cap follows and shows on the chart. -->
       <div class="header-price">
         <div class="price-stat">
-          <output class="cap-value" for="bitcoin-cap" data-price>{formatUsd(snapshot.bitcoin.fallbackPrice)}</output>
+          <output class="cap-value" for="bitcoin-cap" data-price>{formatUsd(snapshot.bitcoin.fallbackPrice, locale)}</output>
           <label for="bitcoin-cap" class="section-label">{t.priceLabel}</label>
         </div>
         <div class="slider-hit" data-slider-hit>
           <input id="bitcoin-cap" class="cap-slider" type="range" min="0" max={SLIDER_STEPS} step="1" value="0" style="--fill:0%" data-slider disabled
-            aria-valuetext={interpolate(t.sliderValue, { cap: formatCompactUsd(base.bitcoin, 4), price: formatUsd(snapshot.bitcoin.fallbackPrice) })} />
+            aria-valuetext={interpolate(t.sliderValue, { cap: formatCompactUsd(base.bitcoin, locale, 4), price: formatUsd(snapshot.bitcoin.fallbackPrice, locale) })} />
           <div class="slider-scale" data-scale aria-hidden="true"></div>
         </div>
       </div>
@@ -51,7 +50,7 @@ const sourceFor = (id: AssetId) => id === 'bitcoin' ? snapshot.bitcoin.source : 
     <div class="wealth-stage">
       <section class="treemap-area" aria-label={t.treemapLabel}>
         {(['bitcoin', 'silver'] as const).map((id) => (
-          <p class="tile-callout" data-callout={id} data-visible aria-hidden="true" style={`left:calc(${percent(rects[id].x + rects[id].w, 160)} + 4px);top:${percent(rects[id].y, 90)}`}>{assetNames[id]} <strong data-callout-value>{formatCompactUsd(base[id])}</strong></p>
+          <p class="tile-callout" data-callout={id} data-visible aria-hidden="true" style={`left:calc(${percent(rects[id].x + rects[id].w, 160)} + 4px);top:${percent(rects[id].y, 90)}`}>{assetNames[id]} <strong data-callout-value>{formatCompactUsd(base[id], locale)}</strong></p>
         ))}
         <ul class="treemap" data-treemap>
           {ASSET_IDS.map((id) => {
@@ -63,7 +62,7 @@ const sourceFor = (id: AssetId) => id === 'bitcoin' ? snapshot.bitcoin.source : 
                 <div class="tile-label">
                   {id === 'bitcoin' && <span class="tile-glyph" aria-hidden="true">₿</span>}
                   <span class="tile-name">{assetNames[id]}</span>
-                  <span class="tile-value" data-tile-value>{formatCompactUsd(base[id])}</span>
+                  <span class="tile-value" data-tile-value>{formatCompactUsd(base[id], locale)}</span>
                   <span class="tile-change" data-tile-change></span>
                 </div>
               </div>
@@ -105,7 +104,7 @@ const sourceFor = (id: AssetId) => id === 'bitcoin' ? snapshot.bitcoin.source : 
                 : id === 'gold'
                   ? interpolate(t.goldMethod, { tonnes: formatNumber(snapshot.gold.tonnes, locale), year: yearOf(snapshot.gold.asOf) })
                   : id === 'silver'
-                    ? interpolate(t.silverMethod, { ounces: (snapshot.silver.ounces / t.ouncesUnit).toLocaleString(locale, { maximumFractionDigits: 1 }), year: yearOf(snapshot.silver.asOf), date: date(snapshot.silver.fallbackPriceDate), price: snapshot.silver.fallbackPrice.toFixed(2) })
+                    ? interpolate(t.silverMethod, { ounces: (snapshot.silver.ounces / t.ouncesUnit).toLocaleString(locale, { maximumFractionDigits: 1 }), year: yearOf(snapshot.silver.asOf), date: date(snapshot.silver.fallbackPriceDate), price: formatUsd(snapshot.silver.fallbackPrice, locale, 2) })
                   : id === 'fiat'
                     ? [interpolate(t.fiatMethod, { count: String(5 + snapshot.fiat.more.length), date: date(snapshot.fiat.fxDate) }), ownRated.length > 0 && interpolate(t.ownRateMethod, { currencies: new Intl.ListFormat(locale).format(ownRated.map(({ currency }) => currency)) })].filter(Boolean).join(' ')
                     : interpolate(t.reportMethod, { publisher: asset.publisher, date: date(asset.asOf), note: t.assetNotes[id as ReportedAsset] });
@@ -150,9 +149,9 @@ const sourceFor = (id: AssetId) => id === 'bitcoin' ? snapshot.bitcoin.source : 
   .price-stat .cap-value { line-height: var(--slider-h); }
   /* Matches the scale labels: their offset below the track (.5rem + 9px), size and line height. */
   .price-stat .section-label { margin-top: calc(.5rem + 9px - var(--slider-h) / 2); font-size: .6875rem; line-height: 1; }
-  /* Room for the widest price (tens of millions), so the slider never resizes while it moves.
+  /* Room for the widest price (tens of millions, with a spaced symbol in some languages), so the slider never resizes while it moves.
      The block is right-aligned, so the spare room falls on its left rather than before the slider. */
-  .header-price .cap-value { min-width: 10ch; text-align: right; }
+  .header-price .cap-value { min-width: 12ch; text-align: right; }
   .header-price .slider-hit { flex: 1; min-width: 8rem; margin-top: 0; }
   .wealth-header h1 { font-size: clamp(1.375rem, 2.4vw, 2rem); font-weight: 650; letter-spacing: -.03em; line-height: 1.15; }
   /* When Bitcoin's or silver's box is too small for its own label, its name and value sit beside it, over the neighbouring tile. */
@@ -195,6 +194,11 @@ const sourceFor = (id: AssetId) => id === 'bitcoin' ? snapshot.bitcoin.source : 
   @container (max-width: 2.9rem) or (max-height: .7rem) or ((max-width: 6rem) and (max-height: 1.9rem)) { .tile-value { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); } .tile-glyph { display: block; } }
   .tile[data-label-outside] :is(.tile-name, .tile-value, .tile-change) { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
   .tile[data-label-outside] .tile-glyph { display: block; }
+  /* Set by the script when a localized name or value is wider than its tile: first a smaller size, then the amount on two lines, then hidden from view only. */
+  .tile[data-label-tight] :is(.tile-name, .tile-value) { font-size: .625rem; }
+  .tile[data-label-wrap] .tile-value { max-width: 100%; white-space: normal; line-height: 1.1; }
+  .tile[data-label-overflow] :is(.tile-name, .tile-value, .tile-change) { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+  .tile[data-label-overflow] .tile-glyph { display: block; }
   @container (max-width: .9rem) or (max-height: .9rem) { .tile-glyph, .tile[data-label-outside] .tile-glyph { display: none; } }
   /* Tall, narrow strips turn the name and value sideways, reading bottom to top. */
   @container (max-width: 2.9rem) and (min-width: 1rem) and (min-height: 4.5rem) {

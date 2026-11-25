@@ -352,23 +352,29 @@ export function layoutAssets(values: AssetValues, width: number, height: number)
   return nestSilver(layout, values.silver, total > 0 ? width * height / total : 0);
 }
 
-const compactFormatters = new Map<number, Intl.NumberFormat>();
-export function formatCompactUsd(value: number, digits = 3): string {
-  if (!Number.isFinite(value)) return '—';
-  let formatter = compactFormatters.get(digits);
-  if (!formatter) {
-    formatter = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', notation: 'compact', maximumSignificantDigits: digits });
-    compactFormatters.set(digits, formatter);
+// Amounts follow the page locale's number format. Every amount is in US dollars, so the plain `$`
+// symbol stays short in every language instead of `US$`, `$US` or `USD`.
+const formatters = new Map<string, Intl.NumberFormat>();
+function formatter(locale: string, kind: string, options: Intl.NumberFormatOptions): Intl.NumberFormat {
+  const key = `${locale}|${kind}`;
+  let cached = formatters.get(key);
+  if (!cached) {
+    cached = new Intl.NumberFormat(locale, options);
+    formatters.set(key, cached);
   }
-  return formatter.format(value);
+  return cached;
+}
+const usd = { style: 'currency', currency: 'USD', currencyDisplay: 'narrowSymbol' } as const;
+
+export function formatCompactUsd(value: number, locale: string, digits = 3): string {
+  if (!Number.isFinite(value)) return '—';
+  return formatter(locale, `compact${digits}`, { ...usd, notation: 'compact', maximumSignificantDigits: digits }).format(value);
 }
 
-const priceFormatter = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 });
-export function formatUsd(value: number): string {
-  return Number.isFinite(value) ? priceFormatter.format(value) : '—';
+export function formatUsd(value: number, locale: string, fractionDigits = 0): string {
+  return Number.isFinite(value) ? formatter(locale, `usd${fractionDigits}`, { ...usd, minimumFractionDigits: fractionDigits, maximumFractionDigits: fractionDigits }).format(value) : '—';
 }
 
-const changeFormatter = new Intl.NumberFormat('en-US', { style: 'percent', maximumFractionDigits: 1, signDisplay: 'exceptZero' });
-export function formatChange(value: number): string {
-  return Number.isFinite(value) ? changeFormatter.format(value).replace('-', '−') : '—';
+export function formatChange(value: number, locale: string): string {
+  return Number.isFinite(value) ? formatter(locale, 'change', { style: 'percent', maximumFractionDigits: 1, signDisplay: 'exceptZero' }).format(value).replace('-', '−') : '—';
 }

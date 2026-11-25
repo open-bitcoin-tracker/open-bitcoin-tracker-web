@@ -111,6 +111,33 @@ if (root && json) {
       callout.style.bottom = above ? `${height - rect.y + 2}px` : '';
       callout.style.alignItems = onLeft ? 'flex-end' : '';
     }
+    fitLabels();
+  }
+
+  /**
+   * The container queries size labels for short English amounts. Localized names and amounts
+   * ("24,8 Bio. $") can be wider, so a label that still overflows its tile shrinks, then breaks
+   * the amount at its space, and if even that does not fit, leaves the view while staying
+   * available to screen readers.
+   */
+  function fitLabels() {
+    for (const { tile, body } of tiles.values()) {
+      tile.removeAttribute('data-label-tight');
+      tile.removeAttribute('data-label-wrap');
+      tile.removeAttribute('data-label-overflow');
+      const label = body.querySelector<HTMLElement>('.tile-label')!;
+      if (tile.hasAttribute('data-empty') || getComputedStyle(label).writingMode !== 'horizontal-tb') continue;
+      const style = getComputedStyle(body);
+      const room = body.clientWidth - parseFloat(style.paddingLeft) - parseFloat(style.paddingRight);
+      const parts = Array.from(label.querySelectorAll<HTMLElement>('.tile-name, .tile-value'));
+      // Parts already hidden by a container query are 1px wide; only visible ones need to fit.
+      const overflows = () => parts.some((part) => part.offsetWidth > 1 && part.scrollWidth > room + .5);
+      if (!overflows()) continue;
+      tile.toggleAttribute('data-label-tight', true);
+      if (!overflows()) continue;
+      tile.toggleAttribute('data-label-wrap', true);
+      if (overflows()) tile.toggleAttribute('data-label-overflow', true);
+    }
   }
 
   const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
@@ -154,7 +181,7 @@ if (root && json) {
       const mark = document.createElement('span');
       mark.className = major ? 'scale-mark scale-mark--major' : 'scale-mark';
       mark.style.setProperty('--at', String(at));
-      if (major) mark.dataset.label = formatCompactUsd(price);
+      if (major) mark.dataset.label = formatCompactUsd(price, copy.locale);
       return mark;
     }));
   }
@@ -170,17 +197,19 @@ if (root && json) {
     draw(values, animate);
     for (const id of ASSET_IDS) {
       const { value, change } = tiles.get(id)!;
-      value.textContent = formatCompactUsd(values[id]);
+      // Intl joins the number and unit with no-break spaces; a plain space lets a narrow tile wrap the amount.
+      value.textContent = formatCompactUsd(values[id], copy.locale).replace(/[\u00a0\u202f]/g, ' ');
       const ratio = base[id] > 0 ? values[id] / base[id] - 1 : 0;
-      change.textContent = simulated && Math.abs(ratio) > 1e-9 ? formatChange(ratio) : '';
+      change.textContent = simulated && Math.abs(ratio) > 1e-9 ? formatChange(ratio, copy.locale) : '';
     }
-    for (const [id, { value }] of callouts) value.textContent = formatCompactUsd(values[id]);
-    priceOutput.textContent = formatUsd(price);
+    for (const [id, { value }] of callouts) value.textContent = formatCompactUsd(values[id], copy.locale);
+    fitLabels();
+    priceOutput.textContent = formatUsd(price, copy.locale);
     const position = Math.round(positionFromCap(cap, base.bitcoin, total));
     slider.value = String(position);
     slider.style.setProperty('--fill', `${position / SLIDER_STEPS * 100}%`);
     drawScale(base.bitcoin, total, supply);
-    slider.setAttribute('aria-valuetext', interpolate(copy.sliderValue, { cap: formatCompactUsd(cap, 4), price: formatUsd(price) }));
+    slider.setAttribute('aria-valuetext', interpolate(copy.sliderValue, { cap: formatCompactUsd(cap, copy.locale, 4), price: formatUsd(price, copy.locale) }));
 
     const lines = [
       bitcoinState === 'unavailable' ? interpolate(copy.priceUnavailable, { date: date(snapshot.bitcoin.fallbackPriceDate) }) : '',
