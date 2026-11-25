@@ -156,6 +156,10 @@ const locale = htmlLang(Astro.currentLocale);
       </dialog>
       <section class="video-dock" aria-label={t.controlsLabel}>
         <div class="video-playback" data-video-controls hidden>
+          <button type="button" class="video-change" data-change-video aria-haspopup="dialog" aria-controls="video-picker" aria-expanded="false" hidden disabled>
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="3" /><path d="M7 3v18M17 3v18M3 8h4m-4 8h4M17 8h4m-4 8h4" /></svg>
+            <span>{t.changeVideo}</span>
+          </button>
           <div class="video-player-panel" data-playback-panel role="group" aria-label={t.controlsLabel} hidden>
           <div class="video-player-header video-time" data-video-time>
             <span data-video-current aria-hidden="true">0:00</span>
@@ -186,10 +190,6 @@ const locale = htmlLang(Astro.currentLocale);
         </IconButton>
           </div>
           </div>
-          <button type="button" class="video-change" data-change-video aria-haspopup="dialog" aria-controls="video-picker" aria-expanded="false" hidden disabled>
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="3" /><path d="M7 3v18M17 3v18M3 8h4m-4 8h4M17 8h4m-4 8h4" /></svg>
-            <span>{t.changeVideo}</span>
-          </button>
         </div>
         <p class="sr-only" data-video-status role="status" hidden></p>
         <p class="video-message" data-control-status role="status" hidden></p>
