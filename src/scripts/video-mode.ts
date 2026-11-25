@@ -5,7 +5,7 @@ import { createCurrencyPicker } from '../lib/currency-picker';
 import { createVideoPriceLayout } from '../lib/video-price-layout';
 import { createVideoPriceStyle } from '../lib/video-price-style';
 import { createVideoPickerTabs } from '../lib/video-picker-tabs';
-import { videoSuggestions } from '../lib/video-suggestions';
+import { defaultVideoId, videoSuggestions } from '../lib/video-suggestions';
 import { readVideoSetup, videoSetupHash } from '../lib/video-share';
 import { isCurrency } from '../lib/bitcoin-currency';
 import type { PartyCopy } from '../i18n/party';
@@ -430,7 +430,13 @@ function startVideoMode(root: HTMLElement) {
       if (saved?.version !== 1 || typeof saved.url !== 'string') return;
       const video = parseYouTubeVideo(saved.url);
       if (video) loadSelectedVideo(video, { focus: false, persist: false });
-    } catch { /* Missing, malformed, or blocked storage leaves the URL picker ready. */ }
+    } catch { /* Malformed or blocked storage falls back to the default video below. */ }
+  }
+
+  /** First visits start on the fireplace video; picking another replaces it. */
+  function loadDefaultVideo() {
+    const video = parseYouTubeVideo(`https://www.youtube.com/watch?v=${defaultVideoId}`);
+    if (video) loadSelectedVideo(video, { focus: false, persist: false });
   }
 
   const pickerTabs = createVideoPickerTabs(root, { copy: t, onSelect: video => loadSelectedVideo(video, { remember: true }) });
@@ -600,6 +606,7 @@ function startVideoMode(root: HTMLElement) {
   document.addEventListener('visibilitychange', onVisibility);
   if (sharedSetup) loadSelectedVideo(sharedSetup.video, { focus: false, persist: false });
   else restoreSelectedVideo();
+  if (!hasVideo) loadDefaultVideo();
   if (!hasVideo) showForm(true, false);
   onVisibility();
   priceDisplay.start();

@@ -55,7 +55,7 @@ const href = (path: string) => getRelativeLocaleUrl(lang, path);
 
       <div class="explore-grid">
         <article class="video-tool secondary-tool">
-            <div class="tool-heading"><h2 lang="en"><a class="tool-link video-card-link" href={href('video-mode')}>{video[lang].title}</a></h2></div>
+            <div class="tool-heading"><h2><a class="tool-link video-card-link" href={href('video-mode')}>{video[lang].title}</a></h2></div>
             <VideoPreview />
             <div class="tool-description"><p>{video[lang].description}</p><span class="text-action">{home.openVideo}<span aria-hidden="true">↗</span></span></div>
         </article>

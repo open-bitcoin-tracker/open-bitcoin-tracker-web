@@ -111,7 +111,7 @@ const en: VideoCopy = {
 export const video: Record<Lang, VideoCopy> = {
   en,
   es: {
-    title: 'Price on Video',
+    title: 'Precio en vídeo',
     description: 'El precio de Bitcoin en directo sobre vídeos de YouTube.',
     videoLabel: 'URL del vídeo de YouTube',
     urlPlaceholder: 'Pega un enlace de YouTube',
@@ -164,7 +164,7 @@ export const video: Record<Lang, VideoCopy> = {
     nextPreviewAnimation: 'Siguiente animación',
   },
   'pt-BR': {
-    title: 'Price on Video',
+    title: 'Preço no vídeo',
     description: 'O preço do Bitcoin ao vivo sobre vídeos do YouTube.',
     videoLabel: 'URL do vídeo do YouTube',
     urlPlaceholder: 'Cole um link do YouTube',
@@ -217,7 +217,7 @@ export const video: Record<Lang, VideoCopy> = {
     nextPreviewAnimation: 'Próxima animação',
   },
   fr: {
-    title: 'Price on Video',
+    title: 'Prix sur vidéo',
     description: 'Le cours du Bitcoin en direct sur des vidéos YouTube.',
     videoLabel: 'URL de la vidéo YouTube',
     urlPlaceholder: 'Colle un lien YouTube',
@@ -270,7 +270,7 @@ export const video: Record<Lang, VideoCopy> = {
     nextPreviewAnimation: 'Animation suivante',
   },
   de: {
-    title: 'Price on Video',
+    title: 'Preis im Video',
     description: 'Der Bitcoin-Livekurs über YouTube-Videos.',
     videoLabel: 'URL des YouTube-Videos',
     urlPlaceholder: 'YouTube-Link einfügen',
@@ -323,7 +323,7 @@ export const video: Record<Lang, VideoCopy> = {
     nextPreviewAnimation: 'Nächste Animation',
   },
   it: {
-    title: 'Price on Video',
+    title: 'Prezzo sul video',
     description: 'Il prezzo di Bitcoin in tempo reale sui video di YouTube.',
     videoLabel: 'URL del video di YouTube',
     urlPlaceholder: 'Incolla un link di YouTube',
@@ -376,7 +376,7 @@ export const video: Record<Lang, VideoCopy> = {
     nextPreviewAnimation: 'Animazione successiva',
   },
   ru: {
-    title: 'Price on Video',
+    title: 'Цена на видео',
     description: 'Курс биткоина в реальном времени поверх видео на YouTube.',
     videoLabel: 'Ссылка на видео YouTube',
     urlPlaceholder: 'Вставь ссылку на YouTube',
@@ -429,7 +429,7 @@ export const video: Record<Lang, VideoCopy> = {
     nextPreviewAnimation: 'Следующая анимация',
   },
   tr: {
-    title: 'Price on Video',
+    title: 'Videoda Fiyat',
     description: 'YouTube videolarının üzerinde canlı Bitcoin fiyatı.',
     videoLabel: 'YouTube video bağlantısı',
     urlPlaceholder: 'Bir YouTube bağlantısı yapıştır',
@@ -482,7 +482,7 @@ export const video: Record<Lang, VideoCopy> = {
     nextPreviewAnimation: 'Sonraki animasyon',
   },
   vi: {
-    title: 'Price on Video',
+    title: 'Giá trên video',
     description: 'Giá Bitcoin trực tiếp trên video YouTube.',
     videoLabel: 'URL video YouTube',
     urlPlaceholder: 'Dán liên kết YouTube',
@@ -535,7 +535,7 @@ export const video: Record<Lang, VideoCopy> = {
     nextPreviewAnimation: 'Hoạt ảnh tiếp theo',
   },
   ja: {
-    title: 'Price on Video',
+    title: '動画に価格を表示',
     description: 'YouTube動画にビットコインのリアルタイム価格を重ねて表示。',
     videoLabel: 'YouTube動画のURL',
     urlPlaceholder: 'YouTubeのリンクを貼り付け',

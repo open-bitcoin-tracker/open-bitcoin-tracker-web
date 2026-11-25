@@ -109,10 +109,6 @@ const locale = htmlLang(Astro.currentLocale);
         </div>
         <p id="video-price-keyboard-hint" class="sr-only">{t.priceKeyboardHint}</p>
       </section>
-      <button type="button" class="video-change" data-change-video aria-haspopup="dialog" aria-controls="video-picker" aria-expanded="false" hidden disabled>
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="3" /><path d="M7 3v18M17 3v18M3 8h4m-4 8h4M17 8h4m-4 8h4" /></svg>
-        <span>{t.changeVideo}</span>
-      </button>
       <div class="video-setup-link">
         <IconButton type="button" class="video-icon-button" data-share-setup aria-label={t.shareSetup} title={t.shareSetup} hidden disabled>
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="18" cy="5" r="3" /><circle cx="6" cy="12" r="3" /><circle cx="18" cy="19" r="3" /><path d="m8.6 10.5 6.8-4m-6.8 7 6.8 4" /></svg>
@@ -190,6 +186,9 @@ const locale = htmlLang(Astro.currentLocale);
         </IconButton>
           </div>
           </div>
+          <button type="button" class="video-change" data-change-video aria-label={t.changeVideo} title={t.changeVideo} aria-haspopup="dialog" aria-controls="video-picker" aria-expanded="false" hidden disabled>
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="3" /><path d="M7 3v18M17 3v18M3 8h4m-4 8h4M17 8h4m-4 8h4" /></svg>
+          </button>
         </div>
         <p class="sr-only" data-video-status role="status" hidden></p>
         <p class="video-message" data-control-status role="status" hidden></p>
@@ -325,9 +324,9 @@ const locale = htmlLang(Astro.currentLocale);
   /* Scale the default proportionally up to 4K; saved sizes remain relative multipliers. */
   /* Compensate for the final negative letter spacing so the last glyph stays inside the frame. */
   .video-price { --price-chars: 8; --video-price-base-size: clamp(3.75rem, min(11.71875vw, 20.8334vh, 258.75vw / var(--price-chars)), 28.125rem); color: var(--video-price-colour, #fff); font-family: var(--video-price-font, var(--font-sans)); font-size: calc(var(--video-price-base-size) * var(--video-price-scale, 1) * var(--video-price-fit, 1)); font-weight: var(--video-price-weight, 750); letter-spacing: var(--video-price-spacing, -.065em); padding-inline-end: .065em; padding-block: var(--video-price-padding, 0); -webkit-text-stroke: var(--video-price-stroke-width, 0px) var(--video-price-stroke-colour, #000); paint-order: stroke fill; line-height: 1.2; font-variant-numeric: tabular-nums; white-space: nowrap; text-shadow: 0 3px 30px #000, 0 0 80px #0009; }
-  .video-dock { position: fixed; bottom: 0; margin-bottom: max(1rem, env(safe-area-inset-bottom)); left: 50%; transform: translateX(-50%); width: min(22rem, calc(100% - 3rem)); z-index: 3; text-align: center; }
+  .video-dock { --video-change-size: 3.75rem; --video-change-space: calc(var(--video-change-size) + .5rem); position: fixed; bottom: 0; margin-bottom: max(1rem, env(safe-area-inset-bottom)); left: 50%; transform: translateX(-50%); width: min(calc(22rem + var(--video-change-space)), calc(100% - 3rem)); z-index: 3; text-align: center; }
   .video-page[data-video-controls-top] .video-dock { top: 0; bottom: auto; margin-top: calc(var(--menu-control-top) + var(--menu-control-size) + .75rem); }
-  .video-dock:has(.video-time[hidden]) { width: min(18rem, calc(100% - 3rem)); }
+  .video-dock:has(.video-time[hidden]) { width: min(calc(18rem + var(--video-change-space)), calc(100% - 3rem)); }
   .video-picker { position: fixed; inset: 0 auto 0 0; width: min(32rem, 100%); max-width: 100%; height: 100dvh; max-height: 100dvh; margin: 0; padding: max(1.75rem, env(safe-area-inset-top)) max(1.5rem, env(safe-area-inset-right)) max(1.75rem, env(safe-area-inset-bottom)) max(1.5rem, env(safe-area-inset-left)); overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; border: 0; border-right: 1px solid #ffffff14; background: #111; color: #fff; box-shadow: 12px 0 60px #0005; transform: translate3d(-100%, 0, 0); transition: transform .3s ease; will-change: transform; }
   .video-picker[open] { transform: translate3d(0, 0, 0); }
   .video-picker[open][data-closing] { transform: translate3d(-100%, 0, 0); pointer-events: none; }
@@ -361,7 +360,8 @@ const locale = htmlLang(Astro.currentLocale);
   .video-recents :global(button:focus-visible) { outline: 2px solid var(--color-media-focus); outline-offset: 2px; }
   .video-suggestions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; margin: 0; padding: 0; list-style: none; text-align: left; }
   .video-page :global(.video-live-badge[hidden]) { display: none !important; }
-  .video-playback { width: 100%; }
+  .video-playback { display: flex; align-items: stretch; gap: .5rem; width: 100%; }
+  .video-playback .video-player-panel { flex: 1 1 0; min-width: 0; }
   .video-playback:not([hidden]) { animation: video-controls-in .3s ease; }
   @keyframes video-controls-in {
     from { opacity: 0; }
@@ -394,8 +394,8 @@ const locale = htmlLang(Astro.currentLocale);
   .video-volume-control:has(input:active) .video-volume-reveal { width: calc(clamp(3rem, 15vw, 5rem) + .5rem); opacity: 1; visibility: visible; pointer-events: auto; }
   .video-volume-slider { --video-progress: 100%; width: clamp(3rem, 15vw, 5rem); margin-left: .5rem; }
   .video-page[data-video-silent] .video-volume-reveal { display: none; }
-  .video-change { position: fixed; top: var(--menu-control-top); left: max(var(--menu-control-gutter), env(safe-area-inset-left, 0px)); z-index: 5; display: flex; align-items: center; justify-content: center; gap: .625rem; min-height: var(--menu-control-size); max-width: calc(100% - max(var(--menu-control-gutter), env(safe-area-inset-left, 0px)) - var(--menu-control-right) - var(--menu-control-size) * 2 - 1.5rem); padding: .75rem 1.125rem; border: 0; border-radius: var(--radius-control); color: var(--color-media-accent); font-size: 1rem; font-weight: 700; line-height: 1.3; text-align: left; overflow-wrap: anywhere; }
-  .video-change svg { flex-shrink: 0; }
+  .video-change { display: grid; place-items: center; flex: 0 0 var(--video-change-size); width: var(--video-change-size); padding: 0; border: 0; border-radius: var(--radius-control); color: var(--color-media-accent); }
+  .video-change svg { width: 1.5rem; height: 1.5rem; }
   .video-change:hover { background: rgb(50 50 50 / .85); }
   .video-message { margin-top: .75rem; padding: .4rem .7rem; font-size: .75rem; line-height: 1.5; color: #ddd; background: rgb(8 8 8 / .85); border-radius: 8px; }
   .video-setup-link { position: fixed; top: var(--menu-control-top); right: calc(var(--menu-control-right) + var(--menu-control-size) + .75rem); z-index: 5; }
@@ -428,8 +428,8 @@ const locale = htmlLang(Astro.currentLocale);
   }
   @media (max-width: 700px) {
     .video-price-stage { padding: 5rem 1rem 6rem; }
-    .video-dock { width: min(18rem, calc(100% - 2rem)); }
-    .video-dock:has(.video-time[hidden]) { width: min(16rem, calc(100% - 2rem)); }
+    .video-dock { width: min(calc(18rem + var(--video-change-space)), calc(100% - 2rem)); }
+    .video-dock:has(.video-time[hidden]) { width: min(calc(16rem + var(--video-change-space)), calc(100% - 2rem)); }
     .video-page[data-video-controls-top]:has([data-share-status]:not([hidden])) .video-dock { margin-top: calc(var(--menu-control-top) + var(--menu-control-size) + 3.5rem); }
     .video-controls { flex-wrap: wrap; justify-content: space-between; gap: .25rem; }
     .video-controls .video-icon-button { width: 100%; max-width: 4rem; height: 4rem; }

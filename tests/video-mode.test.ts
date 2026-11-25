@@ -10,7 +10,7 @@ import type { Currency } from '../src/lib/bitcoin-currency.ts';
 import type { DisplayPreferences } from '../src/lib/bitcoin-display-preferences.ts';
 import type { PriceFeedState } from '../src/lib/bitcoin-live-price.ts';
 import { parseYouTubeVideo } from '../src/lib/youtube-player.ts';
-import { videoSections, videoSuggestions } from '../src/lib/video-suggestions.ts';
+import { defaultVideoId, videoSections, videoSuggestions } from '../src/lib/video-suggestions.ts';
 import { video as videoCopy } from '../src/i18n/video.ts';
 import type { createVideoPickerTabs } from '../src/lib/video-picker-tabs.ts';
 import { isColour, isFont } from '../src/lib/video-price-style.ts';
@@ -123,6 +123,8 @@ interface Options {
   url?: string;
   blockedHistory?: boolean;
   clipboard?: 'unavailable' | 'denied' | 'pending';
+  /** Include the first-visit default video; most tests start from the empty picker. */
+  defaultVideo?: boolean;
 }
 
 function harness(options: Options = {}) {
@@ -274,6 +276,7 @@ function harness(options: Options = {}) {
   const modules = {
     createRollingNumber: () => undefined,
     videoSuggestions,
+    defaultVideoId: options.defaultVideo ? defaultVideoId : undefined,
     isColour, isFont,
     CurrencyRates: Rates,
     isCurrency: (value: string) => ['USD', 'EUR', 'GBP', 'AUD', 'CAD', 'CHF', 'JPY'].includes(value),
@@ -446,6 +449,25 @@ function harness(options: Options = {}) {
     async rejectRates(index: number) { requests[index].reject(); await setImmediate(); },
   };
 }
+
+test('first visits play the fireplace video without saving it, while a saved choice wins', async () => {
+  assert.ok(videoSuggestions.some(video => video.id === defaultVideoId && video.title.includes('Fireplace')));
+  const first = harness({ defaultVideo: true });
+  assert.deepEqual(first.loaded, [{ id: defaultVideoId, startSeconds: 0 }]);
+  assert.equal(first.control('[data-video-picker]').open, false);
+  assert.equal(first.control('[data-video-controls]').hidden, false);
+  assert.equal(first.control('[data-change-video]').hidden, false);
+  assert.equal(first.storageWrites.some(write => write.key === videoSelectionKey), false, 'the default does not count as a choice');
+  first.close();
+
+  const returning = harness({ defaultVideo: true, storedSelection: JSON.stringify({ version: 1, url: firstUrl }) });
+  assert.deepEqual(returning.loaded, [{ id: 'abcdefghijk', startSeconds: 0 }]);
+  returning.close();
+
+  const blocked = harness({ defaultVideo: true, blockedStorage: true });
+  assert.deepEqual(blocked.loaded, [{ id: defaultVideoId, startSeconds: 0 }]);
+  blocked.close();
+});
 
 test('video submission replaces the picker with playback controls and rejects invalid replacements without changing the background', () => {
   const h = harness();

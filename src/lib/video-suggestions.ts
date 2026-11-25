@@ -35,3 +35,6 @@ export const videoSections = [
 
 /** Shared metadata for curated cards and Recent, regardless of section. */
 export const videoSuggestions = videoSections.flatMap<{ id: string; title: string; isLive: boolean; isSilent: boolean }>(section => [...section.videos]);
+
+/** First-visit background: the curated fireplace video, until the visitor picks another. */
+export const defaultVideoId = 'mSX3OyW9Rao';
