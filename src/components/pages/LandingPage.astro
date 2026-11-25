@@ -71,7 +71,7 @@ const href = (path: string) => getRelativeLocaleUrl(lang, path);
         </article>
         <article class="wealth-tool">
           <a class="tool-link secondary-tool" href={href('global-wealth')}>
-            <div class="tool-heading"><h2 lang="en">{wealth.title}</h2></div>
+            <div class="tool-heading"><h2>{wealth[lang].title}</h2></div>
             <figure class="secondary-preview"><WealthPreview /></figure>
             <div class="tool-description"><p>{home.wealthDescription}</p><span class="text-action">{home.openWealth}<span aria-hidden="true">↗</span></span></div>
           </a>

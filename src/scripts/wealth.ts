@@ -2,9 +2,9 @@ import { createGuideDrawer } from '../lib/guide-drawer';
 import { subscribeBitcoinPricePoll } from '../lib/bitcoin-price-poll';
 import { formatDate, interpolate } from '../features/supply/model';
 import { ASSET_IDS, baseValues, tileClipPath, capFromPosition, circulatingSupply, estimateHeight, formatChange, formatCompactUsd, formatUsd, positionFromCap, priceMilestones, redistribute, SLIDER_STEPS, snapCap, layoutAssets, totalValue, type AssetValues, type Notch, type Rect, type WealthSnapshot } from '../features/wealth/model';
-import type { WealthCopy, assetNames } from '../i18n/wealth';
+import type { WealthCopy } from '../i18n/wealth';
 
-type Copy = WealthCopy & { assetNames: typeof assetNames };
+type Copy = WealthCopy & { locale: string };
 
 const root = document.querySelector<HTMLElement>('[data-wealth]');
 const json = document.getElementById('wealth-data');
@@ -38,7 +38,7 @@ if (root && json) {
     return [id, { callout, value: callout.querySelector<HTMLElement>('[data-callout-value]')! }];
   }));
   const status = root.querySelector<HTMLElement>('[data-status]')!;
-  const date = (value: string) => formatDate(value, 'en-US');
+  const date = (value: string) => formatDate(value, copy.locale);
 
   let bitcoinPrice = snapshot.bitcoin.fallbackPrice;
   let goldPrice = snapshot.gold.fallbackPrice;

@@ -1,12 +1,14 @@
 ---
 import '../features/wealth/tiles.css';
-import { assetNames } from '../i18n/wealth';
+import { wealth } from '../i18n/wealth';
+import { resolveLang } from '../i18n/utils';
 import { ASSET_IDS, layoutAssets, tileClipPath, totalValue } from '../features/wealth/model';
 import { staticWealth } from '../features/wealth/static';
 
 // A static miniature of the Global Wealth treemap, drawn from the bundled snapshot. It has a
 // regular and a wide layout so Bitcoin stays square when the homepage card spans the full row.
 // Gold, silver and Bitcoin are enlarged beyond their true share so every area can carry its label.
+const { assetNames } = wealth[resolveLang(Astro.currentLocale)];
 const { base } = staticWealth();
 const total = totalValue(base);
 const values = { ...base, gold: Math.max(base.gold, total * .07), silver: Math.max(base.silver, total * .012), bitcoin: Math.max(base.bitcoin, total * .005) };
@@ -22,7 +24,7 @@ const percent = (value: number, of: number) => `${(value / of * 100).toFixed(3)}
       const path = tileClipPath(rect, notches[id], corners[id], percent);
       const clip = path ? `clip-path:${path};` : '';
       return <span class="preview-tile" data-tile={id} style={`left:${percent(rect.x, width)};top:${percent(rect.y, height)};width:calc(${percent(rect.w, width)} + 1px);height:calc(${percent(rect.h, height)} + 1px);${clip}`}>
-        {id === 'bitcoin' ? <span class="preview-glyph">₿</span> : id === 'silver' ? null : <span lang="en">{assetNames[id]}</span>}
+        {id === 'bitcoin' ? <span class="preview-glyph">₿</span> : id === 'silver' ? null : <span>{assetNames[id]}</span>}
       </span>;
     })}
   </div>

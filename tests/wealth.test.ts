@@ -195,3 +195,20 @@ test('Bitcoin stays square in the corner beside fiat and gold, with exact areas 
   close(dominant.rects.bitcoin.w * dominant.rects.bitcoin.h, 800 / 853 * 160 * 90, 1e-6);
 });
 
+
+test('wealth copy covers every language and mirrors the snapshot notes in English', async () => {
+  const { wealth } = await import('../src/i18n/wealth.ts');
+  const keys = Object.keys(wealth.en).sort();
+  for (const copy of Object.values(wealth)) {
+    assert.deepEqual(Object.keys(copy).sort(), keys);
+    assert.deepEqual(Object.keys(copy.assetNames).sort(), [...ASSET_IDS].sort());
+    for (const key of keys) {
+      const english = (wealth.en as unknown as Record<string, unknown>)[key];
+      const value = (copy as unknown as Record<string, unknown>)[key];
+      if (typeof english !== 'string') continue;
+      const placeholders = (text: string) => (text.match(/\{\w+\}/g) ?? []).sort();
+      assert.deepEqual(placeholders(value as string), placeholders(english), key);
+    }
+  }
+  for (const asset of snapshot.assets) assert.equal(wealth.en.assetNotes[asset.id as keyof typeof wealth.en.assetNotes], asset.note);
+});
