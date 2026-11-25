@@ -119,22 +119,22 @@ test('a curve appearing from nothing draws in from the left without delaying zoo
   assert.equal(motion.filled, 0);
   assert.equal(motion.animating, true);
   assert.deepEqual(motion.sample(0), scene());
-  motion.sample(1000);
+  motion.sample(600);
   assert.ok(motion.revealed > .5 && motion.revealed < 1);
   // A range change mid-reveal zooms as usual, and finishing the zoom keeps drawing in.
   const target = { ...scene('day', points.slice(3)), points: points.slice(3) };
-  motion.update(target, 1000);
-  assert.deepEqual(motion.sample(1450), target);
+  motion.update(target, 600);
+  assert.deepEqual(motion.sample(1050), target);
   assert.ok(motion.revealed < 1);
   assert.equal(motion.animating, true);
   // The fill waits for the line, then slides down while inspection is already allowed.
   assert.equal(motion.filled, 0);
-  motion.sample(1900);
+  motion.sample(1300);
   assert.equal(motion.revealed, 1);
   assert.equal(motion.animating, false);
   assert.equal(motion.presenting, true);
   assert.ok(motion.filled > 0 && motion.filled < 1);
-  motion.sample(2300);
+  motion.sample(1600);
   assert.equal(motion.filled, 1);
   assert.equal(motion.presenting, false);
 });

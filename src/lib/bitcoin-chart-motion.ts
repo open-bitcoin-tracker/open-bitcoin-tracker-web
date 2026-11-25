@@ -36,8 +36,8 @@ function bezier(progress: number, x1: number, y1: number, x2: number, y2: number
 }
 
 // The line draws in first; the fill then slides down beneath it.
-const REVEAL_MS = 1600;
-const FILL_MS = 700;
+const REVEAL_MS = 1100;
+const FILL_MS = 500;
 
 export class ChartMotion {
   private target?: ChartScene;
