@@ -186,8 +186,9 @@ const locale = htmlLang(Astro.currentLocale);
         </IconButton>
           </div>
           </div>
-          <button type="button" class="video-change" data-change-video aria-label={t.changeVideo} title={t.changeVideo} aria-haspopup="dialog" aria-controls="video-picker" aria-expanded="false" hidden disabled>
+          <button type="button" class="video-change" data-change-video aria-haspopup="dialog" aria-controls="video-picker" aria-expanded="false" hidden disabled>
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="3" /><path d="M7 3v18M17 3v18M3 8h4m-4 8h4M17 8h4m-4 8h4" /></svg>
+            <span>{t.changeVideo}</span>
           </button>
         </div>
         <p class="sr-only" data-video-status role="status" hidden></p>
@@ -324,7 +325,7 @@ const locale = htmlLang(Astro.currentLocale);
   /* Scale the default proportionally up to 4K; saved sizes remain relative multipliers. */
   /* Compensate for the final negative letter spacing so the last glyph stays inside the frame. */
   .video-price { --price-chars: 8; --video-price-base-size: clamp(3.75rem, min(11.71875vw, 20.8334vh, 258.75vw / var(--price-chars)), 28.125rem); color: var(--video-price-colour, #fff); font-family: var(--video-price-font, var(--font-sans)); font-size: calc(var(--video-price-base-size) * var(--video-price-scale, 1) * var(--video-price-fit, 1)); font-weight: var(--video-price-weight, 750); letter-spacing: var(--video-price-spacing, -.065em); padding-inline-end: .065em; padding-block: var(--video-price-padding, 0); -webkit-text-stroke: var(--video-price-stroke-width, 0px) var(--video-price-stroke-colour, #000); paint-order: stroke fill; line-height: 1.2; font-variant-numeric: tabular-nums; white-space: nowrap; text-shadow: 0 3px 30px #000, 0 0 80px #0009; }
-  .video-dock { --video-change-size: 3.75rem; --video-change-space: calc(var(--video-change-size) + .5rem); position: fixed; bottom: 0; margin-bottom: max(1rem, env(safe-area-inset-bottom)); left: 50%; transform: translateX(-50%); width: min(calc(22rem + var(--video-change-space)), calc(100% - 3rem)); z-index: 3; text-align: center; }
+  .video-dock { --video-change-size: 5.5rem; --video-change-space: calc(var(--video-change-size) + .5rem); position: fixed; bottom: 0; margin-bottom: max(1rem, env(safe-area-inset-bottom)); left: 50%; transform: translateX(-50%); width: min(calc(22rem + var(--video-change-space)), calc(100% - 3rem)); z-index: 3; text-align: center; }
   .video-page[data-video-controls-top] .video-dock { top: 0; bottom: auto; margin-top: calc(var(--menu-control-top) + var(--menu-control-size) + .75rem); }
   .video-dock:has(.video-time[hidden]) { width: min(calc(18rem + var(--video-change-space)), calc(100% - 3rem)); }
   .video-picker { position: fixed; inset: 0 auto 0 0; width: min(32rem, 100%); max-width: 100%; height: 100dvh; max-height: 100dvh; margin: 0; padding: max(1.75rem, env(safe-area-inset-top)) max(1.5rem, env(safe-area-inset-right)) max(1.75rem, env(safe-area-inset-bottom)) max(1.5rem, env(safe-area-inset-left)); overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; border: 0; border-right: 1px solid #ffffff14; background: #111; color: #fff; box-shadow: 12px 0 60px #0005; transform: translate3d(-100%, 0, 0); transition: transform .3s ease; will-change: transform; }
@@ -394,8 +395,8 @@ const locale = htmlLang(Astro.currentLocale);
   .video-volume-control:has(input:active) .video-volume-reveal { width: calc(clamp(3rem, 15vw, 5rem) + .5rem); opacity: 1; visibility: visible; pointer-events: auto; }
   .video-volume-slider { --video-progress: 100%; width: clamp(3rem, 15vw, 5rem); margin-left: .5rem; }
   .video-page[data-video-silent] .video-volume-reveal { display: none; }
-  .video-change { display: grid; place-items: center; flex: 0 0 var(--video-change-size); width: var(--video-change-size); padding: 0; border: 0; border-radius: var(--radius-control); color: var(--color-media-accent); }
-  .video-change svg { width: 1.5rem; height: 1.5rem; }
+  .video-change { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: .25rem; flex: 0 0 var(--video-change-size); width: var(--video-change-size); padding: .375rem; border: 0; border-radius: var(--radius-control); color: var(--color-media-accent); font-size: .75rem; font-weight: 700; line-height: 1.2; text-align: center; overflow-wrap: anywhere; hyphens: auto; }
+  .video-change svg { flex-shrink: 0; width: 1.5rem; height: 1.5rem; }
   .video-change:hover { background: rgb(50 50 50 / .85); }
   .video-message { margin-top: .75rem; padding: .4rem .7rem; font-size: .75rem; line-height: 1.5; color: #ddd; background: rgb(8 8 8 / .85); border-radius: 8px; }
   .video-setup-link { position: fixed; top: var(--menu-control-top); right: calc(var(--menu-control-right) + var(--menu-control-size) + .75rem); z-index: 5; }
