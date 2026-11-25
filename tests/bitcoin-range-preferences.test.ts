@@ -5,7 +5,7 @@ import { createContext, runInContext } from 'node:vm';
 import ts from 'typescript';
 import { tracker } from '../src/i18n/tracker.ts';
 
-const names = ['bitcoin-price', 'bitcoin-live-price', 'bitcoin-chart', 'bitcoin-chart-motion', 'bitcoin-price-change', 'bitcoin-range', 'bitcoin-range-preferences', 'bitcoin-range-pill', 'bitcoin-currency', 'bitcoin-display-preferences', 'currency-picker', 'price-tab-title', 'chart-fullscreen-controls', 'rolling-number'];
+const names = ['bitcoin-price', 'bitcoin-live-price', 'bitcoin-chart', 'bitcoin-chart-motion', 'bitcoin-price-change', 'bitcoin-range', 'bitcoin-range-preferences', 'bitcoin-range-pill', 'bitcoin-currency', 'bitcoin-display-preferences', 'currency-picker', 'price-tab-title', 'chart-fullscreen-controls', 'rolling-number', 'price-currency-menu'];
 const scripts = Object.fromEntries(names.map(name => [name, ts.transpileModule(
   readFileSync(new URL(`../src/${['bitcoin-price', 'bitcoin-range-pill'].includes(name) ? 'scripts' : 'lib'}/${name}.ts`, import.meta.url), 'utf8'),
   { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 } },
@@ -105,8 +105,9 @@ function page(stored: Map<string, string>, locale = 'en', blocked: 'read' | 'wri
   const currencyTrigger = priceCurrencyTrigger;
   const currencyList = priceCurrencyList;
   const currencyOptions = priceCurrencyOptions;
-  const document = Object.assign(new EventTarget(), { hidden: false, querySelector: () => root });
+  const document = Object.assign(new EventTarget(), { hidden: false, querySelector: () => root, documentElement: { clientWidth: 1440 } });
   const window = Object.assign(new EventTarget(), {
+    innerHeight: 900,
     matchMedia: () => Object.assign(new EventTarget(), { matches: true }),
   });
   Object.defineProperty(window, 'localStorage', {
@@ -133,6 +134,7 @@ function page(stored: Map<string, string>, locale = 'en', blocked: 'read' | 'wri
     performance: { now: () => 0 },
     WebSocket: class extends EventTarget { static CLOSING = 2; readyState = 0; close() {} },
     ResizeObserver: class { observe() {} disconnect() {} },
+    getComputedStyle: () => ({ fontSize: '16px', paddingLeft: '16px' }),
     requestAnimationFrame: (callback: (now: number) => void) => { frames.set(++frameId, callback); return frameId; },
     cancelAnimationFrame: (id: number) => frames.delete(id),
     setInterval: () => 1, clearInterval() {}, setTimeout: () => 1, clearTimeout() {},

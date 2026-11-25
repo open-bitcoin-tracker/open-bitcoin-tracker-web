@@ -11,6 +11,7 @@ import { readDisplayPreferences, saveDisplayPreferences, subscribeCurrencyPrefer
 import type { ChartSettingsCopy } from '../i18n/chart-settings';
 import { subscribeBitcoinPrice, type PriceFeedState } from '../lib/bitcoin-live-price';
 import { createCurrencyPicker } from '../lib/currency-picker';
+import { placePriceCurrencyMenu } from '../lib/price-currency-menu';
 import { createPriceTabTitle } from '../lib/price-tab-title';
 import { createChartFullscreenControls } from '../lib/chart-fullscreen-controls';
 import { createRollingNumber, type RollingNumber } from '../lib/rolling-number';
@@ -442,6 +443,34 @@ function startTracker(root: HTMLElement) {
   });
   const priceCurrency = root.querySelector<HTMLElement>('[data-price-currency-picker]')!;
   const priceCurrencyPicker = createCurrencyPicker(priceCurrency, currencySelect, { wrapper: priceCurrency });
+  // Open the currency menu from its chevron rather than the far edge of the price.
+  const priceCurrencyMenu = priceCurrency.querySelector<HTMLElement>('[data-currency-list]')!;
+  function placePriceMenu() {
+    if (priceCurrencyMenu.hidden) return;
+    const rem = parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
+    const picker = priceCurrency.getBoundingClientRect();
+    const code = priceCurrency.querySelector<HTMLElement>('.price-currency-code')!.getBoundingClientRect();
+    const placement = placePriceCurrencyMenu({
+      pickerLeft: picker.left,
+      pickerTop: picker.top,
+      priceRight: priceEl.getBoundingClientRect().right,
+      codeLeft: code.left,
+      codeBottom: code.bottom,
+      triggerBottom: priceSizer.getBoundingClientRect().bottom,
+      menuWidth: priceCurrencyMenu.offsetWidth,
+      viewportWidth: document.documentElement.clientWidth,
+      viewportHeight: window.innerHeight,
+      gutter: parseFloat(getComputedStyle(priceCurrency.closest('.price-header')!).paddingLeft) || rem,
+      gap: .5 * rem,
+      bottomRoom: 5 * rem,
+      maxHeight: 30 * rem,
+    });
+    priceCurrencyMenu.style.left = `${placement.left}px`;
+    priceCurrencyMenu.style.top = `${placement.top}px`;
+    priceCurrencyMenu.style.maxHeight = `${placement.maxHeight}px`;
+  }
+  priceCurrency.addEventListener('currencytoggle', placePriceMenu);
+  window.addEventListener('resize', placePriceMenu);
   const stopCurrency = subscribeCurrencyPreference(next => {
     if (next === currency) return;
     applyCurrency(next);
@@ -693,6 +722,7 @@ function startTracker(root: HTMLElement) {
     reduceMotion.removeEventListener('change', onMotionPreferenceChange);
     rangePill.destroy();
     priceCurrencyPicker.destroy();
+    window.removeEventListener('resize', placePriceMenu);
     document.removeEventListener('fullscreenchange', onPriceOnlyFullscreenChange);
     document.removeEventListener('keydown', onPriceOnlyKeyDown);
     document.removeEventListener('visibilitychange', onPriceOnlyVisibility);
