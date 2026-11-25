@@ -395,7 +395,8 @@ const locale = htmlLang(Astro.currentLocale);
   .video-volume-control:has(input:active) .video-volume-reveal { width: calc(clamp(3rem, 15vw, 5rem) + .5rem); opacity: 1; visibility: visible; pointer-events: auto; }
   .video-volume-slider { --video-progress: 100%; width: clamp(3rem, 15vw, 5rem); margin-left: .5rem; }
   .video-page[data-video-silent] .video-volume-reveal { display: none; }
-  .video-change { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: .25rem; flex: 0 0 var(--video-change-size); width: var(--video-change-size); padding: .375rem; border: 0; border-radius: var(--radius-control); color: var(--color-media-accent); font-size: .75rem; font-weight: 700; line-height: 1.2; text-align: center; overflow-wrap: anywhere; hyphens: auto; }
+  /* The label wraps only between words, never inside one; a word longer than the button widens it. */
+  .video-change { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: .25rem; flex: 0 0 var(--video-change-size); min-width: min-content; padding: .375rem; border: 0; border-radius: var(--radius-control); color: var(--color-media-accent); font-size: .75rem; font-weight: 700; line-height: 1.2; text-align: center; overflow-wrap: normal; hyphens: manual; }
   .video-change svg { flex-shrink: 0; width: 1.5rem; height: 1.5rem; }
   .video-change:hover { background: rgb(50 50 50 / .85); }
   .video-message { margin-top: .75rem; padding: .4rem .7rem; font-size: .75rem; line-height: 1.5; color: #ddd; background: rgb(8 8 8 / .85); border-radius: 8px; }

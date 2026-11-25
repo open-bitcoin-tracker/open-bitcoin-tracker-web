@@ -43,15 +43,13 @@ const sourceFor = (id: AssetId) => id === 'bitcoin' ? snapshot.bitcoin.source : 
       <!-- The slider sets the price per bitcoin; the market cap follows and shows on the chart. -->
       <div class="header-price">
         <div class="price-stat">
-          <!-- Like the price page, the price opens the currency menu; the code and chevron beside it name the currency. -->
+          <!-- Like the price page, the price opens the currency menu; a chevron beside it shows that it does, and the code is read to screen readers. -->
           <div class="wealth-currency" data-currency-picker>
             <button type="button" class="wealth-currency-trigger" data-currency-trigger aria-haspopup="listbox" aria-expanded="false" aria-controls="wealth-currency-options" disabled>
               <span class="wealth-sr-only">{currencyLabel}: </span>
               <output class="cap-value" for="bitcoin-cap" data-price>{usd(snapshot.bitcoin.fallbackPrice)}</output>
-              <span class="wealth-currency-code">
-                <span data-currency-value>USD</span>
-                <svg class="wealth-currency-chevron" width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="m4 6 4 4 4-4" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" /></svg>
-              </span>
+              <span class="wealth-sr-only" data-currency-value>USD</span>
+              <svg class="wealth-currency-chevron" width="20" height="20" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="m4 6 4 4 4-4" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" /></svg>
             </button>
             <CurrencyOptions id="wealth-currency-options" locale={lang} class="wealth-currency-menu" label={currencyLabel} />
             <select data-currency hidden disabled aria-label={currencyLabel}>{currencies.map((code) => <option value={code}>{code}</option>)}</select>
@@ -171,18 +169,19 @@ const sourceFor = (id: AssetId) => id === 'bitcoin' ? snapshot.bitcoin.source : 
   /* Room for the widest price (tens of millions, with a spaced symbol in some languages), so the slider never resizes while it moves.
      The block is right-aligned, so the spare room falls on its left rather than before the slider. */
   .header-price .cap-value { min-width: var(--price-room, 12ch); text-align: right; }
-  /* The price opens the currency menu, like the price page: a quiet code and chevron follow it. */
+  /* The price opens the currency menu, like the price page: a quiet chevron follows it. */
   .wealth-currency { position: relative; }
-  .wealth-currency-trigger { display: inline-flex; align-items: center; gap: .375rem; padding: 0; border: 0; border-radius: .25rem; background: none; color: inherit; font: inherit; text-align: inherit; cursor: pointer; }
+  .wealth-currency-trigger { display: inline-flex; align-items: center; gap: .25rem; padding: 0; border: 0; border-radius: .25rem; background: none; color: inherit; font: inherit; text-align: inherit; cursor: pointer; }
   .wealth-currency-trigger:disabled { cursor: default; }
-  .wealth-currency-code { display: inline-flex; align-items: center; gap: .125rem; color: var(--color-ink-muted); font-size: .875rem; font-weight: 600; letter-spacing: .02em; line-height: 1; white-space: nowrap; transition: color 150ms ease-out; }
-  .wealth-currency-chevron { transition: transform 150ms ease-out; }
-  .wealth-currency-trigger:not(:disabled):hover .wealth-currency-code, .wealth-currency-trigger:focus-visible .wealth-currency-code, .wealth-currency-trigger[aria-expanded='true'] .wealth-currency-code { color: var(--color-ink); }
+  .wealth-currency-chevron { flex: none; color: var(--color-ink-muted); transition: color 150ms ease-out, transform 150ms ease-out; }
+  .wealth-currency-trigger:not(:disabled):hover .wealth-currency-chevron, .wealth-currency-trigger:focus-visible .wealth-currency-chevron, .wealth-currency-trigger[aria-expanded='true'] .wealth-currency-chevron { color: var(--color-ink); }
   .wealth-currency-trigger:not(:disabled):hover .wealth-currency-chevron { transform: translateY(2px); }
   .wealth-currency-trigger[aria-expanded='true'] .wealth-currency-chevron { transform: rotate(180deg); }
   /* The menu drops over the chart from the price; on phones, where the price sits below the chart, it opens upward. */
   .wealth-currency :global(.wealth-currency-menu) { position: absolute; top: calc(100% + .5rem); left: 0; z-index: 20; width: min(21rem, calc(100vw - 2rem)); max-height: min(30rem, calc(100dvh - 9rem)); padding: .5rem; overflow-y: auto; overscroll-behavior: contain; border: 1px solid var(--menu-dropdown-border); border-radius: var(--radius-lg); color: var(--menu-ink); background: var(--menu-dropdown-bg); box-shadow: var(--menu-dropdown-shadow); animation: wealth-menu-enter 160ms var(--ease-out); }
   .wealth-currency :global(.wealth-currency-menu[hidden]) { display: none; }
+  /* Wide screens: the menu lines up with the price's right edge, by the chevron that opened it. */
+  @media (min-width: 701px) { .wealth-currency :global(.wealth-currency-menu) { left: auto; right: 0; } }
   @keyframes wealth-menu-enter { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
   .wealth-sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
   .header-price .slider-hit { flex: 1; min-width: 8rem; margin-top: 0; }
@@ -326,7 +325,7 @@ const sourceFor = (id: AssetId) => id === 'bitcoin' ? snapshot.bitcoin.source : 
     .simulator-footer { order: 3; }
   }
   @media (prefers-reduced-motion: reduce) {
-    .details-plus, .wealth-help-tooltip, .wealth-currency-code, .wealth-currency-chevron { transition: none; }
+    .details-plus, .wealth-help-tooltip, .wealth-currency-chevron { transition: none; }
     .wealth-currency :global(.wealth-currency-menu) { animation: none; }
       .cap-slider::-webkit-slider-thumb, .cap-slider::-moz-range-thumb { transition: none; }
         }
