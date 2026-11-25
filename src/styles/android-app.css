@@ -34,7 +34,7 @@
 .hero-privacy > svg { color: var(--color-accent); }
 .hero-privacy h2 { font-size: .9375rem; font-weight: 600; line-height: 1.5; }
 .hero-privacy p { margin-top: .375rem; font-size: .875rem; line-height: 1.7; text-wrap: pretty; color: var(--color-ink-muted); }
-.feature-card { height: 100%; padding: 1.75rem; border: 1px solid var(--color-divider); border-radius: 20px; background: var(--color-surface); }
+.feature-card { height: 100%; padding: 1.75rem; border: var(--card-border); background: var(--card-bg); }
 .feature-card > div { display: flex; align-items: center; gap: .875rem; }
 .feature-card :is(h2, h3) { font-size: 1rem; font-weight: 600; line-height: 1.4; letter-spacing: -.025em; }
 .feature-icon-wrap { display: flex; align-items: center; justify-content: center; width: 40px; height: 40px; flex-shrink: 0; color: var(--color-accent); }
@@ -73,7 +73,7 @@
 .gallery-number { font-size: .75rem; color: var(--color-ink-muted); font-variant-numeric: tabular-nums; }
 
 .privacy-section { padding-top: 3rem; }
-.privacy-panel { display: grid; grid-template-columns: .9fr 1.3fr; gap: 3rem; padding: clamp(2rem, 4.5vw, 4rem); border: 1px solid var(--color-divider); border-radius: 32px; background: var(--color-surface); }
+.privacy-panel { display: grid; grid-template-columns: .9fr 1.3fr; gap: 3rem; padding: clamp(2rem, 4.5vw, 4rem); border: var(--card-border); background: var(--card-bg); }
 .privacy-intro { display: flex; flex-direction: column; align-items: flex-start; justify-content: center; }
 .privacy-symbol { position: relative; width: 112px; height: 112px; margin-block: .5rem 2rem; display: flex; align-items: center; justify-content: center; color: var(--color-accent); }
 .privacy-symbol::before, .privacy-symbol::after { content: ''; position: absolute; inset: 0; border: 1px solid var(--color-divider); border-radius: 50%; }
@@ -147,7 +147,7 @@
   .hero-device-position { width: 224px; }
   .prices-stage { height: 600px; border-radius: 24px; }
   .prices-device-position { width: 238px; }
-  .privacy-panel { padding: 1.75rem; border-radius: 24px; }
+  .privacy-panel { padding: 1.75rem; }
   .privacy-cards { grid-template-columns: 1fr; }
   .privacy-cards .feature-card > div { flex-direction: row; align-items: center; }
   .privacy-cards .feature-card { padding: 1.5rem; }

@@ -92,6 +92,9 @@ html.dark {
   }
 
 :root {
+  /* Standard card shape: square corners, divider border, surface background. */
+  --card-border: 1px solid var(--color-divider);
+  --card-bg: var(--color-surface);
   --color-media-accent: #ff981e;
   --color-media-focus: #ffc477;
   --radius-control: 14px;

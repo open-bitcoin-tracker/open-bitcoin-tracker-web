@@ -180,7 +180,6 @@ const clientCopy = Object.fromEntries(['projected', 'recorded', 'stale', 'reduce
     --supply-fiat-ink: #234632;
     --supply-gap: 1.25rem;
     --supply-padding: 1.25rem;
-    --supply-radius: 24px;
     --supply-heading-size: 1rem;
     --supply-total-size: clamp(1.25rem, 2.2vw, 1.6rem);
     --supply-share-size: clamp(1.1rem, 2.3vw, 1.5rem);
@@ -203,7 +202,7 @@ const clientCopy = Object.fromEntries(['projected', 'recorded', 'stale', 'reduce
   .bitcoin-share { grid-column: 1; grid-row: 3; }
   .supply-board { grid-column: 2; grid-row: 2; }
   .share-grid { grid-column: 2; grid-row: 3; }
-  .bitcoin-feature { display: flex; flex-direction: column; align-items: stretch; padding: var(--supply-padding); background: radial-gradient(ellipse at 50% 65%, var(--hero-glow), transparent 75%), var(--color-surface); border: 1px solid var(--color-divider); border-radius: var(--supply-radius); }
+  .bitcoin-feature { display: flex; flex-direction: column; align-items: stretch; padding: var(--supply-padding); background: radial-gradient(ellipse at 50% 65%, var(--hero-glow), transparent 75%), var(--card-bg); border: var(--card-border); }
   .asset-comparison :global(.container-scene) { width: min(100%, var(--supply-scene-width)); max-width: none; margin-block: 0; }
   .asset-comparison :global(.container-scene.fiat) { position: relative; z-index: 0; }
   .supply-board { min-width: 0; }
@@ -234,7 +233,7 @@ const clientCopy = Object.fromEntries(['projected', 'recorded', 'stale', 'reduce
   .currency-grid, .share-grid { display: grid; grid-template-columns: minmax(0, 1fr); }
   .currency-grid { height: 100%; }
   .supply-column:not([data-selected='true']), .share-grid > .share:not([data-selected='true']) { display: none; }
-  .supply-column { display: flex; flex-direction: column; min-width: 0; padding: var(--supply-padding); border: 1px solid var(--color-divider); border-radius: var(--supply-radius); }
+  .supply-column { display: flex; flex-direction: column; min-width: 0; padding: var(--supply-padding); border: var(--card-border); background: var(--card-bg); }
   .fiat-column { background: radial-gradient(ellipse at 50% 65%, color-mix(in srgb, var(--supply-fiat) 18%, transparent), transparent 75%), var(--color-surface); }
   .column-heading { display: flex; align-items: center; gap: .6em; color: var(--color-ink-muted); font-size: var(--supply-heading-size); font-weight: 650; margin-bottom: .35rem; }
   .bitcoin-feature .column-heading, .supply-board .column-heading, .share-heading { min-height: 44px; }
@@ -249,7 +248,7 @@ const clientCopy = Object.fromEntries(['projected', 'recorded', 'stale', 'reduce
   .sats-tooltip[data-positioned] { position: fixed; transform: none; }
   .sats-tooltip::before { content: ''; position: absolute; inset: -.5rem; z-index: -1; }
   .bitcoin-unit:is(:hover, :focus-within):not([data-tooltip-dismissed]) .sats-tooltip { visibility: visible; }
-  .share { min-width: 0; padding: var(--supply-padding); border: 1px solid var(--color-divider); border-radius: var(--supply-radius); background: var(--color-surface); text-align: left; }
+  .share { min-width: 0; padding: var(--supply-padding); border: var(--card-border); background: var(--card-bg); text-align: left; }
   .share-number { color: var(--color-ink); font-size: var(--supply-share-size); font-weight: 600; letter-spacing: -.045em; line-height: 1.2; margin-top: .2em; font-variant-numeric: tabular-nums; white-space: nowrap; }
   .method { width: 100%; max-width: 90rem; margin: var(--supply-gap) auto 0; }
   .method-trigger { display: flex; align-items: center; justify-content: center; gap: .5rem; width: fit-content; max-width: 100%; min-height: 44px; margin-inline: auto; padding: .625rem 1rem; border: 1px solid var(--color-divider); border-radius: .75rem; background: var(--color-surface); color: var(--color-ink-muted); font-size: clamp(.875rem, .9vw, 1.125rem); line-height: 1.5; transition: border-color .15s ease, color .15s ease; }
@@ -296,7 +295,6 @@ const clientCopy = Object.fromEntries(['projected', 'recorded', 'stale', 'reduce
     .supply-page {
       --supply-gap: clamp(.75rem, min(1.25vw, 1.6dvh), 2.5rem);
       --supply-padding: clamp(1.25rem, min(2vw, 2.2dvh), 3rem);
-      --supply-radius: clamp(1.5rem, 1.3vw, 3rem);
       --supply-heading-size: clamp(1.125rem, min(1.5vw, 2.8dvh), 2.75rem);
       --supply-total-size: clamp(1.5rem, min(2.55vw, 5dvh), 5.5rem);
       --supply-share-size: clamp(1.5rem, min(2.1vw, 4dvh), 4.5rem);
@@ -324,7 +322,6 @@ const clientCopy = Object.fromEntries(['projected', 'recorded', 'stale', 'reduce
     .supply-page {
       --supply-gap: .75rem;
       --supply-padding: .875rem;
-      --supply-radius: 1rem;
       --supply-heading-size: .9375rem;
       --supply-total-size: clamp(1rem, 4.8vw, 1.6rem);
       --supply-share-size: 1.25rem;
