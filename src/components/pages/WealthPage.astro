@@ -7,7 +7,10 @@ import { wealth, type ReportedAsset } from '../../i18n/wealth';
 import '../../features/wealth/tiles.css';
 import '../../styles/guide-drawer.css';
 import { formatDate, formatNumber, interpolate } from '../../features/supply/model';
-import { ASSET_IDS, formatCompactUsd, formatUsd, SLIDER_STEPS, layoutAssets, tileClipPath, type AssetId } from '../../features/wealth/model';
+import { chartSettings } from '../../i18n/chart-settings';
+import { currencies } from '../../lib/bitcoin-currency';
+import CurrencyOptions from '../ui/CurrencyOptions.astro';
+import { ASSET_IDS, formatCompactMoney, formatMoney, SLIDER_STEPS, layoutAssets, tileClipPath, type AssetId } from '../../features/wealth/model';
 import { staticWealth } from '../../features/wealth/static';
 
 const lang = resolveLang(Astro.currentLocale);
@@ -19,7 +22,11 @@ const { snapshot, fiat, supply, base, total } = staticWealth();
 const { rects, notches, corners } = layoutAssets(base, 160, 90);
 const percent = (value: number, of: number) => `${(value / of * 100).toFixed(4)}%`;
 const listed = Object.fromEntries(snapshot.assets.map((asset) => [asset.id, asset]));
+const currencyLabel = chartSettings[lang].currency;
 const clientCopy = { ...t, locale };
+// Without JavaScript, or until a saved currency loads, amounts show in US dollars.
+const usd = (value: number, digits = 0) => formatMoney(value, locale, 'USD', digits);
+const compactUsd = (value: number, digits?: number) => formatCompactMoney(value, locale, 'USD', digits);
 // Currencies the ECB does not quote, converted at their own central bank's rate.
 const ownRated = snapshot.fiat.more.filter((money) => money.rate);
 const yearOf = (value: string) => value.slice(0, 4);
@@ -36,12 +43,24 @@ const sourceFor = (id: AssetId) => id === 'bitcoin' ? snapshot.bitcoin.source : 
       <!-- The slider sets the price per bitcoin; the market cap follows and shows on the chart. -->
       <div class="header-price">
         <div class="price-stat">
-          <output class="cap-value" for="bitcoin-cap" data-price>{formatUsd(snapshot.bitcoin.fallbackPrice, locale)}</output>
+          <!-- Like the price page, the price opens the currency menu; the code and chevron beside it name the currency. -->
+          <div class="wealth-currency" data-currency-picker>
+            <button type="button" class="wealth-currency-trigger" data-currency-trigger aria-haspopup="listbox" aria-expanded="false" aria-controls="wealth-currency-options" disabled>
+              <span class="wealth-sr-only">{currencyLabel}: </span>
+              <output class="cap-value" for="bitcoin-cap" data-price>{usd(snapshot.bitcoin.fallbackPrice)}</output>
+              <span class="wealth-currency-code">
+                <span data-currency-value>USD</span>
+                <svg class="wealth-currency-chevron" width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="m4 6 4 4 4-4" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" /></svg>
+              </span>
+            </button>
+            <CurrencyOptions id="wealth-currency-options" locale={lang} class="wealth-currency-menu" label={currencyLabel} />
+            <select data-currency hidden disabled aria-label={currencyLabel}>{currencies.map((code) => <option value={code}>{code}</option>)}</select>
+          </div>
           <label for="bitcoin-cap" class="section-label">{t.priceLabel}</label>
         </div>
         <div class="slider-hit" data-slider-hit>
           <input id="bitcoin-cap" class="cap-slider" type="range" min="0" max={SLIDER_STEPS} step="1" value="0" style="--fill:0%" data-slider disabled
-            aria-valuetext={interpolate(t.sliderValue, { cap: formatCompactUsd(base.bitcoin, locale, 4), price: formatUsd(snapshot.bitcoin.fallbackPrice, locale) })} />
+            aria-valuetext={interpolate(t.sliderValue, { cap: compactUsd(base.bitcoin, 4), price: usd(snapshot.bitcoin.fallbackPrice) })} />
           <div class="slider-scale" data-scale aria-hidden="true"></div>
         </div>
       </div>
@@ -50,7 +69,7 @@ const sourceFor = (id: AssetId) => id === 'bitcoin' ? snapshot.bitcoin.source : 
     <div class="wealth-stage">
       <section class="treemap-area" aria-label={t.treemapLabel}>
         {(['bitcoin', 'silver'] as const).map((id) => (
-          <p class="tile-callout" data-callout={id} data-visible aria-hidden="true" style={`left:calc(${percent(rects[id].x + rects[id].w, 160)} + 4px);top:${percent(rects[id].y, 90)}`}>{assetNames[id]} <strong data-callout-value>{formatCompactUsd(base[id], locale)}</strong></p>
+          <p class="tile-callout" data-callout={id} data-visible aria-hidden="true" style={`left:calc(${percent(rects[id].x + rects[id].w, 160)} + 4px);top:${percent(rects[id].y, 90)}`}>{assetNames[id]} <strong data-callout-value>{compactUsd(base[id])}</strong></p>
         ))}
         <ul class="treemap" data-treemap>
           {ASSET_IDS.map((id) => {
@@ -62,7 +81,7 @@ const sourceFor = (id: AssetId) => id === 'bitcoin' ? snapshot.bitcoin.source : 
                 <div class="tile-label">
                   {id === 'bitcoin' && <span class="tile-glyph" aria-hidden="true">₿</span>}
                   <span class="tile-name">{assetNames[id]}</span>
-                  <span class="tile-value" data-tile-value>{formatCompactUsd(base[id], locale)}</span>
+                  <span class="tile-value" data-tile-value>{compactUsd(base[id])}</span>
                   <span class="tile-change" data-tile-change></span>
                 </div>
               </div>
@@ -95,7 +114,7 @@ const sourceFor = (id: AssetId) => id === 'bitcoin' ? snapshot.bitcoin.source : 
       <details data-method-fallback>
         <summary><h2>{t.methodTitle}</h2><svg class="details-plus" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg></summary>
         <div class="method-content" data-method-content>
-          <p class="method-note">{t.methodNote}</p>
+          <p class="method-note">{t.methodNote} {t.currencyMethod}</p>
           <dl class="source-list">
             {ASSET_IDS.map((id) => {
               const asset = listed[id];
@@ -104,7 +123,7 @@ const sourceFor = (id: AssetId) => id === 'bitcoin' ? snapshot.bitcoin.source : 
                 : id === 'gold'
                   ? interpolate(t.goldMethod, { tonnes: formatNumber(snapshot.gold.tonnes, locale), year: yearOf(snapshot.gold.asOf) })
                   : id === 'silver'
-                    ? interpolate(t.silverMethod, { ounces: (snapshot.silver.ounces / t.ouncesUnit).toLocaleString(locale, { maximumFractionDigits: 1 }), year: yearOf(snapshot.silver.asOf), date: date(snapshot.silver.fallbackPriceDate), price: formatUsd(snapshot.silver.fallbackPrice, locale, 2) })
+                    ? interpolate(t.silverMethod, { ounces: (snapshot.silver.ounces / t.ouncesUnit).toLocaleString(locale, { maximumFractionDigits: 1 }), year: yearOf(snapshot.silver.asOf), date: date(snapshot.silver.fallbackPriceDate), price: usd(snapshot.silver.fallbackPrice, 2) })
                   : id === 'fiat'
                     ? [interpolate(t.fiatMethod, { count: String(5 + snapshot.fiat.more.length), date: date(snapshot.fiat.fxDate) }), ownRated.length > 0 && interpolate(t.ownRateMethod, { currencies: new Intl.ListFormat(locale).format(ownRated.map(({ currency }) => currency)) })].filter(Boolean).join(' ')
                     : interpolate(t.reportMethod, { publisher: asset.publisher, date: date(asset.asOf), note: t.assetNotes[id as ReportedAsset] });
@@ -151,7 +170,21 @@ const sourceFor = (id: AssetId) => id === 'bitcoin' ? snapshot.bitcoin.source : 
   .price-stat .section-label { margin-top: calc(.5rem + 9px - var(--slider-h) / 2); font-size: .6875rem; line-height: 1; }
   /* Room for the widest price (tens of millions, with a spaced symbol in some languages), so the slider never resizes while it moves.
      The block is right-aligned, so the spare room falls on its left rather than before the slider. */
-  .header-price .cap-value { min-width: 12ch; text-align: right; }
+  .header-price .cap-value { min-width: var(--price-room, 12ch); text-align: right; }
+  /* The price opens the currency menu, like the price page: a quiet code and chevron follow it. */
+  .wealth-currency { position: relative; }
+  .wealth-currency-trigger { display: inline-flex; align-items: center; gap: .375rem; padding: 0; border: 0; border-radius: .25rem; background: none; color: inherit; font: inherit; text-align: inherit; cursor: pointer; }
+  .wealth-currency-trigger:disabled { cursor: default; }
+  .wealth-currency-code { display: inline-flex; align-items: center; gap: .125rem; color: var(--color-ink-muted); font-size: .875rem; font-weight: 600; letter-spacing: .02em; line-height: 1; white-space: nowrap; transition: color 150ms ease-out; }
+  .wealth-currency-chevron { transition: transform 150ms ease-out; }
+  .wealth-currency-trigger:not(:disabled):hover .wealth-currency-code, .wealth-currency-trigger:focus-visible .wealth-currency-code, .wealth-currency-trigger[aria-expanded='true'] .wealth-currency-code { color: var(--color-ink); }
+  .wealth-currency-trigger:not(:disabled):hover .wealth-currency-chevron { transform: translateY(2px); }
+  .wealth-currency-trigger[aria-expanded='true'] .wealth-currency-chevron { transform: rotate(180deg); }
+  /* The menu drops over the chart from the price; on phones, where the price sits below the chart, it opens upward. */
+  .wealth-currency :global(.wealth-currency-menu) { position: absolute; top: calc(100% + .5rem); left: 0; z-index: 20; width: min(21rem, calc(100vw - 2rem)); max-height: min(30rem, calc(100dvh - 9rem)); padding: .5rem; overflow-y: auto; overscroll-behavior: contain; border: 1px solid var(--menu-dropdown-border); border-radius: var(--radius-lg); color: var(--menu-ink); background: var(--menu-dropdown-bg); box-shadow: var(--menu-dropdown-shadow); animation: wealth-menu-enter 160ms var(--ease-out); }
+  .wealth-currency :global(.wealth-currency-menu[hidden]) { display: none; }
+  @keyframes wealth-menu-enter { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+  .wealth-sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
   .header-price .slider-hit { flex: 1; min-width: 8rem; margin-top: 0; }
   .wealth-header h1 { font-size: clamp(1.375rem, 2.4vw, 2rem); font-weight: 650; letter-spacing: -.03em; line-height: 1.15; }
   /* When Bitcoin's or silver's box is too small for its own label, its name and value sit beside it, over the neighbouring tile. */
@@ -283,7 +316,9 @@ const sourceFor = (id: AssetId) => id === 'bitcoin' ? snapshot.bitcoin.source : 
     .wealth-stage { order: 1; }
     /* The label (left) and large price (right) share a line, with the slider right under them, so a longer price never moves it. */
     .header-price { order: 2; flex: none; display: grid; grid-template-columns: 1fr max-content; grid-template-areas: 'label price' 'slider slider'; align-items: end; gap: 0 1rem; margin: .75rem 0 0; padding: 0; border-left: 0; }
-    .header-price .cap-value { grid-area: price; min-width: 0; font-size: clamp(1.625rem, 7.5vw, 2rem); line-height: 1.1; text-align: right; }
+    .wealth-currency { grid-area: price; justify-self: end; }
+    .header-price .cap-value { min-width: 0; font-size: clamp(1.625rem, 7.5vw, 2rem); line-height: 1.1; text-align: right; }
+    .wealth-currency :global(.wealth-currency-menu) { top: auto; bottom: calc(100% + .5rem); left: auto; right: 0; max-height: min(30rem, calc(100dvh - 12rem)); }
     .price-stat { display: contents; }
     /* The label wraps onto two lines when the price grows into tens of millions. */
     .price-stat .section-label { grid-area: label; justify-self: start; margin-top: 0; padding-bottom: .35em; font-size: .75rem; line-height: 1.3; text-align: left; }
@@ -291,7 +326,8 @@ const sourceFor = (id: AssetId) => id === 'bitcoin' ? snapshot.bitcoin.source : 
     .simulator-footer { order: 3; }
   }
   @media (prefers-reduced-motion: reduce) {
-    .details-plus, .wealth-help-tooltip { transition: none; }
+    .details-plus, .wealth-help-tooltip, .wealth-currency-code, .wealth-currency-chevron { transition: none; }
+    .wealth-currency :global(.wealth-currency-menu) { animation: none; }
       .cap-slider::-webkit-slider-thumb, .cap-slider::-moz-range-thumb { transition: none; }
         }
 </style>

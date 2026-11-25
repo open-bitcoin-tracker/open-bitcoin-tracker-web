@@ -352,8 +352,8 @@ export function layoutAssets(values: AssetValues, width: number, height: number)
   return nestSilver(layout, values.silver, total > 0 ? width * height / total : 0);
 }
 
-// Amounts follow the page locale's number format. Every amount is in US dollars, so the plain `$`
-// symbol stays short in every language instead of `US$`, `$US` or `USD`.
+// Amounts follow the page locale's number format. The narrow symbol keeps them short in every
+// language ($ rather than US$, $US or USD); the currency picker beside the price names the currency.
 const formatters = new Map<string, Intl.NumberFormat>();
 function formatter(locale: string, kind: string, options: Intl.NumberFormatOptions): Intl.NumberFormat {
   const key = `${locale}|${kind}`;
@@ -364,15 +364,15 @@ function formatter(locale: string, kind: string, options: Intl.NumberFormatOptio
   }
   return cached;
 }
-const usd = { style: 'currency', currency: 'USD', currencyDisplay: 'narrowSymbol' } as const;
+const money = (currency: string) => ({ style: 'currency', currency, currencyDisplay: 'narrowSymbol' } as const);
 
-export function formatCompactUsd(value: number, locale: string, digits = 3): string {
+export function formatCompactMoney(value: number, locale: string, currency: string, digits = 3): string {
   if (!Number.isFinite(value)) return '—';
-  return formatter(locale, `compact${digits}`, { ...usd, notation: 'compact', maximumSignificantDigits: digits }).format(value);
+  return formatter(locale, `${currency}|compact${digits}`, { ...money(currency), notation: 'compact', maximumSignificantDigits: digits }).format(value);
 }
 
-export function formatUsd(value: number, locale: string, fractionDigits = 0): string {
-  return Number.isFinite(value) ? formatter(locale, `usd${fractionDigits}`, { ...usd, minimumFractionDigits: fractionDigits, maximumFractionDigits: fractionDigits }).format(value) : '—';
+export function formatMoney(value: number, locale: string, currency: string, fractionDigits = 0): string {
+  return Number.isFinite(value) ? formatter(locale, `${currency}|${fractionDigits}`, { ...money(currency), minimumFractionDigits: fractionDigits, maximumFractionDigits: fractionDigits }).format(value) : '—';
 }
 
 export function formatChange(value: number, locale: string): string {

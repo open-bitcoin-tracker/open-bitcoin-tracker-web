@@ -1,8 +1,11 @@
 import { createGuideDrawer } from '../lib/guide-drawer';
 import { subscribeBitcoinPricePoll } from '../lib/bitcoin-price-poll';
 import { formatDate, interpolate } from '../features/supply/model';
-import { ASSET_IDS, baseValues, tileClipPath, capFromPosition, circulatingSupply, estimateHeight, formatChange, formatCompactUsd, formatUsd, positionFromCap, priceMilestones, redistribute, SLIDER_STEPS, snapCap, layoutAssets, totalValue, type AssetValues, type Notch, type Rect, type WealthSnapshot } from '../features/wealth/model';
+import { ASSET_IDS, baseValues, tileClipPath, capFromPosition, circulatingSupply, estimateHeight, formatChange, formatCompactMoney, formatMoney, positionFromCap, priceMilestones, redistribute, SLIDER_STEPS, snapCap, layoutAssets, totalValue, type AssetValues, type Notch, type Rect, type WealthSnapshot } from '../features/wealth/model';
 import type { WealthCopy } from '../i18n/wealth';
+import { CurrencyRates, isCurrency, type Currency } from '../lib/bitcoin-currency';
+import { readDisplayPreferences, saveDisplayPreferences, subscribeCurrencyPreference } from '../lib/bitcoin-display-preferences';
+import { createCurrencyPicker } from '../lib/currency-picker';
 
 type Copy = WealthCopy & { locale: string };
 
@@ -40,6 +43,29 @@ if (root && json) {
   const status = root.querySelector<HTMLElement>('[data-status]')!;
   const date = (value: string) => formatDate(value, copy.locale);
 
+  /**
+   * The currency is shared with the price page. Amounts convert from US dollars at the latest ECB
+   * rate; until it loads, or if it cannot, the snapshot's ECB rates of `fxDate` stand in, and the
+   * status says so after a failure.
+   */
+  let currency: Currency = readDisplayPreferences().currency;
+  const exchangeRates = new CurrencyRates();
+  let ratesFailed = false;
+  const usdRate = () => currency === 'USD' ? 1 : exchangeRates.current(currency)?.rate ?? snapshot.fiat.usdRates[currency];
+  const live = () => currency === 'USD' || exchangeRates.current(currency) !== undefined;
+  const compact = (value: number, digits?: number) => formatCompactMoney(value * usdRate(), copy.locale, currency, digits);
+  const money = (price: number) => formatMoney(price, copy.locale, currency);
+  async function refreshRates() {
+    if (currency === 'USD') return;
+    try {
+      await exchangeRates.refreshLatest();
+      ratesFailed = false;
+    } catch {
+      ratesFailed = true;
+    }
+    render();
+  }
+
   let bitcoinPrice = snapshot.bitcoin.fallbackPrice;
   let goldPrice = snapshot.gold.fallbackPrice;
   let bitcoinState: 'connecting' | 'live' | 'unavailable' = 'connecting';
@@ -50,7 +76,9 @@ if (root && json) {
   const current = () => {
     const supply = circulatingSupply(estimateHeight(snapshot.bitcoin, Date.now()));
     const base = baseValues(snapshot, fiat, bitcoinPrice, goldPrice, snapshot.silver.fallbackPrice, supply);
-    return { supply, base, total: totalValue(base) };
+    // Values stay in US dollars; dividing a market cap by `units` gives the price in the chosen
+    // currency, so round prices, snapping and the scale all follow that currency.
+    return { units: supply / usdRate(), base, total: totalValue(base) };
   };
 
   /**
@@ -171,9 +199,9 @@ if (root && json) {
   // The scale marks every round price; powers of ten get a label. It follows the live range.
   const scale = root.querySelector<HTMLElement>('[data-scale]')!;
   let scaleKey = '';
-  function drawScale(min: number, max: number, supply: number) {
-    const marks = priceMilestones(min / supply, max / supply).map((price) => ({ price, at: positionFromCap(price * supply, min, max) / SLIDER_STEPS }));
-    const key = marks.map(({ at }) => at.toFixed(4)).join();
+  function drawScale(min: number, max: number, units: number) {
+    const marks = priceMilestones(min / units, max / units).map((price) => ({ price, at: positionFromCap(price * units, min, max) / SLIDER_STEPS }));
+    const key = currency + marks.map(({ at }) => at.toFixed(4)).join();
     if (key === scaleKey) return;
     scaleKey = key;
     scale.replaceChildren(...marks.map(({ price, at }) => {
@@ -181,39 +209,42 @@ if (root && json) {
       const mark = document.createElement('span');
       mark.className = major ? 'scale-mark scale-mark--major' : 'scale-mark';
       mark.style.setProperty('--at', String(at));
-      if (major) mark.dataset.label = formatCompactUsd(price, copy.locale);
+      if (major) mark.dataset.label = formatCompactMoney(price, copy.locale, currency);
       return mark;
     }));
   }
 
   function render(animate = false) {
-    const { supply, base, total } = current();
+    const { units, base, total } = current();
     // Bitcoin can only grow from today's live market cap, up to all global wealth.
     const cap = Math.min(total, Math.max(base.bitcoin, selectedCap ?? base.bitcoin));
     const simulated = selectedCap !== null;
     const values: AssetValues = simulated ? redistribute(base, cap) : base;
-    const price = cap / supply;
+    const price = cap / units;
 
     draw(values, animate);
     for (const id of ASSET_IDS) {
       const { value, change } = tiles.get(id)!;
       // Intl joins the number and unit with no-break spaces; a plain space lets a narrow tile wrap the amount.
-      value.textContent = formatCompactUsd(values[id], copy.locale).replace(/[\u00a0\u202f]/g, ' ');
+      value.textContent = compact(values[id]).replace(/[\u00a0\u202f]/g, ' ');
       const ratio = base[id] > 0 ? values[id] / base[id] - 1 : 0;
       change.textContent = simulated && Math.abs(ratio) > 1e-9 ? formatChange(ratio, copy.locale) : '';
     }
-    for (const [id, { value }] of callouts) value.textContent = formatCompactUsd(values[id], copy.locale);
+    for (const [id, { value }] of callouts) value.textContent = compact(values[id]);
     fitLabels();
-    priceOutput.textContent = formatUsd(price, copy.locale);
+    priceOutput.textContent = money(price);
+    // Room for the price at the top of the range, so the slider never resizes while it moves.
+    priceOutput.style.setProperty('--price-room', `${money(total / units).length + 1}ch`);
     const position = Math.round(positionFromCap(cap, base.bitcoin, total));
     slider.value = String(position);
     slider.style.setProperty('--fill', `${position / SLIDER_STEPS * 100}%`);
-    drawScale(base.bitcoin, total, supply);
-    slider.setAttribute('aria-valuetext', interpolate(copy.sliderValue, { cap: formatCompactUsd(cap, copy.locale, 4), price: formatUsd(price, copy.locale) }));
+    drawScale(base.bitcoin, total, units);
+    slider.setAttribute('aria-valuetext', interpolate(copy.sliderValue, { cap: compact(cap, 4), price: money(price) }));
 
     const lines = [
       bitcoinState === 'unavailable' ? interpolate(copy.priceUnavailable, { date: date(snapshot.bitcoin.fallbackPriceDate) }) : '',
       goldLive === false ? interpolate(copy.goldUnavailable, { date: date(snapshot.gold.fallbackPriceDate) }) : '',
+      ratesFailed && !live() ? interpolate(copy.ratesUnavailable, { date: date(snapshot.fiat.fxDate) }) : '',
     ];
     status.textContent = lines.filter(Boolean).join(' ');
   }
@@ -252,9 +283,9 @@ if (root && json) {
     const { left, width } = slider.getBoundingClientRect();
     const thumb = thumbWidth();
     const ratio = Math.min(1, Math.max(0, (event.clientX - grabOffset - left - thumb / 2) / (width - thumb)));
-    const { supply, base, total } = current();
+    const { units, base, total } = current();
     const position = ratio * SLIDER_STEPS;
-    const { cap, milestone } = snapCap(position, base.bitcoin, total, supply, SNAP_PX / Math.max(1, width - thumb) * SLIDER_STEPS);
+    const { cap, milestone } = snapCap(position, base.bitcoin, total, units, SNAP_PX / Math.max(1, width - thumb) * SLIDER_STEPS);
     if (milestone !== undefined && milestone !== snappedTo) navigator.vibrate?.(8);
     snappedTo = milestone;
     const next = cap <= base.bitcoin ? null : cap;
@@ -299,11 +330,11 @@ if (root && json) {
     }
     if (event.key !== 'PageUp' && event.key !== 'PageDown') return;
     event.preventDefault();
-    const { supply, base, total } = current();
-    const price = Math.max(base.bitcoin, selectedCap ?? base.bitcoin) / supply;
-    const milestones = priceMilestones(base.bitcoin / supply, total / supply);
+    const { units, base, total } = current();
+    const price = Math.max(base.bitcoin, selectedCap ?? base.bitcoin) / units;
+    const milestones = priceMilestones(base.bitcoin / units, total / units);
     const target = event.key === 'PageUp' ? milestones.find((m) => m > price * (1 + 1e-9)) : milestones.findLast((m) => m < price * (1 - 1e-9));
-    selectedCap = target !== undefined ? target * supply : event.key === 'PageUp' ? total : null;
+    selectedCap = target !== undefined ? target * units : event.key === 'PageUp' ? total : null;
     render(true);
   });
   // The sources move into a drawer opened from the help button beside the title, so the chart keeps the page's height.
@@ -335,6 +366,28 @@ if (root && json) {
       if (!methodDialog.open) methodTrigger.removeAttribute('data-tooltip-dismissed');
     });
   }
+  // The price opens the shared currency menu; a choice here also applies on the price page, and back.
+  const currencySelect = root.querySelector<HTMLSelectElement>('[data-currency]')!;
+  const currencyPicker = root.querySelector<HTMLElement>('[data-currency-picker]')!;
+  function applyCurrency(next: Currency) {
+    if (next === currency) return;
+    currency = next;
+    currencySelect.value = next;
+    currencySelect.dispatchEvent(new Event('change'));
+    render();
+    void refreshRates();
+  }
+  currencySelect.value = currency;
+  currencySelect.disabled = false;
+  createCurrencyPicker(currencyPicker, currencySelect, { wrapper: currencyPicker });
+  currencySelect.addEventListener('change', () => {
+    if (!isCurrency(currencySelect.value) || currencySelect.value === currency) return;
+    applyCurrency(currencySelect.value);
+    saveDisplayPreferences({ ...readDisplayPreferences(), currency });
+  });
+  subscribeCurrencyPreference(applyCurrency);
+  void refreshRates();
+
   new ResizeObserver(() => render()).observe(treemap);
   slider.disabled = false;
 

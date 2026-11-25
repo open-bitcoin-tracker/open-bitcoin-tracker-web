@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { readFileSync } from 'node:fs';
 import type { SupplySnapshot } from '../src/features/supply/model.ts';
-import { ASSET_IDS, baseValues, layoutAssets, broadMoneyUsd, otherBroadMoneyUsd, capFromPosition, circulatingSupply, estimateHeight, goldOunces, isValidWealthSnapshot, positionFromCap, priceMilestones, redistribute, snapCap, SLIDER_STEPS, squarify, totalValue, type AssetValues, type WealthSnapshot } from '../src/features/wealth/model.ts';
+import { ASSET_IDS, baseValues, formatCompactMoney, formatMoney, layoutAssets, broadMoneyUsd, otherBroadMoneyUsd, capFromPosition, circulatingSupply, estimateHeight, goldOunces, isValidWealthSnapshot, positionFromCap, priceMilestones, redistribute, snapCap, SLIDER_STEPS, squarify, totalValue, type AssetValues, type WealthSnapshot } from '../src/features/wealth/model.ts';
 
 const read = <T>(path: string) => JSON.parse(readFileSync(new URL(path, import.meta.url), 'utf8')) as T;
 const snapshot = read<WealthSnapshot>('../src/features/wealth/snapshot.json');
@@ -211,4 +211,13 @@ test('wealth copy covers every language and mirrors the snapshot notes in Englis
     }
   }
   for (const asset of snapshot.assets) assert.equal(wealth.en.assetNotes[asset.id as keyof typeof wealth.en.assetNotes], asset.note);
+});
+
+test('amounts format in the chosen currency with the page locale and a short symbol', () => {
+  assert.equal(formatMoney(59048.3, 'en', 'USD'), '$59,048');
+  assert.equal(formatMoney(41.08, 'en', 'USD', 2), '$41.08');
+  assert.equal(formatMoney(9392813, 'en', 'JPY'), '¥9,392,813');
+  assert.equal(formatCompactMoney(393.3e12, 'en', 'EUR'), '€393T');
+  assert.equal(formatCompactMoney(393.3e12, 'de', 'USD').replace(/\s/g, ' '), '393 Bio. $');
+  assert.equal(formatCompactMoney(Number.NaN, 'en', 'USD'), '—');
 });
