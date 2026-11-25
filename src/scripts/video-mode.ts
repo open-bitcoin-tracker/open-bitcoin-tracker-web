@@ -8,7 +8,7 @@ import { createVideoPickerTabs } from '../lib/video-picker-tabs';
 import { defaultVideoId, videoSuggestions } from '../lib/video-suggestions';
 import { readVideoSetup, videoSetupHash } from '../lib/video-share';
 import { isCurrency } from '../lib/bitcoin-currency';
-import type { PartyCopy } from '../i18n/party';
+import type { LivePriceCopy } from '../i18n/live-price';
 import type { VideoCopy } from '../i18n/video';
 
 const VIDEO_SELECTION_KEY = 'obt-video-selection';
@@ -20,7 +20,7 @@ const root = document.querySelector<HTMLElement>('[data-video-mode]');
 if (root) startVideoMode(root);
 
 function startVideoMode(root: HTMLElement) {
-  const t: PartyCopy & VideoCopy = JSON.parse(root.dataset.copy!);
+  const t: LivePriceCopy & VideoCopy = JSON.parse(root.dataset.copy!);
   const locale = root.dataset.locale || 'en';
   const sharedSetup = readVideoSetup(window.location.hash);
   let destroyed = false;

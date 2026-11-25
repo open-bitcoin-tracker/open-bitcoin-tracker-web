@@ -7,7 +7,7 @@ import { setImmediate } from 'node:timers/promises';
 import ts from 'typescript';
 import { parseYouTubeVideo } from '../src/lib/youtube-player.ts';
 import { video } from '../src/i18n/video.ts';
-import { party } from '../src/i18n/party.ts';
+import { livePrice } from '../src/i18n/live-price.ts';
 import type { createVideoPickerTabs } from '../src/lib/video-picker-tabs.ts';
 import { videoSections, videoSuggestions } from '../src/lib/video-suggestions.ts';
 
@@ -75,7 +75,7 @@ function harness({ saved, blocked = false, deferMetadata = false }: { saved?: st
     } },
   });
   const controller = exports.createVideoPickerTabs!(root as unknown as HTMLElement, {
-    copy: { ...video.en, live: party.en.live }, onSelect: value => selected.push({ ...value }),
+    copy: { ...video.en, live: livePrice.en.live }, onSelect: value => selected.push({ ...value }),
   });
   const recent = root.querySelector('[data-video-tab="recent"]');
   const partyTab = root.querySelector('[data-video-tab="party"]');
@@ -346,11 +346,11 @@ test('live suggestions show badges in both tabs without inferring status from ti
   for (const [suggestion, hidden] of [[live, false], [recorded, true]] as const) {
     const button = h.root.querySelector(`[data-video-suggestion="${suggestion.id}"]`);
     assert.equal(button.querySelector('[data-video-live]').hidden, hidden);
-    assert.equal(button.attributes.get('aria-label'), `${video.en.load}: ${suggestion.title}${hidden ? '' : ` (${party.en.live})`}`);
+    assert.equal(button.attributes.get('aria-label'), `${video.en.load}: ${suggestion.title}${hidden ? '' : ` (${livePrice.en.live})`}`);
   }
   const [liveCard, recordedCard] = h.list.children.map(row => row.children[0]);
   assert.equal(liveCard.children[2].hidden, false);
-  assert.equal(liveCard.children[2].textContent, party.en.live);
+  assert.equal(liveCard.children[2].textContent, livePrice.en.live);
   assert.equal(recordedCard.children[2].hidden, true, 'Live Wallpaper is a recording, not a broadcast');
   h.controller.setLiveStatus(live.id, false);
   assert.equal(liveCard.children[2].hidden, true);
@@ -369,7 +369,7 @@ test('playback live status updates matching Recent entries, persists, and ignore
   h.controller.setLiveStatus('abcdefghijk', true);
   for (const row of h.list.children) {
     assert.equal(row.children[0].children[2].hidden, false);
-    assert.ok(row.children[0].attributes.get('aria-label')!.endsWith(` (${party.en.live})`));
+    assert.ok(row.children[0].attributes.get('aria-label')!.endsWith(` (${livePrice.en.live})`));
   }
   assert.equal(h.writes.length, 3);
   h.controller.setLiveStatus('abcdefghijk', true);

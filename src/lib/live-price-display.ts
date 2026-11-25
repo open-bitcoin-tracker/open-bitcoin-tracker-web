@@ -2,10 +2,10 @@ import { CurrencyRates, isCurrency, type Currency } from './bitcoin-currency';
 import { readDisplayPreferences, saveDisplayPreferences, subscribeCurrencyPreference } from './bitcoin-display-preferences';
 import { subscribeBitcoinPrice, type PriceFeedState } from './bitcoin-live-price';
 import type { HistoryPoint } from './bitcoin-chart';
-import type { PartyCopy } from '../i18n/party';
+import type { LivePriceCopy } from '../i18n/live-price';
 import { createRollingNumber } from './rolling-number';
 
-type PriceCopy = Pick<PartyCopy, 'unavailable' | 'offline' | 'fxLoading' | 'fxUnavailable' | 'loadingPrice' | PriceFeedState>;
+type PriceCopy = Pick<LivePriceCopy, 'unavailable' | 'offline' | 'fxLoading' | 'fxUnavailable' | 'loadingPrice' | PriceFeedState>;
 
 /** Shared live-price presentation; charts retain their separate history/selection model. */
 export function createLivePriceDisplay(root: HTMLElement, { copy: t, locale, onPaint, initialCurrency }: {

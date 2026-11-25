@@ -48,7 +48,6 @@ export const en = {
   },
 
   nav: {
-    partyMode: 'Party Mode',
     menuLabel: 'Menu',
     closeMenu: 'Close menu',
     skipToContent: 'Skip to content',

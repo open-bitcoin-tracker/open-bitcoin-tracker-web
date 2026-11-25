@@ -2,12 +2,12 @@
 import { videoPreviewBackgrounds } from '../lib/video-preview-backgrounds';
 import { resolveLang } from '../i18n/utils';
 import { tracker } from '../i18n/tracker';
-import { party } from '../i18n/party';
+import { livePrice } from '../i18n/live-price';
 import { video } from '../i18n/video';
 
 const lang = resolveLang(Astro.currentLocale);
 const t = tracker[lang];
-const { play, pause } = party[lang];
+const { play, pause } = livePrice[lang];
 const next = video[lang].nextPreviewAnimation;
 const copy = { price: t.price, updated: t.updated, unavailable: t.unavailable, connecting: t.connecting, offline: t.offline, play, pause };
 ---

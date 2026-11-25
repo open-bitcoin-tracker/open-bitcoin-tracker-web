@@ -41,7 +41,6 @@ export const ptBR: Dict = {
   },
 
   nav: {
-    partyMode: 'Party Mode',
     menuLabel: 'Menu',
     closeMenu: 'Fechar menu',
     skipToContent: 'Pular para o conteúdo',

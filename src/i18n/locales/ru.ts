@@ -41,7 +41,6 @@ export const ru: Dict = {
   },
 
   nav: {
-    partyMode: 'Party Mode',
     menuLabel: 'Меню',
     closeMenu: 'Закрыть меню',
     skipToContent: 'Перейти к содержимому',

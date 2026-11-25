@@ -1,12 +1,12 @@
 import { parseYouTubeVideo, type YouTubeVideo } from './youtube-player';
 import type { VideoCopy } from '../i18n/video';
-import type { PartyCopy } from '../i18n/party';
+import type { LivePriceCopy } from '../i18n/live-price';
 import { videoSections, videoSuggestions } from './video-suggestions';
 
 const RECENTS_KEY = 'obt-video-recents';
 
 type PickerOptions = {
-  copy: Pick<VideoCopy, 'load' | 'removeRecent' | 'recentTitleLoading' | 'recentTitleUnavailable' | 'noSound'> & Pick<PartyCopy, 'live'>;
+  copy: Pick<VideoCopy, 'load' | 'removeRecent' | 'recentTitleLoading' | 'recentTitleUnavailable' | 'noSound'> & Pick<LivePriceCopy, 'live'>;
   onSelect(video: YouTubeVideo): void;
 };
 

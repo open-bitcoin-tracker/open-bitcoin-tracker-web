@@ -41,7 +41,6 @@ export const it: Dict = {
   },
 
   nav: {
-    partyMode: 'Party Mode',
     menuLabel: 'Menu',
     closeMenu: 'Chiudi menu',
     skipToContent: 'Vai al contenuto',
