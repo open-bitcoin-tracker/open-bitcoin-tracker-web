@@ -173,10 +173,12 @@ const sourceFor = (id: AssetId) => id === 'bitcoin' ? snapshot.bitcoin.source : 
   .wealth-currency { position: relative; }
   .wealth-currency-trigger { display: inline-flex; align-items: center; gap: .25rem; padding: 0; border: 0; border-radius: .25rem; background: none; color: inherit; font: inherit; text-align: inherit; cursor: pointer; }
   .wealth-currency-trigger:disabled { cursor: default; }
-  .wealth-currency-chevron { flex: none; color: var(--color-ink-muted); transition: color 150ms ease-out, transform 150ms ease-out; }
+  /* The chevron points the way the menu opens and turns over while it is open. Turn and hover nudge use separate
+     properties so the nudge never cancels the turn; the nudge follows the direction the chevron points. */
+  .wealth-currency-chevron { --chevron-turn: 0deg; --chevron-nudge: 2px; flex: none; color: var(--color-ink-muted); rotate: var(--chevron-turn); transition: color 150ms ease-out, rotate 200ms var(--ease-out), translate 150ms ease-out; }
   .wealth-currency-trigger:not(:disabled):hover .wealth-currency-chevron, .wealth-currency-trigger:focus-visible .wealth-currency-chevron, .wealth-currency-trigger[aria-expanded='true'] .wealth-currency-chevron { color: var(--color-ink); }
-  .wealth-currency-trigger:not(:disabled):hover .wealth-currency-chevron { transform: translateY(2px); }
-  .wealth-currency-trigger[aria-expanded='true'] .wealth-currency-chevron { transform: rotate(180deg); }
+  .wealth-currency-trigger[aria-expanded='true'] .wealth-currency-chevron { --chevron-turn: 180deg; --chevron-nudge: -2px; }
+  @media (hover: hover) { .wealth-currency-trigger:not(:disabled):hover .wealth-currency-chevron { translate: 0 var(--chevron-nudge); } }
   /* The menu drops over the chart from the price; on phones, where the price sits below the chart, it opens upward. */
   .wealth-currency :global(.wealth-currency-menu) { position: absolute; top: calc(100% + .5rem); left: 0; z-index: 20; width: min(21rem, calc(100vw - 2rem)); max-height: min(30rem, calc(100dvh - 9rem)); padding: .5rem; overflow-y: auto; overscroll-behavior: contain; border: 1px solid var(--menu-dropdown-border); border-radius: var(--radius-lg); color: var(--menu-ink); background: var(--menu-dropdown-bg); box-shadow: var(--menu-dropdown-shadow); animation: wealth-menu-enter 160ms var(--ease-out); }
   .wealth-currency :global(.wealth-currency-menu[hidden]) { display: none; }
@@ -321,6 +323,9 @@ const sourceFor = (id: AssetId) => id === 'bitcoin' ? snapshot.bitcoin.source : 
     .wealth-currency { grid-area: price; justify-self: end; }
     .header-price .cap-value { min-width: 0; font-size: clamp(1.625rem, 7.5vw, 2rem); line-height: 1.1; text-align: right; }
     .wealth-currency :global(.wealth-currency-menu) { top: auto; bottom: calc(100% + .5rem); left: auto; right: 0; max-height: min(30rem, calc(100dvh - 12rem)); }
+    /* The menu opens upward here, so the chevron starts pointing up and turns down while it is open. */
+    .wealth-currency-chevron { --chevron-turn: 180deg; --chevron-nudge: -2px; }
+    .wealth-currency-trigger[aria-expanded='true'] .wealth-currency-chevron { --chevron-turn: 0deg; --chevron-nudge: 2px; }
     .price-stat { display: contents; }
     /* The label wraps onto two lines when the price grows into tens of millions. */
     .price-stat .section-label { grid-area: label; justify-self: start; margin-top: 0; padding-bottom: .35em; font-size: .75rem; line-height: 1.3; text-align: left; }
