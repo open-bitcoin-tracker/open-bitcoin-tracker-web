@@ -48,7 +48,6 @@ const href = (path: string) => getRelativeLocaleUrl(lang, path);
         <div class="chart-copy">
           <h2>{tracker[lang].priceChart}</h2>
           <p>{home.priceDescription}</p>
-          <span class="text-action">{home.openChart}<span aria-hidden="true">↗</span></span>
         </div>
         <BitcoinPreview />
       </a>
@@ -57,7 +56,7 @@ const href = (path: string) => getRelativeLocaleUrl(lang, path);
         <article class="video-tool secondary-tool">
             <div class="tool-heading"><h2><a class="tool-link video-card-link" href={href('video-mode')}>{video[lang].title}</a></h2></div>
             <VideoPreview />
-            <div class="tool-description"><p>{video[lang].description}</p><span class="text-action">{home.openVideo}<span aria-hidden="true">↗</span></span></div>
+            <div class="tool-description"><p>{video[lang].description}</p></div>
         </article>
         <article class="earth-tool">
           <a class="tool-link secondary-tool" href={href(aBitOfEarth.path)}>
@@ -66,14 +65,14 @@ const href = (path: string) => getRelativeLocaleUrl(lang, path);
               <Image class="earth-preview-light" src={earthLightPreview} alt="" widths={[480, 800, 1280]} sizes="(max-width: 700px) 100vw, 50vw" format="webp" quality={85} loading="lazy" />
               <Image class="earth-preview-dark" src={earthDarkPreview} alt="" widths={[480, 800, 1280]} sizes="(max-width: 700px) 100vw, 50vw" format="webp" quality={85} loading="lazy" />
             </figure>
-            <div class="tool-description"><p>{home.earthDescription}</p><span class="text-action">{home.openEarth}<span aria-hidden="true">↗</span></span></div>
+            <div class="tool-description"><p>{home.earthDescription}</p></div>
           </a>
         </article>
         <article class="wealth-tool">
           <a class="tool-link secondary-tool" href={href('global-wealth')}>
             <div class="tool-heading"><h2>{wealth[lang].title}</h2></div>
             <figure class="secondary-preview"><WealthPreview /></figure>
-            <div class="tool-description"><p>{home.wealthDescription}</p><span class="text-action">{home.openWealth}<span aria-hidden="true">↗</span></span></div>
+            <div class="tool-description"><p>{home.wealthDescription}</p></div>
           </a>
         </article>
       </div>
@@ -151,15 +150,12 @@ const href = (path: string) => getRelativeLocaleUrl(lang, path);
   .masthead-brand[aria-expanded="true"] .brand-reveal { grid-template-columns: 1fr; opacity: 1; }
   h2 { overflow-wrap: anywhere; font-family: 'Barlow Condensed', var(--font-sans); font-weight: 700; text-transform: uppercase; }
   .app-feature > * { min-width: 0; }
-  .text-action { display: inline-flex; align-items: center; gap: .8rem; font-size: .8125rem; font-weight: 600; line-height: 1.4; }
-  .text-action > span { font-size: 1.1rem; }
   .tools { padding-top: clamp(1.5rem, 3vw, 2.5rem); }
   .tool-link { display: block; }
   .chart-feature { display: grid; grid-template-columns: 1fr 2.15fr; border: var(--card-border); background: var(--card-bg); }
   .chart-copy { display: flex; flex-direction: column; align-items: start; padding: clamp(1.5rem, 3vw, 2.5rem); }
   .chart-copy h2 { font-size: clamp(2.5rem, 3.8vw, 3.75rem); line-height: 1; letter-spacing: -.015em; }
-  .chart-copy > p { margin-top: 1rem; max-width: 20ch; color: var(--color-ink-muted); font-size: .875rem; line-height: 1.65; }
-  .chart-copy .text-action { margin-top: auto; padding-top: 2rem; }
+  .chart-copy > p { margin-top: 1rem; color: var(--color-ink-muted); font-size: .875rem; line-height: 1.65; }
   .explore-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 2.5rem; padding-block: 3rem; }
   .tool-heading { display: flex; align-items: center; gap: .75rem; padding-block: 0 1.2rem; }
   .tool-heading h2 { font-size: clamp(1.75rem, 2.6vw, 2.5rem); line-height: 1.1; }
@@ -174,18 +170,16 @@ const href = (path: string) => getRelativeLocaleUrl(lang, path);
   .video-tool:has(.video-card-link:hover) h2 { text-decoration: underline; text-decoration-color: var(--color-accent); text-decoration-thickness: 2px; text-underline-offset: 7px; }
   .video-tool:has(.video-card-link:focus-visible) { outline: 2px solid var(--color-accent); outline-offset: 4px; }
   .tool-description { display: flex; justify-content: space-between; gap: 1.25rem; align-items: start; padding-top: 1.1rem; }
-  .tool-description p { color: var(--color-ink-muted); font-size: .8125rem; line-height: 1.7; max-width: 24ch; }
-  .tool-description .text-action { font-size: .75rem; margin-top: .15rem; }
-  .tool-link .text-action > span, .app-action > span { transition: transform 180ms ease; }
-  .tool-link:hover .text-action > span, .video-tool:has(.video-card-link:hover) .text-action > span, .tool-link:hover .app-action > span { transform: translate(2px, -2px); }
+  .tool-description p { color: var(--color-ink-muted); font-size: .8125rem; line-height: 1.7; }
   .tool-link:hover h2 { text-decoration: underline; text-decoration-color: var(--color-accent); text-decoration-thickness: 2px; text-underline-offset: 7px; }
   .app-feature { display: grid; grid-template-columns: 1.35fr 1fr; background: var(--card-bg); border: var(--card-border); overflow: hidden; }
   .app-copy { padding: clamp(2rem, 4vw, 3.5rem); }
   .app-copy h2 { font-size: clamp(2.8rem, 4.6vw, 4.6rem); letter-spacing: -.02em; line-height: .98; max-width: 14ch; text-wrap: balance; }
-  .app-description { color: var(--color-ink-muted); font-size: .875rem; line-height: 1.75; max-width: 34ch; margin-top: 1.2rem; }
-  .app-trust { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem 1rem; margin-top: 1.25rem; color: var(--color-ink-muted); font-size: .8125rem; }
   .app-action { display: inline-flex; align-items: center; gap: 1.2rem; margin-top: 1.7rem; padding: .9rem 1.15rem; background: var(--color-accent); color: #252722; font-size: .75rem; font-weight: 650; }
-  .app-action > span { font-size: 1.1rem; }
+  .app-action > span { font-size: 1.1rem; transition: transform 180ms ease; }
+  .tool-link:hover .app-action > span { transform: translate(2px, -2px); }
+  .app-description { color: var(--color-ink-muted); font-size: .875rem; line-height: 1.75; margin-top: 1.2rem; }
+  .app-trust { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem 1rem; margin-top: 1.25rem; color: var(--color-ink-muted); font-size: .8125rem; }
   .app-preview { position: relative; min-height: 400px; display: flex; justify-content: center; align-items: start; overflow: hidden; background: #e4e5da; padding-top: 2.25rem; }
   :global(html.dark) .app-preview { background: var(--color-accent-soft); }
   .phone-frame { position: absolute; top: 2.25rem; width: 235px; border: 5px solid #252722; border-radius: 30px; overflow: hidden; box-shadow: 0 20px 35px #0002; transform: rotate(5deg); }
@@ -206,7 +200,6 @@ const href = (path: string) => getRelativeLocaleUrl(lang, path);
     .explore-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1.5rem; }
     .wealth-tool { grid-column: 1 / -1; }
     .tool-description { flex-direction: column; gap: .6rem; }
-    .tool-description p { max-width: 32ch; }
   }
   @media (max-width: 700px) {
     .homepage-settings--desktop { display: none; }
@@ -218,15 +211,13 @@ const href = (path: string) => getRelativeLocaleUrl(lang, path);
     .chart-copy { display: grid; grid-template-columns: minmax(0, 1fr); align-items: center; gap: .6rem; padding: 1.25rem; }
     .chart-copy h2 { margin: 0; font-size: 2rem; }
     .chart-copy > p { grid-column: 1 / -1; margin: 0; max-width: none; font-size: .75rem; }
-    .chart-copy .text-action { grid-column: 1 / -1; padding-top: .4rem; margin: 0; font-size: .75rem; }
     .explore-grid { grid-template-columns: 1fr; gap: 2rem; padding-block: 2rem; }
     .wealth-tool { grid-column: auto; }
     .tool-heading { padding-bottom: .8rem; }
     .tool-heading h2 { font-size: 2rem; }
     .secondary-preview { height: auto; aspect-ratio: 1.8; }
     .tool-description { flex-direction: row; }
-    .tool-description p { max-width: 26ch; font-size: .75rem; }
-    .tool-description .text-action { font-size: .6875rem; }
+    .tool-description p { font-size: .75rem; }
     .app-feature { grid-template-columns: 1.25fr 1fr; }
     .app-copy { padding: 1.5rem 1rem; }
     .app-copy h2 { font-size: clamp(2.2rem, 7vw, 3.25rem); }
@@ -244,7 +235,7 @@ const href = (path: string) => getRelativeLocaleUrl(lang, path);
   }
   @media (prefers-reduced-motion: reduce) {
     .masthead h1, .brand-reveal { transition: none; }
-    .tool-link .text-action > span, .app-action > span { transition: none; }
-    .tool-link:hover .text-action > span, .video-tool:has(.video-card-link:hover) .text-action > span, .tool-link:hover .app-action > span { transform: none; }
+    .app-action > span { transition: none; }
+    .tool-link:hover .app-action > span { transform: none; }
   }
 </style>

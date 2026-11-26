@@ -26,10 +26,6 @@ export const it: Dict = {
 
   landing: {
     toolsLabel: 'Esplora gli strumenti',
-    openChart: 'Apri il grafico',
-    openEarth: 'Esplora la mappa',
-    openWealth: 'Apri il simulatore',
-    openVideo: 'Crea l’atmosfera',
     appTitle: 'OBT per Android',
     openApp: 'Scopri di più sull’app',
     appDescription: 'Non servono chiavi né seed. Inserisci a mano le quantità di bitcoin. Non puoi effettuare transazioni con l’app, ma è molto comoda per vedere quanto valgono i tuoi stack di bitcoin.',

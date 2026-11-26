@@ -33,10 +33,6 @@ export const en = {
 
   landing: {
     toolsLabel: 'Explore the tools',
-    openChart: 'Open the chart',
-    openEarth: 'Explore the map',
-    openWealth: 'Open the simulator',
-    openVideo: 'Set the scene',
     appTitle: 'Android app',
     openApp: 'More about the app',
     appDescription: "No keys or seeds needed. Bitcoin amounts are entered by hand. You can't transact, but it’s great to check what your bitcoin stacks are worth.",

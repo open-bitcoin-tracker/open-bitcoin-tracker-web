@@ -26,10 +26,6 @@ export const es: Dict = {
 
   landing: {
     toolsLabel: 'Explora las herramientas',
-    openChart: 'Abrir el gráfico',
-    openEarth: 'Explorar el mapa',
-    openWealth: 'Abrir el simulador',
-    openVideo: 'Ponle ambiente',
     appTitle: 'OBT PARA ANDROID',
     openApp: 'Mas info sobre la app',
     appDescription: 'No le hacen falta llaves ni semillas, las cantidades se meten a mano. No puedes hacer transacciones, pero es muy conveniente para ver lo que valen tus stacks de bitcoin.',

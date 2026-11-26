@@ -26,10 +26,6 @@ export const ja: Dict = {
 
   landing: {
     toolsLabel: 'ツールを使ってみる',
-    openChart: 'チャートを開く',
-    openEarth: '地図を探索',
-    openWealth: 'シミュレーターを開く',
-    openVideo: '雰囲気をつくる',
     appTitle: 'Android版OBT',
     openApp: 'アプリについて詳しく見る',
     appDescription: '秘密鍵もシードフレーズも不要。ビットコインの保有量は手入力します。アプリで取引はできませんが、コツコツ貯めたビットコインが今いくらなのかを確認するのにとても便利です。',
