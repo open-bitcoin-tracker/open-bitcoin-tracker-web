@@ -31,6 +31,15 @@
 /* A single-panel drawer opened from a control on the right slides in from the right edge. */
 .guide-drawer--right { --drawer-from: 100%; inset: 0 0 0 auto; box-shadow: -12px 0 64px #0003; }
 .guide-drawer--right .guide-drawer-overview { border-right: 0; border-left: 1px solid var(--color-divider); }
+/* It moves like the site menu, which opens from the same corner: a slower glide with a fade, and the dimming fades too. */
+.guide-drawer--right[open] { animation: guide-drawer-slide-in 420ms var(--ease-drawer-in), guide-drawer-fade-in 300ms ease; }
+.guide-drawer--right[open][data-closing] { animation: guide-drawer-out-slide 420ms var(--ease-drawer-in) forwards, guide-drawer-fade-out 300ms ease forwards; }
+.guide-drawer--right[open]::backdrop { animation: guide-drawer-fade-in 420ms ease; }
+.guide-drawer--right[open][data-closing]::backdrop { animation: guide-drawer-fade-out 420ms ease forwards; }
+@keyframes guide-drawer-slide-in { from { transform: translateX(var(--drawer-from)); } to { transform: translateX(0); } }
+@keyframes guide-drawer-out-slide { from { transform: translateX(0); } to { transform: translateX(var(--drawer-from)); } }
+@keyframes guide-drawer-fade-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes guide-drawer-fade-out { from { opacity: 1; } to { opacity: 0; } }
 @keyframes guide-drawer-in { from { transform: translateX(var(--drawer-from)); } to { transform: translateX(0); } }
 @keyframes guide-drawer-out { from { transform: translateX(0); } to { transform: translateX(var(--drawer-from)); } }
 @media (min-width: 900px) { .guide-drawer .guide-drawer-detail-header { display: none; } }
@@ -44,6 +53,8 @@
   .guide-drawer .guide-drawer-overview { border-right: 0; border-left: 0; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .guide-drawer[open], .guide-drawer[open][data-closing] { animation: none; }
+  .guide-drawer[open], .guide-drawer[open][data-closing],
+  .guide-drawer--right[open], .guide-drawer--right[open][data-closing],
+  .guide-drawer--right[open]::backdrop, .guide-drawer--right[open][data-closing]::backdrop { animation: none; }
   .guide-drawer, .guide-drawer .guide-drawer-detail, .guide-drawer .guide-drawer-section { transition: none; }
 }

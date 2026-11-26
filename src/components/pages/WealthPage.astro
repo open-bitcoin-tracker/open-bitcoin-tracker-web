@@ -103,7 +103,7 @@ const sourceFor = (id: AssetId) => id === 'bitcoin' ? snapshot.bitcoin.source : 
           <section class="guide-drawer-overview" data-method-overview>
             <header class="method-header guide-drawer-header">
               <h2 id="wealth-method-title" data-method-title tabindex="-1">{t.methodTitle}</h2>
-              <button type="button" class="guide-drawer-close" data-method-close aria-label={t.closeMethod}><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18" /></svg></button>
+              <button type="button" class="method-close" data-method-close aria-label={t.closeMethod}><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" aria-hidden="true"><path d="M4.93 4.93l14.14 14.14M19.07 4.93 4.93 19.07" /></svg></button>
             </header>
             <div class="method-body guide-drawer-scroll" data-method-body></div>
           </section>
@@ -271,10 +271,13 @@ const sourceFor = (id: AssetId) => id === 'bitcoin' ? snapshot.bitcoin.source : 
   .method details { margin-top: var(--wealth-gap); }
   .method details[hidden] { display: none; }
   /* Like the site menu, release the scrollbar gutter so the drawer reaches the right edge. */
-  :global(html:has(.method-dialog[open])) { overflow: hidden; scrollbar-gutter: auto; }
+  :global(html.wealth-sources-open) { overflow: hidden; scrollbar-gutter: auto; }
   /* One panel: the sources, wide enough for their links. Narrow screens keep the shared drawer's widths. */
   @media (min-width: 900px) { .method-dialog { --drawer-width: 440px; } }
-  .method-header { gap: 1rem; }
+  /* The close button copies the site menu's: same size, colours and bold ✕, in the exact spot the menu's sits. */
+  .method-dialog .method-header { gap: 1rem; min-height: 0; padding-top: var(--menu-control-top); padding-right: var(--menu-control-right); }
+  .method-close { display: flex; flex: none; align-items: center; justify-content: center; width: var(--menu-control-size); height: var(--menu-control-size); padding: 0; border: 0; border-radius: 50%; background: var(--menu-control-bg); color: var(--menu-control-ink); cursor: pointer; }
+  @media (max-width: 700px) { .method-close svg { width: 20px; height: 20px; } }
   .method-header h2 { color: var(--color-ink-muted); font-size: 1.5rem; line-height: 1.2; font-weight: 600; }
   .method-dialog h2:focus { outline: none; }
   .method-body { padding: 0 28px max(28px, env(safe-area-inset-bottom)); }

@@ -83,7 +83,7 @@ export function createGuideDrawer({ dialog, overview, detail, heading, detailHea
     else {
       dialog.setAttribute('data-closing', '');
       // Complete dismissal even if an animation is cancelled or motion changes.
-      timeout = window.setTimeout(finishClose, 350);
+      timeout = window.setTimeout(finishClose, 600);
     }
   }
   function open() {
@@ -117,7 +117,7 @@ export function createGuideDrawer({ dialog, overview, detail, heading, detailHea
   });
   listen(dialog, 'click', event => { if (event.target === dialog) close(); });
   listen(dialog, 'animationend', ((event: AnimationEvent) => {
-    if (closing && event.target === dialog && event.animationName === 'guide-drawer-out') finishClose();
+    if (closing && event.target === dialog && event.animationName.startsWith('guide-drawer-out')) finishClose();
   }) as EventListener);
   listen(dialog, 'close', () => {
     reset();

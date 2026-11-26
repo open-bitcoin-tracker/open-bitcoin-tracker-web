@@ -356,10 +356,13 @@ if (root && json) {
       overviewBody: methodBody,
       closeButtons: Array.from(root.querySelectorAll<HTMLButtonElement>('[data-method-close]')),
       trigger: methodTrigger,
+      onClose: () => document.documentElement.classList.remove('wealth-sources-open'),
     });
     // Like A Bit of Earth's help button, the tooltip stays hidden after a click until the pointer or focus leaves.
     methodTrigger.addEventListener('click', () => {
       methodTrigger.toggleAttribute('data-tooltip-dismissed', true);
+      // A class, like the site menu's, locks the page more cheaply than an html:has() rule while the drawer slides in.
+      document.documentElement.classList.add('wealth-sources-open');
       drawer.open();
     });
     for (const type of ['mouseleave', 'blur']) methodTrigger.addEventListener(type, () => {
